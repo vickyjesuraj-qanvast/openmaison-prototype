@@ -1,15 +1,18 @@
-/* Tools › AI Visualizer (REG-673): the house gallery with covers; the intro card is Quote X-Ray's; the sample picker's tiles are the
-   quick-links tiles' grammar at photo size. Every value is a token. */
-.intro { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); margin-bottom: var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
-.introText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-.introTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
-.steps li { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+/* Tools › AI Visualizer (REG-673): the house gallery with covers; the sample picker's tiles are the quick-links tiles' grammar at photo
+   size. Every value is a token. */
+/* (the calm UI build 2026-10-27, 6-10) What the tool does, in one line under the page's title — the secondary sentence and the house text
+   link that opens the three steps in a Drawer (the four-line card it replaces, Quote X-Ray's intro, sat there on every visit). */
+.introLine { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-1); margin: 0 0 var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.howLink { composes: link from '../../om/text-link.module.css'; }
+/* a finger's 44 under the link that stands on its own (REG-273's rule for a lone link); the line keeps its height */
+@media (hover: none) { .howLink { position: relative; } .howLink::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); } }
+.howBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.howLead { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.steps li { display: flex; align-items: flex-start; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .steps b { font-weight: 600; }
-/* (REG-729) The house number disc (X-Ray's Say this, the pin card): a 24 circle, the caption-s number in primary on the primary-variant — here
-   the intro card is that variant itself, so the disc takes the surface's white, as a glyph well does on a picked row (the Company panel,
-   the global search). */
-.stepN { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); background: var(--om-color-surface-default); color: var(--om-color-primary-default); }
+/* (REG-729) The house number disc (X-Ray's Say this, the pin card): a 24 circle, the caption-s number in primary on the primary-variant. */
+.stepN { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
 .menuRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .menuRow > :first-child { color: var(--om-color-on-surface-secondary); }
 /* The cover fills the card's thumb band, whatever the band's own padding. */
@@ -27,24 +30,19 @@
 .sample:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .sampleName { padding: 0 var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .sampleHelp { padding: 0 var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-@media (max-width: 1024px) { .steps { grid-template-columns: 1fr; gap: var(--om-spacing-2); } }
 /* (F133) A design's own cover in the list's and the Deleted sheet's glyph (Price book › My Items' box); the wand only without a photo. */
 .glyph { width: 100%; height: 100%; display: inline-flex; align-items: center; justify-content: center; }   /* (REG-820) it fills the house square (templates-table .thumb) */
 .glyph img { width: 100%; height: 100%; object-fit: cover; display: block; }
-/* (F155) A phone: the intro closes up (the house type one step down), and once the studio has a design its three steps rest — the title and
-   Dismiss stay — so the first designs show above the fold at 390. */
+/* (F155) A phone: the sample picker's tiles one to a row. */
 @media (max-width: 767px) {
-  .intro { padding: var(--om-spacing-4); margin-bottom: var(--om-spacing-4); gap: var(--om-spacing-3); }
-  .introTitle { font: var(--om-type-subtitle-m); }
-  .steps { gap: var(--om-spacing-2); }
-  .steps li { font: var(--om-type-body-s); }
-  .intro[data-has-designs] .steps { display: none; }
   .samples { grid-template-columns: 1fr; }
 }
-/* (verify round 1, F166) The ghost: the L1 header's plate, and the intro card with its words as text-shaped bones (the ink gone, the lines
-   kept) and its step numbers as bone dots — the same box as the page's at every width. */
+/* (verify round 1, F166) The ghost: the L1 header's plate, and the intro line with its words as text-shaped bones (the ink gone, the line
+   kept) — the same box as the page's at every width. */
 .gHead { display: flex; align-items: center; min-height: 68px; padding: 0 var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
 .gText { color: transparent; background: var(--om-color-surface-variant); border-radius: var(--om-radius-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.intro[data-ghost] .stepN { background: var(--om-color-surface-variant); color: transparent; }
-.gDismiss { width: 24px; height: 24px; flex-shrink: 0; }
 @media (max-width: 767px) { .gHead { min-height: 60px; padding: 0 var(--om-spacing-4); } }
+
+/* (the calm UI build 2026-10-27, 6-21 — T-12) the card's foot (whose · when) wraps to a second line on a narrow card instead of cutting — the
+   gallery's usage line is one cut line by default */
+.footWrap { display: block; white-space: normal; overflow-wrap: anywhere; }

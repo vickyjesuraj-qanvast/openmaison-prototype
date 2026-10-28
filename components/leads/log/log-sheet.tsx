@@ -191,7 +191,7 @@ function LogSheetBody({ open, initial, ctx, onClose, onSaved }: {
   )
   const headActions = kind !== 'note'
     // eslint-disable-next-line @next/next/no-img-element
-    ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFill(true)} ariaLabel="Auto Fill from a chat or an email">Auto Fill</LinkButton>
+    ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFill(true)} ariaLabel="Auto fill from a chat or an email">Auto fill</LinkButton>
     : null
   return (
     <>

@@ -41,8 +41,10 @@ export type MeetingsLead = { id: string; name: string; phone: string; email: str
  * rail is (REG-466), with a Lead column and Start's lead picker. A meeting held on a lead IS its Met log: a Met log no meeting holds lists as
  * itself and opens as one. No mock draws the list — the Contracts tab's twin, the house table, dialogs and empty card. *(invented copy)*
  */
-export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChange, now, base, views, header, studioName }: {
+export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChange, now, base, views, header, studioName, onReports }: {
   studioName: string
+  /** (the calm UI build 2026-10-27, 1-30 · 2-47) Tools › Meeting Copilot's Reports door — a row in the toolbar's ⋮ */
+  onReports?: () => void
   leadId: string | null
   lead?: MeetingsLead | null
   /** Tools › Meeting Copilot: the leads a new meeting can be for */
@@ -157,13 +159,13 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
     setBusy(true)
     try {
       const r = await writeUpMeeting({ leadId: l.id, meetingId: writeUp.meetingId, notes: v.notes, aim: v.aim, whereKind: v.whereKind, startsAt: at.getTime(), memberIds: v.memberIds, recording: v.recording ? { name: v.recording.name, data: v.recording.data } : null, consent: v.consent })
-      if ('error' in r) { fail('make the brief', refusalOf(r.error)); return false }
+      if ('error' in r) { fail('make the summary', refusalOf(r.error)); return false }
       /* (S42G) before Met, the stage the studio's rule allows (Contacted for a New lead under one stage at a time) — never a move it refuses */
       const next = r.next
       const toStep = next ? { actionLabel: meetingStepLabel(next), onAction: () => router.push(meetingStepHref(l.id, r.id, next)) } : { actionLabel: 'Open', onAction: () => router.push(meetingPage(r.id)) }
-      snackbar({ message: `Brief made from the ${v.recording ? 'recording’s transcript' : 'notes'}${r.filed === 'logged' ? ' — added to the Met step’s logs' : ''}`, ...toStep })
+      snackbar({ message: `Summary made from ${v.recording ? 'the recording’s transcript' : 'your notes'}${r.filed === 'logged' ? ' — added to the Met step’s logs' : ''}`, ...toStep })
       refresh(); return true
-    } catch { fail('make the brief'); return false } finally { setBusy(false) }
+    } catch { fail('make the summary'); return false } finally { setBusy(false) }
   }
 
   const openInvite = async (row: MeetingRow) => {
@@ -225,13 +227,16 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
     <>
     {header ? header({ add }) : null}
     <div className={styles.tab} data-testid="meetings-tab" data-studio={header ? '' : undefined}>
-      <MeetingsToolbar title={views ?? 'All Meetings'} bare={empty} hideNew={!!header} query={query} onQuery={setQuery} onNew={onNew} onColumns={phone ? undefined : () => setColumnsOpen(true)}
+      <MeetingsToolbar title={views ?? 'All meetings'} bare={empty} hideNew={!!header} query={query} onQuery={setQuery} onNew={onNew} onColumns={phone ? undefined : () => setColumnsOpen(true)} onReports={onReports}
         todos={{ save: counts.save, write: counts.write, on: todo, onToggle: (k) => setTodo((t) => (t === k ? null : k)) }} mayChange={mayChange}
         onMenu={(m) => { if (m === 'settings') router.push(withFrom('/settings?section=meetings', here())); else { setDeletedOpen(true); void loadDeleted() } }} />
       {empty ? (
-        <EmptyState icon="event" testId="meetings-empty"
-          title="Meet with the co-pilot beside you"
-          help="Plan the meeting, and in it the co-pilot keeps the checklist, the tips and the rough estimate — then makes the brief: what they want, the next steps and the message to send."
+        /* (the calm UI build 2026-10-27, 2-23 · W-547) one line, not the tool's feature list — Meeting Copilot explains itself on the meeting's page */
+        /* (the calm UI build 2026-10-27 — 2-04 · T-03, the orchestrator's ask) on a record page (a lead's or a project's Meetings) the first run's
+           primary is outlined, as every record page's empty state (the house EmptyState's `primaryLook`); Tools › Meeting Copilot keeps it filled */
+        <EmptyState icon="event" testId="meetings-empty" primaryLook={studio ? 'filled' : 'outlined'}
+          title="No meetings yet"
+          help="Plan one and Meeting Copilot keeps the notes."
           primary={mayChange ? { label: 'Plan a meeting', icon: 'event', onPress: () => onNew('plan') } : null}
           secondary={mayChange ? { label: 'Start a meeting now', icon: 'mic', onPress: () => onNew('now') } : null}
           link={mayChange ? { label: 'Write one up from notes', onPress: () => onNew('write') } : null} />
@@ -239,7 +244,7 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
         <TabSearchEmpty noun="meetings" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setTodo(null) }} />
       ) : (
         <MeetingsTable rows={visible} team={team} columns={columns.columns} onReorder={columns.reorder} onOpen={(r) => { void openRow(r) }} onAction={onRowAction} now={now}
-                       leadHref={studio ? leadMeetingsHref : undefined} mayChange={mayChange} canDelete={canDelete} />
+                       leadHref={studio ? leadMeetingsHref : undefined} mayChange={mayChange} canDelete={canDelete} onProject={!!base?.startsWith('/projects/')} />
       )}
 
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columns.all} onSave={columns.save} onReset={columns.reset} />
@@ -257,7 +262,7 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
           draft={(name) => inviteMessage({ client: name, studio: studioName, aim: invite.row.aim, startsAt: invite.row.startsAt, whereKind: invite.row.whereKind, place: invite.row.place, link: absolute(clientMeetingPath(invite.token)) })}
           extra={leadFor(invite.row.leadId)?.email ? (
             <div className={styles.emailRow}><span className={styles.muted}>Or send it to {leadFor(invite.row.leadId)!.email} — the email carries the same link.</span>
-              <Button appearance="text" onPress={() => { const row = invite.row; setInvite(null); void inviteClient(row.id, 'email').then((x) => { if ('error' in x) fail('email the invitation', refusalOf(x.error)); else snackbar({ message: x.emailed === 'off' ? 'Your studio has the meeting email switched off — Settings › Notifications' : x.emailed === 'no_address' ? 'The lead has no email' : x.emailed === 'failed' ? couldnt('email the invitation') : `Invitation emailed for ${whenWords(row.startsAt)}` }); refresh() }, () => fail('email the invitation')) }} data-testid="invite-email">Send by email</Button></div>
+              <Button appearance="text" onPress={() => { const row = invite.row; setInvite(null); void inviteClient(row.id, 'email').then((x) => { if ('error' in x) fail('email the invitation', refusalOf(x.error)); else snackbar({ message: x.emailed === 'off' ? 'Your studio has the meeting email switched off — Settings › Studio notifications' : x.emailed === 'no_address' ? 'The lead has no email' : x.emailed === 'failed' ? couldnt('email the invitation') : `Invitation emailed for ${whenWords(row.startsAt)}` }); refresh() }, () => fail('email the invitation')) }} data-testid="invite-email">Send by email</Button></div>
           ) : null}
           onSend={({ phone, message }) => {
             window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')   // on the press (REG-534)
@@ -266,7 +271,7 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
             void run('record the invitation', () => inviteClient(row.id, 'whatsapp'), `Invitation sent to ${firstOf(titleCaseName(row.leadName))}`, { refresh: true })
           }} />
       ) : null}
-      <LibraryDeletedSheet open={deletedOpen} rows={deletedItems} crumb={studio ? 'Meetings' : `${lead?.name ?? 'Lead'} / Meetings`} ariaLabel="Deleted Meetings" title="Deleted Meetings" noun={{ one: 'meeting', many: 'meetings' }} nameLabel="Meeting" byLabel="Deleted by" usageLabel="When"
+      <LibraryDeletedSheet open={deletedOpen} rows={deletedItems} crumb={studio ? 'Meetings' : `${lead?.name ?? 'Lead'} / Meetings`} ariaLabel="Deleted meetings" title="Deleted meetings" noun={{ one: 'meeting', many: 'meetings' }} nameLabel="Meeting" byLabel="Deleted by" usageLabel="When"
         glyph={() => null} meta={{ label: 'Planned', value: (t) => displayDate(t.createdAt) }} usage={(t) => displayDue(t.createdAt)}
         purgeRule={(t) => (viewer.role === 'Owner' || viewer.role === 'Admin' || (t as { createdBy?: string | null }).createdBy === viewer.id ? null : 'whoever planned it, Owner or Admin')}
         onClose={() => setDeletedOpen(false)}

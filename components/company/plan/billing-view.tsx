@@ -159,9 +159,16 @@ export function BillingView({ chrome, invoices, auto, from }: { chrome: CreditsC
             {trusted && s.planId !== 'free' ? (
               <section className={styles.box} aria-label="Payment method" data-card="card" data-testid="billing-card">
                 <div className={styles.boxHead}><h2 className={styles.boxTitle}>Payment method</h2></div>
-                <p className={styles.boxLine}>Visa ending 4242 · expires 08/28 <span className={styles.m}>(demo)</span></p>
-                <p className={styles.boxMeta}>Paid through Dodo Payments. In the live app, updating the card opens Dodo’s billing page in a new tab.</p>
-                {may ? <div className={styles.boxActions}><Button variant="secondary" appearance="outlined" onPress={openManageBilling}>Update card</Button></div> : null}
+                {/* (the calm UI build 2026-10-27 — 5-16 · W-424 · W-306, T-05) no prototype talk on a studio's screen: the card as the studio
+                    reads it; how the live app pays (Dodo Payments' billing page in a new tab — the developers' S34 stand-in) is Update card's tooltip */}
+                <p className={styles.boxLine}>Visa ending 4242 · expires 08/28</p>
+                {may ? (
+                  <div className={styles.boxActions}>
+                    <Tooltip label="Paid through Dodo Payments — in the live app this opens Dodo’s billing page in a new tab">
+                      <Button variant="secondary" appearance="outlined" onPress={openManageBilling}>Update card</Button>
+                    </Tooltip>
+                  </div>
+                ) : null}
               </section>
             ) : null}
           </div>

@@ -157,7 +157,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
           <span className={styles.sub}>{capped ? 'AI credits you can use this month' : 'AI credits you’ve used this month'}</span>
         </div>
       </div>
-      {capped ? <p className={styles.line}>Your monthly amount is {fmtCredits(s.memberCap ?? 0)} · set by {s.owner.name}</p> : null}
+      {capped ? <p className={styles.line}>Your monthly limit is {fmtCredits(s.memberCap ?? 0)} · set by {s.owner.name}</p> : null}
       <p className={styles.line}>{capped && left > 0 ? `About ${fmtCredits(aboutRenders(left))} renders · ` : ''}Refreshes {refreshLine(s.periodEnd, s.now)}</p>
       {!capped ? (
         <p className={styles.note} data-tone={s.poolState === 'out' ? 'bad' : s.poolState === 'low' ? 'warn' : 'info'}>
@@ -171,7 +171,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
         waiting ? <p className={styles.asked}><Icon name="check_circle" size={18} fill weight={300} />Asked {s.owner.name} · we’ll tell you when it’s answered</p>
           : <Button className={styles.full} isDisabled={pending} onPress={() => ask(capped ? 'monthly' : 'pool')}>{`Ask ${s.owner.name} for more`}</Button>
       ) : (
-        <p className={styles.line}>{s.owner.name} can add AI credits or change your monthly amount.</p>
+        <p className={styles.line}>{s.owner.name} can add AI credits or change your monthly limit.</p>
       )}
       <div className={styles.links}>
         <Button appearance="text" onPress={() => go(planHref())}>See my usage</Button>

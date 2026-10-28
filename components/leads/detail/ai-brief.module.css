@@ -23,11 +23,11 @@
 }
 .eyebrow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .sparkle { width: 17px; height: 17px; display: block; flex-shrink: 0; }
-/* "MAISON AI BRIEF" 12/600/16 secondary — caption-s with the semibold weight, as the card head link in card.module.css. */
+/* "Maison AI" 12/600/16 secondary — caption-s with the semibold weight, as the card head link in card.module.css. */
 .eyebrowText { font: var(--om-type-caption-s); font-weight: var(--om-font-weight-semibold); line-height: 16px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-/* DS Tag Filled Yellow gives fill tertiary-yellow-default (#f19e2b), white 10/500/12 uppercase text, p4/8, r4 — the mock
-   renders it uppercase ("FRESH LEAD · RESPOND FAST", 858:24867), so nothing is overridden. */
-.tag { flex-shrink: 0; }
+/* (the calm UI build 2026-10-27 — T-06, audit 2-01) A brief's tag is not a status: grey sentence-case words at the eyebrow's size, where the mock's
+   CAPS yellow Tag stood ("FRESH LEAD · RESPOND FAST", 858:24867); the lead's one card shows none. */
+.tagText { flex-shrink: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 
 /* Body: p8/20/20/20, V g20. */
 .body {
@@ -81,7 +81,7 @@
 @media (max-width: 1024px) {
   .head { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
   .eyebrow { flex: 0 0 auto; }
-  .tag { margin-left: auto; }
+  .tagText { margin-left: auto; }
 }
 /* Mobile: the brief is clamped to the mock's two lines because the mock's box is 844 wide — the same sentence
    needs four at 318. It stays CLAMPED (the card is a brief, not the record) and stays on its 40px floor, but at

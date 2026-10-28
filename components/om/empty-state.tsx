@@ -16,10 +16,11 @@ export type EmptyAction = { label: string; icon?: string; onPress: () => void; b
  * (a library's samples). Rules (design-source/context/page-checklist.md › Empty states): a first run always carries its action; one filled
  * button on the screen; "No results found" (TabSearchEmpty) is a different card, for a search or a filter.
  */
-export function EmptyState({ icon, title, help, primary, secondary, link, extra, extraLabel, tone = 'first', testId = 'empty-state', kb = true }: {
+export function EmptyState({ icon, title, help, primary, secondary, link, extra, extraLabel, tone = 'first', testId = 'empty-state', kb = true, primaryLook = 'filled' }: {
   icon: string
   title: string
-  help: ReactNode
+  /** (the calm UI build 2026-10-27, additive) optional — an empty state that says it all in its title draws no empty line under it */
+  help?: ReactNode
   primary?: EmptyAction | null
   secondary?: EmptyAction | null
   link?: EmptyAction | null
@@ -31,10 +32,13 @@ export function EmptyState({ icon, title, help, primary, secondary, link, extra,
   testId?: string
   /** (pending modules S19) false: the primary is not the page's C — a place whose way on isn't making one (a Pro feature's lock, Plans). */
   kb?: boolean
+  /** (the calm UI build 2026-10-27, T-03 — B2's request, additive) 'outlined': the first action drawn outlined, for an empty state on a record
+      page whose header already holds the screen's one filled button (a lead's Meetings). Its role (C, the first way) is unchanged. */
+  primaryLook?: 'filled' | 'outlined'
 }) {
   const button = (a: EmptyAction, kind: 'primary' | 'secondary' | 'link') => {
     const b = (
-      <Button key={a.label} variant="primary" appearance={kind === 'primary' ? 'filled' : kind === 'secondary' ? 'outlined' : 'text'}
+      <Button key={a.label} variant="primary" appearance={kind === 'primary' ? primaryLook : kind === 'secondary' ? 'outlined' : 'text'}
               iconStart={a.icon && kind !== 'link' ? <Icon name={a.icon} size={20} /> : undefined} isDisabled={!!a.block} onPress={a.onPress}
               data-testid={a.testId} {...(kind === 'primary' && !a.block && kb ? { 'data-kb': 'create', 'data-kb-label': a.label } : {})}>
         {a.label}
@@ -47,7 +51,7 @@ export function EmptyState({ icon, title, help, primary, secondary, link, extra,
     <section className={styles.empty} data-tone={tone} aria-label={title} data-testid={testId}>
       <span className={styles.glyph} aria-hidden><Icon name={icon} size={40} weight={300} /></span>
       <h3 className={styles.title}>{title}</h3>
-      <p className={styles.help}>{help}</p>
+      {help === undefined || help === null || help === '' ? null : <p className={styles.help}>{help}</p>}
       {acts.length ? <div className={styles.actions}>{acts}</div> : null}
       {extra ? (
         <div className={styles.extra}>

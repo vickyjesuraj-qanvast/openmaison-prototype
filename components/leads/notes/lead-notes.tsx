@@ -23,7 +23,7 @@ import { FILL_ORDER, fillWords, readContactFile, type ContactFill } from '@/lib/
 import { withFrom } from '@/lib/nav'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateTimeDot, displayDue, parseInputDateTime } from '@/lib/format'
+import { displayDue, parseInputDateTime } from '@/lib/format'
 import { bodyHtml, bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
 import { refineNoteHtml, refineTitle } from '@/lib/leads/note-refine'   // (pending modules S05)
 import type { LeadNotesData, NoteRow } from '@/lib/leads/notes'
@@ -31,7 +31,7 @@ import { filterByQuery } from '@/lib/search'
 import { reminderTaskTitle } from '@/lib/leads/enums'
 import { createNote, deleteNote, setNoteAttachments, updateNote } from '@/app/leads/notes-actions'
 import { createTask } from '@/app/leads/tasks-actions'
-import { NotesList } from './notes-list'
+import { NotesList, noteWhen } from './notes-list'
 import { NoteEditor } from './note-editor'
 import { ContactEditor } from './contact-editor'
 import { PaneHeader, PaneToolbar } from './pane-toolbar'
@@ -88,6 +88,9 @@ const SUGGESTIONS = ['Prepare sample designs and floor plan illustrations for th
 /* (UX audit 2026-09-30, T3) A Met-stage meeting log reads as what it is — "Meeting log", its remarks or where it happened. */
 const isMeetingRow = (n: NoteRow | undefined) => n?.stageKind === 'Met'
 const titleOf = (n: NoteRow, cur: NoteDraft) => (isMeetingRow(n) ? 'Meeting log' : listTitle(cur))
+/** (the calm UI build 2026-10-27 — 3-43) The moment a row shows: a log's own time (when the call or the meeting happened — what its open view and
+    the Meetings tab say), a note's creation. One meeting no longer shows 2:00 PM in the list and 12:00 PM when opened. */
+const shownAt = (n: NoteRow, cur: NoteDraft): Date => (cur.kind === 'contact' ? parseInputDateTime(cur.when) ?? n.contactedAt ?? n.createdAt : n.createdAt)
 const secondaryOf = (n: NoteRow, cur: NoteDraft) => {
   if (!isMeetingRow(n)) return listSecondary(cur)
   return bodyText(cur.body).split('\n').map((l) => l.trim()).find(Boolean) ?? cur.channel ?? 'No notes yet'
@@ -138,6 +141,10 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
      the list, the selected row drops out, the fallback below picks another, and the caret was stolen out of the
      search box mid-word. So intent, not mounting, decides. */
   const [mayFocusEditor, setMayFocusEditor] = useState(true)
+  /* (the calm UI build 2026-10-27 — 2-46) On a phone and a tablet held upright the note composer opens from New › Note (the toolbar's +) and
+     closes once its note is saved — it no longer sits docked under the list on every visit, taking a quarter of the screen. A note being
+     typed keeps it open (nothing typed is ever hidden). The desk's pane is untouched. */
+  const [composerOpen, setComposerOpen] = useState(false)
 
   /* ── overlays ── */
   const [deleting, setDeleting] = useState<{ id: string; kind: NoteKind } | null>(null)
@@ -195,7 +202,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
      included) so the search reads the same words the item shows. No phone column here — notes hold no numbers. */
   const rows = filterNotes(notes, filter).map((n) => ({ note: n, cur: edits[n.id] ?? draftFrom(n) }))
   const matched = filterByQuery(rows, query, ({ note, cur }) => ({
-    fields: [titleOf(note, cur), secondaryOf(note, cur), bodyText(cur.body), displayDateTimeDot(note.createdAt)],
+    fields: [titleOf(note, cur), secondaryOf(note, cur), bodyText(cur.body), noteWhen(shownAt(note, cur))],
   }))
   // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all, and it is
   // never filtered out (no chip and no query hides the thing you are typing) — then the matched notes (created desc).
@@ -203,8 +210,8 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
     /* (REG-402) …except on a phone, where a NOTE draft is the docked composer at the foot of the screen (995:23383)
        and not a row: an untitled row above the notes you already have is noise, and the thing being typed is
        already on screen. A contact-log draft still takes a row — it opens as a sheet, not in the composer. */
-    ...(draft && !(sheetLayout && draft.kind === 'note') ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
-    ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: titleOf(note, cur), secondary: secondaryOf(note, cur), createdAt: note.createdAt, locked: note.origin === 'stage', meeting: isMeetingRow(note) })),
+    ...(draft && !(sheetLayout && draft.kind === 'note') ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), at: new Date(draft.createdAt), draft: true }] : []),
+    ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: titleOf(note, cur), secondary: secondaryOf(note, cur), createdAt: note.createdAt, at: shownAt(note, cur), locked: note.origin === 'stage', meeting: isMeetingRow(note), step: note.stageKind ?? null })),
   ]
   // 4. Selection follows the visible list: default = the draft, else the top item — the newest.
   if (!(selectedId && items.some((i) => i.id === selectedId))) {
@@ -218,10 +225,15 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
   const startDraft = useCallback((kind: NoteKind) => {
     const at = Date.now()
     setDraft((prev) => (prev && draftDirty(prev) ? prev : freshDraft(kind, at)))
+    if (kind === 'note') setComposerOpen(true)   // (2-46) a phone's composer opens from New › Note
     setSelectedId(DRAFT_ID)
-    setMobilePane(true)   // (REG-347) ≤767 the pane takes the screen, as select() does — without it New ▾ looked inert
+    /* (REG-347) ≤767 the pane takes the screen, as select() does — without it New ▾ looked inert. (calm build triage 2026-10-28, a bug fix)
+       Not for a phone's or an upright tablet's NOTE draft: that draft is the composer, never the pane (REG-402). Left on, `mobilePane` opened
+       the note the draft became, at its first autosave, as a sheet over the composer — REG-402's own bug class; since 2-46 every phone note
+       starts here, so the composer now writes as the docked one always did. */
+    setMobilePane(!(kind === 'note' && sheetLayout))
     setMayFocusEditor(true)   // New ▾ exists to start typing (REG-294)
-  }, [])
+  }, [sheetLayout])
 
   /* (Leads on the move, L2 — P-03 · C-21, his marks 2026-10-23) On a phone and a tablet held upright, New › Contact Log is THE LOG SHEET — the
      Lead screen's own: the channel and now set, the outcomes as chips, the call-back's presets, Take a photo — and on a New lead its save moves
@@ -253,6 +265,8 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
        (REG-402) Not on a phone: there the pristine draft is the empty composer, which stays where it is drawn —
        dropping it would only make the render-phase adjust above mint another one on the very next render. */
     if (id !== DRAFT_ID && notes.length && !sheetLayout) setDraft((prev) => (prev && !draftDirty(prev) ? null : prev))
+    /* (2-46) a phone: an untouched composer folds away once another item is opened — the + opens it again */
+    if (id !== DRAFT_ID && sheetLayout && draft && !draftDirty(draft)) setComposerOpen(false)
   }
   const change = (id: string, patch: Partial<NoteDraft>) => {
     if (id === DRAFT_ID) { setDraft((prev) => (prev ? { ...prev, ...patch } : prev)); return }
@@ -457,7 +471,10 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
   const autosaveIds = [
     /* `!savedDraftId` (REG-285): once the draft has been created, it is waiting to be replaced by its real
        row — scheduling another save for it would create a second note. */
-    ...(draft && draft.kind === 'note' && !savedDraftId ? [DRAFT_ID] : []),
+    /* (the calm UI build, closing regression — a bug fix) …and not on a phone or an upright tablet: there a note draft is the composer
+       (REG-402), which commits on its own Save as the docked one did. Since 2-46 New › Note selects the draft (for its focus, REG-294), and
+       the autosave then created the note at the first pause and the composer vanished mid-sentence. */
+    ...(draft && draft.kind === 'note' && !savedDraftId && !sheetLayout ? [DRAFT_ID] : []),
     ...Object.entries(edits).filter(([, e]) => e.kind === 'note').map(([id]) => id),
   ].filter((id) => isDirty(id) && savingId !== id && !isStage(id) && (id === DRAFT_ID || byId.has(id)))
   const autosaveId = selectedId && autosaveIds.includes(selectedId) ? selectedId : null
@@ -496,7 +513,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
      already exists opens it in a sheet instead (below) — the composer used to take it, which put the note's text
      in a 190px strip while the row it came from sat above it, unchanged. That is the "opens the details in a
      weird way" the owner hit (2026-09-08). */
-  const composerDraft = sheetLayout && draft?.kind === 'note' ? draft : null
+  const composerDraft = sheetLayout && draft?.kind === 'note' && (composerOpen || draftDirty(draft)) ? draft : null
   /* An EXISTING note, opened as a sheet — the contact log's treatment (REG-380), for the same reason. */
   const noteInSheet = sheetLayout && selectedId !== null && selectedId !== DRAFT_ID && selected?.kind === 'note' && mobilePane
   const noteSheetId = noteInSheet ? selectedId : null
@@ -558,7 +575,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
         {/* Mobile-only back affordance, above the pane's own content (hidden ≥768 by CSS). */}
         <button type="button" className={styles.back} onClick={() => setMobilePane(false)}>
           <Icon name="arrow_back" size={24} weight={300} />
-          Notes & Logs
+          Notes &amp; logs
         </button>
 
         {/* The pane toolbar, back at the TOP (REG-277, owner 2026-09-01: REG-254 had docked it to the foot and
@@ -575,11 +592,12 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           <PaneHeader title={isMeeting(contactId) ? 'Meeting log' : 'Contact log'}>
             {isEditing(contactId)
               // eslint-disable-next-line @next/next/no-img-element
-              ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
+              ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto fill</LinkButton>
               : isStage(contactId) ? (
                 <span className={styles.lockHint}>
                   <Icon name="lock" size={14} />
-                  Added during stage movement — view only
+                  {/* (the calm UI build 2026-10-27 — 3-42) the step it came from, in the screen's own words ("stage movement" was the build's) */}
+                  {`From ${noun === 'project' ? 'the lead’s' : 'the'} ${byId.get(contactId)?.stageKind ?? 'Contacted'} step — read only`}
                 </span>
               ) : <Link variant="primary" onPress={() => edit(contactId)}>Edit</Link>}
           </PaneHeader>
@@ -633,7 +651,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
         {selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) && !logInSheet ? (
           <div className={styles.footer}>
             <Button variant="secondary" appearance="outlined" onPress={() => cancel(selectedId)} isDisabled={savingId === selectedId}>Cancel</Button>
-            <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save</Button>
+            <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save log</Button>
           </div>
         ) : null}
       </div>
@@ -689,7 +707,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
             </span>
             {/* The mock's hairline between the tools and Save (995:23429), drawn by the gap itself. */}
             <span className={styles.composerRule} aria-hidden />
-            <Button onPress={() => { void save(DRAFT_ID) }} isDisabled={savingId === DRAFT_ID || !draftDirty(composerDraft)}>Save</Button>
+            <Button onPress={() => { void save(DRAFT_ID); setComposerOpen(false) }} isDisabled={savingId === DRAFT_ID || !draftDirty(composerDraft)}>Save</Button>
           </div>
         </div>
       ) : null}
@@ -708,7 +726,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           headActions={isStage(noteSheetId) ? (
             <span className={styles.lockHint}>
               <Icon name="lock" size={14} />
-              View only
+              Read only
             </span>
           ) : undefined}
           footer={
@@ -746,11 +764,11 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           title={isMeeting(contactId) ? 'Meeting log' : 'Contact log'}
           headActions={isEditing(contactId)
             // eslint-disable-next-line @next/next/no-img-element
-            ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
+            ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto fill</LinkButton>
             : isStage(contactId) ? (
               <span className={styles.lockHint}>
                 <Icon name="lock" size={14} />
-                View only
+                Read only
               </span>
             ) : <Link variant="primary" onPress={() => edit(contactId)}>Edit</Link>}
           footer={isEditing(contactId) ? (
@@ -762,7 +780,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
               <Button variant="secondary" appearance="outlined" className={styles.footBtn}
                       onPress={() => { cancel(contactId); if (contactId === DRAFT_ID) setMobilePane(false) }}
                       isDisabled={savingId === contactId}>Cancel</Button>
-              <Button className={styles.footBtn} onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save</Button>
+              <Button className={styles.footBtn} onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save log</Button>
             </>
           ) : undefined}
         >
@@ -806,7 +824,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
       />
       {/* AutoFillDialog / SuggestedTasksDialog = the Move stage window's, in their Notes variant (164 · 166, spec 02): 600 wide,
           the 64px modal header (20/Bold + rule, 779:26016), body p24; Add tasks with 14/Semi Bold group labels, leading boxes and the rule. */}
-      <AutoFillDialog open={!!autoFillFor} title="Auto Fill" width={600} variant="notes" layered={sheetLayout} onClose={() => setAutoFillFor(null)} onUpload={autoFill} />   {/* (S43B · F1-01) reads the file */}
+      <AutoFillDialog open={!!autoFillFor} title="Auto fill" width={600} variant="notes" layered={sheetLayout} onClose={() => setAutoFillFor(null)} onUpload={autoFill} />   {/* (S43B · F1-01) reads the file */}
       <SuggestedTasksDialog
         open={!!tasksFor} title="Add tasks" width={600} variant="notes"
         autoAdded={tasksFor?.autoAdded ?? ''}

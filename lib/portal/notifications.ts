@@ -52,12 +52,13 @@ export function bellDocumentsOf(f: Pick<HomeFacts, 'quotes' | 'contracts'>): Bel
     const vo = q.kind === 'variation'
     out.push({ id: q.id, kind: vo ? 'variation' : 'quote', number: q.number, title: q.title, amountMinor: q.amountMinor, at: q.sentAt,
       href: via && !vo ? `/sign/${via.signToken}/quote` : confirmPath(confirmKeyOf({ id: q.id, confirmToken: q.confirmToken })), previewHref: `/quotes/${q.id}/preview`,
-      done: q.status === 'Confirmed' || q.status === 'Signed' || !!q.declinedAt })
+      done: q.status === 'Confirmed' || q.status === 'Signed' || !!q.declinedAt,
+      outcome: q.declinedAt ? 'declined' : q.status === 'Signed' ? 'signed' : q.status === 'Confirmed' ? 'confirmed' : null })   // (the calm UI build 2026-10-27, 3-35) the row then says it
   }
   for (const c of f.contracts) {
     if (!c.sentAt) continue
     out.push({ id: c.id, kind: 'agreement', number: '', title: c.title, amountMinor: 0, at: c.sentAt,
-      href: c.bundleId && c.status === 'Sent to Client' ? `/sign/bundle/${c.bundleId}` : `/sign/${c.signToken}`, previewHref: `/contracts/${c.id}/preview`, done: c.status === 'Signed' || !!c.toRead })   // (S44R, C9) a letter to keep asks nothing
+      href: c.bundleId && c.status === 'Sent to Client' ? `/sign/bundle/${c.bundleId}` : `/sign/${c.signToken}`, previewHref: `/contracts/${c.id}/preview`, done: c.status === 'Signed' || !!c.toRead, outcome: c.status === 'Signed' ? 'signed' : null })   // (S44R, C9) a letter to keep asks nothing
   }
   return out
 }

@@ -21,12 +21,20 @@ import styles from './imports.module.css'
 
 const COLS = [
   { key: 'date', label: 'Date', width: 141, sortable: true },
-  { key: 'file', label: 'File Name', width: 285 },
-  { key: 'total', label: 'Total Rows', width: 118 },
-  { key: 'imported', label: 'Rows Imported', width: 142 },
-  { key: 'errors', label: 'Error count', width: 396 },
-  { key: 'log', label: 'Error Log', width: 232 },   // the mock's 234 less the card's 2px of border (REG-430)
+  /* (the calm UI build 2026-10-27 — audit 2-32, W-633) heads that fit and say it: "Rows" · "Added" (they were cut to "TOTAL RO…" "ROWS IMPORT…") */
+  { key: 'file', label: 'File name', width: 285 },
+  { key: 'total', label: 'Rows', width: 118 },
+  { key: 'imported', label: 'Added', width: 142 },
+  { key: 'errors', label: 'Skipped', width: 396 },
+  { key: 'log', label: 'Skipped rows', width: 232 },   // the mock's 234 less the card's 2px of border (REG-430)
 ] as const
+
+/** (the calm UI build 2026-10-27 — audit 2-32, W-515) The stored note in plain words: "1 error detected across 1 skipped lead" reads "1 lead
+ *  skipped" (display only — the import still stores its note as written, app/leads/actions.ts). */
+const noteWords = (note: string | null): string => {
+  if (!note) return 'None'
+  return note.replace(/\d+ errors? detected across (\d+) skipped leads?/, (_m, n: string) => `${n} lead${n === '1' ? '' : 's'} skipped`)
+}
 
 function TemplateButton() {
   // The DS Button is the activation target and drives the download itself
@@ -34,7 +42,7 @@ function TemplateButton() {
   return (
     <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />}
             onPress={() => { const a = document.createElement('a'); a.href = TEMPLATE_HREF; a.download = ''; a.click() }}>
-      Download Template
+      Download the template
     </Button>
   )
 }
@@ -63,7 +71,7 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
         displayDate(i.createdAt),
         String(i.totalRows),
         String(i.importedRows),
-        i.errorNote ?? 'No errors',
+        noteWords(i.errorNote),
       ],
     }))
     if (dateDir === 'none') return list
@@ -76,7 +84,7 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
   }
 
   const uploadButton = (
-    <Button iconStart={<Icon name="upload" size={20} />} onPress={() => setWizardOpen(true)}>Upload</Button>
+    <Button iconStart={<Icon name="upload" size={20} />} onPress={() => setWizardOpen(true)}>Import leads</Button>
   )
 
   return (
@@ -85,7 +93,7 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
           {/* (REG-729) The house L2 header, as Insights has it (components/shell/page-header-l2.tsx): the 1px stroke at rest and the
               level-1 only while the page scrolls under it, the back arrow's hover plate, and Esc as Back once nothing is open (REG-713).
               The hand-rolled copy wore its shadow always and drew no stroke. The two actions wrap as one group on the narrowest phones. */}
-          <PageHeaderL2 backHref="/leads" crumb="Leads" title="Lead Import History"
+          <PageHeaderL2 backHref="/leads" crumb="Leads" title="Import history"
                         actions={<span className={styles.headActions}><TemplateButton />{uploadButton}</span>} />
 
           {imports.length === 0 ? (
@@ -163,10 +171,10 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
                       <div className={`${styles.cell} ${styles.fileName}`} style={colStyle('file', 285)} role="cell"><span>{b.fileName}</span></div>
                       <div className={styles.cell} style={colStyle('total', 118)} role="cell"><span>{b.totalRows}</span></div>
                       <div className={styles.cell} style={colStyle('imported', 142)} role="cell"><span>{b.importedRows}</span></div>
-                      <div className={styles.cell} style={colStyle('errors', 396)} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
+                      <div className={styles.cell} style={colStyle('errors', 396)} role="cell"><span>{noteWords(b.errorNote)}</span></div>
                       <div className={styles.cell} style={colStyle('log', 232)} role="cell">
                         {b.skippedRows > 0 ? (
-                          <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download Skipped Records</a>
+                          <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download skipped</a>
                         ) : <span className={styles.none}>—</span>}
                       </div>
                     </div>

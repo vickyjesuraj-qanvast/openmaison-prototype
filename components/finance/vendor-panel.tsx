@@ -94,7 +94,8 @@ export function useVendorPanel({ vendors, summary, trades, viewer, projectName, 
                      ...(v.contractor ? [{ label: 'On site', value: `${v.contractor.trades.join(', ') || 'No trade set'} · ${plural(v.contractor.capacity, 'site')} at once${v.contractor.code ? ` · ${v.contractor.code}` : ''}` }] : []),
                      ...(standing && v.isActive ? [{ label: 'This week', value: `${standing.words} · ${standing.detail}` }] : []),
                      ...(v.bank ? [{ label: 'Bank', value: [v.bank.bankName, v.bank.accountName, v.bank.accountNo].filter(Boolean).join(' · ') || 'Not given' }, ...(v.bank.payNow ? [{ label: 'PayNow', value: v.bank.payNow }] : [])] : []),
-                     ...(viewer.seesFigures && bal ? [{ label: 'Committed', value: money2(bal.committedMinor) }, { label: 'Paid', value: money2(bal.paidMinor) }, { label: 'Owed', value: `${money2(bal.owedMinor)}${bal.overdueMinor ? ` — ${money2(bal.overdueMinor)} overdue` : ''}` }] : []),
+                     /* (the calm UI build 2026-10-27, W-303) "To pay" — the Vendors list's word for what the studio still owes */
+                     ...(viewer.seesFigures && bal ? [{ label: 'Committed', value: money2(bal.committedMinor) }, { label: 'Paid', value: money2(bal.paidMinor) }, { label: 'To pay', value: `${money2(bal.owedMinor)}${bal.overdueMinor ? ` — ${money2(bal.overdueMinor)} overdue` : ''}` }] : []),
                      /* (pending modules S24) a vendor that is a Marketplace brand opens its page — its deals, products and contacts — and comes back here */
                      ...(v.marketplaceBrandId ? [{ label: 'Marketplace', value: <Link className={link.link} href={withFrom(`/marketplace/${v.marketplaceBrandId}`, `/company/finance/vendors?open=${encodeURIComponent(v.id)}`)} data-testid="vendor-marketplace">See it on the Marketplace</Link> }] : []),
                    ]}

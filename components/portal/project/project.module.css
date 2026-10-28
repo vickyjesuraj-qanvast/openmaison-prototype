@@ -52,6 +52,8 @@
 .stageText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .stageName { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); font: var(--om-type-subtitle-m); overflow-wrap: anywhere; }
 .stageDates { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 3-52 · T-06) "You are here" beside the milestone's name: a grey caption with its flag, never a capitals tag */
+.here { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .stageWas { font: var(--om-type-body-s); color: var(--om-color-on-primary-variant); }
 .stageWas s { margin-right: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
 .stageNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }

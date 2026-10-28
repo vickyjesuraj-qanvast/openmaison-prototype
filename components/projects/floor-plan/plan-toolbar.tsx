@@ -8,6 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
+import { ScopePill } from '@/components/om/scope-pill'
 import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { CLIENT_TOOLS, HATCHES, LAYERS, SIDE_COLOR, SWATCHES, SYMBOL_GROUPS, SYMBOLS, TOOL_HINT, WEIGHTS, type HatchKey, type Side } from '@/lib/projects/floor-plan-model'
 import type { CanvasTool } from './plan-canvas'
@@ -21,6 +22,10 @@ import styles from './floor-plan.module.css'
  */
 const STUDIO_ORDER: readonly CanvasTool[] = ['select', 'pen', 'rect', 'arrow', 'text', 'pin', 'photo', 'hatch', 'cloud', 'callout', 'symbol', 'dimension', 'erase']
 const CLIENT_ORDER: readonly CanvasTool[] = ['select', ...CLIENT_TOOLS, 'erase']
+/** (the calm UI build 2026-10-27, 3-28 · T-14) the four a plan is marked up with most stay in words on the row — Select · Pin · Pen · Text; every
+    other tool is one press away under More tools (its line of what it does as the row's second line), and the one picked from there names the
+    pill, so the row always says which tool is in hand. Words, not glyphs, stay the rule (G-Q4: an elderly owner reads "Box" sooner than a square). */
+const FIRST: readonly CanvasTool[] = ['select', 'pin', 'pen', 'text']
 export const TOOL_WORD: Record<CanvasTool, string> = {
   select: 'Select', pen: 'Pen', rect: 'Box', arrow: 'Arrow', text: 'Text', pin: 'Pin', photo: 'Photo', hatch: 'Zone', cloud: 'Cloud', callout: 'Callout', symbol: 'Stamp', dimension: 'Measure', erase: 'Erase', scale: 'Scale',
 }
@@ -64,14 +69,30 @@ export function PlanToolbar({
   const color = style.color ?? SIDE_COLOR[side]
   const picked = tool === 'scale' ? 'dimension' : tool
   const layerName = LAYERS.find((l) => l.key === layer)?.label ?? 'General'
+  const shown = FIRST.filter((t) => order.includes(t))
+  const more = order.filter((t) => !shown.includes(t))
+  const inMore = more.includes(picked)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLSpanElement>(null)
   return (
     <div className={styles.tools} data-testid="plan-tools">
       <div className={styles.toolRow}>
         <div className={styles.toolChips}>
           <ChipRail label="Tools">
-            <Chips label="Tools" options={order.map((t) => ({ value: t, label: TOOL_WORD[t] }))} value={picked} disabled={disabled}
+            <Chips label="Tools" options={shown.map((t) => ({ value: t, label: TOOL_WORD[t] }))} value={inMore ? null : picked} disabled={disabled}
                    onChange={(v) => onTool(v as CanvasTool)} testId="plan-tool-chips" />
+            {more.length ? (
+              <span ref={moreRef} className={styles.anchor} data-testid="plan-more-tools">
+                <ScopePill label={inMore ? TOOL_WORD[picked] : 'More tools'} open={moreOpen} scoped={inMore} onClick={() => { if (!disabled) setMoreOpen((o) => !o) }} />
+              </span>
+            ) : null}
           </ChipRail>
+          <PortalMenu open={moreOpen} anchor={moreRef} onClose={() => setMoreOpen(false)} align="left" width={MENU_WIDTH.detail} role="menu" sheetTitle="More tools">
+            {more.map((t) => (
+              <DropdownItem key={t} role="menuitemradio" checked={picked === t} selected={picked === t} help={t === 'select' || t === 'erase' || t === 'scale' ? undefined : TOOL_HINT[t]}
+                            onSelect={() => { setMoreOpen(false); onTool(t) }}>{TOOL_WORD[t]}</DropdownItem>
+            ))}
+          </PortalMenu>
         </div>
         <div className={styles.toolEnd}>
           <span ref={styleRef} className={styles.anchor}>

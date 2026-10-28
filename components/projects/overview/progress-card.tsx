@@ -6,7 +6,7 @@ import { STAGE_LABEL, PROJECT_STAGES, type ProjectStage } from '@/lib/projects/m
 import type { ProjectDetail } from '@/lib/projects/queries'
 import type { SetupAction } from '@/lib/projects/getting-started'
 import { calendarDays } from '@/lib/projects/attention'
-import { holdSince, resumeDue, resumeLine } from '@/lib/projects/hold'   // (gaps build, package A — M-01)
+import { resumeDue, resumeLine } from '@/lib/projects/hold'   // (gaps build, package A — M-01)
 import type { ProjectStep } from '../project-overview'
 import { Row } from './row'
 import styles from '../project-overview.module.css'
@@ -71,9 +71,10 @@ export function ProgressCard({ d, onStep, onSetup, onOpenSchedule }: {
             <>
               <CardRule inset={0} />
               <div className={styles.group} data-testid="status-hold">
-                {/* (gaps build, package A — M-01) since when; when it resumes and why read in full under it (REG-212) */}
-                <Row icon="pending" state={resumeDue(hold, now) ? 'alert' : undefined} name={holdSince(hold)} testId="status-hold-row" />
-                <p className={styles.note} data-testid="status-hold-reason">{resumeLine(hold, now)}.{hold.reason ? <> “{hold.reason.replace(/[.!?]+$/, '')}” — {lead.name.split(/\s+/)[0]} reads this on their schedule.</> : null}</p>
+                {/* (gaps build, package A — M-01) since when — (the calm UI build 2026-10-27, 3-31 · T-04) said once: the hold's day, its reason and
+                    when it resumes are its Needs your attention row; Progress adds the number, how long it has been on hold, and who reads why */}
+                <Row icon="pending" state={resumeDue(hold, now) ? 'alert' : undefined} name="On hold" meta={days(daysBetween(hold.since, now))} testId="status-hold-row" />
+                <p className={styles.note} data-testid="status-hold-reason">{hold.reason ? `${lead.name.split(/\s+/)[0]} reads the reason on their schedule.` : `${resumeLine(hold, now)}.`}</p>
               </div>
             </>
           ) : null}

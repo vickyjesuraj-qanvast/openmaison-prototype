@@ -169,7 +169,7 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
   const variation = !!useVariation()
   const sectionsLocked = usePlanLock('package_creation').locked   // (pending modules S19) My Sections are Pro
   const home = addOnly ? 'add' : null
-  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | 'all' | null>(home)
+  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | 'all' | 'book' | 'more' | null>(home)
   const [several, setSeveral] = useState(5)
   const level = useLevelFocus(sub)
   const close = () => { setSub(home); setSeveral(5); onClose() }
@@ -197,11 +197,11 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
   /* (REG-728) The scale's two widths: 240 for the row menu (key hints, a locked save's rule under it), 320 for Print as — its rows carry a
      description. A section or a highlight picked wears the Selected fill: those rows lead with a glyph, so `checked` alone drew nothing. */
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? MENU_WIDTH.detail : MENU_WIDTH.wide} align={addOnly ? 'left' : 'right'} sheetTitle={addOnly ? 'Add Item' : item.name}>
+    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? MENU_WIDTH.detail : MENU_WIDTH.wide} align={addOnly ? 'left' : 'right'} sheetTitle={addOnly ? 'Add item' : item.name}>
       <div ref={level}>
         {sub === 'add' ? (
           <>
-            {addOnly ? null : back('Add Item')}
+            {addOnly ? null : back('Add item', 'more')}
             {/* (REG-2534) each row says what it adds, with a glyph (the team's sections prototype) */}
             <DropdownItem onSelect={() => act('addAbove')}>{ico('vertical_align_top')}{isItem ? 'Add item above' : 'Add item before section'}</DropdownItem>
             {/* (S44I, B5) on a section, Below has always meant its first place — said so */}
@@ -226,7 +226,7 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
           </>
         ) : sub === 'move' ? (
           <>
-            {back('Move Item')}
+            {back(isItem ? 'Move item' : 'Move section', 'more')}
             <DropdownItem onSelect={() => act('moveUp')}><span className={styles.menuIcon}><Icon name="arrow_upward" size={20} /></span>Up</DropdownItem>
             <DropdownItem onSelect={() => act('moveDown')}><span className={styles.menuIcon}><Icon name="arrow_downward" size={20} /></span>Down</DropdownItem>
           </>
@@ -255,10 +255,22 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
                 <span className={styles.menuText}><span>{v === 'custom' && printAs === 'custom' && item.printAsText ? `Custom word — ${item.printAsText}` : PRINT_AS_LABEL[v]}</span><span className={styles.menuHelp}>{PRINT_AS_HELP[v]}</span></span>
               </DropdownItem>
             ))}
+            {/* (the calm UI build 2026-10-27, the UI audit's 4-07) a section's other print choices live with Print as: as one line, the sub-total's label,
+                priced after the contract — they were four rows of the section's 17 */}
+            {!isItem ? (
+              <>
+                <DropdownDivider />
+                <DropdownItem onSelect={() => act('oneLine')}>{item.printOneLine ? 'Print every line' : 'Print as one line'}</DropdownItem>
+                <DropdownItem onSelect={() => act('subtotalLabel')}>{item.printAsText ? `Sub-total label: ${item.printAsText}` : 'Label the sub-total…'}</DropdownItem>
+                {item.printAsText ? <DropdownItem onSelect={() => act('subtotalClear')}>Remove the sub-total label</DropdownItem> : null}   {/* (sweep S1) the name dialog can't save an empty word */}
+                {/* (S44T — call C1, Dyel's Estimation Direct) a top section's work priced once the contract is signed: out of the total, printed after the items */}
+                {!item.parentId && !variation ? <DropdownItem onSelect={() => act('pricedAfter')} help={item.pricedAfter ? undefined : 'Out of the total — printed after the items'}>{item.pricedAfter ? 'Price with the contract' : 'Price after the contract'}</DropdownItem> : null}   {/* (REG-585) the client sees the section's name and its total; the lines stay the studio's */}
+              </>
+            ) : null}
           </>
         ) : sub === 'highlight' ? (
           <>
-            {back('Highlight')}
+            {back('Highlight', 'more')}
             <DropdownItem role="menuitemradio" checked={!highlight} selected={!highlight} onSelect={() => { close(); onHighlight(null) }}>
               <span className={styles.menuIcon}><span className={styles.swatch} data-none="" /></span>None
             </DropdownItem>
@@ -273,45 +285,54 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
             {/* (P-03) the phone's five, then everything else one level in */}
             <DropdownItem onSelect={() => act('edit')}>{isItem ? 'Edit…' : 'Edit section…'}</DropdownItem>
             <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
-            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear optional mark' : 'Mark as optional'}</DropdownItem> : null}
             {canMove ? <DropdownItem submenu onSelect={() => setSub('group')}>Move to section<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
             <DropdownItem tone="danger" onSelect={() => act('remove')}>Remove</DropdownItem>
             <DropdownDivider />
             <DropdownItem submenu onSelect={() => setSub('all')}>More…<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
           </>
+        ) : sub === 'book' ? (
+          <>
+            {back('Price book')}
+            {/* (REG-653, price book parity Q-09 · Q-18) A line from the Price book says so, and its save names what it does — update that item
+                (an Owner's or an Admin's) or add a new one; a Designer proposes. (The calm UI build, W-608) "the Price book" — the book is the studio's. */}
+            {source ? <div className={styles.menuHead} data-testid="line-source">From the Price book · {source.name}</div> : null}
+            {source ? <DropdownItem onSelect={() => act('libraryUpdate')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : BOOK_RULE}>Update the item from this line</DropdownItem> : null}
+            <DropdownItem onSelect={() => act('library')}>{source ? (bookRule.runsBook ? 'Save as a new item' : 'Propose as a new item') : bookRule.runsBook ? 'Save to My Items' : 'Propose to My Items'}</DropdownItem>
+          </>
+        ) : sub === 'more' ? (
+          <>
+            {back('More', sub === 'more' && compact ? 'all' : null)}
+            {/* (the calm UI build 2026-10-27, 4-07) the rest of the row's menu, one level in — every row it had, nothing dropped */}
+            {isItem ? null : <DropdownItem onSelect={() => act('description')}>Section note…</DropdownItem>}
+            {isItem ? <DropdownItem onSelect={() => act('description')}>Words on this line…</DropdownItem> : null}   {/* (S44I — call C2 · the triage's §12.6) */}
+            <DropdownItem submenu onSelect={() => setSub('highlight')}>Highlight{highlight ? `: ${HIGHLIGHT_LABEL[highlight]}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+            {isItem ? <DropdownItem onSelect={() => act('noNumber')}>{item.noNumber ? 'Number this line' : 'No number'}</DropdownItem> : null}
+            {/* (S44I, B8) says what it makes — a sub-section in the one section the lines share — and, refused, why (in the row) */}
+            {isItem ? <DropdownItem onSelect={() => act('group')} disabled={typeof lvl === 'object'} title={typeof lvl === 'object' ? GROUP_DEPTH_RULE : undefined}>{lvl === 'sub-section' ? 'Add sub-section' : 'Add section'}</DropdownItem> : null}   {/* (REG-2539) the words only: it still makes the section of this line, or of the ticked lines */}
+            <DropdownItem submenu onSelect={() => setSub('add')}>Add item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+            <DropdownItem submenu onSelect={() => setSub('move')}>{isItem ? 'Move item' : 'Move section'}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+            <DropdownDivider />
+            <DropdownItem onSelect={() => act('copyName')}>Copy name</DropdownItem>
+            <DropdownItem onSelect={() => act('showFull')}>Show full content</DropdownItem>
+          </>
         ) : (
           <>
             {sub === 'all' ? back('More') : null}
-            {/* (REG-653, price book parity Q-09 · Q-18) A line from My Items says so, and its save names what it does — update that item
-                (an Owner's or an Admin's) or add a new one; a Designer proposes. One name for the book: My Items, My Sections. */}
-            {source ? <div className={styles.menuHead} data-testid="line-source">From My Items · {source.name}</div> : null}
-            {source ? <DropdownItem onSelect={() => act('libraryUpdate')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : BOOK_RULE}>Update the item from this line</DropdownItem> : null}
-            {isItem ? <DropdownItem onSelect={() => act('library')}>{source ? (bookRule.runsBook ? 'Save as a new item' : 'Propose as a new item') : bookRule.runsBook ? 'Save to My Items' : 'Propose to My Items'}</DropdownItem>
-              : <DropdownItem onSelect={() => act('saveSection')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : SECTION_RULE} meta={sectionsLocked && bookRule.runsBook ? <ProTag /> : undefined}>Save section to My Sections</DropdownItem>}
+            {/* (the calm UI build 2026-10-27, the UI audit's 4-07) A line's ⋮: Duplicate · Move to section › · Mark as optional · Print as › · Comment ·
+                Price book › · More › · Remove — a section's: Duplicate · Move to section › · Print as › (with its one-line, sub-total and after-the-contract
+                choices) · Save to Price book · Ungroup · More › · Remove. It held 17 rows and ran off a 1024 screen; the rest is one level in. */}
+            {source ? <div className={styles.menuHead} data-testid="line-source">From the Price book · {source.name}</div> : null}
             <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
-            <DropdownItem onSelect={() => act('copyName')}>Copy Name</DropdownItem>
-            {/* (S44I, B8) says what it makes — a sub-section in the one section the lines share — and, refused, why (in the row) */}
-            {isItem ? <DropdownItem onSelect={() => act('group')} disabled={typeof lvl === 'object'} title={typeof lvl === 'object' ? GROUP_DEPTH_RULE : undefined}>{lvl === 'sub-section' ? 'Add Sub-section' : 'Add Section'}</DropdownItem> : null}   {/* (REG-2539) the words only: it still makes the section of this line, or of the ticked lines */}
-            <DropdownDivider />
-            {/* (S44I — call C2 · the triage's §12.6) the line's words — its name and description — or the section's note, in their dialog */}
-            <DropdownItem onSelect={() => act('description')}>{isItem ? 'Words on this line…' : 'Section note…'}</DropdownItem>
-            <DropdownItem onSelect={() => act('showFull')}>Show Full Content</DropdownItem>
-            {isItem ? <DropdownItem onSelect={() => act('comment')}>Comment</DropdownItem> : null}   {/* (REG-627, parity Q-30) the line's thread */}
-            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}   {/* (REG-492) prints in its own section, out of the totals */}
+            {canMove ? <DropdownItem submenu onSelect={() => setSub('group')}>Move to section<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear optional mark' : 'Mark as optional'}</DropdownItem> : null}   {/* (REG-492) prints in its own section, out of the totals */}
             {/* (S44I — M17, UAT row 323) a section prints a word too, its lines no amounts */}
             <DropdownItem submenu onSelect={() => setSub('printAs')}>Print as{printAs ? `: ${printAsWord(item)}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            <DropdownItem submenu onSelect={() => setSub('highlight')}>Highlight{highlight ? `: ${HIGHLIGHT_LABEL[highlight]}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            {isItem ? <DropdownItem onSelect={() => act('noNumber')}>{item.noNumber ? 'Number this line' : 'Skip the number'}</DropdownItem> : null}
-            {!isItem ? <DropdownItem onSelect={() => act('subtotalLabel')}>{item.printAsText ? `Sub-total label: ${item.printAsText}` : 'Label the sub-total…'}</DropdownItem> : null}
-            {!isItem && item.printAsText ? <DropdownItem onSelect={() => act('subtotalClear')}>Remove the sub-total label</DropdownItem> : null}   {/* (sweep S1) the name dialog can't save an empty word */}
-            {!isItem ? <DropdownItem onSelect={() => act('oneLine')}>{item.printOneLine ? 'Print every line' : 'Print as one line'}</DropdownItem> : null}
-            {/* (S44T — call C1, Dyel's Estimation Direct) a top section's work priced once the contract is signed: out of the total, printed after the items */}
-            {!isItem && !item.parentId && !variation ? <DropdownItem onSelect={() => act('pricedAfter')} help={item.pricedAfter ? undefined : 'Out of the total — printed after the items'}>{item.pricedAfter ? 'Price with the contract' : 'Price after the contract'}</DropdownItem> : null}   {/* (REG-585) the client sees the section's name and its total; the lines stay the studio's */}
-            <DropdownDivider />
-            <DropdownItem submenu onSelect={() => setSub('add')}>Add Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            <DropdownItem submenu onSelect={() => setSub('move')}>Move Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            {canMove ? <DropdownItem submenu onSelect={() => setSub('group')}>Move to section<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('comment')}>Comment</DropdownItem> : null}   {/* (REG-627, parity Q-30) the line's thread */}
+            {isItem ? <DropdownItem submenu onSelect={() => setSub('book')}>Price book<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+              : <DropdownItem onSelect={() => act('saveSection')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : SECTION_RULE} meta={sectionsLocked && bookRule.runsBook ? <ProTag /> : undefined}>Save to Price book</DropdownItem>}
             {!isItem ? <DropdownItem onSelect={() => act('ungroup')}>Ungroup — keep the lines</DropdownItem> : null}
+            <DropdownItem submenu onSelect={() => setSub('more')}>More<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
             <DropdownDivider />
             <DropdownItem tone="danger" onSelect={() => act('remove')}>Remove</DropdownItem>
           </>

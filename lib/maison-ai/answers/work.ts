@@ -4,10 +4,13 @@ import { db } from '@/lib/db'
 import { leadAssignees, leadTasks, leads, members, projects, quotes, renderConsultationRequests, renderShareLinks, spaceLayoutShares, spaceLayouts, taskAssignees, visualizerDesigns } from '@/lib/db/schema'
 import { withYou } from '@/lib/db/session'
 import { visibleLeadIds } from '@/lib/leads/visibility'
-import { displayDayMonth, displayDue, isDueToday, isOverdue, startOfDay, titleCaseName } from '@/lib/format'
-import { isOverdueLead } from '@/lib/leads/filters'
+import { displayDayMonth, displayDue, displayTime, isDueToday, isOverdue, moneyCard, startOfDay, titleCaseName } from '@/lib/format'
+import { addedInLast7Days, isOverdueLead, isUnassignedLead } from '@/lib/leads/filters'
 import { STAGE_LABEL, isProjectStage } from '@/lib/projects/model'
-import type { MaisonAnswer, MaisonRow } from '@/lib/maison-ai'
+import { waitingOnClient, type QuoteListRow } from '@/lib/leads/quote-filters'
+import type { MaisonAnswer, MaisonFigure, MaisonRow, MaisonTimelineItem } from '@/lib/maison-ai'
+import { dayLabel } from '@/components/leads/activity/activity-days'   // (the Dashboard redesigned 2026-10-26, P-10) the feed's own day words
+import { activityGlyph } from '@/lib/leads/activity-glyph'
 import { stageDraft } from '../drafts'
 import { defaultDue, readWhen, reminderTitle } from '../when'
 import type { AskParams } from '../intents'
@@ -168,14 +171,17 @@ export async function leadsAttentionAnswer(c: Ctx, question: string): Promise<Ma
   if (c.acct) return { title: 'Not for Accounting', text: ON_LEADS }
   const { fetchLeadRows } = await import('@/lib/leads/queries')
   const visible = await visibleLeadIds(c.viewer)
+  const seenRows = (await fetchLeadRows()).rows.filter((r) => !r.direct && (!visible || visible.has(r.id)))
   /* (S42 D-11) a won lead with a live project has handed over (REG-1360's one home): its tasks are the project's, never a lead's follow-up */
-  const rows = (await fetchLeadRows()).rows.filter((r) => !r.direct && !r.project && (!visible || visible.has(r.id)))
+  const rows = seenRows.filter((r) => !r.project)
   const s = question.toLowerCase()
   const open = (id: string) => `/leads/${id}`
-  /* "new leads this week" — the week's leads, newest first */
+  /* "new leads this week" — the week's leads, newest first. (the Dashboard redesigned, 2026-10-26 — P-13) the listing's own Last 7 days over
+     every lead this member sees, as the Leads listing and the Dashboard count them (`addedInLast7Days`) — a rolling 7 × 24 hours said 5 where
+     the page said 4 */
   if (/\bnew\b/.test(s) && /\b(this week|7 days|week|today)\b/.test(s)) {
-    const since = /\btoday\b/.test(s) ? startOfDay(new Date(c.now)) : c.now - 7 * DAY
-    const fresh = rows.filter((r) => r.createdAt.getTime() >= since).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    const today = /\btoday\b/.test(s)
+    const fresh = (today ? seenRows.filter((r) => r.createdAt.getTime() >= startOfDay(new Date(c.now))) : addedInLast7Days(seenRows, c.now)).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     const none = fresh.filter((r) => !r.assignees.length).length
     /* (S42 D-14) the window is the last 7 days, not the calendar week — said so */
     if (!fresh.length) return { title: /\btoday\b/.test(s) ? 'No new leads today' : 'No new leads in the last 7 days', text: 'Leads that came in show here, newest first.', link: { label: 'Open Leads', href: go(c, '/leads') } }
@@ -192,7 +198,7 @@ export async function leadsAttentionAnswer(c: Ctx, question: string): Promise<Ma
     if (late && isOverdueLead(r, c.now)) out.push({ r, why: `Overdue follow-up · ${late.title}, due ${displayDayMonth(late.dueAt!)}`, rank: 0 })
     else if (today && r.stage !== 'On Hold') out.push({ r, why: `Due today · ${today.title}`, rank: 1 })
     else if (r.stage === 'New' && !r.lastContact) out.push({ r, why: `New · no contact yet · came in ${displayDayMonth(r.createdAt)}`, rank: 2 })
-    else if (!r.assignees.length && r.stage !== 'Won') out.push({ r, why: `${r.stage} · no member yet`, rank: 3 })
+    else if (isUnassignedLead(r)) out.push({ r, why: `${r.stage} · no member yet`, rank: 3 })   // (the Dashboard redesigned, P-13) the listing's Unassigned rule
   }
   out.sort((a, b) => a.rank - b.rank || a.r.createdAt.getTime() - b.r.createdAt.getTime())
   const late = out.filter((x) => x.rank === 0).length
@@ -220,12 +226,19 @@ export async function aboutAnswer(c: Ctx, question: string, named?: Named[]): Pr
   const rows: MaisonRow[] = []
   if (open[0]) rows.push(row(c, `task:${open[0].id}`, `Next: ${open[0].title}`, dueMeta(open[0].dueAt, c.now), `/tasks?open=${encodeURIComponent(open[0].id)}`))
   if (late.length > 1) rows.push(row(c, 'late', `${plural(late.length, 'task')} overdue`, 'Open the tasks', `${base}/tasks`))
-  if (q && !c.desk) rows.push(row(c, `quote:${q.id}`, `${q.number} · ${q.status}`, `S$${(q.amountMinor / 100).toLocaleString('en-SG', { minimumFractionDigits: 2 })}`, `/quotes/${q.id}`))   // (S44O — C6) never Marketing's
+  if (q && !c.desk) rows.push(row(c, `quote:${q.id}`, `${q.number} · ${q.status}`, moneyCard(q.amountMinor), `/quotes/${q.id}`))   // (S44O — C6) never Marketing's · (the Dashboard redesigned, P-13) a record's sum as its card writes it, "S$ 77,900" (`moneyCard`)
   if (r.lastContact) rows.push(row(c, 'contact', `Last contact ${displayDayMonth(r.lastContact.at)}`, [r.lastContact.channel, r.lastContact.outcome].filter(Boolean).join(' · ') || undefined, `/leads/${n.id}/notes`))
   else if (!n.project) rows.push(row(c, 'contact', 'No contact logged yet', 'Log a call or a message on Notes & Logs', `/leads/${n.id}/notes`))
   const stageLine = n.project ? `${n.project.number} · ${isProjectStage(n.project.stage) ? STAGE_LABEL[n.project.stage] : n.project.stage}` : `${r.stage} for ${days === 0 ? 'less than a day' : plural(days, 'day')}`
-  return { title: n.name, text: `${stageLine} · ${r.propertyType}${r.budgetMinor > 0 ? ` · budget S$${Math.round(r.budgetMinor / 100).toLocaleString('en-SG')}` : ''}${r.assignees.length ? ` · with ${r.assignees.map((m) => (m.isYou ? 'you' : m.name)).join(', ')}` : ' · no member yet'}.`,
-    rows, link: { label: n.project && !c.desk ? `Open ${first}’s project` : `Open ${first}’s lead`, href: go(c, base) } }
+  /* (the Dashboard redesigned 2026-10-26 — P-10, 1.0's timeline card A-8) what happened lately, the newest five lines of the record's own
+     Activity (its sentences, its glyphs, its days), then the door to the whole feed */
+  const { fetchLeadActivity } = await import('@/lib/leads/activity')
+  const feed = await fetchLeadActivity(n.id, { projectId: n.project && !c.desk ? n.project.id : null }).catch(() => null)
+  const timeline: MaisonTimelineItem[] = (feed?.events ?? []).filter((e) => !e.twin).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 5)
+    .map((e) => ({ id: e.id, day: dayLabel(new Date(e.at), c.now), time: displayTime(new Date(e.at)), icon: activityGlyph(e), text: e.text }))
+  return { title: n.name, text: `${stageLine} · ${r.propertyType}${r.budgetMinor > 0 ? ` · budget ${moneyCard(r.budgetMinor)}` : ''}${r.assignees.length ? ` · with ${r.assignees.map((m) => (m.isYou ? 'you' : m.name)).join(', ')}` : ' · no member yet'}.`,
+    rows, ...(timeline.length ? { timeline, doors: [{ label: 'Open Activity', href: go(c, `${base}/activity`) }] } : {}),
+    link: { label: n.project && !c.desk ? `Open ${first}’s project` : `Open ${first}’s lead`, href: go(c, base) } }
 }
 
 /* ── quotes (1.0's get_quote_analysis) ─────────────────────────────────────────────────────────────────────────────────────────── */
@@ -235,11 +248,11 @@ export async function quotesAnswer(c: Ctx, p: AskParams, question = ''): Promise
   const { fetchQuoteApproval, isApprover } = await import('@/lib/settings/queries')
   const visible = await visibleLeadIds(c.viewer)
   const list = (await db.select({ id: quotes.id, number: quotes.number, status: quotes.status, amountMinor: quotes.amountMinor, leadId: quotes.leadId, lead: leads.name, createdBy: quotes.createdBy, submittedBy: quotes.submittedBy,
-    validUntil: quotes.validUntil, sentAt: quotes.sentAt, clientSentAt: quotes.clientSentAt, views: quotes.clientViewCount, viewedAt: quotes.clientLastViewedAt, submittedAt: quotes.submittedAt })
+    validUntil: quotes.validUntil, sentAt: quotes.sentAt, clientSentAt: quotes.clientSentAt, views: quotes.clientViewCount, viewedAt: quotes.clientLastViewedAt, submittedAt: quotes.submittedAt, title: quotes.title })
     .from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
     .where(and(eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt), isNull(leads.deletedAt))))
     .filter((q) => !visible || visible.has(q.leadId)).map((q) => ({ ...q, lead: titleCaseName(q.lead) }))
-  const money = (m: number) => `S$${(m / 100).toLocaleString('en-SG', { minimumFractionDigits: 2 })}`
+  const money = moneyCard   // (the Dashboard redesigned, P-13) a quote's sum in an answer as its record card and the lead's Maison AI write it, "S$ 77,900"
   const open = (id: string) => `/quotes/${id}`
   const scope = p.quoteScope ?? 'all'
   /* (1.0's "Optimize Quote" one-tap prompt) a client named: their latest quote, read as the quote editor's Maison AI reads it — below cost,
@@ -265,8 +278,14 @@ export async function quotesAnswer(c: Ctx, p: AskParams, question = ''): Promise
   }
   const approver = (await fetchQuoteApproval()) === 'required' && (await isApprover(c.viewer.id, c.viewer.role))
   const waiting = list.filter((q) => q.status === 'Sent for Approval')
-  const sentDay = (q: (typeof list)[number]) => q.clientSentAt ?? q.sentAt
-  const unanswered = list.filter((q) => q.status === 'Sent to Client' && sentDay(q) && c.now - sentDay(q)!.getTime() >= 3 * DAY)
+  /* (the Dashboard redesigned, 2026-10-26 — P-13; B's ST-24) "waiting on the client" is Tools › Quotes' own chip, `waitingOnClient` (sent to the
+     client, or approved and sent, not confirmed or signed) over the lists' own day it went to the client (`sentToClientDates` — an Approved quote
+     the lead's Quote Sent step sent counts) — any age, the longest waiting first; it counted only Sent to Client three days on, so the answer
+     said 1 where the chip said 3 */
+  const { sentToClientDates } = await import('@/lib/quotes/sent-to-client')
+  const sentTo = await sentToClientDates(list)
+  const sentDay = (q: (typeof list)[number]) => sentTo.get(q.id) ?? null
+  const unanswered = list.filter((q) => waitingOnClient({ ...q, sentToClientAt: sentDay(q) } as unknown as QuoteListRow))
   const expiring = list.filter((q) => (q.status === 'Sent to Client' || q.status === 'Approved') && q.validUntil && q.validUntil.getTime() < c.now + 14 * DAY)
   if (scope === 'approval') {
     const mine = approver ? waiting : waiting.filter((q) => q.submittedBy === c.viewer.id || q.createdBy === c.viewer.id)
@@ -280,8 +299,8 @@ export async function quotesAnswer(c: Ctx, p: AskParams, question = ''): Promise
       rows: expiring.sort((a, b) => a.validUntil!.getTime() - b.validUntil!.getTime()).map((q) => row(c, q.id, `${q.number} · ${q.lead}`, `${q.validUntil!.getTime() < c.now ? 'Ran out' : 'Valid until'} ${displayDayMonth(q.validUntil!)} · ${money(q.amountMinor)}`, open(q.id))) }
   }
   if (scope === 'unanswered') {
-    if (!unanswered.length) return { title: 'No quote is waiting on a client', text: 'Every quote sent three days ago or more is confirmed or signed.' }
-    return { title: `${plural(unanswered.length, 'quote')} waiting on the client`, text: 'Sent three days ago or more, not confirmed yet — whether they opened it, from the quote’s own link.',
+    if (!unanswered.length) return { title: 'No quote is waiting on a client', text: 'Every quote a client has is confirmed or signed.' }
+    return { title: `${plural(unanswered.length, 'quote')} waiting on the client`, text: 'Sent and not confirmed yet, the longest waiting first — whether they opened it, from the quote’s own link.',
       rows: unanswered.sort((a, b) => sentDay(a)!.getTime() - sentDay(b)!.getTime()).map((q) => row(c, q.id, `${q.number} · ${q.lead}`, `Sent ${displayDayMonth(sentDay(q)!)} · ${q.views ? `opened ${plural(q.views, 'time')}` : 'not opened yet'}`, open(q.id))) }
   }
   if (scope === 'drafts') {
@@ -293,7 +312,7 @@ export async function quotesAnswer(c: Ctx, p: AskParams, question = ''): Promise
   return { title: `${plural(list.length, 'quote')}`, text: counts.map((x) => `${x.n} ${x.s}`).join(' · ') || 'No quotes yet.',
     rows: [
       ...(waiting.length ? [askRow('approval', `${plural(waiting.length, 'quote')} waiting for approval`, approver ? 'Yours to answer' : 'With the approvers', 'Quotes waiting for approval')] : []),
-      ...(unanswered.length ? [askRow('unanswered', `${plural(unanswered.length, 'quote')} waiting on the client`, 'Sent 3 days ago or more', 'Which quotes are waiting on the client?')] : []),
+      ...(unanswered.length ? [askRow('unanswered', `${plural(unanswered.length, 'quote')} waiting on the client`, 'Sent, not confirmed yet', 'Which quotes are waiting on the client?')] : []),
       ...(expiring.length ? [askRow('expiring', `${plural(expiring.length, 'quote')} running out`, 'Valid until in the next 14 days', 'Which quotes expire soon?')] : []),
     ],
     link: { label: 'Open Tools › Quotes', href: go(c, '/quotes') } }
@@ -349,8 +368,11 @@ export async function memberRoleAnswer(c: Ctx, question: string, p: AskParams): 
 
 /* ── the studio at a glance (1.0's get_studio_overview) ────────────────────────────────────────────────────────────────────────── */
 
+/* (the Dashboard redesigned 2026-10-26 — his marks P-10 · lane D4; 1.0's KPI scorecard, A-5, made pressable) the studio as figures — the house
+   number tiles, each a door: the leads that need attention, the projects, your approvals, your tasks, what is owed — the same facts and words
+   the lines carried, from the same records */
 export async function overviewAnswer(c: Ctx): Promise<MaisonAnswer> {
-  const rows: MaisonRow[] = []
+  const figures: MaisonFigure[] = []
   const tasks = await myOpenTasks(c)
   const lateTasks = tasks.filter((t) => isOverdue(t.dueAt, c.now)).length
   const todayTasks = tasks.filter((t) => isDueToday(t.dueAt, c.now)).length
@@ -358,32 +380,32 @@ export async function overviewAnswer(c: Ctx): Promise<MaisonAnswer> {
     const { fetchLeadRows } = await import('@/lib/leads/queries')
     const visible = await visibleLeadIds(c.viewer)
     const ls = (await fetchLeadRows()).rows.filter((r) => !r.direct && (!visible || visible.has(r.id)))
-    const fresh = ls.filter((r) => r.createdAt.getTime() >= c.now - 7 * DAY).length
+    const fresh = addedInLast7Days(ls, c.now).length   // (the Dashboard redesigned, P-13) the listing's own Last 7 days — never a rolling 7 × 24 hours
     const overdue = ls.filter((r) => !r.project && isOverdueLead(r, c.now)).length   // (S42 D-11) a running project's tasks are counted on its own line
-    rows.push(askRow('leads', `${plural(fresh, 'new lead')} in the last 7 days`, `${ls.filter((r) => !['Won', 'Lost'].includes(r.stage)).length} in the pipeline${overdue ? ` · ${overdue} with an overdue follow-up` : ''}`, 'Which leads need attention?'))
+    figures.push({ key: 'leads', label: 'New leads', value: String(fresh), help: `Added in the last 7 days · ${ls.filter((r) => !['Won', 'Lost'].includes(r.stage)).length} in the pipeline${overdue ? ` · ${overdue} with an overdue follow-up` : ''}`, ask: 'Which leads need attention?' })
     const { countProjectsNeedingAttention } = await import('@/lib/projects/queries')
     const running = (await db.select({ leadId: projects.leadId }).from(projects).where(and(isNull(projects.deletedAt), inArray(projects.stage, ['setting_up', 'in_progress'])))).filter((p) => !visible || visible.has(p.leadId)).length
     const att = await countProjectsNeedingAttention().catch(() => 0)
-    rows.push(row(c, 'projects', `${plural(running, 'running project')}`, att ? `${att} need${att === 1 ? 's' : ''} attention` : 'Nothing needs attention', att ? '/projects?scope=attention' : '/projects'))
-    const { fetchQuoteApproval, isApprover } = await import('@/lib/settings/queries')
-    if ((await fetchQuoteApproval()) === 'required' && (await isApprover(c.viewer.id, c.viewer.role))) {
-      const [w] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.status, 'Sent for Approval'), eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))
-      if (Number(w?.n ?? 0)) rows.push(askRow('approve', `${plural(Number(w!.n), 'quote')} waiting for your approval`, 'Open them', 'Quotes waiting for approval'))
-    }
+    figures.push({ key: 'projects', label: 'Running projects', value: String(running), help: att ? `${att} need${att === 1 ? 's' : ''} attention` : 'Nothing needs attention', href: go(c, att ? '/projects?scope=attention' : '/projects') })
+    /* (the Dashboard redesigned, 2026-10-26 — P-13; B's ST-10) the rail's own count — Who sees leads applied, a quote on a deleted lead left out —
+       never a second count of every quote waiting */
+    const { countQuotesToApprove } = await import('@/lib/leads/tasks')
+    const waiting = await countQuotesToApprove().catch(() => 0)
+    if (waiting) figures.push({ key: 'approve', label: 'Quotes to approve', value: String(waiting), help: 'Waiting for your approval', ask: 'Quotes waiting for approval' })
   }
-  rows.push(askRow('tasks', `${plural(tasks.length, 'open task')} of yours`, lateTasks ? `${lateTasks} overdue${todayTasks ? ` · ${todayTasks} today` : ''}` : todayTasks ? `${todayTasks} due today` : 'Nothing overdue', 'My tasks today'))
+  figures.push({ key: 'tasks', label: 'Your open tasks', value: String(tasks.length), help: lateTasks ? `${lateTasks} overdue${todayTasks ? ` · ${todayTasks} today` : ''}` : todayTasks ? `${todayTasks} due today` : 'Nothing overdue', ask: 'My tasks today' })
   if (c.books) {
     const { fetchBooks } = await import('@/lib/finance/books')
     const { buildReport } = await import('@/lib/finance/reports')
     const b = await fetchBooks()
     if (b) {
       const r = buildReport('ar', { projects: b.projects, overhead: b.overhead, vendors: b.vendors, people: b.people, commission: b.commission, now: b.now }, 'all')
-      const owed = r.tiles.find((t) => t.label === 'Owed to you')
-      if (owed) rows.push(askRow('owed', `${owed.value} owed to the studio`, owed.help, 'Who owes the studio money?'))
+      const owed = r.tiles.find((t) => t.label === 'Owed to you' || t.label === 'To collect')   // (the calm UI build 2026-10-27) the report's tile by its old or its new name (T-01)
+      if (owed) figures.push({ key: 'owed', label: owed.label, value: owed.value, help: owed.help, ask: 'Who owes the studio money?' })   // a client's lateness stays neutral (S-05)
     }
   }
   const d = new Date(c.now)
-  return { title: 'Your studio today', text: `${d.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' })} — open any line for the list behind it.`, rows }
+  return { title: 'Your studio today', text: `${d.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' })} — press a figure for the list behind it.`, figures }
 }
 
 /* ── the tools that read files (1.0's parse_quote · detect_surfaces · generate_render · image_to_3d_floorplan · benchmark_quote) ──── */
@@ -424,9 +446,11 @@ export async function rendersPickedAnswer(c: Ctx): Promise<MaisonAnswer> {
     .where(and(eq(renderConsultationRequests.kind, 'favourite'), isNull(visualizerDesigns.deletedAt))).orderBy(desc(renderConsultationRequests.createdAt)))
     .filter((r) => !r.leadId || !visible || visible.has(r.leadId))
   const week = rows.filter((r) => r.at.getTime() >= since)
-  if (!week.length) return { title: 'No client picked a render in the last 7 days',   // (S42 D-14) the last 7 days, said so text: rows.length ? 'The last ones a client hearted:' : 'When a client taps the heart on a render you sent, it shows here.',
+  /* (S42 D-14) the last 7 days, said so · (the calm UI build 2026-10-27, 6-07) "version"; its sentence had slipped into this comment and never showed (T-18) */
+  if (!week.length) return { title: 'No client picked a version in the last 7 days', text: rows.length ? 'The last ones a client hearted:' : 'When a client taps the heart on a version you sent, it shows here.',
     rows: rows.slice(0, 5).map((r) => row(c, r.id, r.design, `${r.name ? `${r.name} · ` : ''}${displayDayMonth(r.at)}`, `/visualizer/${r.designId}`)), link: { label: 'Open the AI Visualizer', href: go(c, '/visualizer') } }
-  return { title: `${plural(week.length, 'render')} picked in the last 7 days`, text: 'The client’s favourites, newest first — open the design to carry one forward.',
+  return { title: `${plural(week.length, 'version')} picked in the last 7 days`,   // (the calm UI build 2026-10-27, 6-07) the app's word for a picture Generate makes
+    text: 'The client’s favourites, newest first — open the design to carry one forward.',
     rows: week.slice(0, 10).map((r) => row(c, r.id, r.design, `${r.name ? `${r.name} · ` : ''}${displayDayMonth(r.at)}`, `/visualizer/${r.designId}`)) }
 }
 
@@ -439,7 +463,7 @@ export async function designsWaitingAnswer(c: Ctx): Promise<MaisonAnswer> {
     .filter((l) => l.expiresAt.getTime() > c.now && (!l.leadId || !visible || visible.has(l.leadId)))
   const answered = new Set(links.length ? (await db.select({ id: renderConsultationRequests.shareLinkId }).from(renderConsultationRequests).where(inArray(renderConsultationRequests.shareLinkId, links.map((l) => l.id)))).map((r) => r.id) : [])
   const waiting = links.filter((l) => !answered.has(l.id))
-  if (!waiting.length) return { title: 'No design is waiting on a client', text: 'Every live render link has a pick, a note or a call back — or none is out.', link: { label: 'Open the AI Visualizer', href: go(c, '/visualizer') } }
+  if (!waiting.length) return { title: 'No design is waiting on a client', text: 'Every live link has a pick, a note or a call back — or none is out.', link: { label: 'Open the AI Visualizer', href: go(c, '/visualizer') } }
   return { title: `${plural(waiting.length, 'design')} waiting on the client`, text: 'Sent, and no pick, note or call back yet — whether they opened it, from the link.',
     rows: waiting.slice(0, 10).map((l) => row(c, l.id, l.design, `Sent ${displayDayMonth(l.at)} · ${l.views ? `opened ${plural(l.views, 'time')}` : 'not opened yet'}`, `/visualizer/${l.designId}`)) }
 }
@@ -453,9 +477,9 @@ export async function rendersByLeadAnswer(c: Ctx): Promise<MaisonAnswer> {
   const counts = ds.length ? await db.select({ designId: projectRooms.designId, n: sql<number>`count(${renderJobs.id})` }).from(renderJobs).innerJoin(projectRooms, eq(projectRooms.id, renderJobs.roomId)).where(inArray(projectRooms.designId, ds.map((d) => d.id))).groupBy(projectRooms.designId) : []
   const n = new Map(counts.map((x) => [x.designId, Number(x.n)]))
   const withRenders = ds.filter((d) => (n.get(d.id) ?? 0) > 0).sort((a, b) => (n.get(b.id) ?? 0) - (n.get(a.id) ?? 0))
-  if (!withRenders.length) return { title: 'No lead has a render yet', text: 'A lead’s design shows here once its first render is made.' }
-  return { title: `${plural(withRenders.length, 'lead')} with renders`, text: 'The most renders first — open the design.',
-    rows: withRenders.slice(0, 10).map((d) => row(c, d.id, titleCaseName(d.lead), plural(n.get(d.id) ?? 0, 'render'), `/visualizer/${d.id}`)) }
+  if (!withRenders.length) return { title: 'No lead has a version yet', text: 'A lead’s design shows here once its first version is made.' }   // (the calm UI build 2026-10-27, 6-07)
+  return { title: `${plural(withRenders.length, 'lead')} with versions`, text: 'The most versions first — open the design.',
+    rows: withRenders.slice(0, 10).map((d) => row(c, d.id, titleCaseName(d.lead), plural(n.get(d.id) ?? 0, 'version'), `/visualizer/${d.id}`)) }
 }
 
 export async function layoutsOpenedAnswer(c: Ctx): Promise<MaisonAnswer> {

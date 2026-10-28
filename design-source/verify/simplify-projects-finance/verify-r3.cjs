@@ -43,7 +43,9 @@ const P = (number) => sql(`select id from projects where number='${number}'`)
     const row = s.locator('[data-testid="invoice-due-today"]')
     const words = (await row.innerText().catch(() => '')).replace(/\s+/g, ' ')
     ok(await row.count() === 1 && /INV-2026-006 · Mid-Project/.test(words) && /Due today · the automatic reminder is off/.test(words), `Money › Needs you: "INV-2026-006 · Mid-Project" — "Due today · the automatic reminder is off" (the event is off by default) — "${words.slice(0, 140)}"`)
-    ok(await row.getByRole('button', { name: 'Remind on WhatsApp' }).count() === 1 && await row.getByRole('button', { name: 'Record a payment' }).count() === 1, '…its step is Remind on WhatsApp, Record a payment beside it')
+    /* (the calm UI build 2026-10-27, a deliberate change) B3 3-05 · T-02: one verb on a row — Record a payment is the row's ⋮ */
+    const recordInMenu = async () => { await s.getByTestId('invoice-due-today-more').click(); await s.waitForTimeout(300); const n = await s.getByRole('menuitem', { name: 'Record a payment' }).count(); await s.keyboard.press('Escape'); await s.waitForTimeout(200); return n }
+    ok(await row.getByRole('button', { name: 'Remind on WhatsApp' }).count() === 1 && await recordInMenu() === 1, '…its step is Remind on WhatsApp, Record a payment beside it')
     ok(await s.locator('[data-testid="invoice-overdue"]').count() === 0, '…and it is not an overdue row (not past its day)')
     await shot(s, 'r3-01-due-today', false)
     /* the client hears by themselves: the event on (email), Benjamin on the portal — no row */

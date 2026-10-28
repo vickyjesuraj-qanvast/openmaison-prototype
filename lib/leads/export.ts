@@ -119,7 +119,7 @@ export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date, 
 export function downloadTasks(tasks: { title: string; assignees: { name: string }[]; dueAt: Date | null; done: boolean; tags: { name: string }[]; createdAt: Date; externalName?: string | null; externalPhone?: string | null; externalKind?: string | null }[], format: ExportFormat, now: Date): string {
   /* (gaps build, package C — M-03) the outside person after the members: "Ah Seng (Subcontractor) +65 9123 4567" */
   const head = ['Title', 'Members', 'Outside person', 'Due date', 'Status', 'Tags', 'Created']   /* REG-290 */
-  const outside = (t: (typeof tasks)[number]) => (t.externalName ? `${t.externalName}${t.externalKind ? ` (${t.externalKind === 'supplier' ? 'Supplier' : 'Subcontractor'})` : ''}${t.externalPhone ? ` ${phoneDisplay(t.externalPhone)}` : ''}` : '')
+  const outside = (t: (typeof tasks)[number]) => (t.externalName ? `${t.externalName}${t.externalKind ? ` (${t.externalKind === 'supplier' ? 'Vendor' : 'Contractor'})` : ''}${t.externalPhone ? ` ${phoneDisplay(t.externalPhone)}` : ''}` : '')
   const body = tasks.map((t) => [t.title, t.assignees.map((m) => m.name).join(', '), outside(t), t.dueAt ? displayDate(t.dueAt) : '', t.done ? 'Completed' : 'Open', t.tags.map((g) => g.name).join(', '), displayDate(t.createdAt)])
   return downloadBlob(buildTable('OpenMaison — Tasks', head, body, format), `openmaison-tasks-${now.toISOString().slice(0, 10)}.${format.toLowerCase()}`)
 }

@@ -14,6 +14,8 @@
   flex-shrink: 0;
 }
 .chip[data-icon] { padding-left: var(--om-spacing-1); }
+/* (the calm UI build 2026-10-27 — T-06, additive) a fact, not a status: sentence case, the house caption-s so it reads as words ("HDB 4-room") */
+.chip[data-kind='fact'] { text-transform: none; font: var(--om-type-caption-s); }
 .icon { display: inline-flex; width: 12px; height: 12px; align-items: center; justify-content: center; }
 .text { line-height: 12px; }
 

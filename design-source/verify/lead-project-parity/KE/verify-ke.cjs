@@ -9,6 +9,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'shots')
@@ -114,16 +115,17 @@ const day = (d) => `${d.getDate()} ${MONTHS[d.getMonth()]} ’${String(d.getFull
     console.log('P-36 · Q-11 · Deleted Projects in the Deleted Leads look')
     await go(`/projects/${tan}`)
     await snack().getByRole('button', { name: 'Open' }).click(); await p.waitForTimeout(1500)
-    ok(/stay here until they are deleted forever/.test(await p.locator('[data-testid="deleted-projects-banner"]').innerText()), 'the retention banner on top, with the project’s own rule')
+    ok(/stay here until they are deleted forever|Restore brings back/.test(await p.locator('[data-testid="deleted-projects-banner"]').innerText()) /* (the calm UI build 2026-10-27, a deliberate change) B3 3-47: the banner is one line under the title */, 'the retention banner on top, with the project’s own rule')
     const restore = p.locator('[data-testid="deleted-project"]').first().locator('[data-testid="deleted-project-restore"]')
     ok(/link/.test((await restore.getAttribute('class')) ?? ''), 'Restore is the Deleted Leads sheet’s text link')
-    ok(/^Note: Deleted projects are hidden/.test(await p.locator('[role="dialog"][aria-label="Deleted Projects"]').getByText(/^Note:/).innerText()), 'the note under the table')
+    /* (the calm UI build 2026-10-27, a deliberate change) B3 3-47: "Deleted projects" says what it is in its one line — the note under the table went (T-04) */
+    ok(await p.locator('[role="dialog"][aria-label="Deleted projects"]').count() === 1 && await p.locator('[role="dialog"][aria-label="Deleted projects"]').getByText(/^Note:/).count() === 0, 'the note under the table')
     await p.screenshot({ path: path.join(dir, 'ke-deleted-projects-1440.png') })
     await p.keyboard.press('Escape'); await p.waitForTimeout(400)
     await go('/leads')
     await p.locator('button[aria-label="More options"]:visible').first().click(); await p.waitForTimeout(300)
     await p.getByRole('menuitem', { name: 'Deleted Leads' }).click(); await p.waitForTimeout(900)
-    const heads = await p.locator('[role="dialog"][aria-label="Deleted Leads"] [role="columnheader"]').allInnerTexts()
+    const heads = await p.locator('[role="dialog"][aria-label="Deleted leads"] [role="columnheader"]').allInnerTexts()   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     ok(heads.some((h) => /^Deleted\b/i.test(h.trim())) && !heads.some((h) => /Archived/i.test(h)), 'Deleted Leads: the date’s head reads “Deleted”, never “Archived” (Q-11)')   /* a sort head's innerText carries its glyph's name */
     await p.keyboard.press('Escape'); await p.waitForTimeout(400)
 
@@ -141,7 +143,8 @@ const day = (d) => `${d.getDate()} ${MONTHS[d.getMonth()]} ’${String(d.getFull
     ok(/section=studio.*#lead-visibility/.test((await p.locator('[data-testid="projects-visibility-link"]').getAttribute('href')) ?? ''), 'a link to Roles & access › Who sees leads (Q-23)')
     await p.screenshot({ path: path.join(dir, 'ke-settings-projects-1440.png') })
     await go('/settings?section=studio')
-    const groups = await p.locator('[data-testid="studio-roles"] [role="rowgroup"]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
+    await openRoles(p)   // (the calm UI build 2026-10-27, a deliberate change) — its rowgroups are the drawer's list
+    const groups = await p.locator('[data-testid="studio-roles-list"] [role="rowgroup"]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
     ok(groups[0] === 'Studio' && groups[1] === 'Leads' && groups[2] === 'Projects', `grouped by area in Settings’ order (${groups.join(' · ')})`)
     const inGroup = async (g, k) => (await p.locator(`[data-testid="may-group-${g}"] [data-testid="may-${k}"]`).count()) === 1
     ok(await inGroup('leads', 'see') && await inGroup('projects', 'project-see'), '“See a lead” under Leads, “See a project” under Projects')

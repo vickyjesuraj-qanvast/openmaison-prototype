@@ -151,7 +151,7 @@ async function hop(url) {
       const fresh = json(`select p.id, l.name from projects p join leads l on l.id = p.lead_id where p.completed_at is null and p.deleted_at is null and l.deleted_at is null and l.phone is not null limit 1`)[0]
       sql(`update projects set completed_at = ${Math.floor((Date.now() - 86_400_000) / 1000)} where id = '${fresh.id}'`)
       await go(p, '/qanvast-ops/reviews?request=1', 1600)
-      const dlg = p.getByRole('dialog', { name: 'Request reviews' })
+      const dlg = p.getByRole('dialog', { name: 'Ask for reviews' })   // (the calm UI build 2026-10-27, a deliberate change — 2-42) one verb
       const rows = dlg.getByTestId('request-person')
       const reviewed = done.filter((d) => d.at + 4 * 86_400_000 <= Date.now())
       for (const r of reviewed) {
@@ -266,17 +266,22 @@ async function hop(url) {
       const win = p.getByRole('dialog', { name: 'Move stage' })
       ok(p.url().includes(`/leads/${LIM}`) && /from=/.test(p.url()) && await win.isVisible(), 'End lands on the lead with its Move stage window open, the way back kept', p.url())
       const winText = await text(win)
-      ok(/Contacted/.test(winText) && /In person/.test(winText) && /Connected/.test(winText), '…at Contacted, the chat as its first contact log: In person, Connected', winText.slice(0, 200))
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-08) the log's How / How it went are chips at every width; the stored "In person"
+         reads "Visit" */
+      const pickedIn = async (w, g) => (await w.getByRole('radiogroup', { name: g, exact: true }).first().getByRole('radio', { checked: true }).allInnerTexts()).join('|').trim()
+      ok(/Contacted/.test(winText) && (await pickedIn(win, 'How')) === 'Visit' && (await pickedIn(win, 'How it went')) === 'Connected', '…at Contacted, the chat as its first contact log: Visit (In person), Connected', winText.slice(0, 200))
       await shot(p, '08-end-to-contacted-1440')
       await p.keyboard.press('Escape'); await settle(p, 700)
       ok(sql(`select stage from leads where id = '${LIM}'`) === 'New', 'closing the window leaves the lead where it was')
       /* E-11: the met-already brief */
       const brief = p.locator('section[aria-label="Maison AI brief"]')
       const bt = await text(brief)
-      ok(/Met already · log the meeting/i.test(bt) && /Met in person on/.test(bt) && !/Call or WhatsApp within 24h/.test(bt), 'the lead’s brief: met already, not "respond fast" (E-11)', bt.slice(0, 200))
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-01) the brief's CAPS tag went: the record's own fact leads ("Met in person on …"),
+         and its one action is the move */
+      ok(/Met in person on/.test(bt) && /Log the meeting/.test(bt) && !/Call or WhatsApp within 24h|same day/.test(bt), 'the lead’s brief: met already, not "respond fast" (E-11)', bt.slice(0, 200))
       await shot(p, '09-met-brief-1440')
       await brief.getByRole('button', { name: 'Log the meeting' }).first().click(); await settle(p, 1500)
-      ok(await p.getByRole('dialog', { name: 'Move stage' }).isVisible() && /In person/.test(await text(p.getByRole('dialog', { name: 'Move stage' }))), '…Log the meeting opens the window with the meeting as its log')
+      ok(await p.getByRole('dialog', { name: 'Move stage' }).isVisible() && (await pickedIn(p.getByRole('dialog', { name: 'Move stage' }), 'How')) === 'Visit', '…Log the meeting opens the window with the meeting as its log')   // (the calm UI build 2026-10-27, a deliberate change)
       await p.keyboard.press('Escape'); await settle(p, 600)
       /* E-20: the crumb names the section */
       const crumbs = await text(p.locator('nav[aria-label="Breadcrumb"]').first())
@@ -293,7 +298,7 @@ async function hop(url) {
       await end2.getByTestId('end-save').click()
       await p.waitForURL(new RegExp(`/leads/${CHLOE}`), { timeout: 10000 }).catch(() => {})
       await settle(p, 1800)
-      const lost = p.getByRole('dialog').filter({ hasText: 'Moving to Lost' })
+      const lost = p.getByRole('dialog').filter({ hasText: 'Mark as lost' })   // (the calm UI build 2026-10-27, a deliberate change — 2-29) the dialog's title, no subtitle
       ok(await lost.isVisible() && /Budget mismatch/.test(await lost.innerText()), 'End lands on the lead’s Lost window, “Budget mismatch” picked', await text(lost))
       await shot(p, '10-end-to-lost-1440')
       await lost.getByRole('button', { name: 'Cancel' }).click(); await settle(p, 500)
@@ -392,15 +397,15 @@ async function hop(url) {
     {
       as('germaine')
       const ctx = await desk(); const p = await page(ctx, 'designer')
-      await go(p, '/company/profile', 1500)
+      await go(p, '/company/profile?tab=registrations', 1500)   // (the calm UI build 2026-10-27, a deliberate change) B5: Profile is tabbed — the listing card is on Registrations; the chip's sentence is its name
       const sim = p.getByTestId('qanvast-simulated')
-      ok(!(await sim.count()) || !/play/i.test(await text(sim)), 'a Designer’s Listed on Qanvast line has no play they can’t make (E-21)', await text(sim))
+      ok(!(await sim.count()) || !/play/i.test((await sim.getAttribute('aria-label')) ?? ''), 'a Designer’s Listed on Qanvast line has no play they can’t make (E-21)', await text(sim))
       await ctx.close()
       as('dane')
       const c2 = await desk(); const o = await page(c2, 'owner')
-      await go(o, '/company/profile', 1500)
+      await go(o, '/company/profile?tab=registrations', 1500)   // (the calm UI build 2026-10-27, a deliberate change) B5: the Registrations tab; the sentence is the chip's name
       const sim2 = o.getByTestId('qanvast-simulated')
-      ok(!(await sim2.count()) || /play Qanvast’s answer/.test(await text(sim2)), '…an Owner’s still offers it')
+      ok(!(await sim2.count()) || /play Qanvast’s answer/.test((await sim2.getAttribute('aria-label')) ?? ''), '…an Owner’s still offers it')
       const kit = JSON.parse(sql(`select value from settings where key = 'brand'`)).kit
       ok(kit.logo === '/demo-studio/logo.svg', 'the brand kit’s logo is Demo Studio’s own (R170, call E·5)', kit.logo)
       const svg = await fetch(BASE + '/demo-studio/logo.svg')

@@ -20,7 +20,7 @@ export function inviteHref(name: string, phone: string | null, from?: string | n
 
 /** The task's long text: who they are, their mobile, who asked and on which task. (invented copy) */
 export function inviteTaskDescription(o: { name: string; phone: string | null; kind: string; asker: string; task: string; lead: string | null }): string {
-  const who = `${o.kind === 'supplier' ? 'Supplier' : 'Subcontractor'}${o.phone ? ` · mobile ${phoneLocal(o.phone)}` : ''}`
+  const who = `${o.kind === 'supplier' ? 'Vendor' : 'Contractor'}${o.phone ? ` · mobile ${phoneLocal(o.phone)}` : ''}`
   return `${who}.\n${o.asker} put ${o.name} on “${o.task}”${o.lead ? ` (${o.lead})` : ''} and asks to add them to the studio.\nAdd them on Company › Members.`
 }
 

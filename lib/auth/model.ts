@@ -94,6 +94,10 @@ export const SIGN_IN = {
   codeWrong: 'That code isn’t right — check it and try again',
   couldntSend: 'Couldn’t send the code — please try again',
   demo: 'Demo only — no text or email is sent: any six digits sign you in.',
+  /** (the calm UI build 2026-10-27 — the audit's 1-46, T-05) sign-in's two demo lines as one quiet box: "Demo: any 6 digits work — try {who}" */
+  demoBox: 'Demo: any 6 digits work',
+  /** (1-46, W-076) the field's label, as the lede says it */
+  contactLabel: 'Mobile number or work email',
   demoJoin: 'Demo only — no text or email is sent: any six digits work.',
   /* (pending modules S43A) S42A's fallback line ("one signed-in member at a time — every open window follows whoever signs in last") is gone:
      a code sign-in or a join now signs in this browser alone (lib/db/session.ts), so it was no longer true */

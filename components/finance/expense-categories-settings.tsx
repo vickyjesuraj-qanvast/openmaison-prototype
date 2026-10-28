@@ -35,7 +35,7 @@ const countOf = (counts: Record<string, number>, name: string) => Object.entries
 export function ExpenseCategorySettings({ data, canManage }: { data: ExpenseCategoriesData; canManage: boolean }) {
   const snackbar = useSnackbar()
   const [list, setList] = useState(data.list)
-  const [managed, setManaged] = useState(data.managed)
+  const [, setManaged] = useState(data.managed)
   const [counts, setCounts] = useState(data.counts)
   const [adding, setAdding] = useState('')
   const [editing, setEditing] = useState<(EntryEdit & { was: string }) | null>(null)
@@ -110,7 +110,7 @@ export function ExpenseCategorySettings({ data, canManage }: { data: ExpenseCate
       <div className={s.settingHead}>
         <span className={s.settingTitle}>Expense categories</span>
         {/* (S42 audit C-10) the how-to is for whoever can do it; a reader gets what the list is */}
-        <span className={s.settingHelp}>What an expense is logged under — Reports group the expenses by them and Xero gives each its account.{canManage ? ' Press one to rename or move it; a category you remove stays on the expenses already logged under it.' : ''} {managed ? '' : 'Not set yet — these are the ones every studio starts with.'}</span>
+        <span className={s.settingHelp}>What an expense is logged under — Reports group the expenses by them and Xero gives each its account.{canManage ? ' Press one to rename or move it; a category you remove stays on the expenses already logged under it.' : ''}</span>   {/* (the calm UI build, W-574) “Not set yet — …” read as an error */}
       </div>
       <ul className={s.trades} aria-label="Expense categories">
         {list.map((c, i) => (

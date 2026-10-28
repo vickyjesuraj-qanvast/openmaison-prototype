@@ -283,8 +283,8 @@ const pub = (f) => ({ name: path.basename(f), mimeType: MIME[f.split('.').pop()]
     /* (simplify S-01 · S-20, a deliberate change of this rule) Latest updates folded into With Benjamin ("Last told Benjamin … — “title”" · Post an
        update) and Needs you (an update In review is a Needs your OK row, approved in place) */
     const latest = p.locator('[data-testid="with-last-told"]')
-    ok(await latest.isVisible() && /Last told Benjamin/.test(await latest.innerText()), 'With Benjamin: when he was last told, and what')
-    ok(await p.locator('[data-testid="need-review-update"]').count() >= 1 && /Needs your OK/.test(await p.locator('section[data-card="needs"]').innerText()), 'an update In review is a Needs your OK row')
+    ok(await latest.isVisible() && /Last (told|update to) Benjamin/.test(await latest.innerText())   /* (the calm UI build 2026-10-27, a deliberate change) the hold's reason is said once — on its Needs your attention row (3-31); "Last update to …" (W-537) */, 'With Benjamin: when he was last told, and what')
+    ok(await p.locator('[data-testid="need-review-update"]').count() >= 1 && /Approvals|Needs your OK/.test(await p.locator('section[data-card="needs"]').innerText())   /* (the calm UI build 2026-10-27, a deliberate change) the group is "Approvals" (3-07 · T-01) */, 'an update In review is a Needs your OK row')
     await shot('overview-1440')
     /* (simplify S-02 · Q-03, a deliberate change of this rule) the header's one action is the top row — approvals before telling the client; the
        unshared changes are a row of their own */
@@ -303,7 +303,7 @@ const pub = (f) => ({ name: path.basename(f), mimeType: MIME[f.split('.').pop()]
     await go(`/projects/${ryan}`)   // the row shows its weightiest reason (a late milestone); the Status card lists them all
     /* (simplify Q-09, a deliberate change of this rule) a running project quiet for 6+ days offers the week's update as a Needs you row — red at 14 */
     { const more = p.locator('[data-testid="needs-more"]'); if (await more.count() && /Show \d+ more/.test(await more.innerText())) { await more.click(); await p.waitForTimeout(300) } }
-    ok(/Tell Ryan about this week/.test(await p.locator('[data-testid="need-week-update"]').innerText()) && /\d+ days ago/.test(await p.locator('[data-testid="need-week-update"]').innerText()), 'a running project quiet for two weeks: "Tell Ryan about this week · Last update n days ago"')
+    ok(/Send Ryan this week’s update|Tell Ryan about this week/.test(await p.locator('[data-testid="need-week-update"]').innerText())   /* (the calm UI build 2026-10-27, a deliberate change) plain words (1-08 · W-398 · W-426 · W-278 · 3-37) */ && /\d+ days ago/.test(await p.locator('[data-testid="need-week-update"]').innerText()), 'a running project quiet for two weeks: "Tell Ryan about this week · Last update n days ago"')
     await go('/projects')
     const benRow = p.locator('[data-kb-row]').filter({ hasText: 'Benjamin' }).first()
     ok(/ago|just now/.test(await benRow.locator('[data-col="lastUpdate"]').innerText()), 'Benjamin’s Last update reads its newest publish')
@@ -336,7 +336,8 @@ const pub = (f) => ({ name: path.basename(f), mimeType: MIME[f.split('.').pop()]
     await go(`/projects/${benjamin}`)
     const reviewRow = p.locator('[data-testid="need-review-update"]').first()
     if (await reviewRow.count()) {
-      await reviewRow.locator('[data-testid="need-send-back"]').click(); await p.waitForTimeout(500)
+      await reviewRow.locator('[data-testid="need-more"]').click(); await p.waitForTimeout(300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — Send back / Decline is the row's ⋮ (3-05 · 3-22) */
+      await p.locator('[data-testid="need-send-back"] [role="menuitem"]').click(); await p.waitForTimeout(500)
       const sb = p.locator('[role="dialog"][aria-label="Send back"]')
       ok(await sb.isVisible() && /reads this on the update; Benjamin never sees it/.test(await sb.innerText()) && !p.url().includes('/updates'), 'the update’s Send back: the Updates tab’s note dialog, on the Overview')
       await sb.getByRole('button', { name: 'Cancel' }).click(); await p.waitForTimeout(300)

@@ -30,8 +30,8 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     await r.getByRole('button', { name: `More options for ${l1[1]}` }).click()
     await page.getByRole('menuitem', { name: 'Comment' }).click()
     const drawer = page.getByRole('dialog', { name: `Comments on ${l1[1]}` }).or(page.getByLabel(`Comments on ${l1[1]}`)).first(); await drawer.waitFor()
-    await page.getByLabel('Chat with your team here').fill('Can we get the Hafary tiles instead?')
-    await page.getByRole('button', { name: 'Submit' }).click(); await page.waitForTimeout(800)
+    await page.getByLabel('Write a comment').fill('Can we get the Hafary tiles instead?')   // (the calm UI build 2026-10-27, a deliberate change) W-135
+    await page.getByRole('button', { name: 'Send', exact: true }).last().click(); await page.waitForTimeout(800)   // the drawer's Send — the quote header's Send ▾ shares the word
     ok('stored on the line', sql(`select count(*) from quote_item_comments where item_id='${l1[0]}' and body like 'Can we get the Hafary%'`) === '1')
     ok('shown in the thread', (await page.getByTestId('line-comment').count()) === 1)
     await shot('01-line-thread')
@@ -43,27 +43,27 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     const r = row(l2[0]); await r.scrollIntoViewIfNeeded()
     const qty = r.getByLabel(`Quantity of ${l2[1]}`); const was = await qty.inputValue()
     await qty.click(); await qty.fill(String(Number(was) + 1)); await qty.press('Tab'); await page.waitForTimeout(1500)
-    await page.getByRole('button', { name: 'Undo', exact: true }).first().click(); await page.waitForTimeout(2500)
+    await page.locator('#section-items').getByRole('button', { name: 'More options for Items' }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Undo' }).click(); await page.waitForTimeout(2500)   // (the calm UI build 2026-10-27, a deliberate change) 4-03: Undo is the Items ⋮'s row
     ok('the comment is still there', sql(`select count(*) from quote_item_comments where item_id='${l1[0]}'`) === '1' && (await row(l1[0]).getByTestId('line-comment-count').count()) === 1)
   })
   await step('the header’s Comments: every thread, and a comment on another line', async () => {
     as('sarah')
     await openQuote(page, OM6)
-    await page.getByRole('button', { name: 'Comments', exact: true }).first().click()
+    await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Comments', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) Comments is the header ⋮'s row (4-03)
     const list = page.getByTestId('line-comments'); await list.waitFor()
-    ok('one comment · one line', /1 Comment · 1 line/.test(await list.innerText()))
+    ok('one comment · one line', /1 comment · 1 item/.test(await list.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) sentence case, items (4-28)
     await page.getByRole('combobox', { name: /^Comment on/ }).click(); await page.getByRole('option', { name: l2[1], exact: true }).click()
-    await page.getByLabel('Chat with your team here').fill('Measured again on site — 2 more.')
-    await page.getByRole('button', { name: 'Submit' }).click(); await page.waitForTimeout(800)
+    await page.getByLabel('Write a comment').fill('Measured again on site — 2 more.')
+    await page.getByRole('button', { name: 'Send', exact: true }).last().click(); await page.waitForTimeout(800)   // the drawer's Send — the quote header's Send ▾ shares the word
     ok('the second line has its thread', sql(`select author_id from quote_item_comments where item_id='${l2[0]}'`) === 'sarah')
-    ok('two threads listed', /2 Comments · 2 lines/.test(await list.innerText()))
+    ok('two threads listed', /2 comments · 2 items/.test(await list.innerText()))   // (the calm UI build 2026-10-27, a deliberate change)
     await shot('02-all-threads')
     await page.getByRole('button', { name: 'Close' }).last().click()
   })
   await step('edit one’s own, delete any', async () => {
     as('dane')
     await openQuote(page, OM6)
-    await page.getByRole('button', { name: 'Comments', exact: true }).first().click()
+    await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Comments', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) Comments is the header ⋮'s row (4-03)
     const mine = page.getByTestId('line-comment').filter({ hasText: 'Can we get the Hafary' })
     await mine.getByRole('button', { name: 'Comment actions' }).click(); await page.getByRole('menuitem', { name: 'Edit' }).click()
     const box = page.getByTestId('line-comments').locator('input').last()   // the text moved into the box: find the box, not the words
@@ -86,7 +86,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   const UPLOADS = path.resolve(__dirname, '../../..', 'design-source/verify/quote-editor-parity/uploads')
   const upload = async (file) => {
     await page.goto(`${BASE}/leads/${LEAD6}/quotes`); await ready(page)
-    await page.getByRole('button', { name: 'Create Quote' }).first().click()
+    await page.getByRole('button', { name: 'New quote' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) W-011
     await page.getByTestId('create-quote').waitFor()
     const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.getByTestId('upload-quote-row').click()])
     await fc.setFiles(path.join(UPLOADS, file))
@@ -98,7 +98,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     const before = Number(sql(`select count(*) from quotes where lead_id='${LEAD6}'`))
     const box = await upload('flo-design-quotation.pdf')   // (S42 E-05) the fixture now SAYS Flo Design's lines — a reference is read by its words, never its name
     const t = await box.innerText()
-    ok('the lines read, with their total', /lines read from Flo Design’s quote/.test(t), t.split('\n')[0])
+    ok('the lines read, with their total', /* (the calm UI build 2026-10-27, a deliberate change) T-01 · 6-14: Upload a quote reads "items" */ /items read from Flo Design’s quote/.test(t), t.split('\n')[0])
     await shot('03-upload-read')
     await page.getByRole('button', { name: 'Create the quote' }).click()
     await page.waitForURL(/\/quotes\/[0-9a-f-]{36}/, { timeout: 15000 }); await page.getByTestId('quote-editor').waitFor(); await ready(page)
@@ -110,7 +110,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   })
   await step('Upload a quote: a spreadsheet is read for real', async () => {
     const box = await upload('our-old-quote.csv')
-    ok('3 lines read', /3 lines/.test(await box.innerText()))
+    ok('3 lines read', /* (the calm UI build 2026-10-27, a deliberate change) T-01 · 6-14: Upload a quote reads "items" */ /3 items/.test(await box.innerText()))
     await page.getByRole('button', { name: 'Create the quote' }).click()
     await page.waitForURL(/\/quotes\/[0-9a-f-]{36}/, { timeout: 15000 }); await page.getByTestId('quote-editor').waitFor(); await ready(page)
     const id = page.url().match(/\/quotes\/([0-9a-f-]{36})/)[1]

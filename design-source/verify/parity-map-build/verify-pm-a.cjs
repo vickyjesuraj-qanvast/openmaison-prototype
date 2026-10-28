@@ -63,7 +63,7 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     console.log('Money in, studio-wide')
     await go(s, '/company/finance/money-in')
     const tabs = (await s.locator('[role="tablist"] [role="tab"]').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim())
-    ok(tabs[0] === 'To do' && tabs[1] === 'Money in' && tabs[2] === 'Money out', `the strip reads To do · Money in · Money out … (${tabs.join(' · ')})`)
+    ok(tabs[0] === 'Needs your attention' && tabs[1] === 'Client payments' && tabs[2] === 'Costs' /* (the calm UI build 2026-10-27, a deliberate change) T-01 · §2 */, `the strip reads To do · Money in · Money out … (${tabs.join(' · ')})`)
     ok(await s.locator('[data-testid="money-in-kinds"] [role="radio"]').count() === 4, 'one kind switch: Invoices · Payments · Variation orders · Credit notes')
     const invRows = s.locator('[data-testid="money-in-table-invoices"] [data-row]')
     const sentVoid = Number(sql(`select count(*) from project_invoices i join projects p on p.id=i.project_id join leads l on l.id=p.lead_id where p.deleted_at is null and l.deleted_at is null and i.status in ('sent','void')`))
@@ -78,13 +78,17 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     ok(statusRows[0]?.startsWith('All ·') && statusRows.some((r) => /^Overdue · \d+/.test(r)) && !statusRows.some((r) => / · 0$/.test(r)), `the Status pill lists only the statuses present, with counts (${statusRows.join(' | ')})`)
     await s.getByRole('menuitemradio', { name: /^Overdue/ }).click(); await settle(s, 400)
     ok((await invRows.count()) > 0 && (await s.locator('[data-testid="money-in-table-invoices"] [data-row]:not([data-status="overdue"])').count()) === 0, 'Status: Overdue narrows the list to it')
-    await inv006.locator('[data-testid="money-in-open"]').click(); await settle(s, 1200)
+    await inv006.getByRole('button', { name: /^More for/ }).click(); await settle(s, 300)   // (the calm UI build 2026-10-27, a deliberate change) B5 T-02: Open is the row's ⋮
+    await s.locator('[data-testid="money-in-open"]').first().click(); await settle(s, 1200)
     ok(new RegExp(`/projects/${ben}/money`).test(s.url()) && /from=%2Fcompany%2Ffinance%2Fmoney-in/.test(s.url()), 'Open lands on the project’s Money, the way back riding along')
     await go(s, '/company/finance/money-in?kind=payments')
-    ok(await s.locator('[data-testid="money-in-table-payments"]').count() === 1 && /Payments/.test(await s.locator('[data-testid="money-in-kinds"] [aria-checked="true"]').innerText()), '?kind=payments lands on Payments')
+    ok(await s.locator('[data-testid="money-in-table-payments"]').count() === 1 && /Client payments/.test(await s.locator('[data-testid="money-in-kinds"] [aria-checked="true"]').innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-310 */, '?kind=payments lands on Payments')
     const receipts = Number(sql(`select count(*) from project_payments pp join projects p on p.id=pp.project_id where p.deleted_at is null`))
     ok(await s.locator('[data-testid="money-in-table-payments"] [data-row]').count() === receipts, `every client payment is listed (${receipts})`)
-    const view = s.locator('[data-testid="money-in-view-receipt"]').first()
+    /* (the calm UI build 2026-10-27, a deliberate change) B5 T-02: View receipt is a confirmed payment row's ⋮ — open the rows' menus until one offers it */
+    let view = s.locator('[data-testid="money-in-view-receipt"]').first()
+    for (const more of (await s.locator('[data-testid="money-in-table-payments"] [data-row]').getByRole('button', { name: /^More for/ }).all()).slice(0, 8)) { await more.click(); await settle(s, 250); if (await view.count()) break; await s.keyboard.press('Escape'); await settle(s, 150) }
+    view = s.locator('[data-testid="money-in-view-receipt"]').first()
     if (await view.count()) { await view.click(); await settle(s, 1200); ok(/\/receipts\//.test(s.url()) && /from=%2Fcompany%2Ffinance%2Fmoney-in%3Fkind%3Dpayments/.test(s.url()), 'View receipt opens the receipt, Back returning to Payments') }
     else ok(false, 'a confirmed payment offers View receipt')
     await go(s, '/company/finance/money-in?kind=variations')
@@ -119,15 +123,17 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     as('germaine')
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
     const over = s.locator('[data-testid="invoice-overdue"]', { hasText: 'INV-2026-006' }).first()
-    await over.locator('[data-testid="invoice-remind"]').click(); await settle(s, 1500)
+    await over.locator('[data-testid="invoice-overdue-more"]').click(); await settle(s, 300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    await s.locator('[data-testid="invoice-remind"] [role="menuitem"]').click(); await settle(s, 1500)
     ok(/Third reminder drafted on WhatsApp for Benjamin/.test(await snack(s).innerText()), 'the third reminder says the next step is a call')
     ok(sql(`select group_concat(member_id) from (select member_id from notifications where kind='invoice_reminded' and created_at >= ${T0} order by member_id)`) === 'dane,huimin,priya', 'Owners, Admins and Accounting hear invoice_reminded — once each') /* (parity map, FB-114 — a deliberate change of this rule) */
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
     const call = s.locator('[data-testid="invoice-overdue"][data-call]', { hasText: 'INV-2026-006' }).first()
     ok(await call.count() === 1 && /reminded 3× · last \d+ \w+ — call Benjamin on \+65 9773 1968/.test(await call.innerText()), 'the row: "reminded 3× · last … — call Benjamin on +65 9773 1968"')
-    ok(await call.locator('[data-testid="invoice-call"]').innerText() === 'Call Benjamin' && await call.locator('[data-testid="invoice-remind"]').count() === 0, 'its second button is Call Benjamin (Remind stays in the invoice’s ⋮)')
+    await call.locator('[data-testid="invoice-overdue-more"]').click(); await settle(s, 300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    ok((await s.locator('[data-testid="invoice-call"]').innerText()).trim() === 'Call Benjamin' && await s.locator('[data-testid="invoice-remind"]').count() === 0, 'its second step is Call Benjamin (Remind stays in the invoice’s ⋮)')
     await shot(s, 'a03-overdue-call-row', false)
-    await call.locator('[data-testid="invoice-call"]').click(); await settle(s, 700)
+    await s.locator('[data-testid="invoice-call"] [role="menuitem"]').click(); await settle(s, 700)
     ok(/\+65 9773 1968/.test(await snack(s).innerText()), 'at a desk, Call copies the number (said in the snackbar)')
     ok(Number(sql(`select count(*) from notifications where kind='invoice_reminded' and created_at >= ${T0}`)) === 3, 'the bell was told once per Owner, Admin and Accounting member') /* (parity map, FB-114 — a deliberate change of this rule) */
     as('dane')
@@ -146,7 +152,7 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     const send = s.locator(`[data-invoice="${dep}"] [data-testid="invoice-send"]`).first()
     if (await send.count()) {
       await send.click(); await settle(s, 700)
-      await dialog(s).getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(s, 1800)
+      await dialog(s).getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(s, 1800)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
       ok(sql(`select status from project_invoices where id='${dep}'`) === 'sent', 'Marcus’s deposit is sent')
       ok(sql(`select count(*) from notifications where kind='invoice_sent' and member_id='huimin' and created_at >= ${T0}`) === '1' && sql(`select count(*) from notifications where kind='invoice_sent' and member_id='dane' and created_at >= ${T0}`) === '0', 'the Admin hears invoice_sent — never the Owner who sent it')
     } else ok(false, 'Marcus’s Deposit offers Send')
@@ -199,6 +205,7 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     console.log('MI-035 a one-off filled from a PDF')
     await go(s, `/projects/${aisha}/money`)
     await s.locator('[data-testid="money-new"]').click(); await settle(s, 300)
+    await menuItem(s, /^Invoice$/).click(); await settle(s, 400)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
     await menuItem(s, /^One-off invoice/).click(); await settle(s, 500)
     const od = dialog(s)
     await od.locator('[data-testid="oneoff-pdf-input"]').setInputFiles(path.join(REPO, 'public/uat-files/printhub-bill-PH-2210.pdf')); await settle(s, 3000)

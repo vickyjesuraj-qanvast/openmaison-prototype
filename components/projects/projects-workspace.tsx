@@ -3,7 +3,7 @@
 import { unsentWords } from '@/lib/notifications/held'   // (simplify round 2)
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ds'
+import { Button, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -54,7 +54,6 @@ import pageStyles from '@/app/leads/leads.module.css'
 import styles from './projects-workspace.module.css'
 import { WorkloadView, CapacityDialog } from './workload/workload-view'   // (gaps build I)
 import { ContractorsView } from './contractors/contractors-view'   // (S45B · H-UHD-2)
-import { Chips } from '@/components/om/chips'
 import { CONTRACTORS_OF_KEY } from './contractors/keys'
 import { boardOf } from '@/lib/projects/contractors-model'
 import { dayOf } from '@/lib/projects/schedule-model'
@@ -72,7 +71,15 @@ export type ProjectsUrlState = { scope: string | null; q: string | null; sort: s
   /** (S45B · H-UHD-2) `?of=contractors` — the Workload view's Contractors */
   of?: string | null }
 
-const TILE_SCOPE: Record<(typeof TILE_LABELS)[number], ProjectScope> = { 'In progress': 'in_progress', 'Needs attention': 'attention', 'Waiting on client': 'waiting', 'Completing this month': 'month' }
+const TILE_SCOPE: Record<(typeof TILE_LABELS)[number], ProjectScope> = { 'In progress': 'in_progress', 'Needs your attention': 'attention', 'Waiting on client': 'waiting', 'Completing this month': 'month' }   // (the calm UI build 2026-10-27, T-01)
+/** (the calm UI build 2026-10-27, 3-11) the tiles as one line on a phone — each fact a door to its scope, a zero left out */
+const PHONE_WORDS: Partial<Record<ProjectScope, (n: number) => string>> = {
+  attention: (n) => `${n} need${n === 1 ? 's' : ''} your attention`, waiting: (n) => `${n} wait${n === 1 ? 's' : ''} on the client`,
+  month: (n) => `${n} finish${n === 1 ? 'es' : ''} this month`, in_progress: (n) => `${n} in progress`,
+}
+const PHONE_ORDER: ProjectScope[] = ['attention', 'waiting', 'month', 'in_progress']
+/** (the calm UI build 2026-10-27, 3-38) the tiles count open projects: they stand where the list shows open work, never on Completed */
+const TILES_IN: readonly ProjectScope[] = ['open', 'all', 'mine', 'attention', 'waiting', 'month', 'review', 'setting_up', 'in_progress', 'on_hold']
 const list = (v: string | null) => (v ? v.split(',').map((x) => x.trim()).filter(Boolean) : [])
 
 /**
@@ -212,7 +219,7 @@ export function ProjectsWorkspace({ data, url }: { data: ProjectsListData; url: 
   const [landDeleted] = useState(url.deleted ?? null)
   useEffect(() => {
     if (!landDeleted) return
-    const t = setTimeout(() => snackbar({ message: `${landDeleted.number} is in Deleted Projects`, actionLabel: 'Open', onAction: () => setTrashOpen(true) }), GHOST_MIN_MS)
+    const t = setTimeout(() => snackbar({ message: `${landDeleted.number} is in Deleted projects`, actionLabel: 'Open', onAction: () => setTrashOpen(true) }), GHOST_MIN_MS)
     return () => clearTimeout(t)
   }, [landDeleted, snackbar])
 
@@ -308,49 +315,67 @@ export function ProjectsWorkspace({ data, url }: { data: ProjectsListData; url: 
             ) : (
               <span data-kb="create" data-kb-label="New project"><Button iconStart={<Icon name="add" size={20} />} onPress={openNew}>New project</Button></span>
             )}
-            {/* (parity P-21, B-04) the Leads listing's Insights: outlined, `bar_chart_4_bars`, after the primary (on a phone its square) — behind the
-                reports' own gate (Company › Reports › Projects: Owners, Admins, a Manager for their team — whoever sees the Workload view) */}
-            {first || !wl ? null : phone ? (
-              <Tooltip label="Insights"><IconButton icon="bar_chart_4_bars" label="Insights" onClick={openInsights} data-testid="open-insights" /></Tooltip>
-            ) : (
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={openInsights} data-testid="open-insights">Insights</Button>
-            )}
+            {/* (the calm UI build 2026-10-27, 1-30 · W-217) the L1 header is title · New project · ⋮ — the reports' door (was the outlined
+                "Insights" after New project) is the ⋮'s first row, "Reports", behind the same gate (Company › Reports › Projects: Owners, Admins,
+                a Manager for their team — whoever sees the Workload view) */}
             <div style={{ position: 'relative' }}>
               <Tooltip label="More options" disabled={kebabOpen}><IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} data-testid="projects-kebab" /></Tooltip>
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Projects">
+                {first || !wl ? null : <span className={styles.menuRow} data-testid="open-insights"><DropdownItem onSelect={() => { setKebabOpen(false); openInsights() }}>Reports</DropdownItem></span>}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setExportSel([]) }}>Export all as…</DropdownItem>
-                <DropdownItem onSelect={() => { setKebabOpen(false); setTrashOpen(true) }}>Deleted Projects</DropdownItem>   {/* (Projects round 7, Q-26) */}
+                <DropdownItem onSelect={() => { setKebabOpen(false); setTrashOpen(true) }}>Deleted projects</DropdownItem>   {/* (Projects round 7, Q-26) · (the calm UI build 2026-10-27, 3-40 · W-170) */}
                 {/* (S46 — REG-2524) Tickets left this menu for the rail, a place of its own as Tasks is (his ask 2026-10-19) */}
-                <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=projects', here())) }}>Projects Settings</DropdownItem>
+                <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=projects', here())) }}>Project settings</DropdownItem>   {/* (the calm UI build 2026-10-27, 3-40 · W-591) */}
               </Dropdown>
             </div>
           </>
         } />
         <div className={pageStyles.content}>
-          {first ? null : (
-            /* (parity P-30) the house row of tiles: one row from 1025, 3 + 2 at a tablet's width, two per row on a phone (the value taking its row) */
+          {first || workload || !TILES_IN.includes(scope) || phone ? null : (
+            /* (parity P-30) the house row of tiles: one row from 1025, 3 + 2 at a tablet's width — (the calm UI build 2026-10-27, 3-38 · T-06)
+               the Dashboard's look: five white cards, each boxed, one caption; they stand where they count (open work — not on Workload or
+               Completed, whose rows they don't describe) */
             <StatTiles className={styles.tiles} testId="project-tiles">
               {TILE_LABELS.map((l) => {
                 const s = TILE_SCOPE[l]
                 const n = tileValue(l)
                 return (
                   <button key={l} type="button" className={styles.tileBtn} aria-pressed={scope === s} onClick={() => setScope(scope === s ? 'open' : s)} data-testid={`tile-${s}`}>
-                    <StatTile label={l} value={n} grade={s === 'attention' && n > 0 ? 'bad' : undefined} wrap />
+                    <StatTile look="card" label={l} value={n} grade={s === 'attention' && n > 0 ? 'bad' : undefined} wrap />
                   </button>
                 )
               })}
-              {total !== null ? <div className={styles.valueTile}><StatTile testId="tile-value" label="Contract value" value={moneyCompact(total)} help="Open projects" wrap /></div> : null}
+              {total !== null ? <div className={styles.valueTile}><StatTile look="card" testId="tile-value" label="Contract value" value={moneyCompact(total)} help="Open projects" wrap /></div> : null}
             </StatTiles>
           )}
           <ProjectsToolbar bare={first} reviews={viewer.reviews ?? mayReviewUpdate(viewer.role)} scope={scope} counts={counts} shown={filtered.length} onScope={setScope} query={query} onQuery={setQuery} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onColumns={phone || workload ? undefined : () => setColumnsOpen(true)}
                            view={wl || cb ? { value: view, onChange: setView } : undefined} />
+          {/* (the calm UI build 2026-10-27, 3-11 · T-15) a phone's tiles: one line under the pill, each fact a door to its scope (the same handles), the
+              studio's open value after them — nothing in a tile is lost, nothing fills the first screen */}
+          {!first && !workload && TILES_IN.includes(scope) && phone ? (
+            <p className={styles.phoneTiles} data-testid="project-tiles">
+              {PHONE_ORDER.filter((s) => counts[s] > 0).map((s) => (
+                <span key={s} className={styles.phoneTile}>
+                  <button type="button" className={styles.phoneDoor} aria-pressed={scope === s} data-alert={s === 'attention' || undefined} onClick={() => setScope(scope === s ? 'open' : s)} data-testid={`tile-${s}`}>{PHONE_WORDS[s]!(counts[s])}</button>
+                </span>
+              ))}
+              {total !== null ? <span className={styles.phoneTile} data-testid="tile-value">{`${moneyCompact(total)} open`}</span> : null}
+            </p>
+          ) : null}
           {first ? (
             <EmptyState icon="business_center" title="No projects yet" testId="projects-empty"
                         help="A project begins when a lead is won — the Won step creates it. For a client who came straight to you, add the project here."
                         primary={{ label: 'New project', icon: 'add', onPress: openNew }} secondary={{ label: 'Open Leads', onPress: () => router.push('/leads') }} />
           ) : workload ? (   /* (gaps build I, I-Q2) the rows the list shows — scope, Filters, search; (S45B) Members · Contractors */
             <>
-              {wl && cb ? <Chips label="Workload of" options={[{ value: 'members', label: 'Members' }, { value: 'contractors', label: 'Contractors' }]} value={of} onChange={(v) => setOf(v === 'contractors' ? 'contractors' : 'members')} testId="workload-of" /> : null}
+              {/* (the calm UI build 2026-10-27, 3-08 · T-10) Members · Contractors is a view switch — the design system's SegmentedButton, not chips */}
+              {wl && cb ? (
+                <SegmentedButton aria-label="Workload of" selectedKeys={[of]} data-testid="workload-of" className={styles.workloadOf}
+                                 onSelectionChange={(keys) => { const v = String([...keys][0] ?? ''); if (v) setOf(v === 'contractors' ? 'contractors' : 'members') }}>
+                  <SegmentedButtonItem id="members">Members</SegmentedButtonItem>
+                  <SegmentedButtonItem id="contractors">Contractors</SegmentedButtonItem>
+                </SegmentedButton>
+              ) : null}
               {of === 'contractors' && cb ? <ContractorsView board={cb} shown={new Set(filtered.map((r) => r.id))} query={query} here={`/projects?view=workload${wl ? '&of=contractors' : ''}`} />
                 : wl ? <WorkloadView rows={filtered} people={team} viewer={{ id: viewer.id, role: viewer.role, teamIds: wl.teamIds }} studioDefault={wl.defaultCapacity} sets={wl.sets}
                                      onOpen={open} onSetCapacity={() => setCapacityOpen(true)} onInsights={openInsights} /> : null}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { useSheetLayout } from '@/components/om/sheet'
-import { Checkbox, Tag } from '@/components/ds'
+import { Checkbox } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
@@ -241,23 +241,23 @@ function FileRowView({
             <Avatar name={row.owner.name} color={row.owner.color} size={24} tooltip={false} />
             <span className={styles.oneLine}>{row.owner.name}</span>
           </>
-        ) : '--'}
+        ) : '—'}   {/* (the calm UI build 2026-10-27 — T-08) one stand-in for an empty cell */}
       </div>
 
       {/* Updated "17 Jul ‘26" · File type "JPEG" / "Folder" · File size "711 KB" / "--" (frame 104 folder row). */}
       <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(row.updatedAt ?? row.createdAt)}</div>
       <div className={`${styles.cell} ${styles.colType} ${L.pinned('type') ? styles.pin : ''}`} role="cell" data-col="type" data-pin-edge={L.edge('type') || undefined} style={L.style('type')}>{fileTypeLabel(row)}</div>
-      <div className={`${styles.cell} ${styles.colSize} ${L.pinned('size') ? styles.pin : ''}`} role="cell" data-col="size" data-pin-edge={L.edge('size') || undefined} style={L.style('size')}>{folder ? '--' : fileSize(row.sizeBytes)}</div>
+      <div className={`${styles.cell} ${styles.colSize} ${L.pinned('size') ? styles.pin : ''}`} role="cell" data-col="size" data-pin-edge={L.edge('size') || undefined} style={L.style('size')}>{folder ? '—' : fileSize(row.sizeBytes).replace(/^--$/, '—')}</div>
 
       {/* Attached to: Tag Outlined Default "Task" (931:40181) or "--" (the mock repeats "Task" as a placeholder; the
           model's attachedTo decides). */}
       <div className={`${styles.cell} ${styles.colAttached} ${L.pinned('attached') ? styles.pin : ''}`} role="cell" data-col="attached" data-pin-edge={L.edge('attached') || undefined} style={L.style('attached')}>
-        {row.attachedTo ? <Tag appearance="outlined">{row.attachedTo}</Tag> : '--'}
+        {row.attachedTo ? <span className={styles.oneLine}>{row.attachedTo}</span> : '—'}   {/* (T-06) what it is attached to is a word, not a capital tag */}
       </div>
 
       {/* (Projects r4a) Client: "Shown" when the client's portal lists the file; a folder is never shown on its own. */}
       <div className={`${styles.cell} ${L.pinned('client') ? styles.pin : ''}`} role="cell" data-col="client" data-pin-edge={L.edge('client') || undefined} style={L.style('client')}>
-        {row.shownToClientAt ? <span className={styles.shown} data-testid="file-shown-cell"><Icon name="visibility" size={16} weight={300} />Shown</span> : '--'}
+        {row.shownToClientAt ? <span className={styles.shown} data-testid="file-shown-cell"><Icon name="visibility" size={16} weight={300} />Shown</span> : '—'}
       </div>
 
       {/* Row kebab — not mocked for the list; the tile's kebab at the row's right edge on hover (Quotes .actions/.float,

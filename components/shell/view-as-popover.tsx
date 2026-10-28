@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useTransition, type KeyboardEvent, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import Link from 'next/link'
@@ -19,10 +19,8 @@ import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './view-as-popover.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
-import { homeOfRole, onLeads, opensPath } from '@/lib/settings/roles'
-import { Switch } from '@/components/ds'
-import { setMyAccepting } from '@/app/company/members-actions'   // (pending modules S16)
-import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
+import { homeOfRole, opensPath } from '@/lib/settings/roles'
+import { couldnt } from '@/components/leads/tasks/use-run'
 import { leaveThen } from '@/components/company/leave-guard'   // (pending modules S30) unsaved edits ask before Sign out
 import { signOut } from '@/app/sign-in/actions'   // (pending modules S30)
 import { forgetMember, forgetStudio } from '@/lib/auth/forget'
@@ -84,26 +82,13 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
   const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'bottom' })   // (REG-728) the rail's popovers open one way
 
   const current = team.find((m) => m.isYou) ?? null
-  /* (pending modules S16 — his "build all of them" 2026-10-11; 1.0's top bar: "Open" / "Closed" to new leads, one press, for the member
-     themself) your own Open to new leads, under Your profile — the record Company › Members' switch writes (REG-612). Optimistic: the switch
-     moves on the press and goes back if the save is refused; the server's answer takes over once the page has refreshed. */
-  const serverOpen = current?.acceptingLeads ?? true
-  const [openSeen, setOpenSeen] = useState(serverOpen)
-  const [openToLeads, setOpenToLeads] = useState(serverOpen)
-  if (serverOpen !== openSeen) { setOpenSeen(serverOpen); setOpenToLeads(serverOpen) }
-  const setOpen = useCallback(function apply(next: boolean, undoable: boolean) {
-    setOpenToLeads(next)
-    startTransition(async () => {
-      let r: Awaited<ReturnType<typeof setMyAccepting>>
-      try { r = await setMyAccepting(next) } catch (e) { setOpenToLeads(!next); snackbar({ key: 'you-accepting', message: couldnt('change whether you take new leads', refusalOf(e)) }); return }
-      if ('error' in r) { setOpenToLeads(!next); snackbar({ key: 'you-accepting', message: couldnt('change whether you take new leads', refusalOf(r.error)) }); return }
-      router.refresh()
-      snackbar({ key: 'you-accepting', message: next ? 'You’re open to new leads' : 'You’re closed to new leads',
-        ...(undoable ? { actionLabel: 'Undo', onAction: () => apply(r.before, false) } : {}) })
-    })
-  }, [router, snackbar, startTransition])
-  const flipOpen = () => setOpen(!openToLeads, true)
-  const onOpenKey = (e: KeyboardEvent<HTMLDivElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flipOpen() } }
+  /* (pending modules S16) your own Open to new leads sat here, under Your profile. (the calm UI build 2026-10-27 — the audit's 1-39: one home for
+     one switch) it moved to Your profile › New leads, the switch itself ("Take new leads"), with the same save, refusal and Undo; an Owner or an
+     Admin still sets it on the member's row in Company › Members. */
+  /* (the calm UI build 2026-10-27 — the audit's 1-40) the studio block opens Your profile · Sign out; the demo's tools — View as, the studio's
+     plan, the studios — fold under one "Demo" row at the bottom (remembered per browser, `om.viewas.demo`) */
+  const [demoOpen, setDemoOpen] = useState(() => { try { return localStorage.getItem('om.viewas.demo') === '1' } catch { return false } })
+  const toggleDemo = () => setDemoOpen((o) => { const n = !o; try { localStorage.setItem('om.viewas.demo', n ? '1' : '0') } catch { /* a private window: the fold just isn't remembered */ } return n })
   const become = useCallback(function go(m: SessionMember, back: SessionMember | null) {
     startTransition(async () => {
       const r = await viewAs(m.id)
@@ -165,7 +150,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
           <span className={panel.glyph}><Icon name="diamond" size={20} weight={300} /></span>
           <span className={panel.text}>
             <span className={panel.label}>{p.label}</span>
-            <span className={panel.help}>{p.help}</span>
+            <span className={styles.helpLine}>{p.help}</span>
           </span>
           {plan === p.key ? <Icon name="check" size={20} weight={300} /> : null}
         </button>
@@ -199,7 +184,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
           <span className={panel.glyph}><Icon name="storefront" size={20} weight={300} /></span>
           <span className={panel.text}>
             <span className={panel.label}>{switching === st.key ? `Opening ${st.name}…` : st.name}</span>
-            <span className={panel.help}>{st.line}</span>
+            <span className={styles.helpLine}>{st.line}</span>
           </span>
           {st.open ? <Icon name="check" size={20} weight={300} /> : null}
         </button>
@@ -214,7 +199,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
           <Avatar name={m.name} color={m.color} size={36} tooltip={false} />
           <span className={panel.text}>
             <span className={panel.label}>{m.name}</span>
-            <span className={panel.help}>{memberLine(m)}</span>
+            <span className={styles.helpLine}>{memberLine(m)}</span>
           </span>
           {m.isYou ? <Icon name="check" size={20} weight={300} /> : null}
         </button>
@@ -234,23 +219,11 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
           <Avatar name={current.name} color={current.color} size={36} tooltip={false} />
           <span className={panel.text}>
             <span className={panel.label}>{current.name}</span>
-            <span className={panel.help}>Your profile</span>
+            <span className={styles.helpLine}>Your profile</span>
           </span>
           <Icon name="chevron_right" size={20} weight={300} />
         </Link>
-        {/* (pending modules S16) your own Open to new leads — a checkbox row whose mark is the DS switch (the house DropdownItem's rule for a
-            row that draws its own mark); the switch is the row's picture only (inert), the row takes the press, ↵ and Space */}
-        {onLeads(current.role) ? (
-          <div role="menuitemcheckbox" aria-checked={openToLeads} tabIndex={0} className={panel.row} onClick={flipOpen} onKeyDown={onOpenKey}
-               aria-label="Open to new leads" aria-describedby="you-accepting-help" data-testid="you-accepting">
-            <span className={panel.glyph}><Icon name="person_add" size={20} weight={300} /></span>
-            <span className={panel.text}>
-              <span className={panel.label}>Open to new leads</span>
-              <span className={panel.help} id="you-accepting-help">{openToLeads ? 'Suggested for new leads' : 'Not suggested for leads'}</span>
-            </span>
-            <span className={styles.switchMark} inert aria-hidden><Switch size="sm" isSelected={openToLeads} aria-label="Open to new leads" /></span>
-          </div>
-        ) : null}
+        {/* (the calm UI build 2026-10-27 — the audit's 1-39) Open to new leads left this menu: it is Your profile › New leads now */}
         {/* (pending modules S30) Sign out — the last of you, under Your profile (and Open to new leads) */}
         <button type="button" role="menuitem" className={panel.row} onClick={leave} disabled={leaving} data-testid="sign-out">
           <span className={panel.glyph}><Icon name="logout" size={20} weight={300} /></span>
@@ -260,12 +233,27 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
       <div className={menuStyles.divider} role="separator" />
     </>
   ) : null
+  /* (1-40) the demo's tools as one fold under the menu you open from the studio block (or the phone's avatar): "Demo" — View as · the studio's
+     plan · the studios — closed until pressed; More › View as (no `you`) opens View as alone, as before */
+  const demoRow = you ? (
+    <button type="button" className={panel.row} aria-expanded={demoOpen} aria-controls="view-as-demo" onClick={toggleDemo} data-testid="demo-fold">
+      <span className={panel.glyph}><Icon name="swap_horiz" size={20} weight={300} /></span>
+      <span className={panel.text}><span className={panel.label}>Demo</span><span className={styles.helpLine}>View as · plan · studios</span></span>
+      <Icon name={demoOpen ? 'expand_less' : 'expand_more'} size={20} weight={300} />
+    </button>
+  ) : null
+  const demo = !you || demoOpen ? (
+    <div id="view-as-demo" className={styles.demo}>
+      <span className={styles.titleRow}><span className={panel.title}>View as</span><span className={panel.soon}>Demo only</span></span>
+      {head}{list}{plans}{studioGroup}
+    </div>
+  ) : null
   if (typeof document === 'undefined') return null
   if (sheet) {
     return (
       <Sheet open={open} onClose={onClose} onBack={onBack} title={you ? 'You' : 'View as'} label={you ? 'You' : 'View as'} role="menu">
-        {/* (pending modules S01) from the phone's avatar: you first, then View as under its own title */}
-        <div className={panel.sheetBody}>{you}{you ? <span className={styles.titleRow}><span className={panel.title}>View as</span><span className={panel.soon}>Demo only</span></span> : null}{head}{list}{plans}{studioGroup}</div>
+        {/* (pending modules S01) from the phone's avatar: you first, then the Demo fold (View as under its own title) */}
+        <div className={panel.sheetBody}>{you}{demoRow}{demo}</div>
       </Sheet>
     )
   }
@@ -275,14 +263,8 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
         <motion.div ref={place} className={`${menuStyles.menu} ${panel.popover} ${styles.fits}`} role="menu" aria-label="View as" data-om-menu
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', zIndex: 130 }}>
           {you}
-          <span className={styles.titleRow}>
-            <span className={panel.title}>View as</span>
-            <span className={panel.soon}>Demo only</span>
-          </span>
-          {head}
-          {list}
-          {plans}
-          {studioGroup}
+          {demoRow}
+          {demo}
         </motion.div>
       ) : null}
     </AnimatePresence>,

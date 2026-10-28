@@ -52,7 +52,8 @@ const TASK = sql(`select t.id from lead_tasks t join task_assignees a on a.task_
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const text = async (l) => ((await l.count()) ? (await l.first().innerText()).replace(/\s+/g, ' ') : '')
   const card = (p) => p.getByTestId('profile-notifications')
-  const openBell = async (p) => { await p.locator('[data-notifications-tile]').first().click(); await p.getByTestId('notifications-panel').waitFor(); await settle(p, 1400) }
+  /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-20) the bell leads with what happened; what is due folds under one line at its end — opened here to read it */
+  const openBell = async (p) => { await p.locator('[data-notifications-tile]').first().click(); await p.getByTestId('notifications-panel').waitFor(); await settle(p, 1400); const f = p.getByTestId('notifications-due-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await settle(p, 300) } }
   const closeBell = async (p) => { await p.keyboard.press('Escape'); await settle(p, 300) }
   const openChooser = async (p) => { await p.getByTestId('notices-choose').click(); await p.getByTestId('notices-list').waitFor(); await settle(p, 400) }
   const flip = async (p, key) => { await p.getByTestId(`notice-${key}`).click(); await settle(p, 1100) }
@@ -97,7 +98,7 @@ const TASK = sql(`select t.id from lead_tasks t join task_assignees a on a.task_
     await go(d, '/profile')
     ok(await card(d).count() === 1 && /Your notifications/.test(await text(card(d).locator('h2'))), 'Your profile has a Your notifications card')
     ok(/\/settings\?section=notifications/.test(await d.getByTestId('notices-studio-link').getAttribute('href') || ''), '…its line names the studio’s rules, as a link to Settings › Notifications')
-    ok(await d.getByRole('radio', { name: 'As they happen' }).getAttribute('aria-checked') === 'true' && /Each email goes out with its notice/.test(await text(d.getByTestId('notices-email-help'))), 'Emails: As they happen by default — a member who never opens it hears what they heard before')
+    ok(await d.getByRole('radio', { name: 'As they happen' }).getAttribute('aria-checked') === 'true' && /Each email goes out with its notification/.test(await text(d.getByTestId('notices-email-help'))), 'Emails: As they happen by default — a member who never opens it hears what they heard before')
     ok(/^Nothing muted/.test(await text(d.getByTestId('notices-muted-line'))), 'Muted: nothing, in one sentence')
     await shot(d, '01-your-notifications-1440')
 
@@ -105,8 +106,9 @@ const TASK = sql(`select t.id from lead_tasks t join task_assignees a on a.task_
     console.log('2 · the bell: Notices · Due, and Notification settings opens Your notifications')
     await go(d, '/leads')
     await openBell(d)
-    const heads = (await d.getByTestId('notifications-panel').locator('h3').allInnerTexts()).map((s) => s.toLowerCase())
-    ok(heads.some((h) => h.startsWith('notices')) && heads.some((h) => h.startsWith('due')) && !heads.some((h) => h.startsWith('updates')), `the bell’s groups are Notices and Due — no “Updates” beside a project’s Updates tab (${heads.join(' · ')})`)
+    /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-20 · 1-41) no group heads: the notifications first, then "Due · n" folded at the end — never “Updates” */
+    const fold = await d.getByTestId('notifications-due-fold').innerText().catch(() => '')
+    ok(await d.getByTestId('notifications-notices').count() === 1 && /^Due · \d+/.test(fold.trim()) && !/updates/i.test(await d.getByTestId('notifications-panel').locator('h3').allInnerTexts().then((x) => x.join(' '))), `the bell: its notifications, then what is due under one fold (${fold.replace(/\s+/g, ' ')})`)
     const soonRows = await d.locator('[data-testid="notification-row"]:has([data-kind="task_due_soon"])').allInnerTexts()
     ok(soonRows.every((r) => !/Due (tomorrow|in \d+ days):/.test(r) || !/Due in \d+ min/.test(r)), 'a project task due in days reads its day — never “Due in 29 min”')
     await shot(d, '02-bell-1440')
@@ -151,7 +153,7 @@ const TASK = sql(`select t.id from lead_tasks t join task_assignees a on a.task_
     await s.keyboard.press('Escape'); await settle(s, 300)
     as('priya')
     { const P = await desk(); const p = await page(P, 'priya'); await go(p, '/profile#notifications')
-      ok(await p.getByTestId('notices-studio-link').count() === 0 && /its Owners and Admins set it/.test(await text(card(p))), 'Accounting’s card names no page they can’t open (their Settings are Finance alone)')
+      ok(await p.getByTestId('notices-studio-link').count() === 0 && /Owners and Admins choose which go out/.test(await text(card(p)))   /* (the calm UI build 2026-10-27, a deliberate change) one line (1-29) */, 'Accounting’s card names no page they can’t open (their Settings are Finance alone)')
       await openChooser(p)
       ok(await p.getByTestId('notice-invoice_sent').count() === 1 && await p.getByTestId('notice-assigned').count() === 0 && await p.getByTestId('notice-task_assigned').count() === 1, 'Accounting’s list: the money notices and their own tasks — never a lead’s')
       await P.close() }

@@ -20,11 +20,12 @@ export function VisualizerEditorSkeleton() {
         <div className={styles.editor} aria-hidden>
           <div className={styles.top}>
             <Bone w={24} h={24} r={4} />
-            <span className={styles.topTitle}><Bone w={160} h={18} className={styles.shrink} /><Bone w={56} h={24} r={12} className={styles.wide} /></span>
+            {/* (the calm UI build 2026-10-27, 6-08) the name alone — no kind chip beside it */}
+            <span className={styles.topTitle}><Bone w={160} h={18} className={styles.shrink} /></span>
             <span className={`${styles.topRooms} ${styles.wide}`}><Bone w={110} h={32} r={4} className={styles.chip} /><Bone w={96} h={32} r={4} className={styles.chip} /><Bone w={120} h={32} r={4} className={styles.chip} /><Bone w={24} h={24} r={4} /><Bone w={120} h={40} r={4} className={styles.full} /><Bone w={36} h={36} r={4} className={styles.snug} /></span>
             <span className={styles.topEnd}>
               <span className={styles.wide}><Bone w={24} h={24} r={4} /><Bone w={24} h={24} r={4} /></span>
-              {/* (UX audit V4) Share is a filled "Share" where the bar is tight, as the page draws it */}
+              {/* (UX audit V4) Share is a labelled "Share" where the bar is tight, as the page draws it (outlined since the calm UI build) */}
               <Bone w={169} h={40} r={4} className={styles.full} /><Bone w={96} h={40} r={4} className={styles.snugOrNarrow} /><Bone w={24} h={24} r={4} />
             </span>
           </div>
@@ -48,13 +49,13 @@ export function VisualizerEditorSkeleton() {
                 <span className={styles.railHead}><Bone w={140} h={16} /><Bone w="90%" h={12} /><Bone w="60%" h={12} /></span>
                 <div className={styles.railCard}>{[0, 1, 2].map((i) => <span key={i} className={styles.railRow}><Bone w={24} h={24} r={4} /><Bone w="55%" h={14} /></span>)}</div>
               </div>
-              {/* the foot as the page lays it (tablet-10): Describe (its caption and box), Generate, the idle hint, the versions line — the box
-                  and the hint fold on short windows as the page's do */}
+              {/* the foot as the page lays it (tablet-10): Describe (its caption and box), Generate with the tune button at its end (the calm
+                  UI build 2026-10-27, 6-04 — the versions line went into it), the idle hint — the box and the hint fold on short windows as the
+                  page's do */}
               <div className={styles.railFoot}>
                 <span className={styles.footDescribe}><Bone w={110} h={12} /><Bone w="100%" h={60} r={4} className={styles.footBox} /></span>
-                <Bone w="100%" h={36} r={4} />
+                <span className={styles.footGo}><Bone w="100%" h={36} r={4} className={styles.footGoMain} /><Bone w={36} h={36} r={4} /></span>
                 <span className={`${styles.footLine} ${styles.footHint}`}><Bone w={200} h={12} /></span>
-                <span className={`${styles.footLine} ${styles.footOpts}`}><Bone w={160} h={12} /></span>
               </div>
               <div className={styles.railGo}><span className={styles.goRow}><Bone w={36} h={36} r={4} /><Bone w="100%" h={36} r={4} className={styles.grow} /></span><span className={styles.footLine}><Bone w={220} h={12} /></span></div>
             </aside>

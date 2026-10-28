@@ -228,7 +228,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     await s.keyboard.press('Escape'); await settle(s, 400)
     sql(`update homeowner_lead_links set last_asked_at = ${Math.floor(Date.now() / 1000) - 60} where lead_id='${olivia}'`)
     if (sql(`select count(*) from homeowner_lead_links where lead_id='${olivia}'`) === '0') sql(`insert into homeowner_lead_links (id, homeowner_id, lead_id, portal_token, chat_history_visible, created_at, last_asked_at) values ('probe-olivia-link', (select id from homeowner_profiles limit 1), '${olivia}', 'probe-olivia-token', 1, ${Math.floor(Date.now() / 1000)}, ${Math.floor(Date.now() / 1000) - 60})`)
-    await s.getByRole('button', { name: 'Ask Client' }).click(); await settle(s, 1200)
+    await s.locator('[data-testid="ask-client"]').first().click(); await settle(s, 1200)   // (the calm UI build 2026-10-27, a deliberate change) B2: "Ask {client}" — pressed by its handle
     /* (parity map, CP-110 — a deliberate change of this rule) the pace is read when Ask the client opens: Send rests and the dialog says when it
        may go, before the press (WhatsApp now opens on the press, so a send the server would refuse is never started); the server still refuses */
     ok(/ask again after/.test(await dialog(s).locator('[data-testid="ask-block"]').innerText()) && await dialog(s).locator('[data-testid="ask-send"]').isDisabled(), 'a second ask within five minutes is refused, saying when it may go')
@@ -270,7 +270,8 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     const ctOn = () => sql(`select coalesce(json_extract(value,'$.CASETRUST_RENOVATION.done'),'') from settings where key='compliance_studio'`) === '1'
     await go(s, '/settings?section=quotes')
     ok(await s.locator('[data-testid="casetrust-setting"]').count() === 0, 'Settings › Quotes & pricing has no CaseTrust switch of its own')
-    await go(s, '/company/profile')
+    /* (the calm UI build 2026-10-27, a deliberate change — 5-36) Company › Profile is four tabs; the registrations are on its Registrations tab */
+    await go(s, '/company/profile?tab=registrations')
     const ctRow = s.locator('[data-testid="registration"][data-id="CASETRUST_RENOVATION"]')
     await ctRow.scrollIntoViewIfNeeded()
     if (!ctOn()) { await ctRow.locator('label').first().click().catch(() => {}); await settle(s, 1200) }

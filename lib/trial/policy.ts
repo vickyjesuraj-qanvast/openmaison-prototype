@@ -207,7 +207,7 @@ export const XRAY_WORDS = {
   lede: 'Put another studio’s quote beside yours — Quote X-Ray matches them line by line and tells you what to say to the client. The same Quote X-Ray studios use.',
   theirs: 'Their quote',
   yours: 'Your quote',
-  fromRead: (n: number) => `Use the quote you read (${n} ${n === 1 ? 'line' : 'lines'})`,
+  fromRead: (n: number) => `Use the quote you read (${n} ${n === 1 ? 'item' : 'items'})`,   // (the calm UI build 2026-10-27, T-01 · 6-14) as the note beside it
   samples: 'No quotes handy? Compare two of ours',
   forLead: 'Which lead is it for? (optional)',
   noLead: 'None',

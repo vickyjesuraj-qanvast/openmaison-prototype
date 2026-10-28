@@ -25,6 +25,7 @@ import type { Contract } from '@/lib/db/schema'
 import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters, nextHeadSort, searchContracts, sortByHead, type ContractFilters, type ContractHeadSort, type ContractStatus } from '@/lib/leads/contract-filters'
 import type { StudioContractsData } from '@/lib/contracts/queries'
 import { awaitingLine, bundleMessage, contractLink, firstName, reminderMessage } from '@/lib/contracts/model'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import { linkExpired } from '@/lib/contracts/link'
 import { moveStageHref } from '@/lib/leads/move-link'
 import { SendBundleDialog } from '@/components/contracts/send-bundle-dialog'
@@ -84,7 +85,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const [headSort, setHeadSort] = useState<ContractHeadSort>(null)
   const onSort = (key: Parameters<typeof nextHeadSort>[1]) => { setHeadSort((h) => nextHeadSort(h, key)); setFilters((f) => (f.sort === 'newest' ? f : { ...f, sort: 'newest' })) }
   const applyFilters = (next: ContractFilters) => { if (next.sort !== filters.sort) setHeadSort(null); setFilters(next) }
-  const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query, (c) => c.leadName), headSort), [contracts, filters, query, now, headSort])
+  const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query, (c) => [c.leadName, c.fromQuoteId ? data.quotes[c.fromQuoteId]?.number : null, contractStatusLabel(c.status)].filter(Boolean).join(' '))   /* (the calm UI build 2026-10-27, 4-26 · W-612) the box says client · title · quote number — it finds them, and the status as it reads */, headSort), [contracts, filters, query, now, headSort, data.quotes])
   const nothingMatches = contracts.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
   /* (Contracts on the move, C4 — P-07) a phone's selection: a hold on a card selects it, the bulk bar deletes; what leaves the view leaves it */
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
@@ -173,7 +174,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
     }
     if (status === 'Signed') { setMarking(c); return }
     if (status === 'Draft' && c.status === 'Sent to Client') { stop(c); return }   // (pending modules S03) the link ends — said, with Undo
-    void run('change the status', () => setContractStatus(c.id, status), `Contract marked ${status}`)
+    void run('change the status', () => setContractStatus(c.id, status), `Contract marked ${contractStatusLabel(status)}`)
   }
   const rowMenu = (c: Contract, action: ContractRowAction) => {
     if (action === 'share') router.push(withFrom(`/contracts/${c.id}/preview`, from))
@@ -185,7 +186,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         const q = quoteBlockOf(c); if (q) { sayQuoteBlock(c, q); return }
       }
       const write = copyText(contractLink(c))
-      if (c.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(c.id), 'Signing link copied — the contract is Sent to Client now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
+      if (c.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(c.id), 'Signing link copied — the contract is waiting for signature now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
       /* (pending modules S03) a copy is a send: a link past its window opens again for the studio's days */
       else if (c.status === 'Sent to Client' && linkExpired(c, Date.now())) void write.then(() => { void run('open the link again', () => renewSigningLink(c.id, 'copy'), `Signing link copied — it opens for ${data.linkDays} days from now`) }, () => fail('copy the link'))
       else void write.then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
@@ -224,7 +225,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <SendBundleDialog open={!!bundleLead} onClose={() => setBundleLead(null)} contracts={bundleDocs} quoteBlock={quoteBlockOf} loadStandard={loadStandard}
                           defaults={{ name: bundleDocs[0]?.recipientName || bundleDocs[0]?.leadName || '', phone: bundleDocs[0]?.recipientPhone || '' }}
                           draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
-                          onShare={({ bundleId, contractIds, templateIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }, { templateIds }), 'Signing link copied — the documents are Sent to Client now') }}
+                          onShare={({ bundleId, contractIds, templateIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }, { templateIds }), 'Signing link copied — the documents are waiting for signature now') }}
                           onSend={({ bundleId, contractIds, templateIds, name, phone, message }) => {
                             setBundleLead(null)
                             window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')
@@ -241,7 +242,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
                             return r }, undefined, { refresh: true }); if (ok) setMarking(null) }} />
       {/* (UX audit C5) Send a reminder: the Send dialog with the same link and a nudge — WhatsApp opens on the press */}
       <SendContractDialog open={!!remind?.open} onClose={closeRemind} title={reminding && awaitingLine(reminding, now)?.expired ? 'Send the link again' : 'Send a reminder'}
-                          subtitle={reminding ? `${reminding.title} is still waiting for a signature. Send via WhatsApp opens your chat with the client, the same link in the message — it opens for ${data.linkDays} days from now.` : ''}
+                          subtitle={reminding ? `${reminding.title} is still waiting for a signature. Send on WhatsApp opens your chat with the client, the same link in the message — it opens for ${data.linkDays} days from now.` : ''}
                           link={reminding ? contractLink(reminding) : ''} defaults={{ name: reminding?.recipientName || reminding?.leadName || '', phone: reminding?.recipientPhone || '' }}
                           draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: data.studioName, title: reminding?.title ?? 'agreement', link: reminding ? contractLink(reminding) : '' })}
                           onMarkSigned={() => { const r = reminding; closeRemind(); if (r) setMarking(r) }}
@@ -253,7 +254,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
                             if (r) void run('renew the link', () => renewSigningLink(r.id, 'whatsapp'), `Reminder sent to ${name}`)
                           }} />
       <UnsignDialog to={unsign?.to ?? null} signedAt={unsign?.contract.signedAt ?? null} onCancel={() => setUnsign(null)}
-                      onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${u.to}`) }} />
+                      onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${contractStatusLabel(u.to)}`) }} />
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <ContractsFiltersModal open={filtersOpen} value={filters} now={now} onApply={applyFilters} onClose={() => setFiltersOpen(false)}
                                headSort={headSort ? ({ status: 'Status', created: 'Created', sent: 'Sent', updated: 'Updated' } as const)[headSort.key] : null} onClearHead={() => setHeadSort(null)} />

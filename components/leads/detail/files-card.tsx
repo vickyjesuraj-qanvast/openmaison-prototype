@@ -84,16 +84,18 @@ export function FilesCard({ files, onOpenTab, onOpenFile, onCreateFolder, onUplo
           illustration="/figma-assets/empty-files.svg"
           width={140}
           height={120}
-          title="Add your first files"
-          body="Create folders and upload files from your local."
+          /* (the calm UI build 2026-10-27 — 2-04 · 2-23 · W-159) plain words, and no filled button inside a record page (its header holds the
+             screen's one): Upload files leads, outlined; Create folder stays one press away as the card's text button */
+          title="No files yet"
+          body="Upload photos, plans or documents."
           gap={16}
           actions={
             <>
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>
-                Create Folder
+              <Button variant="primary" appearance="outlined" iconStart={<Icon name="upload" size={20} />} onPress={onUpload}>
+                Upload files
               </Button>
-              <Button iconStart={<Icon name="upload" size={20} />} onPress={onUpload}>
-                Upload Files
+              <Button variant="primary" appearance="text" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>
+                Create folder
               </Button>
             </>
           }

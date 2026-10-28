@@ -1,6 +1,6 @@
 'use client'
 
-import { DOCUMENT_NUMBERS_HELP } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
+import { DOCUMENT_NUMBERS_HELP, DOCUMENT_NUMBERS_HOW, DOCUMENT_NUMBERS_RULES } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import { Fragment, useEffect, useState } from 'react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -12,6 +12,7 @@ import { DOCS, DOCUMENT_NUMBERS_RULE, TICKET_DOC, cleanPrefix, nextDocNumber, pr
 import type { ProjectNumbering } from '@/lib/projects/model'
 import { nextTicketNumber } from '@/lib/projects/tickets-model'   // (parity map, UC-058)
 import { readTicketNumbering, setDocumentNumbers } from './document-numbers-actions'
+import { HowItWorks } from './how-it-works'   // (the calm UI build, 5-34 · W-213) the rules behind a fold
 import s from './settings.module.css'
 import d from './document-numbers.module.css'
 
@@ -83,6 +84,7 @@ export function DocumentNumbersSetting({ data, canManage }: { data: DocumentNumb
         <div className={s.settingHead}>
           <span className={s.settingTitle}>Document numbers</span>
           <span className={s.settingHelp}>{DOCUMENT_NUMBERS_HELP}</span>
+          <HowItWorks label={DOCUMENT_NUMBERS_HOW} testId="document-numbers-how">{DOCUMENT_NUMBERS_RULES}</HowItWorks>
         </div>
         <div className={d.rows}>
           {DOCS.map((x) => {
@@ -130,7 +132,7 @@ export function DocumentNumbersSetting({ data, canManage }: { data: DocumentNumb
         </div>
         {canManage ? <div className={s.settingActions}>
           <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !!clash} data-testid="document-numbers-save">{busy ? 'Saving…' : 'Save the numbers'}</Button>
+          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !!clash} data-testid="document-numbers-save">{busy ? 'Saving…' : 'Save'}</Button>
         </div> : null}
       </div>
     </>

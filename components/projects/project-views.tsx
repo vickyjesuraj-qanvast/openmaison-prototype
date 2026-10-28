@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { ChipRail } from '@/components/om/chip-rail'
-import { Chips } from '@/components/om/chips'
 import { UNCOUNTED_VIEWS, groupOf } from '@/lib/projects/tabs'
 import { useProjectContext } from './project-context'
 import { opensProjectView } from '@/lib/settings/roles'
@@ -20,6 +20,10 @@ export function viewsFor(slug: string, money: boolean, role?: string | null) {
  * view with its own share of the strip's count ("Messages · 1"), Compliance with none (S-06). A press goes to the view's own address, keeping
  * `?from=` — every view keeps its address, so a link, the bell and Back still land on it. The body passes it as its title line (`views`), so the
  * body's own filter chips stay on the row below and no row is added. Outside a project (the lead's tabs) the bodies draw their own title.
+ * (the calm UI build 2026-10-27, 3-08 · T-10) The views are a view switch, so they are the design system's SegmentedButton (the house's one look for
+ * a view switch — Weeks · Months, Whose tasks), never chips: chips are what narrows a list, and on every grouped tab two rows of identical chips
+ * stood one over the other. Each view keeps its own address, its count ("Messages · 1", T-07) and the radio semantics the key layer and the
+ * probes read (role radio · aria-checked); the rail still scrolls on a short row.
  */
 export function ProjectViews({ slug, note }: { slug: string; /** a grey line after the chips — Compliance's "n to do this phase" */ note?: ReactNode }) {
   const { href, counts, money, viewer } = useProjectContext()
@@ -59,8 +63,10 @@ export function ProjectViews({ slug, note }: { slug: string; /** a grey line aft
   return (
     <div ref={root} className={styles.views} data-testid="project-views">
       <ChipRail label={`${group.label} views`} className={styles.rail}>
-        <Chips label={`${group.label} views`} options={options} value={picked} testId="project-view-chips"
-               onChange={(v) => { if (v === picked) return; setPicked(v); router.push(href(v)) }} />
+        <SegmentedButton aria-label={`${group.label} views`} selectedKeys={[picked]} data-testid="project-view-chips"
+                         onSelectionChange={(keys) => { const v = String([...keys][0] ?? ''); if (!v || v === picked) return; setPicked(v); router.push(href(v)) }}>
+          {options.map((o) => <SegmentedButtonItem key={o.value} id={o.value}>{o.label}</SegmentedButtonItem>)}
+        </SegmentedButton>
       </ChipRail>
       {note ? <span className={styles.note} data-testid="project-view-note">{note}</span> : null}
     </div>

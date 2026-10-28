@@ -40,6 +40,7 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     // #6 the sub-total label can be removed
     const grp = page.locator(`[data-item-id="${GROUP}"]`).first(); await grp.scrollIntoViewIfNeeded(); await grp.hover()
     await grp.getByRole('button', { name: 'More options for Bedrooms' }).click(); await page.waitForTimeout(300)
+    await page.getByRole('menuitem', { name: /^Print as/ }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: a section's sub-total label sits under Print as ›
     await page.getByRole('menuitem', { name: 'Remove the sub-total label' }).click(); await page.waitForTimeout(1200)
     ok('the sub-total label can be removed', sql(`select coalesce(print_as_text,'∅') from quote_items where id='${GROUP}'`) === '∅')
     // #13 Find: no match says so, the Sum row adds what shows
@@ -48,7 +49,7 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     ok('Find with no match shows its empty row', await page.getByTestId('find-empty').isVisible())
     await page.getByRole('searchbox', { name: 'Find items' }).fill('Painting'); await page.waitForTimeout(500)
     const sum = await page.getByRole('row', { name: 'Sum' }).innerText().catch(() => '')
-    ok('the Sum row counts what Find shows', /Sum · 1 priced item/.test(sum), sum.split('\n')[0])
+    ok('the Sum row counts what Find shows', /Sum · 1 item\b/.test(sum), sum.split('\n')[0])   // (the calm UI build 2026-10-27, a deliberate change) "16 items", one word for a quote's lines (4-28 · W-060)
     await shot(page, '02-find-sum')
     await page.keyboard.press('Escape')
     // #31 the Signature Settings' DS radios
@@ -104,7 +105,7 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     // REG-768 (UX audit Q2) superseded Mark as sent: Preview's main button is the quote's Send ▾, ending with "Sent it another way"
     ok('the preview’s press is the quote’s Send ▾', await page.getByTestId('quote-send').count() === 1 && await page.getByRole('button', { name: 'Mark as sent' }).count() === 0)
     await page.getByTestId('quote-send').click(); await page.waitForTimeout(400)
-    ok('…its menu ends with Sent it another way', await page.getByRole('menuitem', { name: /Sent it another way/ }).count() === 1)
+    ok('…its menu ends with Mark as sent', await page.getByRole('menuitem', { name: /^Mark as sent/ }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change) W-362: “Sent it another way” reads Mark as sent
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await shot(page, '04-preview')
     await ctx.close()

@@ -42,12 +42,12 @@ export function MoneyGhost({ band = false }: { /** (fix-D, D-39) the tab opens w
   return (
     <div className={styles.tab} aria-hidden>
       <div className={styles.bar}>
-        <Words as="h2" className={styles.title}>Money</Words>
+        <Words as="h2" className={styles.title}>Payments</Words>
         <span className={styles.actions}><Slot kind="btnFold" w={96} /></span>
       </div>
       {band ? (
         <section className={styles.needs}>
-          <div className={styles.needsHead}><Words as="h3" className={styles.needsTitle}>Needs you</Words></div>
+          <div className={styles.needsHead}><Words as="h3" className={styles.needsTitle}>Needs your attention</Words></div>
           <div className={styles.banners}>{[0, 1].map((i) => <Bone key={i} w="100%" h={64} r={8} />)}</div>
         </section>
       ) : null}
@@ -65,9 +65,9 @@ export function MoneyGhost({ band = false }: { /** (fix-D, D-39) the tab opens w
           </div>
         ))}
       </StatTiles>
-      <div className={styles.listSwitch}><Slot kind="chip" w={72} /><Slot kind="chip" w={64} /></div>
+      <div className={styles.listSwitch}><Slot kind="btn" w={220} /></div>   {/* (the calm UI build 2026-10-27, 3-08) the segmented switch */}
       <div className={styles.lists} data-show="billing">
-        <Section list="billing" title="Billing" help="From the signed quote’s payment schedule — each stage bills its share of the contract value, GST included." rows={4} tools={2} phone={{ card: 150, lines: 4 }} cols={[
+        <Section list="billing" title="Client payments" help="How client payments work" rows={4} tools={2} phone={{ card: 150, lines: 4 }} cols={[
           { basis: 170, grow: 220, head: 40, cell: stack([72, 96, 104, 84]) },
           { basis: 124, grow: 150, head: 52, cell: stack([84, 84, 84, 84]) },
           { basis: 190, grow: 260, head: 48, cell: (r) => ({ slot: 'chip', w: cycle([44, 44, 64, 44], r) }) },

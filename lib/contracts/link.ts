@@ -10,6 +10,7 @@
  * - **Stop** (1.0's cancel) takes the contract back to Draft and gives it a new token — the old address stays dead; Undo puts the same
  *   link back. The Visualizer's share link speaks the same words (Open until · Expired · Renew · Stop sharing).
  */
+import { displayDate } from '@/lib/format'
 
 export const DAY_MS = 86_400_000
 /** 1.0's fixed seven days — the studio's default. */
@@ -36,7 +37,7 @@ export const linkEndsAt = (from: Date | number, days: number) => new Date((typeo
 /** Out for signature and past its window. */
 export const linkExpired = (c: { status: string; signExpiresAt: Date | null }, now: number) => c.status === 'Sent to Client' && !!c.signExpiresAt && c.signExpiresAt.getTime() <= now
 
-const shortDate = (d: Date) => `${d.getDate()} ${d.toLocaleString('en-SG', { month: 'short' })} ’${String(d.getFullYear()).slice(2)}`
+const shortDate = (d: Date) => displayDate(d)   // (the calm UI build 2026-10-27, 4-43) the house months — "Sep", never the locale's "Sept"
 /** "closes in 5 h" — a link about to close says when (the share dialog's words, critic 18). */
 export const closesIn = (ms: number) => { const h = Math.max(1, Math.round(ms / 3_600_000)); return h < 24 ? `closes in ${h} h` : `closes in ${Math.round(h / 24)} d` }
 

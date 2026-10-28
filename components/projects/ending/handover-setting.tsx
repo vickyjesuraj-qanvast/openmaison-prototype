@@ -4,6 +4,7 @@ import { usePlanLock } from '@/components/credits/credits-client'
 import { useState } from 'react'
 import { Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { HelpLink } from '@/components/company/help-link'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { setHandoverReview } from '@/app/projects/ending-actions'
@@ -37,14 +38,15 @@ export function HandoverSetting({ on, canManage, rule = true }: { on: boolean; c
     } catch (e) { setValue(!next); snackbar({ message: couldnt('change the rule', refusalOf(e)) }) }
     finally { setBusy(false) }
   }
-  const label = 'Handover needs an owner’s review'
+  const label = 'Handover needs approval'   // (the calm UI build 2026-10-27, 5-33 · W-041) the approvals' one word (was Handover needs an owner’s review)
   return (
     <div className={st.setting} id="handover-settings" data-testid="handover-setting">
       <div className={st.settingHead}>
         <span className={st.settingTitle}>Stages and handover</span>
         <span className={st.settingHelp}>Every project runs Setting up → In progress → Completed. Complete handover ends it once its checklist is met; completed, its schedule, choices and agreed money are read-only until an Owner or an Admin reopens it — payments can still be recorded.</span>
       </div>
-      {!rule ? <span className={st.settingHelp} data-testid="handover-review-pointer">Whether a Designer’s or a Manager’s handover waits for an owner’s review is switched under What waits for an Owner or an Admin, above.</span> : (
+      {/* (the calm UI build 2026-10-27, 5-33 · T-05) the pointer sentence is one link to its row in the approvals card above */}
+      {!rule ? <span className={st.settingHelp} data-testid="handover-review-pointer"><HelpLink href="#handover-review">Handover approval</HelpLink></span> : (
       <div className={`${st.eventTable} ${u.table}`} role="table" aria-label="Handover review" data-card-table="">
         <div className={st.eventHead} role="row">
           <span role="columnheader">Rule</span><span role="columnheader">Who reviews</span><span role="columnheader" className={st.eventCol}>On</span>

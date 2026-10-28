@@ -39,7 +39,7 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
   await step('a supplier’s CSV: Kind mapped, each row matched by name and vendor, repeats and new trades said', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     await openImport(page)
-    ok('the limit is said before anything is read', /up to 500 rows at a time/.test(await page.getByRole('dialog').innerText()))
+    ok('the limit is said before anything is read', /up to 500 rows/.test(await page.getByRole('dialog').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) W-470: “Excel or CSV, up to 500 rows.”
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(XLS); await snack(page, 'Save the sheet as XLSX or CSV first')
     ok('an old .xls is refused with the way out', true)
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(CSV)
@@ -69,7 +69,7 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Filters', exact: true }).click()
     const f = page.getByTestId('library-facets'); await f.waitFor()
-    await f.getByRole('combobox', { name: 'Category' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await page.waitForTimeout(300)
+    await f.getByRole('combobox', { name: 'Trade' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) the filter is Trade
     await page.getByRole('dialog', { name: 'Filters' }).getByRole('button', { name: 'Done' }).click(); await page.waitForTimeout(300)
     await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
     const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
@@ -114,7 +114,7 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     await page.getByRole('checkbox', { name: 'Select Cement screeding and waterproofing' }).click({ force: true })
     await page.getByRole('checkbox', { name: 'Select Hacking of existing floor and wall tiles' }).click({ force: true }); await page.waitForTimeout(300)
     const bar = page.getByText('Set markup', { exact: true })
-    ok('the bulk bar rises with the four changes', await bar.count() === 1 && await page.getByText('Set category', { exact: true }).count() === 1 && await page.getByText('Set vendor', { exact: true }).count() === 1)
+    ok('the bulk bar rises with the four changes', await bar.count() === 1 && await page.getByText('Set trade', { exact: true }).count() === 1 && await page.getByText('Set vendor', { exact: true }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change) Trade
     await shot('05-bulk-bar')
     await bar.click()
     const d = page.getByRole('dialog', { name: 'Set markup' }); await d.waitFor()
@@ -126,9 +126,9 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     const v = page.getByRole('dialog', { name: 'Set vendor' }); await v.waitFor(); await v.getByLabel('Vendor', { exact: true }).fill('Probe Supplies'); await v.getByRole('button', { name: 'Apply to 1 item' }).click(); await snack(page, '1 item changed')
     ok('Set vendor', sql(`select vendor from price_book_items where name='Cement screeding and waterproofing'`) === 'Probe Supplies')
     await page.getByRole('checkbox', { name: 'Select Cement screeding and waterproofing' }).click({ force: true })
-    await page.getByText('Set category', { exact: true }).click()
-    const c = page.getByRole('dialog', { name: 'Set category' }); await c.waitFor()
-    await c.getByRole('combobox', { name: 'Category' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await c.getByRole('button', { name: 'Apply to 1 item' }).click(); await snack(page, '1 item changed')
+    await page.getByText('Set trade', { exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) Set trade
+    const c = page.getByRole('dialog', { name: 'Set trade' }); await c.waitFor()   // (the calm UI build 2026-10-27, a deliberate change)
+    await c.getByRole('combobox', { name: 'Trade' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await c.getByRole('button', { name: 'Apply to 1 item' }).click(); await snack(page, '1 item changed')   // (the calm UI build 2026-10-27, a deliberate change) Trade
     /* (S46 closing regression, 2026-10-19) Set vendor's "1 item changed" can still be on screen when this one's is awaited, so the read waits
        for the save to land instead of trusting the snackbar alone */
     let cat = ''; for (let i = 0; i < 20 && cat !== 'Tiling'; i++) { cat = sql(`select category from price_book_items where name='Cement screeding and waterproofing'`); if (cat !== 'Tiling') await page.waitForTimeout(250) }

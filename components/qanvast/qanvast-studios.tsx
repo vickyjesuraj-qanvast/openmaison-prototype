@@ -105,8 +105,9 @@ function StudioCard({ studio }: { studio: PlatformStudioRow }) {
   return (
     <Card title={name} metaRight={studio.address} testId="qanvast-studio">
       <div className={styles.body}>
-        <div className={styles.table} role="table" aria-label={`OpenMaison’s switches for ${name}`} data-card-table="">
-          <div className={styles.head} role="row"><span role="columnheader">OpenMaison’s switches</span><span role="columnheader" className={styles.col}>On</span></div>
+        {/* (the calm UI build 2026-10-27, 2-07 — the tab and its switches kept by the contract; W-298) the head in plain words */}
+        <div className={styles.table} role="table" aria-label={`Set by OpenMaison for ${name}`} data-card-table="">
+          <div className={styles.head} role="row"><span role="columnheader">Set by OpenMaison</span><span role="columnheader" className={styles.col}>On</span></div>
           <div className={styles.row} role="row" data-on={!shown.portalOff || undefined} data-testid="qanvast-studio-portal">
             <span role="cell" className={styles.name}><span>Client portal</span><span className={styles.line} data-testid="qanvast-studio-portal-line">{portalLine}</span></span>
             <span role="cell" className={styles.col}>
@@ -130,7 +131,8 @@ function StudioCard({ studio }: { studio: PlatformStudioRow }) {
           <h3 className={styles.usageHead}>{`On the portal · last 30 days, since ${shortDay(studio.since)}`}</h3>
           <StatTiles testId="qanvast-studio-usage">
             <StatTile label="Portal sign-ins" value={u.signIns} help="Clients and their household" testId="qanvast-usage-signins" />
-            <StatTile label="Issues reported" value={u.issues} help="Raised by clients" testId="qanvast-usage-issues" />
+            {/* (the Dashboard redesigned, P-13: one name — the studio's word, Tickets) · (the calm UI build 2026-10-27, §2: Issues on screen) */}
+            <StatTile label="Issues raised" value={u.issues} help="Raised by clients" testId="qanvast-usage-issues" />
             <StatTile label="Messages" value={u.messages} help="From clients to the studio" testId="qanvast-usage-messages" />
             <StatTile label="Choices made" value={u.choices} help="Picked on their page" testId="qanvast-usage-choices" />
           </StatTiles>

@@ -45,16 +45,18 @@ export function ItemRow({ item, answer, task, open, fresh, onToggle, onDone, onM
           <Icon name={project ? (state === 'todo' ? 'radio_button_unchecked' : 'check_circle') : 'verified_user'} size={20} fill={state === 'done'} weight={state === 'not_needed' || !project ? 300 : 400} />
         </span>
         <span className={styles.itemText}>
-          <span className={styles.itemTitle}>{item.title}</span>
+          {/* (the calm UI build 2026-10-27, 3-29 · W-513) the title opens the item's detail in place — the "Details ▾" link on every row is gone */}
+          <button type="button" className={styles.itemOpen} aria-expanded={open} onClick={onToggle} data-kb-open="" data-testid="compliance-details">
+            <span className={styles.itemTitle}>{item.title}</span><Icon name={open ? 'expand_less' : 'expand_more'} size={16} className={styles.itemChev} />
+          </button>
           <span className={styles.meta}>
-            {state === 'todo' ? <MetaChip color={item.level === 'mandatory' ? 'red' : 'yellow'}>{item.level === 'mandatory' ? 'Mandatory' : 'Recommended'}</MetaChip>
+            {/* (the calm UI build 2026-10-27, 3-29 · T-06) capitals only for a state: Done / Not needed keep their tag; a to-do's level is words —
+                "Required" (the line's own word for Mandatory) or "Recommended" */}
+            {state === 'todo' ? <span className={styles.level} data-level={item.level}>{item.level === 'mandatory' ? 'Required' : 'Recommended'}</span>
               : <MetaChip color={state === 'done' ? 'green' : 'default'}>{state === 'done' ? 'Done' : 'Not needed'}</MetaChip>}
             <span>{item.authority}</span>
             {answer ? <span data-testid="compliance-who">{`${answer.by ? `${answer.by} · ` : ''}${displayDate(new Date(answer.at))}`}</span> : null}
             {task ? <span>{task.done ? 'Its task is done' : 'Has a task'}</span> : null}
-            <button type="button" className={styles.toggle} aria-expanded={open} onClick={onToggle} data-kb-open="" data-testid="compliance-details">
-              {open ? 'Hide details' : 'Details'}<Icon name={open ? 'expand_less' : 'expand_more'} size={16} />
-            </button>
           </span>
         </span>
       </div>
@@ -62,7 +64,8 @@ export function ItemRow({ item, answer, task, open, fresh, onToggle, onDone, onM
         <>
           <span className={styles.press} role="cell">
             {mayChange && state === 'todo' && onDone ? (
-              <Button size="sm" variant="secondary" appearance="outlined" iconStart={<Icon name="check" size={18} />} isDisabled={busy} onPress={onDone} data-testid="compliance-done">Mark done</Button>
+              /* (the calm UI build 2026-10-27, 3-19 · W-253) one Mark done look in every list — the Schedule's outlined "Mark done" */
+              <Button size="sm" variant="primary" appearance="outlined" isDisabled={busy} onPress={onDone} data-testid="compliance-done">Mark done</Button>
             ) : null}
           </span>
           <span className={styles.menuWrap} role="cell">

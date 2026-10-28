@@ -31,19 +31,21 @@ export function FloorPlanGhost({ first = false, title }: { first?: boolean; /** 
     <div className={styles.tab} aria-hidden>
       <div className={styles.bar} data-views={title ? '' : undefined}>
         {title ?? <Line w={220} lh={36} h={16} />}
-        <span className={styles.actions}><Slot kind="chip" w={96} /><Slot kind="btnFold" w={132} /><Slot kind="icon" /><Slot kind="icon" /></span>
+        {/* (the calm UI build 2026-10-27, 3-28) no Main plan tag: New plan · Download · ⋮ */}
+        <span className={styles.actions}><Slot kind="btnFold" w={112} /><Slot kind="icon" /><Slot kind="icon" /></span>
       </div>
-      {/* (simplify S-03) on a project the plan's name rides in the plans' chips, drawn for one plan too */}
-      {title ? <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}><Slot kind="pill" w={168} /></div></div></div></div></div> : null}
+      {/* (simplify S-03) on a project the plan's name under the views — (the calm UI build 2026-10-27, 3-28) as words when there is one plan */}
+      {title ? <Line w={168} lh={24} h={14} /> : null}
       <Bone w="100%" h={48} r="var(--om-radius-2)" />
       <div className={styles.layout}>
         <div className={styles.canvasCol}>
-          <div className={styles.tools}><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[60, 48, 48, 56, 48, 40, 56, 52, 52, 60, 56, 64, 52].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div></div>
+          {/* (the calm UI build 2026-10-27, 3-28) Select · Pin · Pen · Text, More tools, then the row's end */}
+          <div className={styles.tools}><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[60, 48, 48, 48].map((w, i) => <Slot key={i} kind="pill" w={w} />)}<Slot kind="btn" w={120} /></div></div></div></div></div>
           <Bone w="100%" h={480} r="var(--om-radius-1)" />
           <Line w="60%" lh={16} h={10} />
         </div>
         <div className={styles.rail}>
-          <div className={chipRow.chips}>{[52, 64, 64].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div>
+          <Slot kind="btn" w={196} />   {/* (the calm UI build 2026-10-27, 3-28) the one Show pill */}
           <Line w={160} lh={36} h={12} />
           {[0, 1, 2].map((i) => (
             <div key={i} className={card.card}>

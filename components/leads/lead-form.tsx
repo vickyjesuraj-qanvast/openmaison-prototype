@@ -63,7 +63,7 @@ const IN_MORE: ReadonlySet<LeadFormField> = new Set<LeadFormField>([
 
 /** (Leads on the move, L3 — P-08 · B-21) Edit details on a phone or a tablet is a short list — each row one screen of the form. */
 type FormSection = 'contact' | 'property' | 'budget' | 'people' | 'custom' | 'project'
-const SECTION_LABEL: Record<FormSection, string> = { contact: 'Contact', property: 'Property', budget: 'Budget & source', people: 'People', custom: 'Custom fields', project: 'Project' }
+const SECTION_LABEL: Record<FormSection, string> = { contact: 'Contact', property: 'Property', budget: 'Budget & source', people: 'Members', custom: 'Custom fields', project: 'Project' }   // (the calm UI build — T-01) Members, never People
 const SECTION_OF: Record<string, FormSection> = {
   name: 'contact', phone: 'contact', email: 'contact', leadAddress: 'contact', nric: 'contact', customerId: 'contact', companyName: 'contact', companyUen: 'contact', client2Name: 'contact', client2Nric: 'contact', client2Phone: 'contact',
   propertyType: 'property', propertyAddress: 'property', district: 'property', style: 'property', keyCollection: 'property', condition: 'property', areaSize: 'property', areaUnit: 'property',
@@ -118,7 +118,7 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
    before `phoneDigits` could ever see the country code. Typing is still capped at 8 by the slice below, so the
    value the field can hold is unchanged. The box SHOWS the digits grouped as they are typed — "9123 4", "9123 4567"
    (REG-456, user feedback 2026-09-16) — while `value` stays the bare digits the rule above produces. */
-export function PhoneField({ value, onChange, error, inputRef, label = 'Lead phone number', required = true, autoComplete = 'tel' }: {
+export function PhoneField({ value, onChange, error, inputRef, label = 'Mobile number', required = true, autoComplete = 'tel' }: {
   value: string; onChange: (v: string) => void; error?: string; inputRef?: RefObject<HTMLInputElement | null>
   /** (Leads on the move, A-18) the browser's autofill hint — a phone's own number; "off" where the number is someone else's to type */
   autoComplete?: string
@@ -443,7 +443,7 @@ export function LeadFormModal({
       </Dialog>
       {/* (Leads on the move, L3 — P-08 · A-20) The safe answer is the filled one: Open existing lead. "Create anyway" steps back to the outlined
           button — the one-thumb default used to make the duplicate. */}
-      <Dialog open={!!dup} onClose={() => setDup(null)} title={dup?.matchedOn === 'email' ? 'A lead with this email already exists' : 'A lead with this phone already exists'} width={400} size="form" alert nested portal
+      <Dialog open={!!dup} onClose={() => setDup(null)} title="Already in your leads" width={400} size="form" alert nested portal
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setDup(null); void persist() }} data-testid="duplicate-create-anyway">Create anyway</Button>
                        <Button onPress={() => { const id = dup?.id; setDup(null); if (id) openInNewTab(id) }} data-testid="duplicate-open-existing">Open existing lead</Button></>}>
         {dup ? <p className={styles.dupText} data-testid="duplicate-lead"><b>{dup.name}</b> · {phoneTyped(dup.phone)}{dup.email ? ` · ${dup.email}` : ''} · {dup.stage}</p> : null}
@@ -467,7 +467,7 @@ export function LeadFormModal({
      new lead and a touch screen's Edit details compose the same pieces differently. ── */
   const nameField = (
     <div className={styles.fieldWrap} data-field="name">
-      <TextField label="Lead name" required value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef}
+      <TextField label="Name" required value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef}
                  autoComplete="name" inputProps={{ autoCapitalize: 'words' }} />   {/* (leads on the move, A-18) */}
     </div>
   )
@@ -476,7 +476,7 @@ export function LeadFormModal({
       <PhoneField value={data.phone} onChange={set('phone')} error={errors.phone} inputRef={phoneRef} />
     </div>
   )
-  const sourceSelect = <TextField label="Lead source" mode="select" value={data.source} options={data.source && !sources.includes(data.source) ? [data.source, ...sources] : sources} onChange={set('source')} />   /* (REG-599) */
+  const sourceSelect = <TextField label="Source" mode="select" value={data.source} options={data.source && !sources.includes(data.source) ? [data.source, ...sources] : sources} onChange={set('source')} />   /* (REG-599) */
   const typeSelect = <TextField label="Property type" mode="select" value={data.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
   const sourceRow = (
     <div className={styles.fieldRow} data-field="source">
@@ -497,8 +497,7 @@ export function LeadFormModal({
   ) : null
   const addressField = (
     <div className={styles.fieldWrap} data-field="propertyAddress">
-      <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />
-      <span className={styles.helper}>Client project address.</span>
+      <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />   {/* (the calm UI build — W-592) the label says it; its helper named it a third way */}
     </div>
   )
   /* (REG-607, parity Q-12) 1.0's Area / District — Singapore's five regions; it also feeds the members' lead preferences. */
@@ -514,9 +513,9 @@ export function LeadFormModal({
                    error={errors.assignees} inputRef={assigneeRef} suggestion={touch ? suggestion : null}   /* (leads on the move, P-08) a finger's form offers the suggested member; the desk keeps the mock's field */
                    locked={selfAssign && form.mode === 'create' ? 'This lead will be assigned to you. Your manager routes leads to teammates.' : undefined} />   /* (REG-609, parity C-07) 1.0's lock note */
   )
-  const emailField = <div className={styles.fieldWrap} data-field="email"><TextField label="Lead email" value={data.email} onChange={set('email')} trailingIcon={null}
+  const emailField = <div className={styles.fieldWrap} data-field="email"><TextField label="Email" value={data.email} onChange={set('email')} trailingIcon={null}
                                  type="email" inputMode="email" error={errors.email} inputRef={emailRef} autoComplete={form?.mode === 'create' ? 'email' : 'off'} /></div>
-  const leadAddressField = <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
+  const leadAddressField = <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Client address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
   /* (REG-607, parity Q-35) 1.0 keeps the client's IC and the studio's own reference on the lead; every new quote starts with them. */
   const nricRow = (
     <div className={styles.fieldRow} data-field="nric">
@@ -724,7 +723,8 @@ export function LeadFormModal({
     </div>
   )
 
-  const title = form?.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'
+  /* (the calm UI build 2026-10-27 — audit 2-49 · 2-13, W-031 · W-539) "New lead" — the dialog says it is a lead, so its fields drop the word */
+  const title = form?.mode === 'create' ? 'New lead' : project ? 'Edit details' : 'Edit lead'
 
   return (
     <>
@@ -737,7 +737,7 @@ export function LeadFormModal({
              or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
           <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
-                      aria-label={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'}
+                      aria-label={form.mode === 'create' ? 'New lead' : project ? 'Edit details' : 'Edit lead'}
                       data-short-list={touchEdit || undefined} data-phone-create={phoneCreate || undefined}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel — (leads on the move, B-21) a section's screen
@@ -834,7 +834,7 @@ export function LeadFormModal({
               ) : (
                 <>
                   <Button variant="secondary" appearance="outlined" onPress={requestClose} isDisabled={submitting}>Cancel</Button>
-                  <Button onPress={() => { void submit() }} isDisabled={submitting} data-testid={project ? 'details-save' : undefined}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
+                  <Button onPress={() => { void submit() }} isDisabled={submitting} data-testid={project ? 'details-save' : undefined}>{form.mode === 'create' ? 'Add lead' : 'Save'}</Button>
                 </>
               )}
             </SurfaceFoot>

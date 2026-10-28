@@ -1,0 +1,1121 @@
+[
+ {
+  "now": "Needs you",
+  "proposed": "Needs your attention",
+  "where": [
+   "/dashboard card head",
+   "lib/dashboard/frame.ts:59",
+   "components/dashboard/inbox/needs-inbox.tsx:126",
+   "/projects/[id] Overview card"
+  ],
+  "why": "A fragment; the owner's own example.",
+  "kind": "heading",
+  "alsoElsewhere": "Projects listing \"Needs attention\", Finance \"To do\", Projects \"Needs my review\", project Overview \"Needs your OK\" — same idea."
+ },
+ {
+  "now": "51 things need you",
+  "proposed": "(drop — the card head carries the count)",
+  "where": [
+   "/dashboard greeting",
+   "lib/dashboard/frame.ts:67"
+  ],
+  "why": "Same number three times on one screen.",
+  "kind": "helper"
+ },
+ {
+  "now": "Nothing waits on you",
+  "proposed": "You’re all caught up",
+  "where": [
+   "/dashboard greeting, project Overview",
+   "lib/dashboard/frame.ts:67"
+  ],
+  "why": "One empty line for every \"needs me\" list.",
+  "kind": "empty",
+  "alsoElsewhere": "Dashboard card already says \"You’re all caught up\"."
+ },
+ {
+  "now": "To approve",
+  "proposed": "Approvals",
+  "where": [
+   "/dashboard Needs you chip",
+   "lib/dashboard/inbox.ts:150",
+   "Company › Finance › To do group"
+  ],
+  "why": "One word for the approval group.",
+  "kind": "label"
+ },
+ {
+  "now": "Clients",
+  "proposed": "Clients waiting",
+  "where": [
+   "/dashboard Needs you chip",
+   "lib/dashboard/inbox.ts:150"
+  ],
+  "why": "Says why a client row is here.",
+  "kind": "label"
+ },
+ {
+  "now": "Late",
+  "proposed": "Overdue",
+  "where": [
+   "/dashboard Needs you chip",
+   "lib/dashboard/inbox.ts:150"
+  ],
+  "why": "The rest of the app says \"overdue\"; \"late\" reserved for schedule milestones.",
+  "kind": "label",
+  "alsoElsewhere": "Tasks chip \"Overdue\", bell \"Overdue:\", Pulse \"past due\"."
+ },
+ {
+  "now": "Needs my review",
+  "proposed": "Approvals",
+  "where": [
+   "/projects listing",
+   "lib/projects/queries.ts:43"
+  ],
+  "why": "Same group as the Dashboard's.",
+  "kind": "label"
+ },
+ {
+  "now": "Needs your OK",
+  "proposed": "Approvals",
+  "where": [
+   "/projects/[id] Overview group"
+  ],
+  "why": "Same group as the Dashboard's.",
+  "kind": "heading"
+ },
+ {
+  "now": "To do",
+  "proposed": "Needs your attention",
+  "where": [
+   "/company/finance landing tab"
+  ],
+  "why": "Finance's landing is the same idea as the Dashboard's card.",
+  "kind": "name"
+ },
+ {
+  "now": "1 awaiting",
+  "proposed": "1 approval",
+  "where": [
+   "Company panel › Templates",
+   "components/company/company-popover.tsx:41"
+  ],
+  "why": "Three words for one count.",
+  "kind": "status"
+ },
+ {
+  "now": "1 proposed",
+  "proposed": "1 approval",
+  "where": [
+   "Company panel › Price book",
+   "components/company/company-popover.tsx:42"
+  ],
+  "why": "Three words for one count.",
+  "kind": "status"
+ },
+ {
+  "now": "4 to approve",
+  "proposed": "4 approvals",
+  "where": [
+   "Company panel › Finance",
+   "components/company/company-popover.tsx:44"
+  ],
+  "why": "Three words for one count.",
+  "kind": "status"
+ },
+ {
+  "now": "8 approvals wait for you on the Dashboard · Open Dashboard",
+  "proposed": "(remove the banner from Tasks)",
+  "where": [
+   "/tasks",
+   "components/tasks/approvals-line.tsx:19"
+  ],
+  "why": "Tasks is for tasks; the approvals have one home.",
+  "kind": "helper"
+ },
+ {
+  "now": "Show all 51",
+  "proposed": "See all 23",
+  "where": [
+   "/dashboard Needs you foot",
+   "components/dashboard/inbox/needs-inbox.tsx:153"
+  ],
+  "why": "Opens the full list in a drawer, not in place; the count drops once checklist rows move to projects.",
+  "kind": "label"
+ },
+ {
+  "now": "Pulse",
+  "proposed": "Key numbers",
+  "where": [
+   "/dashboard page ⋮ \"Cards on your page\"",
+   "lib/dashboard/frame.ts:59"
+  ],
+  "why": "A name the page never shows.",
+  "kind": "name"
+ },
+ {
+  "now": "WON · 90 DAYS",
+  "proposed": "Won in the last 90 days",
+  "where": [
+   "/dashboard Pulse",
+   "lib/dashboard/pulse.ts:79"
+  ],
+  "why": "Sentence case; capitals are for statuses.",
+  "kind": "label"
+ },
+ {
+  "now": "OWED TO YOU",
+  "proposed": "Owed to you",
+  "where": [
+   "/dashboard Pulse",
+   "lib/dashboard/pulse.ts:79"
+  ],
+  "why": "Sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "PROFIT · OCTOBER",
+  "proposed": "Profit in October",
+  "where": [
+   "/dashboard Pulse",
+   "lib/dashboard/pulse.ts:83"
+  ],
+  "why": "Sentence case, a sentence.",
+  "kind": "label"
+ },
+ {
+  "now": "FIRST RESPONSE",
+  "proposed": "First reply to new leads",
+  "where": [
+   "/dashboard Pulse",
+   "lib/dashboard/pulse.ts:79"
+  ],
+  "why": "Says whose response and to what.",
+  "kind": "label",
+  "alsoElsewhere": "Reports and the lead Overview call it \"Response time\" — pick one."
+ },
+ {
+  "now": "26.3h",
+  "proposed": "26 hours",
+  "where": [
+   "/dashboard Pulse value",
+   "lib/dashboard/pulse-queries.ts:141"
+  ],
+  "why": "Decimal hours are an analyst's unit.",
+  "kind": "label"
+ },
+ {
+  "now": "Target 8h · median, 90 days",
+  "proposed": "Usually 26 hours · aim for 8",
+  "where": [
+   "/dashboard Pulse caption",
+   "lib/dashboard/pulse-queries.ts:148"
+  ],
+  "why": "\"median\" is a statistics word.",
+  "kind": "helper"
+ },
+ {
+  "now": "S$ 34.2K past due · 2 invoices",
+  "proposed": "3 invoices · S$34.2K overdue",
+  "where": [
+   "/dashboard Pulse caption",
+   "lib/dashboard/pulse-queries.ts:190"
+  ],
+  "why": "\"past due\" vs \"overdue\" elsewhere; Maison AI says 3 invoices for the same debt.",
+  "kind": "helper"
+ },
+ {
+  "now": "on S$ 50.8K invoiced · costs not in yet on 2 projects",
+  "proposed": "on S$50.8K billed · 2 projects still missing costs",
+  "where": [
+   "/dashboard Pulse caption",
+   "lib/dashboard/pulse-queries.ts:251"
+  ],
+  "why": "Plainer.",
+  "kind": "helper"
+ },
+ {
+  "now": "Studio / Mine",
+  "proposed": "Whole studio / Just me",
+  "where": [
+   "/dashboard switch",
+   "components/dashboard/frame/greeting.tsx:56-57"
+  ],
+  "why": "\"Studio\" means three different slices in this lane.",
+  "kind": "label",
+  "alsoElsewhere": "Tasks \"Studio Tasks\" = tasks with no lead; Messages \"STUDIO\" = all-hands chat."
+ },
+ {
+  "now": "Studio Tasks",
+  "proposed": "General tasks",
+  "where": [
+   "/tasks scope pill",
+   "lib/leads/task-filters.ts:10"
+  ],
+  "why": "They are tasks on no lead or project — not \"the studio's tasks\".",
+  "kind": "label"
+ },
+ {
+  "now": "All Tasks (48)",
+  "proposed": "All tasks 48",
+  "where": [
+   "/tasks scope pill",
+   "lib/leads/task-filters.ts:10",
+   "components/leads/tasks/tasks-toolbar.tsx:156"
+  ],
+  "why": "One count style; sentence case.",
+  "kind": "label",
+  "alsoElsewhere": "Leads \"All Leads (31)\", Projects \"Open projects (4)\"."
+ },
+ {
+  "now": "Overdue · 6",
+  "proposed": "Overdue 6",
+  "where": [
+   "/tasks chip",
+   "components/leads/tasks/lead-tasks.tsx:83"
+  ],
+  "why": "One count style.",
+  "kind": "label"
+ },
+ {
+  "now": "Due today · 6",
+  "proposed": "Today 6",
+  "where": [
+   "/tasks chip",
+   "components/leads/tasks/lead-tasks.tsx:83"
+  ],
+  "why": "Shorter; same meaning.",
+  "kind": "label"
+ },
+ {
+  "now": "Add Task",
+  "proposed": "New task",
+  "where": [
+   "/tasks header",
+   "components/leads/tasks/tasks-toolbar.tsx:79",
+   "components/leads/tasks/tasks-table.tsx:226"
+  ],
+  "why": "One create verb in sentence case across the app.",
+  "kind": "label",
+  "alsoElsewhere": "Add Lead · New project · Create Quote · New ticket · New message."
+ },
+ {
+  "now": "Create Quote",
+  "proposed": "New quote",
+  "where": [
+   "/quotes toolbar",
+   "components/leads/quotes/quotes-toolbar.tsx:99"
+  ],
+  "why": "One create verb.",
+  "kind": "label"
+ },
+ {
+  "now": "Add Lead",
+  "proposed": "New lead",
+  "where": [
+   "/leads header"
+  ],
+  "why": "One create verb.",
+  "kind": "label"
+ },
+ {
+  "now": "OPEN",
+  "proposed": "(hide the Status column on an open list)",
+  "where": [
+   "/tasks rows",
+   "components/leads/tasks/tasks-table.tsx:498"
+  ],
+  "why": "Every row says the list's own filter.",
+  "kind": "status"
+ },
+ {
+  "now": "+ Add Tags",
+  "proposed": "(empty cell; \"Add tags\" in the row ⋮)",
+  "where": [
+   "/tasks rows",
+   "components/leads/tasks/tasks-table.tsx:404"
+  ],
+  "why": "A placeholder repeated on every row.",
+  "kind": "label"
+ },
+ {
+  "now": "Mark as Completed",
+  "proposed": "Mark as done",
+  "where": [
+   "/tasks panel and row ⋮",
+   "components/leads/tasks/task-panel.tsx:156",
+   "components/leads/tasks/tasks-table.tsx:752"
+  ],
+  "why": "Sentence case; the Dashboard says \"Mark done\".",
+  "kind": "label"
+ },
+ {
+  "now": "Lead (for a project task)",
+  "proposed": "Project",
+  "where": [
+   "/tasks panel",
+   "components/leads/tasks/task-panel.tsx:165"
+  ],
+  "why": "P-2026-002 is a project.",
+  "kind": "label"
+ },
+ {
+  "now": "Add a subcontractor or supplier",
+  "proposed": "Add a vendor or contractor",
+  "where": [
+   "/tasks panel",
+   "components/leads/tasks/outside-person.tsx:149"
+  ],
+  "why": "Finance calls them Vendors / Contractors.",
+  "kind": "label"
+ },
+ {
+  "now": "Attach Files",
+  "proposed": "Attach files",
+  "where": [
+   "/tasks panel"
+  ],
+  "why": "Sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "Save all as Template · Manage Templates · Export all as... · Delete all",
+  "proposed": "Save as a template · Manage templates · Export… · (no Delete all)",
+  "where": [
+   "/tasks page ⋮"
+  ],
+  "why": "Sentence case; a dangerous item removed.",
+  "kind": "label"
+ },
+ {
+  "now": "OM-10008’s price ended 29 Sep while Vivien has it",
+  "proposed": "Vivien’s quote expired on 29 Sep (OM-10008)",
+  "where": [
+   "/dashboard Needs you",
+   "lib/dashboard/inbox-queries.ts:552"
+  ],
+  "why": "Person and thing first; \"price ended\" is not how a studio says it.",
+  "kind": "label"
+ },
+ {
+  "now": "VO-2 has waited on Ryan for 11 days",
+  "proposed": "Ryan hasn’t answered variation order VO-2 — 11 days",
+  "where": [
+   "/dashboard Needs you"
+  ],
+  "why": "Spell out VO once.",
+  "kind": "label"
+ },
+ {
+  "now": "VO-1 adds 3 days — move what follows?",
+  "proposed": "VO-1 adds 3 days — update the schedule?",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/needs-you.ts:271"
+  ],
+  "why": "Says what the press does.",
+  "kind": "label"
+ },
+ {
+  "now": "Move the schedule",
+  "proposed": "Update schedule",
+  "where": [
+   "/dashboard verb"
+  ],
+  "why": "Plain verb.",
+  "kind": "label"
+ },
+ {
+  "now": "Michelle asks for 5% of what the client pays",
+  "proposed": "Michelle asks for 5% commission on Executive Condo",
+  "where": [
+   "/dashboard Needs you",
+   "bell"
+  ],
+  "why": "It is a commission request.",
+  "kind": "label"
+ },
+ {
+  "now": "Answer (commission ask)",
+  "proposed": "Review",
+  "where": [
+   "/dashboard verb",
+   "lib/dashboard/inbox-queries.ts:351"
+  ],
+  "why": "One verb set.",
+  "kind": "label"
+ },
+ {
+  "now": "More time on Carpentry fabrication · Michelle asks for 1 week more",
+  "proposed": "Michelle asks for 1 more week on Carpentry fabrication",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/needs-you.ts:158",
+   "lib/dashboard/inbox-queries.ts:131-133"
+  ],
+  "why": "One sentence instead of a title + caption saying it twice.",
+  "kind": "label"
+ },
+ {
+  "now": "Agree",
+  "proposed": "Approve",
+  "where": [
+   "/dashboard verb",
+   "lib/dashboard/inbox-queries.ts:232"
+  ],
+  "why": "Same kind of yes/no as a bill.",
+  "kind": "label"
+ },
+ {
+  "now": "Germaine’s claim — “Grab to site — tile selection with Benjamin”",
+  "proposed": "Germaine’s expense: Grab to site · S$38.50",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/money-needs.ts:95"
+  ],
+  "why": "The bell and Finance call it an expense.",
+  "kind": "label",
+  "alsoElsewhere": "bell: \"Germaine logged an expense of S$38.50\"."
+ },
+ {
+  "now": "No Painting contractor on Painting",
+  "proposed": "No contractor booked for Painting",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/needs-you.ts:279"
+  ],
+  "why": "The word \"Painting\" twice.",
+  "kind": "label"
+ },
+ {
+  "now": "Tell Ryan about this week · Draft it",
+  "proposed": "Send Ryan this week’s update · Write",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/needs-you.ts:248"
+  ],
+  "why": "Says what is sent.",
+  "kind": "label"
+ },
+ {
+  "now": "4 schedule changes Benjamin hasn’t seen · Share",
+  "proposed": "Share 4 schedule changes with Benjamin · Share",
+  "where": [
+   "/dashboard Needs you"
+  ],
+  "why": "Action first.",
+  "kind": "label"
+ },
+ {
+  "now": "Contract · The signed agreement · Add",
+  "proposed": "Add the signed contract",
+  "where": [
+   "/dashboard Needs you",
+   "lib/projects/getting-started.ts:63"
+  ],
+  "why": "One line that says it.",
+  "kind": "label"
+ },
+ {
+  "now": "1 lead has no member yet",
+  "proposed": "1 lead isn’t assigned",
+  "where": [
+   "/dashboard Needs you",
+   "lib/dashboard/inbox-queries.ts:480"
+  ],
+  "why": "\"member\" for the person in charge is jargon.",
+  "kind": "label"
+ },
+ {
+  "now": "Rahul Menon · new lead, no contact yet",
+  "proposed": "Call Rahul Menon — new lead",
+  "where": [
+   "/dashboard Needs you",
+   "lib/dashboard/inbox-queries.ts:470"
+  ],
+  "why": "The verb is the point.",
+  "kind": "label"
+ },
+ {
+  "now": "Skirting, PVC 80 mm — proposed for the Price book",
+  "proposed": "Sarah wants “Skirting, PVC 80 mm” in the Price book",
+  "where": [
+   "/dashboard Needs you",
+   "lib/dashboard/inbox-queries.ts:409"
+  ],
+  "why": "Person first.",
+  "kind": "label",
+  "alsoElsewhere": "bell: \"Sarah proposed … for My Items\" — My Items vs Price book."
+ },
+ {
+  "now": "Ryan says they paid for INV-2026-002",
+  "proposed": "Ryan says he paid INV-2026-002",
+  "where": [
+   "/dashboard Needs you"
+  ],
+  "why": "Grammar.",
+  "kind": "label"
+ },
+ {
+  "now": "S$1,090.00 to refund on CN-2026-002 · Record the refund",
+  "proposed": "Refund S$1,090.00 to Benjamin (CN-2026-002) · Record",
+  "where": [
+   "/dashboard Needs you"
+  ],
+  "why": "Says who and what.",
+  "kind": "label"
+ },
+ {
+  "now": "Save the brief of the meeting with Kevin",
+  "proposed": "Save the meeting notes — Kevin",
+  "where": [
+   "/dashboard Needs you"
+  ],
+  "why": "\"brief\" is the system's word.",
+  "kind": "label"
+ },
+ {
+  "now": "AquaFlow Plumbing Works’s bill AF-7781",
+  "proposed": "Bill AF-7781 from AquaFlow Plumbing Works",
+  "where": [
+   "/dashboard Projects card",
+   "bell",
+   "lib/projects/money-needs.ts:102,110",
+   "lib/dashboard/health.ts:60"
+  ],
+  "why": "Possessive breaks on company names (\"Works’s\", \"Pte Ltd’s\").",
+  "kind": "label"
+ },
+ {
+  "now": "Purchase order · Benjamin Han",
+  "proposed": "PO-2026-008 · Stone & Tile Masonry",
+  "where": [
+   "/dashboard Review pane title"
+  ],
+  "why": "Names the record and fits one line.",
+  "kind": "heading"
+ },
+ {
+  "now": "leaves 23.8% against the quote",
+  "proposed": "margin left on this work: 23.8%",
+  "where": [
+   "/dashboard Review pane",
+   "lib/projects/money-needs.ts:90"
+  ],
+  "why": "Say margin.",
+  "kind": "helper"
+ },
+ {
+  "now": "projects / capacity",
+  "proposed": "(drop the legend)",
+  "where": [
+   "/dashboard Team load",
+   "components/dashboard/cards/team-card.tsx:27"
+  ],
+  "why": "Rows say it in words.",
+  "kind": "helper"
+ },
+ {
+  "now": "Team load",
+  "proposed": "Team workload",
+  "where": [
+   "/dashboard card"
+  ],
+  "why": "Plainer.",
+  "kind": "heading"
+ },
+ {
+  "now": "2/3 · Full · 0/4",
+  "proposed": "2 of 3 projects · full · 0 of 4 projects",
+  "where": [
+   "/dashboard Team load"
+  ],
+  "why": "Fractions need decoding.",
+  "kind": "label"
+ },
+ {
+  "now": "2 open leads",
+  "proposed": "2 active leads",
+  "where": [
+   "/dashboard Team load"
+  ],
+  "why": "\"Open\" also means \"Open to new leads\" a click away.",
+  "kind": "label"
+ },
+ {
+  "now": "Contractors · 4 free this week · 1 over capacity",
+  "proposed": "Contractors: 4 free this week, 1 overbooked",
+  "where": [
+   "/dashboard Team load foot"
+  ],
+  "why": "Plainer.",
+  "kind": "helper"
+ },
+ {
+  "now": "Quote sent",
+  "proposed": "Quote Sent",
+  "where": [
+   "/dashboard Pipeline"
+  ],
+  "why": "The stage's own name (listing, pill, Move stage).",
+  "kind": "label"
+ },
+ {
+  "now": "On site this week",
+  "proposed": "Site photos this week",
+  "where": [
+   "/dashboard card",
+   "components/dashboard/cards/on-site-card.tsx:30"
+  ],
+  "why": "Says what is shown.",
+  "kind": "heading"
+ },
+ {
+  "now": "NEW SINCE SATURDAY · 3 NEW LEADS · ALL FROM HANGOUT",
+  "proposed": "New since Saturday · 3 new leads, all from Hangout",
+  "where": [
+   "/dashboard Since popover"
+  ],
+  "why": "Sentence case.",
+  "kind": "heading"
+ },
+ {
+  "now": "Ask Maison AI about your studio…",
+  "proposed": "Ask Maison AI…",
+  "where": [
+   "/dashboard dock"
+  ],
+  "why": "Same words as every other page's Maison AI.",
+  "kind": "label"
+ },
+ {
+  "now": "Keyboard shortcuts for this page (in the Maison AI sheet)",
+  "proposed": "(remove from the AI sheet)",
+  "where": [
+   "Maison AI sheet",
+   "components/shell/maison-ai.tsx:25"
+  ],
+  "why": "Unrelated to the assistant.",
+  "kind": "label"
+ },
+ {
+  "now": "Answers from your records",
+  "proposed": "(drop — or \"Reads your studio’s records\")",
+  "where": [
+   "Maison AI sheet",
+   "components/shell/maison-ai.tsx:169"
+  ],
+  "why": "A field helper that reads like a disclaimer.",
+  "kind": "helper"
+ },
+ {
+  "now": "Qanvast Ops",
+  "proposed": "Qanvast",
+  "where": [
+   "rail",
+   "components/shell/app-rail.tsx:43",
+   "phone More"
+  ],
+  "why": "\"Ops\" reads as Qanvast's own console.",
+  "kind": "name"
+ },
+ {
+  "now": "Tickets",
+  "proposed": "Issues",
+  "where": [
+   "rail",
+   "/tickets title",
+   "components/shell/app-rail.tsx:38"
+  ],
+  "why": "The client's portal and the studio's bell already say \"issue\".",
+  "kind": "name",
+  "alsoElsewhere": "bell: \"reported an issue\"; portal tab \"Issues\"; 1.0 \"Escalations\"."
+ },
+ {
+  "now": "New ticket",
+  "proposed": "New issue",
+  "where": [
+   "/tickets header",
+   "components/projects/tickets/studio-tickets.tsx:119"
+  ],
+  "why": "Follows the name.",
+  "kind": "label"
+ },
+ {
+  "now": "Escalate",
+  "proposed": "Flag to the Owner",
+  "where": [
+   "/tickets drawer",
+   "components/projects/tickets/ticket-parts.tsx"
+  ],
+  "why": "Says who hears it.",
+  "kind": "label"
+ },
+ {
+  "now": "Resolved and closed (1)",
+  "proposed": "Closed 1",
+  "where": [
+   "/tickets chips",
+   "components/projects/tickets/project-tickets.tsx:25"
+  ],
+  "why": "Shorter; one count style.",
+  "kind": "label"
+ },
+ {
+  "now": "Open (3) · All (4)",
+  "proposed": "Open 3 · All 4",
+  "where": [
+   "/tickets chips",
+   "components/projects/tickets/project-tickets.tsx:24-26"
+  ],
+  "why": "One count style.",
+  "kind": "label"
+ },
+ {
+  "now": "Waiting on Benjamin / Waiting on you",
+  "proposed": "Benjamin’s turn / Your turn",
+  "where": [
+   "/tickets cards",
+   "components/projects/tickets/ticket-parts.tsx:27"
+  ],
+  "why": "Next to the owner's avatar it reads as \"Germaine is waiting\".",
+  "kind": "status"
+ },
+ {
+  "now": "Looked after by",
+  "proposed": "Handled by",
+  "where": [
+   "/tickets drawer",
+   "components/projects/tickets/ticket-parts.tsx:177"
+  ],
+  "why": "Plainer.",
+  "kind": "label"
+ },
+ {
+  "now": "INTERNAL NOTE",
+  "proposed": "Note · team only",
+  "where": [
+   "/tickets drawer"
+  ],
+  "why": "Sentence case; says who sees it.",
+  "kind": "status"
+ },
+ {
+  "now": "From the portal · Reported 18 Oct ’26 by Mei Ling Han",
+  "proposed": "Reported by Mei Ling Han on 18 Oct",
+  "where": [
+   "/tickets drawer",
+   "components/projects/tickets/ticket-parts.tsx:160"
+  ],
+  "why": "\"the portal\" is the system's word.",
+  "kind": "helper"
+ },
+ {
+  "now": "Pick a conversation / Its messages open here. A client reads theirs on their page; Team, Direct, Group and Studio ones stay in the studio.",
+  "proposed": "Pick a conversation",
+  "where": [
+   "/chat empty pane",
+   "components/projects/messages/chat-ghost.tsx:14-15"
+  ],
+  "why": "The taxonomy is the system's.",
+  "kind": "empty"
+ },
+ {
+  "now": "STUDIO · TEAM · DIRECT · GROUP · CLIENT (row tags)",
+  "proposed": "Team (internal threads only); none on client threads",
+  "where": [
+   "/chat rows",
+   "components/projects/messages/chat-inbox.tsx:33-38"
+  ],
+  "why": "Five caps tags; the names already say it.",
+  "kind": "status",
+  "alsoElsewhere": "⌘K tags a lead's client thread \"LEAD\" (lib/projects/conversations.ts:106)."
+ },
+ {
+  "now": "Benjamin Han and Mei Ling Han read this on their page",
+  "proposed": "Benjamin and Mei Ling see this",
+  "where": [
+   "/chat thread head + under composer",
+   "components/projects/messages/conversation.tsx:34"
+  ],
+  "why": "Said twice; \"their page\" is vague.",
+  "kind": "helper"
+ },
+ {
+  "now": "Search people, words…",
+  "proposed": "Search messages",
+  "where": [
+   "/chat search"
+  ],
+  "why": "Plainer.",
+  "kind": "label"
+ },
+ {
+  "now": "Single-key shortcuts · Letters, numbers and ? — arrows, ↵, Esc and ⌘ keys always work",
+  "proposed": "Use single keys (C, F, J, K…) · Arrows, Enter, Esc and ⌘ shortcuts always work",
+  "where": [
+   "? panel",
+   "components/shell/shortcuts/shortcuts-panel.tsx:71-72"
+  ],
+  "why": "Plain words.",
+  "kind": "label"
+ },
+ {
+  "now": "Tips while I work · A key, once the mouse has done the same three times",
+  "proposed": "Show shortcut tips · After you do the same thing 3 times with the mouse",
+  "where": [
+   "? panel",
+   "components/shell/shortcuts/shortcuts-panel.tsx:78-79"
+  ],
+  "why": "Plain words.",
+  "kind": "label"
+ },
+ {
+  "now": "You use 2 of 26 here",
+  "proposed": "(remove)",
+  "where": [
+   "? panel",
+   "components/shell/shortcuts/shortcuts-panel.tsx:91"
+  ],
+  "why": "Gamification noise.",
+  "kind": "helper"
+ },
+ {
+  "now": "Quote X-Ray",
+  "proposed": "Compare quotes",
+  "where": [
+   "Tools tile",
+   "components/shell/tools-popover.tsx:27"
+  ],
+  "why": "Says what it does.",
+  "kind": "name"
+ },
+ {
+  "now": "Meeting Copilot",
+  "proposed": "Meeting notes",
+  "where": [
+   "Tools tile",
+   "components/shell/tools-popover.tsx:34"
+  ],
+  "why": "Help spells it \"co-pilot\"; plain name.",
+  "kind": "name"
+ },
+ {
+  "now": "Compliance Navigator",
+  "proposed": "Rules & permits",
+  "where": [
+   "Tools tile",
+   "components/shell/tools-popover.tsx:32"
+  ],
+  "why": "Plain name.",
+  "kind": "name"
+ },
+ {
+  "now": "Floorplan to 3D Isometric · 3D Space Planner",
+  "proposed": "3D (one tile: \"From a floor-plan photo\" · \"Draw a layout\")",
+  "where": [
+   "Tools tiles",
+   "components/shell/tools-popover.tsx:30,33"
+  ],
+  "why": "Two 3D tiles side by side.",
+  "kind": "name"
+ },
+ {
+  "now": "Market Insights",
+  "proposed": "Industry news",
+  "where": [
+   "Tools tile",
+   "components/shell/tools-popover.tsx:31"
+  ],
+  "why": "It is articles.",
+  "kind": "name"
+ },
+ {
+  "now": "Every quote in the studio — create one, or upload an existing quote",
+  "proposed": "(Quotes leaves Tools for its own rail item)",
+  "where": [
+   "Tools tile help",
+   "components/shell/tools-popover.tsx:26"
+  ],
+  "why": "Core documents aren't tools.",
+  "kind": "helper"
+ },
+ {
+  "now": "COMPANY / STUDIO / OPERATIONS",
+  "proposed": "Company · groups \"Studio\" and \"Money & reports\"",
+  "where": [
+   "Company panel",
+   "lib/company/sections.ts:12,22"
+  ],
+  "why": "Two stacked caps titles; \"Operations\" is vague.",
+  "kind": "heading"
+ },
+ {
+  "now": "People, roles and who reports to whom (and every Company help line)",
+  "proposed": "(drop the help lines; they are cut \"…\")",
+  "where": [
+   "Company panel",
+   "lib/company/sections.ts:13-25"
+  ],
+  "why": "Truncated help says nothing.",
+  "kind": "helper"
+ },
+ {
+  "now": "My Items and My Sections — what quote lines start from",
+  "proposed": "(drop)",
+  "where": [
+   "Company panel › Price book",
+   "lib/company/sections.ts:17"
+  ],
+  "why": "Insider words, and cut.",
+  "kind": "helper"
+ },
+ {
+  "now": "Insights (Leads / Projects / Meetings header button)",
+  "proposed": "Reports",
+  "where": [
+   "/leads · /projects · /meetings header",
+   "components/projects/projects-workspace.tsx:316"
+  ],
+  "why": "It opens Company › Reports.",
+  "kind": "label"
+ },
+ {
+  "now": "Dane Bruce Lee",
+  "proposed": "Dane · Owner",
+  "where": [
+   "rail studio block",
+   "lib/studios/model.ts:117"
+  ],
+  "why": "The member is \"Dane\" everywhere else.",
+  "kind": "label"
+ },
+ {
+  "now": "Open to new leads · Suggested for new leads",
+  "proposed": "Take new leads · New leads can be assigned to you",
+  "where": [
+   "studio block / You sheet",
+   "components/shell/view-as-popover.tsx:248-249",
+   "Company › Members"
+  ],
+  "why": "Says what changes.",
+  "kind": "helper"
+ },
+ {
+  "now": "notice(s)",
+  "proposed": "notification(s)",
+  "where": [
+   "/profile",
+   "lib/notifications/personal.ts:126-138",
+   "bell group \"Notices\""
+  ],
+  "why": "One word.",
+  "kind": "label"
+ },
+ {
+  "now": "Notification settings (bell footer)",
+  "proposed": "Your notification settings",
+  "where": [
+   "bell",
+   "components/shell/notifications-panel.tsx:262"
+  ],
+  "why": "Settings › Notifications is the studio's.",
+  "kind": "label"
+ },
+ {
+  "now": "Due today: Call Cheryl back about her budget / On Cheryl Lim / Due today",
+  "proposed": "Call Cheryl back about her budget · Cheryl Lim · today",
+  "where": [
+   "bell rows"
+  ],
+  "why": "The date said twice.",
+  "kind": "label"
+ },
+ {
+  "now": "· also by email and WhatsApp",
+  "proposed": "(move to the row ⋮ / details)",
+  "where": [
+   "bell rows"
+  ],
+  "why": "Repeated on nearly every row.",
+  "kind": "helper"
+ },
+ {
+  "now": "Mei Ling Han reported an issue",
+  "proposed": "(keep — and name the rail \"Issues\")",
+  "where": [
+   "bell"
+  ],
+  "why": "The studio's page says Tickets.",
+  "kind": "label"
+ },
+ {
+  "now": "Your name and photo show wherever you appear in the studio — on the leads you hold, the quotes you prepare and in the messages clients read.",
+  "proposed": "(drop)",
+  "where": [
+   "/profile Your details",
+   "lib/company/member-words.ts:12"
+  ],
+  "why": "Card title says enough.",
+  "kind": "helper"
+ },
+ {
+  "now": "It prints on the quotes and contracts you prepare, once you allow it. Draw it, type your name in the signature face, or upload a picture of it.",
+  "proposed": "Printed on your quotes and contracts",
+  "where": [
+   "/profile Your signature",
+   "components/profile/your-profile-view.tsx:174"
+  ],
+  "why": "Two lines → one.",
+  "kind": "helper"
+ },
+ {
+  "now": "Where the studio pays you — a claim paid back, your commission. Finance shows it, with a copy button, when it pays you.",
+  "proposed": "For claims and commission",
+  "where": [
+   "/profile Your PayNow",
+   "components/profile/your-profile-ghost.tsx:16"
+  ],
+  "why": "Two lines → a few words.",
+  "kind": "helper"
+ },
+ {
+  "now": "What clients read about you — your card and your work — on their portal and your studio’s Hangout pages.",
+  "proposed": "What clients see about you",
+  "where": [
+   "/profile Your public profile",
+   "components/profile/your-profile-ghost.tsx:19"
+  ],
+  "why": "\"Hangout pages\" is insider.",
+  "kind": "helper"
+ },
+ {
+  "now": "You’re an Owner at Demo Studio. An Owner or an Admin sets roles on Company › Members.",
+  "proposed": "(show \"Owner\" as a chip by the name)",
+  "where": [
+   "/profile",
+   "components/profile/your-profile-view.tsx:167"
+  ],
+  "why": "A sentence for a fact.",
+  "kind": "helper"
+ },
+ {
+  "now": "Nothing muted — every notice the studio sends you reaches you.",
+  "proposed": "Nothing muted",
+  "where": [
+   "/profile Your notifications",
+   "lib/notifications/personal.ts:138"
+  ],
+  "why": "Shorter.",
+  "kind": "status"
+ },
+ {
+  "now": "Mobile number or email",
+  "proposed": "Mobile number or work email",
+  "where": [
+   "/sign-in field"
+  ],
+  "why": "Matches its own lead line.",
+  "kind": "label"
+ }
+]

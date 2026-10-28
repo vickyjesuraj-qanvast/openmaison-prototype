@@ -27,6 +27,9 @@ const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
 const sharp = require('sharp')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s36')
@@ -197,7 +200,7 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       console.log('\n§2 the start: the allowance, the samples, the before / after, the six tools')
       const ctx = await signedOut(); const p = await page(ctx, '§2')
       await go(p, '/site/try', 600)
-      ok(await text(p.getByTestId('trial-allowance')) === 'FREE · NO SIGN-UP · 3 OF 3 FREE RENDERS LEFT' || /^free · no sign-up · 3 of 3 free renders left$/i.test(await text(p.getByTestId('trial-allowance'))), 'the eyebrow: “Free · no sign-up · 3 of 3 free renders left”')
+      ok(await text(p.getByTestId('trial-allowance')) === 'FREE · NO SIGN-UP · 3 OF 3 FREE VERSIONS LEFT' || /^free · no sign-up · 3 of 3 free versions left$/i.test(await text(p.getByTestId('trial-allowance'))), 'the eyebrow: “Free · no sign-up · 3 of 3 free versions left”')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       ok(/^See your room, redesigned, in seconds\.$/.test(await text(p.locator('h1'))), 'the title (1.0’s, its fifteen seconds now the engine’s few)')
       ok(await p.locator('[data-testid="trial-sample"]').count() === 3, 'three sample rooms to start from')
       const hero = await p.getByTestId('trial-hero-compare').boundingBox()
@@ -232,7 +235,7 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       const frame = await p.getByTestId('trial-editor').boundingBox()
       ok(!!frame && frame.x === 0 && frame.y === 0 && frame.width === 1440 && frame.height === 1024, 'it owns the whole screen')
       ok(await p.evaluate(() => !!document.querySelector('#main-content')?.closest('[inert]') && !document.querySelector('[data-testid="trial-editor"]')?.closest('[inert]')), 'the site behind it is out of reach (inert); the editor is not')
-      ok(/3 of 3 free renders left · no sign-up needed/.test(await allowance(p)) && await p.getByTestId('viz-options-toggle').count() === 0, 'under Generate: “3 of 3 free renders left · no sign-up needed” — Fast, one version, nothing to set (1.0’s)')
+      ok(/3 of 3 free versions left · no sign-up needed/.test(await allowance(p)) && await p.getByTestId('viz-options-toggle').count() === 0, 'under Generate: “3 of 3 free versions left · no sign-up needed” — Fast, one version, nothing to set (1.0’s)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       ok(await p.getByTestId('viz-hint').count() === 1, 'the first-visit tip')
       await gotIt(p)
       await shot(p, 's36-editor-1440')
@@ -243,12 +246,12 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       await p.keyboard.press('Meta+Shift+z'); await p.waitForTimeout(300)
       await generate(p)
       ok(/^V1/.test(await text(p.getByTestId('viz-stage-chip'))) && await p.getByTestId('viz-version').count() === 2, 'V1 is on the canvas and in the strip')
-      ok(/V1 is ready .*· 2 of 3 free renders left/.test(await waitSnack(p, /is ready/)), `the ready line says what is left (“${await snackText(p)}”)`)
-      ok(/2 of 3 free renders left/.test(await allowance(p)), 'the allowance follows the server: 2 of 3')
+      ok(/V1 is ready .*· 2 of 3 free versions left/.test(await waitSnack(p, /is ready/)), `the ready line says what is left (“${await snackText(p)}”)`)   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
+      ok(/2 of 3 free versions left/.test(await allowance(p)), 'the allowance follows the server: 2 of 3')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       const c = await cookie(ctx, 'om_trial')
       ok(!!c && c.httpOnly && c.path === '/site/try' && /^[A-Za-z0-9_-]+\.[0-9a-f]{64}$/.test(c.value) && c.expires > Date.now() / 1000 + 86000, `the count is a signed, httpOnly cookie scoped to the trial for a day (${c ? `${c.path}, ${c.value.slice(0, 18)}…` : 'none'})`)
       ok(JSON.parse(Buffer.from(c.value.split('.')[0], 'base64url').toString()).n === 1, '…holding one render used')
-      ok(/That’s one of your 3 free renders/.test(await text(p.getByTestId('trial-soft'))) && await p.getByTestId('trial-soft-start').count() === 1, 'after the first render: the soft ask — Start your studio (1.0’s moment)')
+      ok(/That’s one of your 3 free versions/.test(await text(p.getByTestId('trial-soft'))) && await p.getByTestId('trial-soft-start').count() === 1, 'after the first render: the soft ask — Start your studio (1.0’s moment)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       /* the picture shown carries the mark */
       const shownSrc = await p.locator('[data-testid="viz-frame"] img[alt="Living room · V1"]').first().getAttribute('src').catch(() => null)
       const shown = shownSrc && shownSrc.startsWith('data:image/jpeg') ? await stamped(Buffer.from(shownSrc.split(',')[1], 'base64')) : null
@@ -259,7 +262,7 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       const st = await stamped(fs.readFileSync(file))
       ok(dl.suggestedFilename() === 'Render - Living room - V1.jpg', `the file is named as a studio’s render is (${dl.suggestedFilename()})`)
       ok(st.yes && st.W >= 800, `the downloaded picture carries the mark (${st.W}×${st.H}: ${Math.round(st.mark * 100)}% of the logo’s glyphs white in 1.0’s box, ${Math.round(st.control * 100)}% in the same box opposite)`)
-      ok(/free renders carry a small watermark/.test(await waitSnack(p, /watermark/)), 'the download says free renders carry a small watermark')
+      ok(/free versions carry a small watermark/.test(await waitSnack(p, /watermark/)), 'the download says free versions carry a small watermark')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       console.log('\n§5 compare, the second and third renders, the gate')
       await p.getByTestId('viz-compare-toggle').click(); await p.waitForTimeout(600)
       ok(await p.getByTestId('viz-compare').isVisible(), 'Compare lays the Original under the slider')
@@ -269,12 +272,12 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       const pvMark = pv && pv.startsWith('data:image/jpeg') ? await stamped(Buffer.from(pv.split(',')[1], 'base64')) : null
       ok(!!pvMark && pvMark.yes, 'the light previews live on the photo — and a live light wears the mark too (it is a picture of its own)')
       await generate(p)
-      ok(/1 of 3 free renders left/.test(await allowance(p)), 'a relight: 1 of 3 left')
+      ok(/1 of 3 free versions left/.test(await allowance(p)), 'a relight: 1 of 3 left')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       await p.getByTestId('viz-mode-style').click(); await p.waitForTimeout(300)
       await p.getByTestId('viz-style-card').filter({ hasText: 'Japandi' }).click(); await p.waitForTimeout(300)
       await generate(p)
       const gate = p.getByTestId('trial-gate')
-      ok(await gate.count() === 1 && /You’ve used all 3 free renders/.test(await text(gate)) && await p.getByTestId('viz-generate').count() === 0, 'after the third: 1.0’s gate where Generate was — “You’ve used all 3 free renders”')
+      ok(await gate.count() === 1 && /You’ve used all 3 free versions/.test(await text(gate)) && await p.getByTestId('viz-generate').count() === 0, 'after the third: 1.0’s gate where Generate was — “You’ve used all 3 free versions”')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       ok(await p.getByTestId('trial-gate-start').count() === 1 && await p.getByTestId('trial-gate-demo').count() === 1, 'its two ways on: Start your studio and Book a demo')
       ok(await p.getByTestId('viz-version').count() === 4, 'the three versions stay to look at, compare and download')
       await shot(p, 's36-gate-1440')
@@ -287,23 +290,23 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
       console.log('\n§6 the limit holds: a reload, a forged count, a second tab')
       await p.getByTestId('trial-back').click(); await p.waitForTimeout(400)
       const leave = p.getByRole('dialog').filter({ hasText: 'Leave this room?' })
-      ok(/Your renders aren’t saved in the free trial\. Download the ones you want to keep first\./.test(await text(leave)), 'Start over with renders asks first (1.0’s words, Stay · Leave)')
+      ok(/Your versions aren’t saved in the free trial\. Download the ones you want to keep first\./.test(await text(leave)), 'Start over with renders asks first (1.0’s words, Stay · Leave)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       await leave.getByRole('button', { name: 'Leave' }).click(); await p.waitForTimeout(500)
       ok(await p.getByTestId('trial-editor').count() === 0 && await p.evaluate(() => !document.querySelector('#main-content')?.closest('[inert]')), 'Leave returns to the start, the site in reach again')
       await go(p, '/site/try', 400)
-      ok(/no free renders left/i.test(await text(p.getByTestId('trial-allowance'))), 'after a reload: “No free renders left” (the cookie, not the page, keeps the count)')
+      ok(/no free versions left/i.test(await text(p.getByTestId('trial-allowance'))), 'after a reload: “No free versions left” (the cookie, not the page, keeps the count)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       await openSample(p)
       ok(await p.getByTestId('trial-gate').count() === 1 && await p.getByTestId('viz-generate').count() === 0, 'a room opened then goes straight to the gate')
       /* a forged count — never believed */
       const forged = `${Buffer.from(JSON.stringify({ n: -10 })).toString('base64url')}.${'0'.repeat(64)}`
       await ctx.clearCookies({ name: 'om_trial' }); await ctx.addCookies([{ name: 'om_trial', value: forged, url: BASE + '/site/try' }])
       await go(p, '/site/try', 300)
-      ok(/3 of 3 free renders left/i.test(await text(p.getByTestId('trial-allowance'))), 'a cookie the app didn’t sign counts nothing — a forged “-10 used” gives 3, never 13')
+      ok(/3 of 3 free versions left/i.test(await text(p.getByTestId('trial-allowance'))), 'a cookie the app didn’t sign counts nothing — a forged “-10 used” gives 3, never 13')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       /* two tabs, one render left: the one that waited is refused by the server, not the page */
       const one = (await (async () => { const pp = await ctx.newPage(); return pp })())
       await ctx.clearCookies({ name: 'om_trial' })
       await go(p, '/site/try', 200); await openSample(p); await gotIt(p); await pickLight(p, 1); await generate(p); await pickLight(p, 2); await generate(p)
-      ok(/1 of 3 free renders left/.test(await allowance(p)), 'tab A: two renders made, 1 left')
+      ok(/1 of 3 free versions left/.test(await allowance(p)), 'tab A: two renders made, 1 left')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       one.on('pageerror', (e) => errors.push(`§6 tab B: ${String(e).slice(0, 200)}`))
       await one.goto(BASE + '/site/try', { waitUntil: 'networkidle' }); await one.waitForTimeout(300)
       await openSample(one); await gotIt(one); await pickLight(one, 3); await generate(one)
@@ -331,7 +334,7 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
         }
       }
       ok(made === 10 && refused === 'You’re going a little fast — give it a moment and try again.', `ten renders made, the eleventh refused with 1.0’s words (${made} made · “${refused}”)`)
-      ok(/[23] of 3 free renders left|1 of 3/.test(await allowance(p)), 'and nothing was counted for it (the browser’s allowance unchanged)')
+      ok(/[23] of 3 free versions left|1 of 3/.test(await allowance(p)), 'and nothing was counted for it (the browser’s allowance unchanged)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
       await shot(p, 's36-too-fast-1440')
       await ctx.close()
     }
@@ -383,7 +386,7 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
           await p.getByTestId('viz-light-card').first().click(); await p.waitForTimeout(400)
           await p.getByRole('button', { name: 'Close the panel' }).click(); await p.waitForTimeout(500)
           await generate(p)
-          ok(/2 of 3 free renders left/.test(await allowance(p)), 'a render on the phone: 2 of 3 left on the go line')
+          ok(/2 of 3 free versions left/.test(await allowance(p)), 'a render on the phone: 2 of 3 left on the go line')   // (the calm UI build 2026-10-27, a deliberate change) — 6-07 · W-463: the trial says "versions"
           await shot(p, 's36-rendered-390')
           for (const i of [2, 3]) { await p.getByTestId('viz-mode-lighting').click(); await p.waitForTimeout(600); await p.getByTestId('viz-light-card').nth(i).click(); await p.waitForTimeout(300); await p.getByRole('button', { name: 'Close the panel' }).click(); await p.waitForTimeout(500); await generate(p) }
           ok(await p.getByTestId('trial-gate').isVisible() && await p.getByTestId('trial-gate-start').isVisible(), 'the phone’s gate sits on the go line: Start your studio · Book a demo')
@@ -473,14 +476,14 @@ const PHOTO = path.join(__dirname, '..', '..', '..', 'public', 'visualizer', 'de
         const dlg = async () => { const d = c.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await d.count()) await d.getByRole('button', { name: 'Not now' }).click().catch(() => {}) }
         await c.goto(BASE + '/leads', { waitUntil: 'networkidle' }); await c.waitForTimeout(800)
         if (/\/sign-in/.test(c.url())) {
-          await c.getByLabel('Mobile number or email').fill('93334455'); await c.getByTestId('sign-in-send').click(); await c.waitForTimeout(1000)
+          await c.getByLabel(/^Mobile number or (work )?email/).fill('93334455'); await c.getByTestId('sign-in-send').click(); await c.waitForTimeout(1000)
           await c.getByTestId('sign-in-digit').first().click(); await c.keyboard.type('123456'); await c.getByTestId('sign-in-go').click(); await c.waitForTimeout(3000)
           await c.goto(BASE + '/leads', { waitUntil: 'networkidle' }); await c.waitForTimeout(800)
         }
         if ((await c.getByTestId('studio-name').innerText().catch(() => '')) !== 'Demo Studio') {
           await dlg()
           await c.getByTestId('studio-block').click(); await c.waitForTimeout(500)
-          await c.getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
+          await (await openDemo(c)).getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
         }
         await C.close()
       } catch (e) { console.log('  ! could not switch the server back to the demo — restart it:', String(e).slice(0, 120)) }

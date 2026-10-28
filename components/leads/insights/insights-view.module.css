@@ -8,6 +8,17 @@
 .barEnd { display: flex; align-items: center; gap: var(--om-spacing-3); margin-left: auto; min-width: 0; }
 .barEnd > :last-child { flex-shrink: 0; }   /* the caption wraps on a phone; the button never squeezes */
 .caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — 5-19 · 5-20) the reports' one bar: the Report and Period pills at its start (they wrap under each other where a
+   phone has no room for both), Export at its end — one row at a desk, the same row wrapping on a phone; Meetings and Studio health compose it */
+.pickBar { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); min-width: 0; }
+/* the pills take the bar's room and wrap inside it (a phone: Report over Period), Export at the first row's end — until a pill's whole words
+   (212, "Report: Response time ▾") no longer fit beside it (320): then Export takes its own row and the pills keep their words (T-12) */
+.picks { flex: 1 1 212px; display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; min-width: 0; }
+.pickEnd { margin-left: auto; display: inline-flex; flex-shrink: 0; }
+/* Reports › Finance sets the bar in its own block (books.module.css `.block`, the page's 24 gap under it) — no margin of its own there */
+.pickBar.flush { margin-bottom: 0; }
+/* (5-09) a tile's figure that says its average on hover and focus — the house tile's (money.module.css `.tileValue`) */
+.tileValue { outline-offset: 2px; }
 /* (parity P-30) the row itself is the house StatTiles (components/om/stat-tile) — this keeps only the page's spacing under it */
 .tiles { margin-bottom: var(--om-spacing-4); }
 .tileDelta { margin-top: var(--om-spacing-1); }

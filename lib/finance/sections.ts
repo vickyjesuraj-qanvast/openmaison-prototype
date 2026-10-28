@@ -20,13 +20,16 @@ export type FinanceTab = { key: string; label: string; href: string; icon: strin
 
 export const FINANCE_TABS: FinanceTab[] = [
   /* (simplify S-10) the landing: To approve · To pay · To collect · Stuck — a member's own drafts, sent back, vendors' answers and claims */
-  { key: 'todo', label: 'To do', href: '/company/finance/todo', icon: 'task', help: 'What the money needs from you — approve, pay, collect' },
+  /* (the calm UI build 2026-10-27, T-01 — 1-02 · 5-06 · W-047) the tabs say what they hold in the app's one vocabulary: **Needs your attention** (was To
+     do), **Client payments** (was Money in), **Costs** (was Money out). The words only — every key, address (`/todo` · `/money-in` · `/money-out`),
+     `?kind=` and count stays; ⌘K keeps finding the old names. */
+  { key: 'todo', label: 'Needs your attention', href: '/company/finance/todo', icon: 'task', help: 'What the money needs from you — approve, pay, collect' },
   /* (parity map, FB-013 · FB-016 · FB-012 — 1.0's Finance › Operations registers) Money out's twin: every invoice, client payment, variation order and
      credit note across the projects, one list with a kind switch (`?kind=`); a row opens its project's Money on it. A member sees the projects
      whose money they see. */
-  { key: 'money-in', label: 'Money in', href: '/company/finance/money-in', icon: 'payments', help: 'Invoices, client payments, variation orders and credit notes across the projects' },
+  { key: 'money-in', label: 'Client payments', href: '/company/finance/money-in', icon: 'payments', help: 'Invoices, client payments, variation orders and credit notes across the projects' },
   /* (simplify S-11) Purchase orders · Bills · Expenses · Payments out became one tab with a kind switch (`?kind=`) */
-  { key: 'money-out', label: 'Money out', href: '/company/finance/money-out', icon: 'local_shipping', help: 'Purchase orders, bills, expenses and what was paid' },
+  { key: 'money-out', label: 'Costs', href: '/company/finance/money-out', icon: 'local_shipping', help: 'Purchase orders, bills, expenses and what was paid' },
   { key: 'vendors', label: 'Vendors', href: '/company/finance/vendors', icon: 'storefront', help: 'The studio’s sub-contractors and suppliers' },
   /* (gaps build F2 — F2-Q1) commission (everyone: a member sees their own) · (simplify S-11) "Commission"; a member's tab says "My commission" */
   { key: 'commissions', label: 'Commission', memberLabel: 'My commission', href: '/company/finance/commissions', icon: 'workspace_premium', help: 'What each member earns, is paid and is owed' },
@@ -52,9 +55,11 @@ export type MoneyOutKind = 'purchase-orders' | 'bills' | 'expenses' | 'paid'
 /** The kind switch: each one of today's lists, in the order money goes out. Paid (the Payments out list) is the Owners' and Admins' (F-16). */
 export const MONEY_OUT_KINDS: { key: MoneyOutKind; label: string; runners?: boolean; legacy: string }[] = [
   { key: 'purchase-orders', label: 'Purchase orders', legacy: 'purchase-orders' },
-  { key: 'bills', label: 'Bills', legacy: 'bills' },
+  /* (the calm UI build 2026-10-27, 5-28 · W-035 · W-305) each chip says what its list is titled — "Supplier bills"; the studio's own payments list
+     is "Payments made" (was Paid · Payments out). The keys and `?kind=` stay. */
+  { key: 'bills', label: 'Supplier bills', legacy: 'bills' },
   { key: 'expenses', label: 'Expenses', legacy: 'expenses' },
-  { key: 'paid', label: 'Paid', runners: true, legacy: 'payments' },
+  { key: 'paid', label: 'Payments made', runners: true, legacy: 'payments' },
 ]
 export const isMoneyOutKind = (v: unknown): v is MoneyOutKind => MONEY_OUT_KINDS.some((k) => k.key === v)
 /** The kinds this viewer switches between. */
@@ -71,7 +76,8 @@ export const moneyOutHref = (kind: MoneyOutKind, open?: string | null) => `${FIN
 export type MoneyInKind = 'invoices' | 'payments' | 'variations' | 'credits'
 /** The kind switch, in the order money comes in: what was billed, what was paid, what changed the contract, what was given back. */
 export const MONEY_IN_KINDS: { key: MoneyInKind; label: string }[] = [
-  { key: 'invoices', label: 'Invoices' }, { key: 'payments', label: 'Payments' }, { key: 'variations', label: 'Variation orders' }, { key: 'credits', label: 'Credit notes' },
+  /* (the calm UI build 2026-10-27, W-310) "Client payments" — "Payments" also named commission paid and the studio's payments made */
+  { key: 'invoices', label: 'Invoices' }, { key: 'payments', label: 'Client payments' }, { key: 'variations', label: 'Variation orders' }, { key: 'credits', label: 'Credit notes' },
 ]
 export const isMoneyInKind = (v: unknown): v is MoneyInKind => MONEY_IN_KINDS.some((k) => k.key === v)
 /** The kind an address asks for — Invoices when it asks for none. */

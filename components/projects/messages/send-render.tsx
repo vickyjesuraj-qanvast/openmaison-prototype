@@ -59,7 +59,7 @@ export function SendToMessages({ leadId, version }: { leadId: string | null; ver
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setOpen(false)}>Cancel</Button><Button onPress={() => { void send() }} isDisabled={busy} data-testid="viz-send-messages-send">{busy ? 'Sending…' : 'Send'}</Button></>}>
         <div className={styles.sendRender} data-testid="viz-send-messages-dialog">
           <Chips label="To" value={channel} onChange={(v) => setChannel(v === 'team' ? 'team' : 'client')} testId="viz-send-messages-channel"
-                 options={[{ value: 'client', label: `${first} (Client)` }, { value: 'team', label: 'Team' }]} />
+                 options={[{ value: 'client', label: `${first} · client` }, { value: 'team', label: 'Team' }]} />   {/* (the calm UI build 2026-10-27, 1-21) "Benjamin · client", the inbox's words */}
           <p className={styles.note}>{channel === 'team' ? `Only the team reads it — ${first} never sees this conversation.` : `${first} reads it on their page and can answer there.`}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className={styles.sendRenderPic} src={version.imageUrl} alt={`${version.room} · V${version.n}`} />

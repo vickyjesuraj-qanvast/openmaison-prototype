@@ -78,3 +78,21 @@
   .item:first-child > .row:first-child .rail::before { top: 22px; }
   .item:last-child > .row .rail::before { bottom: calc(100% - 22px); }
 }
+
+/* (the calm UI build 2026-10-27 — the audit's 3-06, T-12) A feed in a narrow card (under 360 wide — a project's Recent activity beside its
+   money): the time goes above its sentence as a small caption and the sentence takes the whole width, so a line never runs eight to twelve
+   lines in a 130px column. The rail spans both. */
+.list { container-type: inline-size; container-name: om-timeline; }
+@container om-timeline (max-width: 360px) {
+  .row { grid-template-columns: var(--tl-rail) minmax(0, 1fr); grid-template-rows: auto auto; }
+  .row > .rail { grid-row: 1 / span 2; }
+  .row > .time { grid-column: 2; padding-bottom: 0; }
+  .row > .body { grid-column: 2; padding-top: 2px; }
+}
+/* (the calm UI build closing regression 2026-10-28) …the small caption is a desk's alone: a phone's or a tablet's whole feed is under 360 wide
+   too, and there the time keeps its 14 (Leads on the move's P-13 scale above — a value is never under 14 on a phone or a tablet) */
+@media (min-width: 1025px) {
+  @container om-timeline (max-width: 360px) {
+    .row > .time { font: var(--om-type-caption-s); }
+  }
+}

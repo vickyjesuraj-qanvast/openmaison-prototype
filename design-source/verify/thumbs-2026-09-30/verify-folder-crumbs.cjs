@@ -21,18 +21,20 @@ const measure = (p) => p.evaluate(() => {
     await p.keyboard.press('Escape'); await p.waitForTimeout(400)
   }
   await p.goto(`${BASE}/quotes/${Q}`, { waitUntil: 'networkidle' }); await p.waitForTimeout(800)
-  const openBook = async () => { await p.getByRole('button', { name: /^Price book$/ }).first().click() }
+  /* (the calm UI build 2026-10-27, a deliberate change) one door each (4-03): the link under the table left; the Price book is Create ▾ › From Price book (and each section's foot) */
+  const openBook = async () => { await p.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await p.waitForTimeout(300); await p.getByRole('menuitem', { name: 'From Price book' }).click() }
   await check('price-book-wet-works', openBook, 'Wet works')
   await check('price-book-kitchen', openBook, 'Kitchen')
   await check('price-book-sections', async () => { await openBook(); await p.waitForTimeout(500); await dlg().getByRole('radio', { name: /My Sections/ }).or(dlg().getByRole('button', { name: /My Sections/ })).first().click() }, 'Bathrooms')
-  await check('terms-templates', async () => { await p.getByRole('button', { name: 'My Templates' }).first().click() }, 'HDB')
+  /* (the calm UI build 2026-10-27, a deliberate change) W-270: the Terms card's "My Templates" reads "Templates" — the Create strip's tile shares the word, so the card's own */
+  await check('terms-templates', async () => { await p.locator('button:not(aside[aria-label="Create"] button)', { hasText: /^Templates$/ }).first().click() }, 'HDB')
   /* (S46 closing regression, 2026-10-19) since S44Q a Draft quote is pinned to Blank Quote (R173), so the Template card's button reads "Change";
      "Choose a template" only on a quote with none — either opens the same picker */
   await check('quote-template-picker', async () => { await p.getByTestId('template-card').getByRole('button', { name: /^(Choose a template|Change)$/ }).first().click() }, 'HDB')
   await p.goto(`${BASE}/leads/${L}/tasks`, { waitUntil: 'networkidle' }); await p.waitForTimeout(800)
-  await check('task-templates', async () => { await p.locator('[data-kb="create"]').first().click(); await p.getByRole('menuitem', { name: 'Use Template' }).click() }, 'Lead follow-up')
+  await check('task-templates', async () => { await p.locator('[data-kb="create"]').first().click(); await p.getByRole('menuitem', { name: 'From a template' }).click() }, 'Lead follow-up')   // (the calm UI build 2026-10-27, a deliberate change) W-021: New task ▾ › From a template
   await p.goto(`${BASE}/leads/${L}/contracts`, { waitUntil: 'networkidle' }); await p.waitForTimeout(800)
-  await check('contract-template-picker', async () => { await p.locator('[data-kb="create"]').first().click(); await p.getByRole('menuitem', { name: 'From Template' }).click() }, 'Agreements')
+  await check('contract-template-picker', async () => { await p.locator('[data-kb="create"]').first().click(); await p.getByRole('menuitem', { name: 'From a template' }).click() }, 'Agreements')   // (the calm UI build 2026-10-27, a deliberate change) W-199: New contract ▾ › From a template
   /* the row hosts keep their crumb on the bar's line */
   await p.goto(`${BASE}/company/price-book`, { waitUntil: 'networkidle' }); await p.waitForTimeout(700)
   await p.getByRole('button', { name: /Open Wet works/ }).first().click(); await p.waitForTimeout(700)

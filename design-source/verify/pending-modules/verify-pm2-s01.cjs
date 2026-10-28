@@ -16,6 +16,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s01')
@@ -48,6 +49,12 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const field = (p, label) => p.locator('[data-testid="member-details"]').getByLabel(label, { exact: false }).first()
   const undoPress = (p) => snack(p).getByRole('button', { name: 'Undo' }).click()
+  /* (the calm UI build 2026-10-27, a deliberate change) B5 5-01: a Members row's pencil and Public profile moved into the row's ⋮ ("More for …"),
+     each keeping its handle on its menu row (member-edit · member-your-profile · member-about) — open the row's ⋮, then the row; the menu is a
+     portal, so the row is found on the page. A row with nothing in its ⋮ draws no ⋮. */
+  const memberMenu = async (p, id) => { await p.keyboard.press('Escape').catch(() => {}); const more = p.locator(`[data-member-id="${id}"] [data-testid="member-more"]`).first(); if (await more.count()) { await more.click(); await settle(p, 500) } return p }
+  const memberItem = async (p, id, testId) => { await memberMenu(p, id); return p.locator(`[role="menu"] [data-testid="${testId}"]`).first() }
+  const menuItemOf = (row) => row.locator('[role^="menuitem"]').first()
 
   try {
     as('dane')
@@ -60,14 +67,17 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
     /* (pending modules, a deliberate change of this rule — S30 put Sign out in the You group, a menu row of its own: the profile row by its id) */
     const you = menu.getByRole('group', { name: 'You' }).getByTestId('open-profile')
     ok(await you.count() === 1 && /Dane/.test(await you.innerText()) && /Your profile/.test(await you.innerText()), 'the menu leads with you — Dane · Your profile')
-    ok(await menu.getByRole('group', { name: 'Members' }).getByRole('menuitemradio').count() >= 2, '…then View as, as before')
+    /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-40) then the Demo fold — View as under it, one press */
+    ok(await menu.getByTestId('demo-fold').count() === 1, '…then the Demo fold')
+    await menu.getByTestId('demo-fold').click(); await settle(d, 300)
+    ok(await menu.getByRole('group', { name: 'Members' }).getByRole('menuitemradio').count() >= 2, '…View as inside it, as before')
     const mb = await menu.boundingBox()
     ok(!!mb && mb.y >= 0 && mb.y + mb.height <= 1024, `the menu stays inside the window (${mb ? Math.round(mb.y) + '…' + Math.round(mb.y + mb.height) : '?'})`)
     await shot(d, 's01-01-menu-1440')
     await you.click(); await d.waitForURL(/\/profile$/, { timeout: 10000 }).catch(() => {}); await settle(d, 1200)
     ok(new URL(d.url()).pathname === '/profile', 'Your profile opens')
     ok(await d.getByRole('heading', { level: 1, name: 'Your profile' }).count() === 1 && await d.locator('a[data-kb="back"]').count() === 0, 'an L1 page — the rail reached it, so no Back')
-    ok(/You’re an Owner at Demo Studio/.test(await d.getByTestId('profile-role').innerText()), 'the role line: an Owner at Demo Studio')
+    ok(/You’re an Owner at Demo Studio/.test(await d.getByTestId('profile-role').getAttribute('aria-label')) && /^Owner$/.test((await d.getByTestId('profile-role').innerText()).trim()), 'the role: an Owner chip by the title, the sentence its name and tooltip')   // (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-29)
     const save = d.getByTestId('profile-save')
     ok(await save.isDisabled() && await d.getByRole('button', { name: 'Discard' }).isDisabled(), 'Discard · Save changes rest until something changes')
     await shot(d, 's01-02-profile-1440', true)
@@ -163,14 +173,14 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
     // ── 6 · Company › Members: the pencil — yours opens Your profile, anyone else's Edit details ──────────────────────────────
     console.log('6 · Company › Members')
     await go(d, '/company/members')
-    await d.locator('[data-member-id="dane"] [data-testid="member-your-profile"]').click()
+    await (await memberItem(d, 'dane', 'member-your-profile')).click()
     await d.waitForURL(/\/profile\?from=/, { timeout: 10000 }).catch(() => {}); await settle(d, 1200)
     const back = d.locator('a[data-kb="back"]')
     ok(await back.count() === 1 && /Back to Members/.test(await back.getAttribute('aria-label')), 'your own pencil opens Your profile, Back to Members')
     await shot(d, 's01-05-profile-from-members-1440')
     await back.click(); await d.waitForURL(/\/company\/members/, { timeout: 10000 }).catch(() => {}); await settle(d, 1000)
     ok(new URL(d.url()).pathname === '/company/members', 'Back returns to Members')
-    await d.locator('[data-member-id="sarah"] [data-testid="member-edit"]').click(); await settle(d, 600)
+    await (await memberItem(d, 'sarah', 'member-edit')).click(); await settle(d, 600)
     const ed = d.getByTestId('member-edit-dialog')
     ok(await d.getByRole('dialog', { name: 'Edit Sarah’s details' }).count() === 1, 'Sarah’s pencil opens Edit Sarah’s details')
     const germainePhone = sql(`select phone from members where id='germaine'`)
@@ -190,13 +200,13 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
 
     // ── 7 · one photo: the About portrait; a client's page never carries the studio's picture address ─────────────────────────
     console.log('7 · One photo, and the client’s pages')
-    await d.locator('[data-member-id="germaine"] [data-testid="member-edit"]').click(); await settle(d, 600)
+    await (await memberItem(d, 'germaine', 'member-edit')).click(); await settle(d, 600)
     await d.getByTestId('member-edit-dialog').getByTestId('member-photo-input').setInputFiles({ name: 'germaine.png', mimeType: 'image/png', buffer: PNG }); await settle(d, 700)
     await d.getByTestId('member-edit-save').click(); await settle(d, 1800)
     const gPic = sql(`select portal_photo_id from members where id='germaine'`)
     ok(!!gPic && sql(`select color from members where id='germaine'`).startsWith(`photo:${gPic}|`), 'Germaine’s photo is her avatar and her About portrait')
     /* (pending modules S27, a deliberate change of this rule) the About page dialog became the member's Public profile — a page, opened from the row */
-    await d.locator('[data-member-id="germaine"] [data-testid="member-about"]').click(); await d.waitForURL(/\/company\/members\/germaine\/profile/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
+    await (await memberItem(d, 'germaine', 'member-about')).click(); await d.waitForURL(/\/company\/members\/germaine\/profile/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(await d.locator('[data-testid="public-profile"] img[src="/company/picture/' + gPic + '"]').count() >= 1, 'Members › Public profile shows the same photo')
     await go(d, '/company/members')
     const C = await desk(); const c = await page(C, 'portal')
@@ -221,31 +231,38 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
     console.log('8 · Hui Min (Admin), Germaine (Designer), Priya (Accounting)')
     as('huimin')
     await go(d, '/company/members')
-    const owner = d.locator('[data-member-id="dane"] [data-testid="member-edit"]')
-    ok(await owner.getAttribute('aria-disabled') === 'true' && /Only an Owner changes an Owner’s details/.test(await owner.getAttribute('aria-label')), 'an Admin: the Owner’s pencil says why — only an Owner changes an Owner’s details')
+    /* (the calm UI build 2026-10-27, a deliberate change) B5 5-01: the refused pencil is the ⋮'s greyed "Edit details", its reason in the row (the house rule for a refused choice) */
+    const owner = menuItemOf(await memberItem(d, 'dane', 'member-edit'))
+    ok(await owner.getAttribute('aria-disabled') === 'true' && /Only an Owner changes an Owner’s details/.test(await owner.innerText().catch(() => '')), 'an Admin: the Owner’s pencil says why — only an Owner changes an Owner’s details')
     await owner.click({ force: true }); await settle(d, 400)
     ok(await d.getByTestId('member-edit-dialog').count() === 0, '…and opens nothing')
-    ok(await d.locator('[data-member-id="sarah"] [data-testid="member-edit"]').getAttribute('aria-disabled') === null, '…while a Designer’s opens')
+    ok(await menuItemOf(await memberItem(d, 'sarah', 'member-edit')).getAttribute('aria-disabled') === null, '…while a Designer’s opens')
     /* (pending modules S27, a deliberate change of this rule) the About page dialog is the member's Public profile page now */
-    await d.locator('[data-member-id="dane"] [data-testid="member-about"]').click(); await d.waitForURL(/\/company\/members\/dane\/profile/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
+    await (await memberItem(d, 'dane', 'member-about')).click(); await d.waitForURL(/\/company\/members\/dane\/profile/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(/Only an Owner changes an Owner’s details/.test(await d.getByTestId('member-photo-locked').innerText().catch(() => '')) && await d.locator('[data-testid="public-profile"] [data-testid="card-photo"]').count() === 0, '…and the Public profile keeps the Owner’s photo the same way (it is his avatar too)')
     as('germaine')
     await go(d, '/company/members')
-    ok(await d.locator('[data-testid="member-edit"]').count() === 0 && await d.locator('[data-member-id="germaine"] [data-testid="member-your-profile"]').count() === 1, 'a Designer: no pencil on anyone else’s row, their own opens Your profile')
+    /* (the calm UI build 2026-10-27, a deliberate change) B5 5-01: read in each row's ⋮ — no other member's carries Edit details; her own carries Your profile */
+    const others = (await d.locator('[data-testid="member-row"]').evaluateAll((rs) => rs.map((r) => r.getAttribute('data-member-id')))).filter((x) => x && x !== 'germaine')
+    let pencils = 0
+    for (const id of others) { await memberMenu(d, id); pencils += await d.locator('[role="menu"] [data-testid="member-edit"]').count(); await d.keyboard.press('Escape'); await settle(d, 200) }
+    ok(pencils === 0 && await (await memberItem(d, 'germaine', 'member-your-profile')).count() === 1, 'a Designer: no pencil on anyone else’s row, their own opens Your profile')
+    await d.keyboard.press('Escape'); await settle(d, 200)
     ok(/change another member’s details/.test(await d.locator('main').innerText()), 'the read-only note names the details')
     await go(d, '/profile')
-    ok(/Germaine/.test(await field(d, 'Name').inputValue()) && /a Designer at Demo Studio/.test(await d.getByTestId('profile-role').innerText()), 'Germaine’s Your profile is hers — a Designer at Demo Studio')
+    ok(/Germaine/.test(await field(d, 'Name').inputValue()) && /a Designer at Demo Studio/.test(await d.getByTestId('profile-role').getAttribute('aria-label')), 'Germaine’s Your profile is hers — a Designer at Demo Studio')
     as('priya')
     await go(d, '/profile')
     ok(await d.getByTestId('your-profile').count() === 1 && await d.locator('[data-testid="route-error"], [data-testid="access-gate"]').count() === 0, 'Accounting opens Your profile')
     ok(await d.getByTestId('profile-signature').count() === 0 && await d.getByTestId('profile-members-link').count() === 0, '…with no signature card (no quotes to sign) and no door to Members (not theirs to open)')
-    ok(/You’re in Accounting at Demo Studio/.test(await d.getByTestId('profile-role').innerText()), '…"You’re in Accounting at Demo Studio"')
+    ok(/You’re in Accounting at Demo Studio/.test(await d.getByTestId('profile-role').getAttribute('aria-label')), '…"You’re in Accounting at Demo Studio"')   // (the calm UI build 2026-10-27, a deliberate change)
     await shot(d, 's01-08-priya-profile-1440', true)
     as('dane')
 
     // ── 9 · Who may do what · ⌘K ──────────────────────────────────────────────────────────────────────────────────────────────
     console.log('9 · Who may do what, ⌘K')
     await go(d, '/settings')
+    await openRoles(d)   // (the calm UI build 2026-10-27, a deliberate change)
     const reach = JSON.stringify(await d.getByTestId('may-member-details').locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))))
     /* (S44O — call C6, a deliberate change of this rule: a sixth role, Marketing — their own details too) */
     ok(reach === '["yes","yes","own","own","own","own"]', `Who may do what: Owners and Admins anyone's, everyone else their own (${reach})`)
@@ -296,7 +313,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR
       if (w === 390) await shot(m, 's01-11-profile-390', true)
       await go(m, '/company/members')
       ok(await sideways(m) <= 0, `${w}: Members has no sideways scroll`)
-      await m.locator('[data-member-id="sarah"] [data-testid="member-edit"]').click(); await settle(m, 800)
+      await (await memberItem(m, 'sarah', 'member-edit')).click(); await settle(m, 800)
       ok(await m.getByTestId('member-edit-dialog').isVisible() && await sideways(m) <= 0, `${w}: Edit details opens with no sideways scroll`)
       if (w === 390) await shot(m, 's01-12-edit-390')
       await M.close()

@@ -23,13 +23,14 @@ export function FilesEmpty({ onCreateFolder, onUpload, readOnly = false, onPhoto
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/figma-assets/empty-files.svg" width={180} height={154} alt="" className={styles.art} />
           <div className={styles.texts}>
-            <p className={styles.title}>Add your first files</p>
+            <p className={styles.title}>No files yet</p>
             <p className={styles.body}>Take photos on site, or choose files from your phone.</p>
           </div>
           <div className={styles.phoneButtons}>
-            <Button iconStart={<Icon name="photo_camera" size={20} />} onPress={onPhoto} data-kb="create" data-kb-label="Take a photo" data-testid="files-empty-photo">Take a photo</Button>
+            {/* (the calm UI build 2026-10-27 — T-03 · 2-04) on a record page the one filled button is the header's: the camera leads, outlined */}
+            <Button variant="primary" appearance="outlined" iconStart={<Icon name="photo_camera" size={20} />} onPress={onPhoto} data-kb="create" data-kb-label="Take a photo" data-testid="files-empty-photo">Take a photo</Button>
             <Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload" size={20} />} onPress={onUpload}>Choose files</Button>
-            <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create Folder</Button>
+            <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create folder</Button>
           </div>
         </div>
       </div>
@@ -43,13 +44,15 @@ export function FilesEmpty({ onCreateFolder, onUpload, readOnly = false, onPhoto
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/figma-assets/empty-files.svg" width={180} height={154} alt="" className={styles.art} />
         <div className={styles.texts}>
-          <p className={styles.title}>{readOnly ? 'No files yet' : 'Add your first files'}</p>
-          <p className={styles.body}>{readOnly ? 'The project’s team adds its files here.' : 'Create folders and upload files from your local.'}</p>
+          {/* (the calm UI build 2026-10-27 — 2-23 · W-159) plain words: what is missing and what to add — never "from your local" */}
+          <p className={styles.title}>No files yet</p>
+          <p className={styles.body}>{readOnly ? 'The project’s members add its files here.' : 'Upload photos, plans or documents.'}</p>
         </div>
         {readOnly ? null : <div className={styles.buttons}>
-          {/* 931:40356 secondary outlined, leading create_new_folder 20 · 931:40357 primary filled, leading upload 20. */}
-          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create Folder</Button>
-          <Button iconStart={<Icon name="upload" size={20} />} onPress={onUpload} data-kb="create" data-kb-label="Upload Files">Upload Files</Button>   {/* (REG-735) C, while New File steps back */}
+          {/* 931:40356 secondary outlined, leading create_new_folder 20 · 931:40357 primary, leading upload 20 — (the calm UI build 2026-10-27 —
+              T-03 · 2-04) outlined now: on a record page the screen's one filled button is the header's */}
+          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create folder</Button>
+          <Button variant="primary" appearance="outlined" iconStart={<Icon name="upload" size={20} />} onPress={onUpload} data-kb="create" data-kb-label="Upload files">Upload files</Button>   {/* (REG-735) C, while New File steps back */}
         </div>}
       </div>
     </div>

@@ -35,7 +35,7 @@ export function SignBar({ state }: { state: SignBarState }) {
       ) : (
         <div className={ph.barRow}>
           <button type="button" className={ph.barState} onClick={state.onLine} data-testid="sign-bar-signed"><Icon name="check_circle" size={24} /><span className={ph.barStateText}>{state.line}</span></button>
-          <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="share" size={20} />} onPress={state.onSave} data-testid="sign-bar-save">Save a copy</Button>
+          <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="share" size={20} />} onPress={state.onSave} data-testid="sign-bar-save">Download a copy</Button>   {/* (the calm UI build 2026-10-27, 4-09 · W-351) the desk's verb — on a phone it still opens the share sheet */}
         </div>
       )}
     </div>

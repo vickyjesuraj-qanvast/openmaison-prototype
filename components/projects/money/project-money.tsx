@@ -4,14 +4,13 @@ import { usePlanLock } from '@/components/credits/credits-client'
 import { ProTag } from '@/components/credits/pro-tag'
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ds'
+import { Button, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
 import { Tooltip } from '@/components/om/tooltip'
-import { Chips } from '@/components/om/chips'
 import { useSheetLayout } from '@/components/om/sheet'
 import { useSnackbar } from '@/components/om/snackbar'
 import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
@@ -56,8 +55,8 @@ export function ProjectMoney({ data, costs = null, books = null }: { data: Proje
   if (!data.money) {
     return (
       <div className={styles.tab} data-testid="project-money">
-        <div className={styles.bar}><h2 className={styles.title}>Money</h2></div>
-        <EmptyState icon="lock" tone="plain" title="Money is the project’s team’s" testId="money-hidden"
+        <div className={styles.bar}><h2 className={styles.title}>Payments</h2></div>   {/* (the calm UI build 2026-10-27, 3-02 · W-026) */}
+        <EmptyState icon="lock" tone="plain" title="Payments are the project team’s" testId="money-hidden"
                     help="The contract value, the invoices and what the client has paid are for the project’s team, Owners and Admins. Ask one of them to add you to the team." />
       </div>
     )
@@ -85,6 +84,10 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
   const [focus, setFocus] = useState<string | null>(null)
   const [panel, setPanel] = useState<InvoiceFocus | null>(null)
   const [newOpen, setNewOpen] = useState(false)
+  /* (the calm UI build 2026-10-27, 3-26 · T-14) New ▾'s five kinds; a kind made more than one way opens its ways in place (`level`) */
+  const [level, setLevel] = useState<null | 'vo' | 'invoice' | 'po'>(null)
+  const closeNew = () => { setNewOpen(false); setLevel(null) }
+  const openLevel = (l: 'vo' | 'invoice' | 'po') => { setLevel(l); requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="money-new-level"] [role="menuitem"]')?.focus()) }
   const [ordering, setOrdering] = useState(false)
   const [view, setView] = useState<BillingView>('all')
   /* (Q-06) the phone's Billing · Costs switch, remembered per browser like the listing's view */
@@ -147,8 +150,9 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
         k.c.setFocus(id)
         scroll(`[data-po="${CSS.escape(id)}"],[data-bill="${CSS.escape(id)}"],[data-expense="${CSS.escape(id)}"]`)
         const next = po ? k.c.poNext(po) : bill ? k.c.billNext(bill) : exp ? k.c.expenseNext(exp) : null
-        /* `&do=pay` opens the payout; `&do=approve` a PO's Approve and send (an expense's Approve stays a press, in its panel) */
-        if (next && ((arrival.step === 'pay' && /^Pay/.test(next.label)) || (arrival.step === 'approve' && ((po && next.label === 'Approve and send') || (bill && next.label === 'Approve'))))) { next.run(); return }   // (S44R, C8) a bill's Approve too
+        /* `&do=pay` opens the payout; `&do=approve` a PO's Approve and send (an expense's Approve stays a press, in its panel) — (the calm UI build
+           2026-10-27, B5's request) keyed on the step's handle too, so a renamed verb still lands */
+        if (next && ((arrival.step === 'pay' && /^Pay/.test(next.label)) || (arrival.step === 'approve' && ((po && (next.testId === 'po-next-approve' || next.label === 'Approve and send')) || (bill && next.label === 'Approve'))))) { next.run(); return }   // (S44R, C8) a bill's Approve too
         /* (R2-A) `&do=sendback`: a PO or an expense waiting for approval opens its Send back note — the row ⋮'s own step, for whoever may answer it */
         if (arrival.step === 'sendback') {
           const back = (po ? k.c.poMenu(po) : exp ? k.c.expenseMenu(exp) : []).find((a) => a.label === 'Send back')
@@ -190,33 +194,65 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
   /* ── Region 1: the head — one New ▾, two groups (P3 §6.2) ── */
   const locked = viewer.locked
   const keeper = isAccounting(viewer.role)   // (parity map, MI-007) a variation order changes what was agreed — never Accounting's
-  const billItems = viewer.prepares && !locked && !first ? [
-    ...(keeper ? [] : [<DropdownItem key="vo" onSelect={() => { setNewOpen(false); inv.newVariation() }} help="A change to the works, approved by the client on its link">Variation order</DropdownItem>,
-    <DropdownItem key="vo-up" onSelect={() => { setNewOpen(false); inv.openVoUpload() }} help="Read from a contractor’s quote — a spreadsheet or a PDF"   /* (S42 D-08) what the dialog reads, said alike */>Variation order from a contractor’s quote</DropdownItem>]),
-    <DropdownItem key="one-off" onSelect={() => { setNewOpen(false); inv.openOneOff('new') }} help="A reimbursement, an upgrade, out-of-scope work — outside the contract value">One-off invoice</DropdownItem>,
-    <DropdownItem key="record" onSelect={() => { setNewOpen(false); inv.openRecordExternal() }} help="An invoice raised in your accounting system or on paper">Record an invoice made elsewhere</DropdownItem>,
-  ] : []
+  /* (the calm UI build 2026-10-27, 3-26 · T-05 · T-14) five kinds, no helper lines: Variation order · Invoice · Purchase order · Supplier bill ·
+     Expense. A kind made more than one way (a VO from a contractor's quote, an invoice or a PO made elsewhere, an order from the quote's lines)
+     opens its ways in place — the first row is the usual one — so every way the menu had is still here, one press further. Each row keeps its
+     own rule (who prepares, the plan's lock). */
+  const canBill = viewer.prepares && !locked && !first
   const can = costs?.can ?? { po: false, bill: false, expense: false, external: false }
   const expLocked = usePlanLock('expense_management').locked   // (pending modules S19) expenses are Pro
-  const costItems = costs ? [
-    ...(can.po ? [<DropdownItem key="po" onSelect={() => { setNewOpen(false); costs.c.newPo() }} help={costs.data.viewer.costs === false ? 'To a sub-contractor or a supplier — the quote’s lines, with the vendor’s prices' : 'To a sub-contractor or a supplier — the quote’s lines at their cost'}>Purchase order</DropdownItem>] : []),
-    ...(costs.fromQuote ? [<DropdownItem key="order" onSelect={() => { setNewOpen(false); setOrdering(true) }} help="One Draft PO for each vendor, from the signed quote’s lines">Order from the quote</DropdownItem>] : []),
-    /* (parity map, MO-038) a PO raised elsewhere, recorded on the project — it counts in the costs */
-    ...(can.external ? [<DropdownItem key="external" onSelect={() => { setNewOpen(false); costs.c.newExternalPo() }} help="One raised in your accounting system or on paper — it counts in the costs">Record a PO made elsewhere</DropdownItem>] : []),
-    ...(can.bill ? [<DropdownItem key="bill" onSelect={() => { setNewOpen(false); costs.c.newBill() }} help="A vendor’s invoice — drop its PDF and it is read for you">Supplier bill</DropdownItem>] : []),
-    ...(can.expense ? [<DropdownItem key="expense" onSelect={() => { setNewOpen(false); costs.c.newExpense() }} help="Something bought for the project — or a claim to be paid back" meta={expLocked ? <ProTag /> : undefined}>Expense</DropdownItem>] : []),   /* (pending modules S19) Pro on Free */
+  const vo = canBill && !keeper
+  const pick = (run: () => void) => () => { closeNew(); run() }
+  type Way = { key: string; label: string; run: () => void }
+  const voWays: Way[] = vo ? [
+    { key: 'vo', label: 'New variation order', run: inv.newVariation },
+    { key: 'vo-up', label: 'From a contractor’s quote', run: inv.openVoUpload },
   ] : []
+  const invoiceWays: Way[] = canBill ? [
+    { key: 'one-off', label: 'One-off invoice', run: () => inv.openOneOff('new') },
+    { key: 'record', label: 'Record one made elsewhere', run: inv.openRecordExternal },
+  ] : []
+  const poWays: Way[] = costs ? [
+    ...(can.po ? [{ key: 'po', label: 'New purchase order', run: costs.c.newPo }] : []),
+    ...(costs.fromQuote ? [{ key: 'order', label: 'Order from the quote', run: () => setOrdering(true) }] : []),
+    /* (parity map, MO-038) a PO raised elsewhere, recorded on the project — it counts in the costs */
+    ...(can.external ? [{ key: 'external', label: 'Record one made elsewhere', run: costs.c.newExternalPo }] : []),
+  ] : []
+  const wayRows = (ways: Way[]) => ways.map((w) => <DropdownItem key={w.key} onSelect={pick(w.run)}>{w.label}</DropdownItem>)
+  /** A kind's row: its ways in place when it has more than one, else the kind itself runs its one way. */
+  const kind = (key: 'vo' | 'invoice' | 'po', label: string, ways: Way[]) => (ways.length > 1
+    ? <DropdownItem key={key} submenu onSelect={() => openLevel(key)}>{label}</DropdownItem>
+    : ways[0] ? <DropdownItem key={key} onSelect={pick(ways[0].run)}>{label}</DropdownItem> : null)
+  const billItems = canBill ? [kind('vo', 'Variation order', voWays), kind('invoice', 'Invoice', invoiceWays)].filter(Boolean) : []
+  const costItems = costs ? [
+    kind('po', 'Purchase order', poWays),
+    ...(can.bill ? [<DropdownItem key="bill" onSelect={pick(() => costs.c.newBill())}>Supplier bill</DropdownItem>] : []),
+    ...(can.expense ? [<DropdownItem key="expense" onSelect={pick(costs.c.newExpense)} meta={expLocked ? <ProTag /> : undefined}>Expense</DropdownItem>] : []),   /* (pending modules S19) Pro on Free */
+  ].filter(Boolean) : []
+  const levelOf = { vo: { label: 'Variation order', ways: voWays }, invoice: { label: 'Invoice', ways: invoiceWays }, po: { label: 'Purchase order', ways: poWays } }
   /* C presses New — unless the empty Billing's own first button answers it (REG-735: one filled button, one C) */
   const kb = first ? {} : { 'data-kb': 'create', 'data-kb-label': 'New' }
   const newMenu = billItems.length || costItems.length ? (
     <span ref={newAnchor}>
       {phone
-        ? <Tooltip label="New" shortcut={first ? undefined : 'create'} disabled={newOpen}><IconButton icon="add" label="New" variant="primary" onClick={() => setNewOpen((o) => !o)} aria-haspopup="menu" aria-expanded={newOpen} disabled={inv.busy === 'new-vo'} {...kb} data-testid="money-new" /></Tooltip>
-        : <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} iconEnd={<Icon name="arrow_drop_down" size={20} />} onPress={() => setNewOpen((o) => !o)} aria-haspopup="menu" aria-expanded={newOpen} isDisabled={inv.busy === 'new-vo'} {...kb} data-testid="money-new">New</Button>}
-      <PortalMenu open={newOpen} anchor={newAnchor} onClose={() => setNewOpen(false)} align="right" width={MENU_WIDTH.detail} role="menu" sheetTitle="New on Money">
-        {billItems.length ? <><DropdownLabel>Bill {client.firstName}</DropdownLabel>{billItems}</> : null}
-        {billItems.length && costItems.length ? <DropdownDivider /> : null}
-        {costItems.length ? <><DropdownLabel>Costs</DropdownLabel>{costItems}</> : null}
+        ? <Tooltip label="New" shortcut={first ? undefined : 'create'} disabled={newOpen}><IconButton icon="add" label="New" variant="primary" onClick={() => (newOpen ? closeNew() : setNewOpen(true))} aria-haspopup="menu" aria-expanded={newOpen} disabled={inv.busy === 'new-vo'} {...kb} data-testid="money-new" /></Tooltip>
+        : <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} iconEnd={<Icon name="arrow_drop_down" size={20} />} onPress={() => (newOpen ? closeNew() : setNewOpen(true))} aria-haspopup="menu" aria-expanded={newOpen} isDisabled={inv.busy === 'new-vo'} {...kb} data-testid="money-new">New</Button>}
+      <PortalMenu open={newOpen} anchor={newAnchor} onClose={closeNew} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={level ? levelOf[level].label : 'New on Payments'}>
+        {level ? (
+          <span className={styles.menuRow} data-testid="money-new-level">
+            <DropdownItem onSelect={() => { setLevel(null); requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="menu"] [role="menuitem"]')?.focus()) }}>
+              <span className={styles.menuBack}><Icon name="chevron_left" size={20} />{levelOf[level].label}</span>
+            </DropdownItem>
+            <DropdownDivider />
+            {wayRows(levelOf[level].ways)}
+          </span>
+        ) : (
+          <>
+            {billItems.length ? <><DropdownLabel>Bill {client.firstName}</DropdownLabel>{billItems}</> : null}
+            {billItems.length && costItems.length ? <DropdownDivider /> : null}
+            {costItems.length ? <><DropdownLabel>Costs</DropdownLabel>{costItems}</> : null}
+          </>
+        )}
       </PortalMenu>
     </span>
   ) : null
@@ -256,8 +292,8 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
        Designer's Contract value takes its own row (`moneyTiles`) */
     <StatTiles testId="money-tiles" className={styles.moneyTiles}>
       <StatTile label="To collect" value={<Tooltip label={collectHow}><span className={styles.tileValue}>{money2(m.outstandingMinor)}</span></Tooltip>} figure={money2(m.outstandingMinor)} grade={overdue.length ? 'bad' : undefined} testId="tile-collect"
-                press={{ label: `To collect ${money2(m.outstandingMinor)}. ${collectHow}. Opens Billing`, onPress: () => goList('billing') }}
-                help={<span className={styles.touchHelp}>{overdue.length ? `${money2(m.overdueMinor)} overdue` : m.toConfirmMinor ? `${money2(m.toConfirmMinor)} to confirm` : m.outstandingMinor ? 'Sent and not yet paid' : 'Nothing owed right now'}</span>}>
+                press={{ label: `To collect ${money2(m.outstandingMinor)}. ${collectHow}. Opens Client payments`, onPress: () => goList('billing') }}
+                help={<span className={styles.touchHelp}>{overdue.length ? `${money2(m.overdueMinor)} overdue` : m.toConfirmMinor ? `${money2(m.toConfirmMinor)} to confirm` : m.outstandingMinor ? 'Sent and not yet paid' : 'Nothing to collect right now'}</span>}>   {/* (the calm UI build 2026-10-27, 3-03 · T-01) */}
         <span className={styles.collectBar} role="progressbar" aria-label="Collected of the contract" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(paidPct)}><span className={styles.collectFill} style={{ width: `${paidPct}%` }} /></span>
         <span className={`${tile.help} ${styles.touchHelp}`} data-testid="money-collected">{money2(m.collectedContractMinor)} collected of {money2(m.contractMinor)}</span>
         {/* (Contracts on the move, C4 — P-11 · C-24) ≤1024 the contract total and where it comes from, at 14 — on a desk it is the value's hover
@@ -268,7 +304,7 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
       {seesCosts && s ? (
         <StatTile label="To pay" value={<Tooltip label={payHow}><span className={styles.tileValue}>{money2(s.owedMinor)}</span></Tooltip>} figure={money2(s.owedMinor)}
                   grade={s.overdueMinor ? 'bad' : undefined} testId="tile-pay" press={{ label: `To pay ${money2(s.owedMinor)}. ${payHow}. Opens Costs`, onPress: () => goList('costs') }}
-                  help={<span className={styles.touchHelp}>{[s.overdueMinor ? `${money2(s.overdueMinor)} overdue` : s.owedMinor ? 'To vendors, not yet due' : 'Nothing owed right now', waitingOk ? `${money2(waitingOk)} waiting for approval` : null].filter(Boolean).join(' · ')}</span>} />
+                  help={<span className={styles.touchHelp}>{[s.overdueMinor ? `${money2(s.overdueMinor)} overdue` : s.owedMinor ? 'To vendors, not yet due' : 'Nothing to pay right now', waitingOk ? `${money2(waitingOk)} waiting for approval` : null].filter(Boolean).join(' · ')}</span>} />
       ) : null}
       {/* (simplify round 2) the Profit tile opens Costs, as To pay does */}
       {books?.profit ? <ProfitTile profit={books.profit} onPress={() => goList('costs')} /> : null}
@@ -312,15 +348,20 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
     <div className={styles.tab} data-testid="project-money" data-dropping={dropping || undefined} {...dropHandlers}>
       {dropping ? <div className={styles.drop} aria-hidden data-testid="money-drop"><span className={styles.dropLine}>Drop to record a supplier bill</span></div> : null}
       <div className={styles.bar}>
-        <h2 className={styles.title}>Money</h2>
+        <h2 className={styles.title}>Payments</h2>   {/* (the calm UI build 2026-10-27, 3-02 · W-026 · T-01) the tab's own word */}
         <div className={styles.actions}>{newMenu}</div>
       </div>
       <MoneyNeeds rows={needs} data={data} inv={inv} payments={payments} cn={cn} costs={costs} onOpenInvoice={openInvoice} />
       {tiles}
-      {/* (Q-06) ≤767: one list at a time behind two chips, remembered; at a desk both lists show and the switch is not drawn */}
+      {/* (Q-06) ≤767: one list at a time behind a switch, remembered; at a desk both lists show and the switch is not drawn — (the calm UI build
+          2026-10-27, 3-08 · T-10) a view switch is the design system's SegmentedButton, never chips; "Client payments" as the region is named */}
       {costs ? (
         <div className={styles.listSwitch}>
-          <Chips label="Show" options={[{ value: 'billing', label: 'Billing' }, { value: 'costs', label: 'Costs' }]} value={costsFirst ? 'costs' : 'billing'} onChange={(v) => setCostsFirst(v === 'costs')} testId="money-list-switch" />
+          <SegmentedButton aria-label="Show" selectedKeys={[costsFirst ? 'costs' : 'billing']} data-testid="money-list-switch"
+                           onSelectionChange={(keys) => { const k = String([...keys][0] ?? ''); if (k) setCostsFirst(k === 'costs') }}>
+            <SegmentedButtonItem id="billing">Client payments</SegmentedButtonItem>
+            <SegmentedButtonItem id="costs">Costs</SegmentedButtonItem>
+          </SegmentedButton>
         </div>
       ) : null}
       <div className={styles.lists} data-show={costs && costsFirst ? 'costs' : 'billing'}>

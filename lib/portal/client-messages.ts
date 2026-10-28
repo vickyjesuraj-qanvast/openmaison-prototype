@@ -96,7 +96,7 @@ export const DEFAULT_CLIENT_TEMPLATES: ClientTemplate[] = [
   { event: 'client_receipt', channel: 'whatsapp', subject: '', body: 'Hi {client}, {studio} has confirmed your payment of {amount}. Your receipt is on your page: {link}' },
   { event: 'client_to_answer', channel: 'email', subject: 'Waiting on you: {document}', body: 'Hi {client},\n\n{studio} has sent you {document}. It’s waiting on your page:\n{link}\n\n{studio}' },
   { event: 'client_to_answer', channel: 'whatsapp', subject: '', body: 'Hi {client}, {studio} has sent you {document}. It’s waiting on your page: {link}' },
-  { event: 'client_schedule_shared', channel: 'email', subject: 'Your schedule with {studio}', body: 'Hi {client},\n\n{studio} has shared the schedule for {project} — the stages ahead and when each is planned:\n{link}\n\n{studio}' },
+  { event: 'client_schedule_shared', channel: 'email', subject: 'Your schedule with {studio}', body: 'Hi {client},\n\n{studio} has shared the schedule for {project} — the milestones ahead and when each is planned:\n{link}\n\n{studio}' },
   { event: 'client_schedule_shared', channel: 'whatsapp', subject: '', body: 'Hi {client}, {studio} has shared the schedule for {project}: {link}' },
   { event: 'client_update', channel: 'email', subject: 'New update: {update}', body: 'Hi {client},\n\n{sender} has posted an update on the work at {project}: “{update}”.\n{link}\n\n{studio}' },
   { event: 'client_update', channel: 'whatsapp', subject: '', body: 'Hi {client}, a new update on {project} from {sender}: “{update}”. {link}' },

@@ -30,9 +30,9 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
     await dlg.getByLabel('Cost (S$)').fill('2.80'); await dlg.getByLabel('Markup (S$)').fill('0.70')
     // (S44P, M8 — pending modules, a deliberate change of this rule: the unit price is its own box beside Cost and Markup, no longer the markup's helper line)
     ok('the unit price reads S$3.50', (await dlg.getByLabel('Unit price (S$)').inputValue()) === '3.50')
-    await dlg.getByRole('combobox', { name: 'Category' }).click(); await page.waitForTimeout(250)
+    await dlg.getByRole('combobox', { name: 'Trade' }).click(); await page.waitForTimeout(250)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
     const cats = await page.getByRole('option').allInnerTexts()
-    ok('the category is one of the trades — Tiling from the book among them', cats.includes('Carpentry') && cats.includes('Tiling') && cats.includes('No category'), cats.join(', '))
+    ok('the category is one of the trades — Tiling from the book among them', cats.includes('Carpentry') && cats.includes('Tiling') && cats.includes('No trade'), cats.join(', '))
     await page.getByRole('option', { name: 'Carpentry', exact: true }).click()
     await shot('01-item-cents')
     await page.getByRole('dialog').getByRole('button', { name: 'Add to My Items' }).click(); await page.waitForTimeout(1200)
@@ -74,7 +74,11 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
 
   await step('the trades: one list, a rename carries the book and My Sections', async () => {
     await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('trades').waitFor(); await ready(page)
-    ok('unset, the trades say they come from the quotes and My Items', /your quotes and My Items already use/.test(await page.getByTestId('trades').innerText()))
+    // (the calm UI build 2026-10-27, a deliberate change) W-574 took the "Not set yet — these are the trades your quotes and My Items already use"
+    // line off the card; the rule stays on screen in what the card lists: unset, its trades are exactly the categories the quotes and the book use
+    const usedTrades = [...new Map(sql(`select category from quote_items where category is not null and trim(category) <> '' and kind='item' union all select category from price_book_items where category is not null and trim(category) <> '' and deleted_at is null`).split('\n').map((c) => c.trim()).filter(Boolean).map((c) => [c.toLowerCase(), c])).keys()].sort()
+    const shownTrades = (await page.getByTestId('trade').evaluateAll((els) => els.map((li) => (li.querySelector('button > span:last-child, :scope > span:last-child')?.textContent ?? '').trim().toLowerCase()))).sort()
+    ok('unset, the trades say they come from the quotes and My Items', sql(`select count(*) from settings where key='trades'`) === '0' && usedTrades.length > 0 && JSON.stringify(shownTrades) === JSON.stringify(usedTrades), `${shownTrades.length} shown · ${usedTrades.length} used`)
     sql(`update price_book_items set category='masonry' where name like 'Cement screeding%'`)
     const chip = page.getByTestId('trade').filter({ has: page.getByRole('button', { name: /^Masonry/ }) }).first()
     await chip.getByRole('button').first().click()

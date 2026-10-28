@@ -46,9 +46,11 @@ function measure(text: string, font: string): number {
   canvas.font = font
   return canvas.measureText(text).width
 }
-/** The sum row's figure for a column (REG-477): quantities add up, the money columns sum the lines that price. */
-function sumText(key: ColumnKey, sums: ReturnType<typeof sumLines>): string {
-  return key === 'qty' ? fmtNum(sums.qty) : key === 'cost' ? money2(sums.costMinor) : key === 'markup' ? money2(sums.markupMinor) : key === 'unitPrice' ? money2(sums.unitPriceMinor) : ''
+/** The sum row's figure for a column (REG-477): quantities add up, the money columns sum the lines that price. (The calm UI build 2026-10-27,
+    the UI audit's 4-44) Qty and Unit price only while every counted line shares one unit — 885 sqft + 78 ft run + 46 point is no number, and
+    the unit prices' sum was the total again. */
+function sumText(key: ColumnKey, sums: ReturnType<typeof sumLines>, oneUnit: boolean): string {
+  return key === 'qty' ? (oneUnit ? fmtNum(sums.qty) : '') : key === 'cost' ? money2(sums.costMinor) : key === 'markup' ? money2(sums.markupMinor) : key === 'unitPrice' ? (oneUnit ? money2(sums.unitPriceMinor) : '') : ''
 }
 /** What a column shows on every display row, as [text, extra px] — the extra is a glyph / chevron / chip chrome beside the text. */
 function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [string, number][] {
@@ -77,8 +79,8 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
       case 'unitPrice': out.push([money2(isGroup ? sums!.unitPriceMinor : unitPriceMinor(i)), 0]); break
       case 'discount': if (!isGroup) out.push([`${fmtNum(i.discountPct)}%`, 0]); break
       case 'gst': if (!isGroup) out.push([fmtNum(i.gstPct), 0]); break
-      case 'room': out.push([i.room ?? 'Add Room', 24]); break
-      case 'category': out.push([i.category ?? 'Add Category', 24]); break
+      case 'room': out.push([i.room ?? 'Add room', 24]); break   // (the calm UI build) the cells' own words (item-row.tsx)
+      case 'category': out.push([i.category ?? 'Add trade', 24]); break
       case 'section': out.push([i.section ?? 'Add label', 24]); break
       case 'type': if (!isGroup) out.push([isItemKind(i.icon) ? ITEM_KIND_LABEL[i.icon] : '–', 0]); break
       case 'rebate': if (!isGroup) out.push([money2(i.rebateMinor), 0]); break   // (REG-596)
@@ -355,7 +357,7 @@ export function ItemsTable({
   const sums = useMemo(() => sumLines(found ? items.filter((i) => found.has(i.id)) : items), [items, found])
   /* (wave E, desktop-6) "priced" means a line with a price: a counted line still at S$0 (a finish the Price book couldn't price, a floor
      waiting for its measured quantity) is counted but not priced — the row said "2 priced items" over a S$0.00 total. */
-  const priced = useMemo(() => { const lines = countedLines(found ? items.filter((i) => found.has(i.id)) : items); return { n: lines.filter((l) => lineTotalMinor(l) !== 0).length, of: lines.length } }, [items, found])
+  const priced = useMemo(() => { const lines = countedLines(found ? items.filter((i) => found.has(i.id)) : items); return { n: lines.filter((l) => lineTotalMinor(l) !== 0).length, of: lines.length, oneUnit: new Set(lines.map((l) => (l.unit ?? '').trim().toLowerCase())).size <= 1 } }, [items, found])
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
@@ -368,11 +370,11 @@ export function ItemsTable({
     for (const c of columns) {
       let w = measure(COLUMN_LABEL[c].toUpperCase(), headFont)
       for (const [text, extra] of columnTexts(c, fullDisplay, items)) w = Math.max(w, measure(text, bodyFont) + extra)
-      w = Math.max(w, measure(sumText(c, sums), bodyFont))   // the sum row's figure (REG-477)
+      w = Math.max(w, measure(sumText(c, sums, priced.oneUnit), bodyFont))   // the sum row's figure (REG-477)
       next[c] = Math.max(MIN_COL, Math.ceil(w) + 36)   // the cell's 32 of padding + the input's 2 of border + 2 of slack (the box rounds up past the canvas measure)
     }
     setFit((cur) => (columns.every((c) => cur[c] === next[c]) && Object.keys(cur).length === columns.length ? cur : next))
-  }, [columns, fullDisplay, items, sums, fontsReady, touchGrid])
+  }, [columns, fullDisplay, items, sums, priced.oneUnit, fontsReady, touchGrid])
   // What every row lays its cells to: the user's width, else the fit, else the stylesheet's mocked width (item-row.tsx COL_CLASS).
   const colW: ColWidths = useMemo(() => {
     const w: ColWidths = {}
@@ -672,13 +674,13 @@ export function ItemsTable({
 }
 
 /** The sum row (REG-477): the number columns' totals over the lines that price — a spreadsheet's SUM line under the table. */
-function SumRow({ sums, priced, columns, colW, colStyle, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; priced: { n: number; of: number }; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
+function SumRow({ sums, priced, columns, colW, colStyle, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; priced: { n: number; of: number; oneUnit: boolean }; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
   return (
     <div className={styles.sumRow} role="row" aria-label="Sum">
       <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
       {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
-      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle} data-testid="sum-label">Sum · {priced.n === priced.of ? `${priced.n} priced ${priced.n === 1 ? 'item' : 'items'}` : `${priced.n} of ${priced.of} priced`}</div>   {/* (REG-576) "priced": the title's count is every line; this one is the lines that carry a price — (wave E, desktop-6) "0 of 2 priced" while lines wait at S$0 */}
-      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle} data-testid="sum-label">Sum · {priced.n === priced.of ? `${priced.n} ${priced.n === 1 ? 'item' : 'items'}` : `${priced.n} of ${priced.of} items priced`}</div>   {/* (REG-576) "priced": the title's count is every line; this one is the lines that carry a price — (wave E, desktop-6) "0 of 2 priced" while lines wait at S$0 */}
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sumText(c, sums, priced.oneUnit)}</span></div>)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(sums.totalMinor)}</span></div>
     </div>
@@ -778,7 +780,7 @@ function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onTogg
  * matches, Enter adds the active one — or, with nothing active, a blank line named as typed ("Item" when nothing is typed,
  * like Create ▾ › New Item). "Create New Item" is always live (spec 04 draws it enabled). The field keeps focus for the next line.
  */
-function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick, matchCount = 0, onMatch }: {
+function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onCreate, onPick, onPickSection, onViewPriceBook: _onViewPriceBook, onExport, inputRef, openTick, matchCount = 0, onMatch }: {
   number: number; autonumber: boolean; priceBook: PriceBookItem[]; sections: PriceBookSection[]; propertyType: string | null; onCreate: (name: string) => void; onPick: (id: string) => void; onPickSection: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
   matchCount?: number; onMatch?: () => void
   inputRef: React.RefObject<HTMLInputElement | null>
@@ -853,7 +855,7 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
                      inputProps={{ role: 'combobox', 'aria-expanded': open, 'aria-controls': open ? listId : undefined, 'aria-autocomplete': 'list', 'aria-activedescendant': open && active >= 0 ? optId(active) : undefined, autoComplete: 'off', onBlur }} />
           <PortalMenu open={open} anchor={anchor} onClose={close} role="listbox" width={360} id={listId} className={sec.popoverMenu} autoFocus={false}>
             <div className={sec.popover}>
-              <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>Create New Item</Button></div>
+              <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>New item</Button></div>
               <div className={sec.popList} data-testid="add-item-list">
                 <div className={sec.popHead}>My Items ({matches.length})</div>
                 {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'Nothing in My Items yet'}</div> : matches.map((p) => { const i = idx('item', p.id); return (
@@ -866,7 +868,7 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
                     </span>
                     <span className={sec.popText}>
                       <span className={sec.popName}>{p.name}</span>
-                      <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}{p.vendor ? ` · by ${p.vendor}` : ''}{p.status === 'proposed' ? ' · Proposed' : ''}</span>   {/* (REG-594; REG-652 a proposal of your own says so) */}
+                      <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}{p.vendor ? ` · by ${p.vendor}` : ''}{p.status === 'proposed' ? ' · Waiting for approval' : ''}</span>   {/* (REG-594; REG-652 a proposal of your own says so — the calm UI build: T-01's word for it) */}
                     </span>
                   </button>
                 ) })}
@@ -894,10 +896,10 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
             </div>
           </PortalMenu>
         </div>
-        <button type="button" className={styles.link} onClick={onViewPriceBook}>Price book</button>   {/* (REG-662, owner 2026-09-25) one name — the modal, Company's page and this link */}
+        {/* (the calm UI build 2026-10-27, 4-03) the Price book's link here left — Create ▾ › From Price book and each section's foot open the same modal */}
         {/* (pending modules S12) shown only while a line not taken from My Items reads like an item in it — the review fills their costs */}
         {matchCount > 0 && onMatch ? <button type="button" className={styles.link} onClick={onMatch} data-testid="match-link" aria-label={`Match ${matchCount} ${matchCount === 1 ? 'line' : 'lines'} to the Price book`}>{`Match ${matchCount} ${matchCount === 1 ? 'line' : 'lines'}`}</button> : null}
-        <button type="button" className={styles.link} onClick={onExport}>Export As</button>
+        <button type="button" className={styles.link} onClick={onExport}>Export…</button>   {/* (the calm UI build 2026-10-27, W-185) */}
       </div>
     </div>
   )

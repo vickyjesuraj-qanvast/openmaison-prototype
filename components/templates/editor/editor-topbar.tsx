@@ -21,9 +21,9 @@ export type SourceOption = { key: string; label: string; sub?: string }
  * chips clip instead of running under the actions, and ⋯ › Rename template puts the caret in the name for whoever
  * never guessed the title is typed in place.
  */
-export function EditorTopbar({ name, onName, status, version, isDefault, hasChanges, savedLabel, saving, pages, source, sources, onSource, zoomLabel, onZoom, canUndo, canRedo, onUndo, onRedo, onHistory, preview, onPreview, onMenu, publishLabel, canPublish, onPublish, onBack, hasReference, compact, originLabel = null, backLabel = 'Back to Quote templates', canStart = false, readOnly = false }: {
+export function EditorTopbar({ name, onName, status, version, savedLabel, saving, pages, source, sources, onSource, zoomLabel, onZoom, canUndo, canRedo, onUndo, onRedo, onHistory, preview, onPreview, onMenu, publishLabel, canPublish, onPublish, onBack, hasReference, compact, originLabel = null, backLabel = 'Back to Quote templates', canStart = false, readOnly = false }: {
   name: string; onName: (v: string) => void
-  status: TemplateStatus; version: number; isDefault: boolean; hasChanges: boolean; savedLabel: string; saving: boolean; pages: number
+  status: TemplateStatus; version: number; /** (the calm UI build 2026-10-27, 4-11) read by the gallery card, no longer drawn here */ isDefault?: boolean; hasChanges?: boolean; savedLabel: string; saving: boolean; pages: number
   source: string; sources: SourceOption[]; onSource: (key: string) => void
   zoomLabel: string; onZoom: (d: 'in' | 'out' | 'fit' | '100') => void
   canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void
@@ -47,9 +47,9 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget as HTMLInputElement).blur() } if (e.key === 'Escape') { setDraft(null); (e.currentTarget as HTMLInputElement).blur() } }} readOnly={preview} />
         <span className={styles.chips}>
           <MetaChip>{status === 'draft' ? 'Draft' : status === 'archived' ? `Archived · v${version}` : `Published v${version}`}</MetaChip>
-          {isDefault ? <MetaChip>Default</MetaChip> : null}
-          {status !== 'draft' && hasChanges ? <MetaChip>Edited since v{version}</MetaChip> : null}   {/* (REG-577) the gallery's words */}
-          {originLabel ? <span className={styles.originChip} data-testid="origin-chip"><MetaChip icon="request_quote">{originLabel}</MetaChip></span> : null}   {/* (REG-729) the house tag, r4 — it was a pill */}
+          {/* (the calm UI build 2026-10-27, the UI audit's 4-11) the one status pill: Default is the gallery card's (and the publish dialog's "It already
+              is"), and unpublished edits are said by the button — "Publish changes" (REG-577's "Edited since" stays on the gallery card) */}
+          {originLabel ? <span className={styles.originChip} data-testid="origin-chip"><MetaChip icon="request_quote" kind="fact">{originLabel}</MetaChip></span> : null}   {/* (REG-729) the house tag, r4 — it was a pill */}
         </span>
         <span className={styles.saved}>{saving ? <><Icon name="progress_activity" size={16} weight={300} className={styles.spin} /> Saving…</> : <><Icon name="check_circle" size={16} weight={300} className={styles.savedIcon} /> {savedLabel}</>}</span>
       </div>

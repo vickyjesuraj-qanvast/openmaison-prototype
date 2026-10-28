@@ -18,7 +18,8 @@ import { PaperViewer } from '@/components/quotes/confirm/paper-viewer'   // (K3)
 import { withFrom } from '@/lib/nav'
 import { copyText } from '@/lib/clipboard'
 import { displayDate } from '@/lib/format'
-import { contractLink, firstName, signingLink, signingMessage, tokenOf } from '@/lib/contracts/model'
+import { contractLink, firstName, SIGN_SEND_LINE, signingLink, signingMessage, tokenOf } from '@/lib/contracts/model'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import { ContractPdf } from '@/components/contracts/render/contract-pdf'
 import type { ContractEditorData } from '@/lib/contracts/queries'
 import { renewSigningLink, sendContract, shareContractLink } from '@/app/contracts/actions'
@@ -82,7 +83,7 @@ export function ContractPreview({ data, from, print, paper: paperAsked = false }
      the checks first, then the copy, then the share; a refusal leaves it a Draft and says why. */
   const shareDraft = (): Promise<boolean> => shareContractLink(contract.id).then((r) => {
     if ('error' in r) { snackbar({ message: `Couldn’t mark it Sent — ${r.error}` }); return false }
-    setStatus(r.status); router.refresh(); snackbar({ message: 'Signing link copied — the contract is Sent to Client now' }); return true
+    setStatus(r.status); router.refresh(); snackbar({ message: 'Signing link copied — the contract is waiting for signature now' }); return true
   }, () => { snackbar({ message: 'Couldn’t share the link — please try again' }); return false })
   const copyLink = () => {
     if (status === 'Draft' && !uploaded && isBlankDoc(contract.body)) { snackbar({ message: 'Add some content before sharing the link' }); return }
@@ -136,7 +137,7 @@ export function ContractPreview({ data, from, print, paper: paperAsked = false }
   )
   const record = kept ? <SigningRecord r={{ signedBy: contract.signedBy, signedAt: contract.signedAt, nric: contract.signedNric, signatureKind: contract.signatureKind, phone: contract.signerPhone, method: contract.verificationMethod, device: contract.signerUserAgent, timezone: contract.signerTimezone, viewedAt: contract.viewedAt, acceptedAt: contract.acceptedAt, caseTrustAt: contract.caseTrustAt, hash: kept.hash }} /> : null
   const sendDialog = (
-    <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} subtitleShort="Your client reviews and signs in their browser."
+    <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} subtitleShort={SIGN_SEND_LINE}
                         defaults={{ name: contract.recipientName ?? lead.name, phone: contract.recipientPhone ?? lead.phone }}
                         draft={(name) => signingMessage({ clientFirst: firstName(name), studio: values['studio.name'] ?? studio.name, title: contract.title, link })}
                         onCopy={status === 'Draft' ? shareDraft : undefined}
@@ -168,7 +169,7 @@ export function ContractPreview({ data, from, print, paper: paperAsked = false }
             <Tooltip label="Back to the contract"><IconButton icon="arrow_back" label="Back to the contract" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={() => router.push(editorHref)} data-kb="back" data-testid="preview-back" /></Tooltip>
             <div className={styles.touchTitle}>
               <h1 className={styles.touchH}>Preview</h1>
-              <span className={styles.touchSub} data-testid="preview-sub">{contract.title} · {status}{contract.signedAt ? ` · signed ${displayDate(contract.signedAt)}` : ''}</span>
+              <span className={styles.touchSub} data-testid="preview-sub">{contract.title} · {contractStatusLabel(status)}{contract.signedAt ? ` · signed ${displayDate(contract.signedAt)}` : ''}</span>
             </div>
             <Tooltip label="Download as PDF"><IconButton icon="download" label="Download as PDF" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={download} data-testid="preview-download" /></Tooltip>
             {!phone ? <span className={`${header.anchor} ${styles.barSend}`}>{primary}</span> : null}
@@ -176,7 +177,7 @@ export function ContractPreview({ data, from, print, paper: paperAsked = false }
               <Tooltip label="More options" disabled={more}><IconButton icon="more_vert" label="More options" size={36} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={more} onClick={() => setMore((o) => !o)} data-testid="preview-more" /></Tooltip>
               <Dropdown open={more} onClose={() => setMore(false)} align="right" width={MENU_WIDTH.wide} sheetTitle="Preview">
                 {/* (UX audit C8) on a Draft the copy sends it — said before the press */}
-                <DropdownItem onSelect={() => { setMore(false); copyLink() }} help={status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy signing link</DropdownItem>
+                <DropdownItem onSelect={() => { setMore(false); copyLink() }} help={status === 'Draft' ? 'Copying it sends the contract' : undefined}>Copy signing link</DropdownItem>
                 {/* (K3 — C-20) the file through the system share sheet once a PDF renderer is plugged in (lib/services/pdf.ts, the S34 seam); the print sheet until then */}
                 <DropdownItem onSelect={() => { setMore(false); download() }} help="Through WhatsApp, mail or AirDrop">Share PDF</DropdownItem>
               </Dropdown>
@@ -221,26 +222,31 @@ export function ContractPreview({ data, from, print, paper: paperAsked = false }
   return (
     <PageReveal skeleton={<ContractSkeleton kind="preview" pdf={uploaded} />}>
     <div className={styles.page} data-testid="contract-preview">
-      <div className={`${styles.bar} ${own.noPrint}`}>
+      {/* (the calm UI build 2026-10-27, 4-08 · T-10) the one Preview bar, the quote's: ← back to the editor · crumb {client} / {contract} · "Preview"
+          · one status chip — then Copy link and Download PDF with their words, and the state's one filled press. The signed day and an upload's
+          kind are words beside the chip, not tags (T-06); "Back to edit" is the ←'s name (its old button's). */}
+      <header className={`${styles.bar} ${own.noPrint}`}>
+        <Tooltip label="Back to edit"><IconButton icon="arrow_back" label="Back to edit" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={() => router.push(editorHref)} data-testid="preview-back-desk" /></Tooltip>
         <div className={styles.titleBlock}>
-          <Crumbs className={styles.crumb} items={[{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Contracts', href: `/leads/${lead.id}/contracts` }, { label: 'Preview' }]} />
+          <Crumbs className={styles.crumb} items={[{ label: lead.name, href: `/leads/${lead.id}/contracts` }, { label: contract.title, href: editorHref }]} />
           <div className={styles.titleRow}>
-            <h1 className={styles.title}>{contract.title}</h1>
-            <div className={styles.chips}>
-              <MetaChip>{status}</MetaChip>
-              {contract.signedAt ? <MetaChip>Signed {displayDate(contract.signedAt)}</MetaChip> : null}
-              {uploaded ? <MetaChip>{pdf?.picture ? 'Signed on paper' : 'Uploaded PDF'}</MetaChip> : null}
-            </div>
+            <h1 className={styles.title}>Preview</h1>
+            <span className={styles.chips}>
+              <MetaChip>{contractStatusLabel(status)}</MetaChip>
+              {contract.signedAt || uploaded ? <span className={own.barWords} data-testid="preview-words">{[contract.signedAt ? `Signed ${displayDate(contract.signedAt)}` : null, uploaded ? (pdf?.picture ? 'Signed on paper' : 'Uploaded PDF') : null].filter(Boolean).join(' · ')}</span> : null}
+            </span>
           </div>
         </div>
         <div className={styles.actions}>
-          <Button variant="secondary" appearance="outlined" onPress={() => router.push(editorHref)}>Back to edit</Button>
-          <Tooltip label={copied ? 'Copied' : status === 'Draft' ? 'Copy link — marks it Sent' : 'Copy signing link'}><IconButton icon="link" label={status === 'Draft' ? 'Copy link — marks it Sent' : 'Copy signing link'} onClick={copyLink} /></Tooltip>
-          <Tooltip label="Download as PDF"><IconButton icon="download" label="Download as PDF" onClick={download} /></Tooltip>
+          {/* (UX audit C8) on a Draft the copy sends it — said before the press, in the tooltip */}
+          <Tooltip label={status === 'Draft' ? 'Copying the link sends the contract — it waits for a signature from then' : 'Copy the signing link'}>
+            <Button appearance="outlined" variant="secondary" iconStart={<Icon name={copied ? 'check' : 'link'} size={20} />} onPress={copyLink} data-testid="preview-copy-link">{copied ? 'Copied' : 'Copy link'}</Button>
+          </Tooltip>
+          <Button appearance="outlined" variant="secondary" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="preview-download-desk">Download PDF</Button>
           {/* (UX audit C1) a signed contract's main press is its signed copy — Send was a dead button */}
           {status === 'Signed' ? <Button variant="primary" onPress={downloadSigned}>Download signed copy</Button> : <Button variant="primary" onPress={send}>Send</Button>}
         </div>
-      </div>
+      </header>
       <div className={styles.body}>
         <div className={styles.column}>
           <div className={styles.stage} style={{ flexDirection: 'column', alignItems: 'center' }}>

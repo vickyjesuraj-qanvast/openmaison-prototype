@@ -5,7 +5,7 @@ import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import type { LeadReturn, Member } from '@/lib/db/schema'
-import { displayDate, displayDateTimeTight, money } from '@/lib/format'
+import { displayDate, displayDue, money } from '@/lib/format'
 import { appealUntil, appealWindowPassed } from '@/lib/leads/return-model'   // (S42 B-10)
 import { returnTags } from '@/lib/leads/return-tags'
 import { Card } from './card'
@@ -25,7 +25,7 @@ export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab,
   onOpenTab: () => void
 }) {
   const showAppeal = ret.status === 'rejected' && !!ret.appealDays
-  const repliedOn = ret.repliedAt ? displayDateTimeTight(ret.repliedAt) : null
+  const repliedOn = ret.repliedAt ? displayDue(ret.repliedAt) : null   // (the calm UI build — 2-24) the house date and clock, "Thu, 10 Sep ’26 · 4:30 PM"
 
   // Qanvast's reply identity (858:24095): 20×20 r4 logo + "Qanvast - Business Team".
   const repliedBy = (
@@ -74,14 +74,14 @@ export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab,
           <span className={styles.name}>{returnedBy.name}</span>
         </>
       ) : null },
-      { key: 'Returned on', value: displayDateTimeTight(ret.returnedAt) },
+      { key: 'Returned on', value: displayDue(ret.returnedAt) },
       { key: 'Reason', value: ret.reason },
       ...(ret.appealOf ? [{ key: 'Appeal of', value: 'The return Qanvast rejected' }] : []),   // (pending modules S05) an appeal says so
     ]
   }
 
   return (
-    <Card title="LEAD RETURNED" headGap={12} onOpen={onOpenTab} openLabel="Open lead return" testId="lead-returned">
+    <Card title="Lead returned" headGap={12} onOpen={onOpenTab} openLabel="Open lead return" testId="lead-returned">
       <div className={styles.body} data-banner={showAppeal || undefined}>
         {showAppeal ? (
           <button type="button" className={styles.banner} onClick={onAppeal}>

@@ -119,7 +119,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const marked = await cards.evaluateAll((els) => els.filter((e) => e.hasAttribute('data-unseen')).map((e) => e.querySelector('[class$="__name"]').textContent.trim()))
     ok(unseenNames.length > 0 && marked.length === unseenNames.length && marked.every((n) => unseenNames.includes(n)), `the new mark sits on the unseen lead(s) only (${marked.join(', ')}) — A-01`)
     const u0 = card(m, unseenNames[0])
-    ok(await u0.locator('[class*="band"]').count() === 1 && /^New$/i.test((await u0.locator('[class*="nameRow"] > :not([class*="name"])').first().innerText()).trim()), `${unseenNames[0]} wears the band and a New tag`)
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-15, W-272) the band alone says "not opened yet": the NEW tag beside the New stage is gone */
+    ok(await u0.locator('[class*="band"]').count() === 1 && await u0.locator('[class*="nameRow"] > :not([class*="name"])').count() === 0, `${unseenNames[0]} wears the band — no New tag beside the New stage`)
     const c0 = card(m, OWNED_NEW)
     const infoItems = await c0.locator('[class*="info"] > span:not([class*="dot"])').count()
     const infoText = (await c0.locator('[class*="info"]').innerText()).replace(/\s+/g, ' ')
@@ -167,7 +168,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(n > 0 && /to call today$/.test(todoText), `"${todoText}" on its own line under the toolbar`)
     await tapEl(m, todo); await settle(m, 1200)
     const scoped = await cards.count()
-    ok(scoped === n && /scope=today/.test(m.url()) && /^To call today \(\d+\)/.test(((await m.locator('[class*="left"] button[aria-haspopup="menu"]').first().textContent()) || '').trim()), `pressed, it scopes the list to the ${n} (the pill names it, the address keeps it)`)
+    /* (the calm UI build 2026-10-27, a deliberate change — T-07) a count reads "Label · n" */
+    ok(scoped === n && /scope=today/.test(m.url()) && /^To call today · \d+/.test(((await m.locator('[class*="left"] button[aria-haspopup="menu"]').first().textContent()) || '').trim()), `pressed, it scopes the list to the ${n} (the pill names it, the address keeps it)`)
     const todayOk = await cards.evaluateAll((els) => els.every((e) => !!e.querySelector('[data-line="next"]')))
     ok(todayOk, 'every card in it names its Next')
     await shot(m, '02-m390-to-call-today')
@@ -190,7 +192,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const next = m.getByTestId('stage-next-move')
     ok(await next.count() === 1 && (await next.innerText()).trim() === 'Move to Contacted', `the sheet leads with the next move: "${(await next.innerText().catch(() => '')).trim()}" (A-07)`)
     const metRow = m.locator('[role="menu"] button[role="menuitem"]').filter({ hasText: /^Met/ })
-    ok(/Complete Contacted first/.test(await metRow.innerText()), 'a locked row says why in the row ("Complete Contacted first") — A-06')
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-05 · W-150) a finger still learns why without spending a tap, but the reason the locked
+       rows SHARE is said once, under them — it was printed under each of the three; the rows stay locked, and a reason of a row's own stays in it */
+    const sharedWhy = (await m.getByTestId('stage-shared-why').innerText().catch(() => '')).trim()
+    ok(sharedWhy === 'Complete Contacted first' && !/Complete Contacted first/.test(await metRow.innerText()) && (await metRow.getAttribute('aria-disabled')) === 'true', `the locked rows' shared reason is said once, under them ("${sharedWhy}") — A-06`)
     await shot(m, '04-m390-stage-next')
     await tapEl(m, next); await settle(m, 1500)
     const win = m.getByRole('dialog', { name: 'Move stage' })
@@ -221,7 +226,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const addTask = tcard.getByRole('button', { name: /^Add a task for/ })
     const opener = await addTask.count() ? addTask : tcard.locator('[class*="taskBox"]')
     await tapEl(m, opener); await settle(m, 900)
-    if (!(await m.getByLabel('Describe your task').count())) { await m.getByRole('button', { name: 'Add Task', exact: true }).last().tap(); await settle(m, 500) }
+    if (!(await m.getByLabel('Describe your task').count())) { await m.getByRole('button', { name: 'Add task', exact: true }).last().tap(); await settle(m, 500) }   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
     await m.getByLabel('Describe your task').fill('Call back about the kitchen layout')
     await tapEl(m, m.getByTestId('task-due-presets').getByRole('radio', { name: 'Tomorrow 10:00 AM' })); await settle(m, 300)
     ok(/^Due \w{3}, \d+ \w{3} ’\d\d · 10:00 AM$/.test((await m.getByTestId('task-due-line').innerText()).trim()), `the chip says the day it means ("${(await m.getByTestId('task-due-line').innerText()).trim()}") — A-09`)
@@ -257,9 +262,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     // ── 4 · a new lead ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('4 · P-08 · A-17…A-20 at 390: a new lead is a name and a mobile')
     await go(m, '/leads')
-    await tapEl(m, m.getByRole('button', { name: 'Add Lead' }).first()); await settle(m, 500)
-    await m.getByRole('menuitem', { name: 'Create New Lead' }).tap(); await settle(m, 900)
-    const form = m.getByRole('dialog', { name: 'Create New Lead' })
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-13 · 2-33 · 2-49) "New lead ▾ › Type in a lead" opens the "New lead" form */
+    await tapEl(m, m.getByRole('button', { name: 'New lead' }).first()); await settle(m, 500)
+    await m.getByRole('menuitem', { name: 'Type in a lead' }).tap(); await settle(m, 900)
+    const form = m.getByRole('dialog', { name: 'New lead', exact: true })
     const nameIn = form.locator('[data-field="name"] input'), phoneIn = form.locator('[data-field="phone"] input')
     ok(await nameIn.getAttribute('autocomplete') === 'name' && await nameIn.getAttribute('autocapitalize') === 'words' && await phoneIn.getAttribute('autocomplete') === 'tel' && await phoneIn.getAttribute('inputmode') === 'tel', 'the name and the mobile carry their autofill hints and the phone pad (A-18)')
     ok(await fontSize(nameIn) === 16 && await fontSize(phoneIn) === 16, 'both type at 16')
@@ -279,7 +285,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await go(c, '/leads?new=1')
     await settle(c, 1200)
     await c.evaluate(() => navigator.clipboard.writeText('[23/10/26, 10:15:12 AM] Kelvin Tan: Hello, saw your Instagram, want to do up my condo\n[23/10/26, 10:17:40 AM] Kelvin Tan: my number 8123 4567'))
-    const cform = c.getByRole('dialog', { name: 'Create New Lead' })
+    const cform = c.getByRole('dialog', { name: 'New lead', exact: true })   // (the calm UI build 2026-10-27, a deliberate change)
     await tapEl(c, cform.getByTestId('paste-message')); await settle(c, 900)
     ok(await cform.locator('[data-field="name"] input').inputValue() === 'Kelvin Tan' && await cform.getByTestId('paste-message-box').count() === 0, 'with the clipboard readable, one press fills the form from a copied chat — no box')
     await C.close()
@@ -307,7 +313,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const T = await touchCtx(768, 1024); const t = await page(T, '768')
     await go(t, '/leads?view=table')
     const row0 = t.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').filter({ hasText: OWNED_NEW }).first()
-    await tapEl(t, row0.getByRole('button', { name: 'Edit', exact: true })); await settle(t, 900)
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-06) the row's Edit is its ⋮'s first row (`lead-row-edit`), at every width */
+    await tapEl(t, row0.getByRole('button', { name: /^More actions for/ })); await settle(t, 600)
+    await tapEl(t, t.getByTestId('lead-row-edit')); await settle(t, 900)
     const list = t.getByTestId('edit-short-list')
     const secs = await list.locator('[data-section]').evaluateAll((els) => els.map((e) => e.getAttribute('data-section')))
     ok(JSON.stringify(secs.slice(0, 4)) === JSON.stringify(['contact', 'property', 'budget', 'people']), `the list: ${secs.join(' · ')}`)
@@ -332,9 +340,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const heads = await t.locator('[role="table"][aria-label="Leads"] [role="columnheader"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-col')))
     ok(JSON.stringify(heads) === JSON.stringify(['name', 'stage', 'lastContact', 'nextFollowUp', 'assignees']), `the tablet's set: ${heads.join(' · ')} (A-12)`)
     const r0 = t.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').first()
-    const eb = await box(r0.getByRole('button', { name: 'Edit', exact: true })), kb = await box(r0.getByRole('button', { name: /^More actions for/ }))
+    const kb = await box(r0.getByRole('button', { name: /^More actions for/ }))
     const vw = await t.evaluate(() => document.documentElement.clientWidth)
-    ok(eb.r <= vw && kb.r <= vw && await hitIn(t, eb.cx, eb.cy, 'button') && await hitIn(t, kb.cx, kb.cy, 'button[aria-label^="More actions"]'), 'Edit and ⋮ stand in view at the row\'s right, unscrolled (A-13)')
+    ok(kb.r <= vw && await hitIn(t, kb.cx, kb.cy, 'button[aria-label^="More actions"]'), 'the ⋮ (Edit its first row) stands in view at the row\'s right, unscrolled (A-13)')   // (the calm UI build 2026-10-27, a deliberate change) — 2-06
     await t.locator('[role="table"][aria-label="Leads"]').evaluate((tb) => { tb.parentElement.scrollLeft = 400 }); await settle(t, 400)
     const kb2 = await box(r0.getByRole('button', { name: /^More actions for/ }))
     ok(Math.abs(kb2.x - kb.x) < 1, '…and stay frozen while the table pans')
@@ -370,8 +378,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     // a new lead on a tablet: the desk's dialog with Paste a message beside Fill from a document, typing at 16
     await go(t, '/leads?view=table')
     await tapEl(t, t.locator('[data-kb="create"] button').first()); await settle(t, 500)
-    await t.getByRole('menuitem', { name: 'Create New Lead' }).tap(); await settle(t, 900)
-    const tform = t.getByRole('dialog', { name: 'Create New Lead' })
+    await t.getByRole('menuitem', { name: 'Type in a lead' }).tap(); await settle(t, 900)   // (the calm UI build 2026-10-27, a deliberate change)
+    const tform = t.getByRole('dialog', { name: 'New lead', exact: true })
     ok(await tform.getByRole('button', { name: 'Paste a message' }).isVisible() && await tform.getByRole('button', { name: 'Fill from a document' }).isVisible() && await fontSize(tform.locator('[data-field="name"] input')) === 16, 'a tablet\'s new lead: Paste a message beside Fill from a document, typing at 16 (P-08 · A-18)')
     await tform.getByRole('button', { name: 'Close' }).first().tap(); await settle(t, 600)
     ok(await tform.count() === 0, 'nothing typed: ✕ closes at once, no question')
@@ -380,9 +388,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const heads2 = await l.locator('[role="table"][aria-label="Leads"] [role="columnheader"]').count()
     const lvw = await l.evaluate(() => document.documentElement.clientWidth)
     const lrow = l.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').first()
-    const actionsLeft = (await box(lrow.getByRole('button', { name: 'Edit', exact: true }))).x
+    const actionsLeft = (await box(lrow.getByRole('button', { name: /^More actions for/ }))).x   // (the calm UI build 2026-10-27, a deliberate change) — the band is the ⋮ alone (2-06)
     const membersRight = (await box(lrow.locator('[data-kb="assign"] button').last())).r
-    ok(heads2 === 5 && membersRight <= actionsLeft - 8 && actionsLeft < lvw, `at 1024 all five columns (the Members' last control ends at ${Math.round(membersRight)}) and Edit · ⋮ (from ${Math.round(actionsLeft)}) stand on the first screen`)
+    ok(heads2 === 5 && membersRight <= actionsLeft - 8 && actionsLeft < lvw, `at 1024 all five columns (the Members' last control ends at ${Math.round(membersRight)}) and the ⋮ (from ${Math.round(actionsLeft)}) stand on the first screen`)
     await shot(l, '15-t1024-table')
     await L.close()
 
@@ -391,8 +399,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const csv = path.join(os.tmpdir(), `rl-l3-five-${process.pid}.csv`)
     fs.writeFileSync(csv, 'Lead Name,Lead Phone Number,Lead Email,Lead Source,Property Type,Estimated Budget (S$)\nRachel Ong,91234501,rachel.ong@example.com,Instagram,HDB 4-Room,80000\nDaniel Koh,82345602,daniel.koh@example.com,Website,Condo 3-bedder,120000\n,93456703,,Facebook,HDB 5-Room,60000\nSandra Lee,84567804,sandra.lee@example.com,Referral,BTO 4-Room,S$75k\nRachel O.,91234501,,Instagram,HDB 4-Room,80000\n')
     await go(m, '/leads')
-    await tapEl(m, m.getByRole('button', { name: 'Add Lead' }).first()); await settle(m, 500)
-    await m.getByRole('menuitem', { name: 'Import from File' }).tap(); await settle(m, 900)
+    await tapEl(m, m.getByRole('button', { name: 'New lead' }).first()); await settle(m, 500)   // (the calm UI build 2026-10-27, a deliberate change) — New lead ▾ › Import a file
+    await m.getByRole('menuitem', { name: 'Import a file' }).tap(); await settle(m, 900)
     const wiz = m.getByRole('dialog', { name: 'Import Leads' })
     ok(await wiz.getByTestId('import-tips-toggle').isVisible() && !(await wiz.locator('[class*="tipBlock"]').first().isVisible()), 'the tips fold under "How to prepare the file" — the first screen is the file (A-21)')
     await tapEl(m, wiz.getByTestId('import-tips-toggle')); await settle(m, 300)
@@ -429,13 +437,15 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     // ── 8 · Review ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('8 · P-09 · A-24 · A-16 at 390: Review shows what differs')
     await go(m, '/leads')
-    await tapEl(m, m.getByRole('button', { name: /Review imported leads/ }).first()); await settle(m, 900)
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-16) the docked review bar went: the queue is the scope's "To review · n" row */
+    await tapEl(m, m.locator('button[class*="scope-pill"]').first()); await settle(m, 500)
+    await tapEl(m, m.getByTestId('leads-review-open').first()); await settle(m, 900)
     const rv = m.getByRole('dialog', { name: 'Review imported leads' })
     const metas = await rv.locator('[class*="cardMeta"]').evaluateAll((els) => els.map((e) => e.textContent))
     ok(metas.length > 0 && metas.every((x) => !/\b\d{8}\b/.test(x)), 'the queue\'s cards print every number grouped (A-16)')
     ok(await fontSize(rv.locator('[class*="cardMeta"]').first()) === 14, 'the queue card reads 14 (A-25)')
     if (DUP_ROW) {
-      await tapEl(m, rv.getByRole('button', { name: 'View & Merge' }).first()); await settle(m, 900)
+      await tapEl(m, rv.locator('[role="listitem"]').filter({ hasText: 'Compare to merge' }).first()); await settle(m, 900)   // (the calm UI build 2026-10-27, a deliberate change) — 2-16: the duplicate card's press opens the comparison (no View & Merge verb on the card)
       const rows = rv.locator('[aria-label="Merge fields"] [role="row"]')
       const shownRows = (await rows.count()) - 1
       ok(shownRows > 0 && shownRows < 15, `the merge shows the ${shownRows} field(s) that differ, not 15 (A-24)`)
@@ -464,7 +474,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(sql(`select count(*) from leads where name = '${d0name.replace(/'/g, "''")}' and deleted_at is null`) !== '0', `Restore brings ${d0name} back`)
     putBack()
     await tapEl(m, m.getByTestId('deleted-head-menu')); await settle(m, 600)
-    ok(await m.getByRole('menuitem', { name: 'Empty Trash' }).isVisible(), 'Empty Trash waits under the head\'s ⋮ — never an outlined button beside ✕')
+    ok(await m.getByRole('menuitem', { name: 'Delete all forever' }).isVisible(), 'Delete all forever (was Empty Trash) waits under the head\'s ⋮ — never an outlined button beside ✕')   // (the calm UI build 2026-10-27, a deliberate change) — 2-31
     await m.keyboard.press('Escape'); await settle(m, 300)
 
     // ── 10 · Return Lead past its window ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -473,7 +483,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
       await go(t, '/leads?view=table')
       const rr = t.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').filter({ hasText: LATE_RETURN }).first()
       await tapEl(t, rr.getByRole('button', { name: /^More actions for/ })); await settle(t, 700)
-      await t.getByRole('menuitem', { name: 'Return Lead' }).tap(); await settle(t, 1500)
+      await t.getByRole('menuitem', { name: 'Return to Qanvast' }).tap(); await settle(t, 1500)   // (the calm UI build 2026-10-27, a deliberate change) — W-599: the row says where the lead goes
       const late = t.getByTestId('return-late')
       ok(await late.isVisible() && /days to return this lead are over/.test(await late.innerText()) && await t.getByLabel('Select a reason').count() === 0, `${LATE_RETURN}: the notice first — the form waits (A-29)`)
       await shot(t, '20-t768-return-late')
@@ -495,9 +505,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(await d.locator('[role="tablist"][aria-label="Filter groups"]').count() === 1 && (await d.getByTestId('filters-done').innerText()).trim() === 'Done', 'Filters keeps its rail and its Done')
     await d.keyboard.press('Escape'); await settle(d, 400)
     await d.locator('[data-kb="create"] button').first().click(); await settle(d, 300)
-    await d.getByRole('menuitem', { name: 'Create New Lead' }).click(); await settle(d, 800)
-    const dform = d.getByRole('dialog', { name: 'Create New Lead' })
-    ok(await dform.getByTestId('paste-message').count() === 0 && await dform.getByRole('button', { name: 'Create', exact: true }).isVisible() && await dform.getByRole('button', { name: 'Cancel' }).isVisible(), 'the form keeps Cancel · Create and its one Fill from a document')
+    await d.getByRole('menuitem', { name: 'Type in a lead' }).click(); await settle(d, 800)   // (the calm UI build 2026-10-27, a deliberate change) — 2-49: "New lead" · "Add lead"
+    const dform = d.getByRole('dialog', { name: 'New lead', exact: true })
+    ok(await dform.getByTestId('paste-message').count() === 0 && await dform.getByRole('button', { name: 'Add lead', exact: true }).isVisible() && await dform.getByRole('button', { name: 'Cancel' }).isVisible(), 'the form keeps Cancel · Add lead and its one Fill from a document')
     await d.keyboard.press('Escape'); await settle(d, 400)
     const dtask = d.locator('[role="table"][aria-label="Leads"] button[aria-label^="Add a task for"]').first()
     await dtask.click(); await settle(d, 600)

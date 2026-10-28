@@ -1,0 +1,279 @@
+/*
+ * (the Dashboard redesigned, 2026-10-26 — lane D3) The grid's cards: Needs you's frame and Your day · Pipeline · Projects · Team · On site.
+ * (the calm pass, 2026-10-26 — his "too busy … simplify" and the Claude Design option with his six corrections, brief-calm.md; lane C3) **A white
+ * card with no border and no shadow**, 8 round (the house's card radius), the page's padding inside (`--dash-card-pad`, set by the page — lane
+ * C1); a head of three things — the title in sentence case, its count in the secondary ink, one quiet fact or control at its right; rows with
+ * no rules between them, their words in two inks (the default and the secondary) and the primary only for a door's words and a day's tint. Data
+ * marks — the Pipeline's bars, the progress bars, the capacity segments, a meeting's dot — take the primary's tones, lightest to darkest
+ * (§ 2.1: a mark, not a button). Red is ours and late only; amber is at risk, a client's lateness, a load over capacity. Type
+ * comes from the house tokens: 20 for a card's title, 14 for a row, 12 for what is secondary at a desk; ≤1024 the house scale on the move
+ * (responsive.md: 16 for a name or a sentence, 14 for the rest, 44 targets).
+ */
+
+/* ── the frame ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.frame {
+  min-width: 0; display: flex; flex-direction: column;
+  /* the primary's tones, lightest to darkest — the Pipeline's stages New → Won, progress, capacity, a meeting's dot */
+  --tone-1: var(--om-color-primary-variant-hover);
+  --tone-2: var(--om-color-on-inverse-surface-primary);
+  --tone-3: color-mix(in srgb, var(--om-color-primary-default) 40%, var(--om-color-on-inverse-surface-primary));
+  --tone-4: color-mix(in srgb, var(--om-color-primary-default) 65%, var(--om-color-on-inverse-surface-primary));
+  --tone-5: var(--om-color-primary-hover);   /* the darkest: Won, a full load — the option's deep purple, deeper than a button's fill */
+  --track: var(--om-color-surface-bg);
+}
+.card {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4);
+  padding: var(--dash-card-pad, var(--om-spacing-6)) 0;
+  background: var(--om-color-surface-default); border-radius: var(--om-radius-2);
+  container: dashcard / inline-size;
+}
+/* the page's padding at the card's sides: the head always, the body unless it pads itself (Needs you); top and bottom are the card's */
+.body { display: flex; flex-direction: column; min-width: 0; }
+.body[data-inset] { padding-inline: var(--dash-card-pad, var(--om-spacing-6)); }
+.body:not([data-inset]) { margin-bottom: calc(-1 * var(--dash-card-pad, var(--om-spacing-6))); }
+
+/* the head: title + count · the one right slot (it may shrink; the title never gives way) · ✦ Ask and ⋮ at the end — holding their room at a
+   desk, shown on hover or focus — or a finger's one ⋮ */
+.head { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--om-spacing-2) var(--om-spacing-3); min-height: 24px; min-width: 0; padding-inline: var(--dash-card-pad, var(--om-spacing-6)); }
+.headTitle { flex: 0 0 auto; max-width: 100%; margin: 0; display: inline-flex; align-items: baseline; gap: var(--om-spacing-2); font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }
+.headName { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headCount { flex: none; font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.tools { flex: none; display: inline-flex; align-items: center; gap: var(--om-spacing-1); margin-left: auto; opacity: 0; transition: opacity var(--motion-hover); }
+.card:hover .tools, .head:focus-within .tools, .tools:has([aria-expanded='true']) { opacity: 1; }
+.tools[data-touch] { opacity: 1; }
+.headRight + .tools { margin-left: 0; }
+.cardMenu { display: inline-flex; }
+.menuRow { display: contents; }
+.menuGlyph { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+.headRight { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.headFact { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headLink { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; border-radius: var(--om-radius-1); }
+.headLink:hover { color: var(--om-color-on-surface-default); text-decoration: underline; text-underline-offset: 2px; }
+.headLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* a door's words: the house text link (14/600, the primary, no underline) — order-proof over it where it grows under a finger */
+.textLink { composes: link from '../../om/text-link.module.css'; white-space: nowrap; }
+.moreLink { composes: link from '../../om/text-link.module.css'; align-self: flex-start; margin-top: var(--om-spacing-2); }
+.verb { white-space: nowrap; }
+
+/* ── Your day ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* the week in the head: seven days, the day shown a tint (his note — never a solid block), today's number in the primary */
+.week { min-width: 0; display: flex; }
+.weekRail { min-width: 0; }
+/* the rail's track (components/om/chip-rail.tsx: wrap › rail › track) — days 2 apart, as the option draws them */
+.weekRail > div:first-child > div { gap: 2px; }
+.dayCell {
+  flex: none; width: 44px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: var(--om-spacing-1) 0; border: 0; border-radius: var(--om-radius-2); cursor: pointer;
+  background: transparent; color: var(--om-color-on-surface-default); font: inherit;
+  transition: background-color var(--motion-hover);
+}
+.dayCell:hover { background: var(--om-color-hover-04p); }
+.dayCell:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.dayName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.dayDate { font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 3px; height: 4px; }
+.dots i { display: block; width: 4px; height: 4px; border-radius: var(--om-radius-full); background: var(--tone-2); }
+.dayCell[data-today] .dayDate { color: var(--om-color-primary-default); }
+.dayCell[aria-pressed='true'], .dayCell[aria-pressed='true']:hover { background: var(--om-color-primary-variant); }
+.dayCell[aria-pressed='true'] .dayName, .dayCell[aria-pressed='true'] .dayDate { color: var(--om-color-primary-default); }
+.dayCell[aria-pressed='true'] .dots i { background: var(--tone-3); }
+
+/* a day's rows: the time column · a tick or a dot · the words · one action · (when any row has one) a ⋮ */
+.agenda { display: flex; flex-direction: column; min-width: 0; }
+.agendaRow {
+  display: grid; grid-template-columns: 88px 24px minmax(0, 1fr) auto; align-items: center; column-gap: var(--om-spacing-3);
+  min-height: 52px; padding: var(--om-spacing-2); margin-inline: calc(-1 * var(--om-spacing-2)); border-radius: var(--om-radius-1); min-width: 0;
+}
+.agenda[data-menus] .agendaRow { grid-template-columns: 88px 24px minmax(0, 1fr) auto 28px; }   /* the row ⋮ ends where Needs you’s verbs end */
+.agenda:not([data-menus]) .rowMore { display: none; }
+.agendaRow:has(.words:hover) { background: var(--om-color-hover-04p); }
+.when { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.when[data-late], .whenInline[data-late] { color: var(--om-color-tertiary-red-default); }
+.whenInline { display: none; }
+.mark { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+.tick { color: var(--om-color-on-surface-secondary); }
+.tick:hover { color: var(--om-color-primary-default); }
+.dot { display: block; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); }
+.dot[data-kind='meeting'], .dot[data-kind='hangout'] { background: var(--tone-4); }
+.words { min-width: 0; display: flex; flex-direction: column; gap: 2px; color: inherit; text-decoration: none; border-radius: var(--om-radius-1); }
+.words:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.title { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agendaRow[data-done] .title { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.agendaRow[data-ended] .when, .agendaRow[data-ended] .title { color: var(--om-color-on-surface-secondary); }
+.act { display: inline-flex; align-items: center; justify-content: flex-end; min-width: 0; }
+/* the row's ⋮ — at a desk only while the row is under the pointer or holds the keyboard (or its menu is open) */
+.rowMore { display: inline-flex; align-items: center; justify-content: center; opacity: 0; transition: opacity var(--motion-hover); }
+.agendaRow:hover .rowMore, .agendaRow:focus-within .rowMore, .rowMore[data-open] { opacity: 1; }
+.wa { display: block; }
+.quiet { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.quietLine { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── Pipeline ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.funnel { display: flex; flex-direction: column; min-width: 0; }
+.stageRow {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 36px; align-items: center; column-gap: var(--om-spacing-3);
+  min-height: 30px; padding: var(--om-spacing-1) var(--om-spacing-2); margin-inline: calc(-1 * var(--om-spacing-2)); border-radius: var(--om-radius-1);
+  color: inherit; text-decoration: none;
+}
+.stageRow:hover { background: var(--om-color-hover-04p); }
+.stageRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.stageName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stageTrack { position: relative; height: 10px; min-width: 0; border-radius: var(--om-radius-full); background: var(--track); overflow: hidden; }
+.stageBar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--om-radius-full); background: var(--tone-1); }
+.stageRow[data-step='1'] .stageBar { background: var(--tone-2); }
+.stageRow[data-step='2'] .stageBar { background: var(--tone-3); }
+.stageRow[data-step='3'] .stageBar { background: var(--tone-4); }
+.stageRow[data-step='4'] .stageBar { background: var(--tone-5); }
+.stageCount { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.funnelFoot { margin: var(--om-spacing-3) 0 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); display: flex; flex-wrap: wrap; align-items: center; column-gap: 0; row-gap: var(--om-spacing-1); }
+
+/* ── Projects ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.lines { display: flex; flex-direction: column; min-width: 0; margin-top: calc(-1 * var(--om-spacing-2)); }
+.projectRow {
+  display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-2); margin-inline: calc(-1 * var(--om-spacing-2));
+  border-radius: var(--om-radius-1); color: inherit; text-decoration: none; min-width: 0;
+}
+.projectRow:hover { background: var(--om-color-hover-04p); }
+.projectRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.projectTop { display: flex; align-items: baseline; gap: var(--om-spacing-3); min-width: 0; }
+.projectName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.projectState { flex: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.projectState[data-health='late'] { color: var(--om-color-tertiary-red-default); }
+.projectState[data-health='at_risk'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.progress { position: relative; display: block; height: 4px; border-radius: var(--om-radius-full); background: var(--track); overflow: hidden; }
+.progressFill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--om-radius-full); background: var(--tone-4); }
+.progress[data-health='on_hold'] .progressFill { background: var(--om-color-on-surface-border); }
+.projectLine { display: block; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Team load ────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.teamList { display: flex; flex-direction: column; min-width: 0; }
+.teamRow {
+  display: grid; grid-template-columns: minmax(0, 1fr) 96px 48px; align-items: center; column-gap: var(--om-spacing-4);
+  min-height: 48px; padding: var(--om-spacing-1) var(--om-spacing-2); margin-inline: calc(-1 * var(--om-spacing-2)); border-radius: var(--om-radius-1);
+  color: inherit; text-decoration: none; min-width: 0;
+}
+.teamRow:hover { background: var(--om-color-hover-04p); }
+.teamRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.teamRow[data-nobody] { grid-template-columns: minmax(0, 1fr); }
+.teamWho { display: flex; flex-direction: column; min-width: 0; }
+.teamName { min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.teamRow[data-nobody] .teamName { color: var(--om-color-on-surface-secondary); }
+.teamCaption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the capacity: one segment per project a member can carry — filled for each they carry (Full in the darkest tone), past it amber */
+.load { display: flex; gap: 3px; min-width: 0; }
+.load i { flex: 1; min-width: 0; height: 6px; border-radius: var(--om-radius-full); background: var(--track); }
+.load i[data-s='filled'] { background: var(--tone-4); }
+.teamRow[data-full] .load i[data-s='filled'] { background: var(--tone-5); }
+.load i[data-s='over'] { background: var(--om-color-tertiary-yellow-default); }
+.loadFigure { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.teamRow[data-full] .loadFigure { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.teamRow[data-over] .loadFigure { font: var(--om-type-subheading-m); color: var(--om-color-on-tertiary-yellow-variant); }
+/* the contractors' line: the card's foot, under a rule, with its View */
+.crewLine {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); padding-top: var(--om-spacing-4);
+  box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
+}
+.crewWords { min-width: 0; }
+.crewLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+
+/* ── On site ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* one row at rest — three across (two on a phone), 4 : 3 —; an update's photos side by side under its one caption */
+.photos { display: grid; grid-template-columns: repeat(var(--site-cols, 3), minmax(0, 1fr)); grid-auto-flow: row dense; gap: var(--om-spacing-5) var(--om-spacing-3); }
+.photoGroup { grid-column: span var(--span, 1); display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.photoRow { display: grid; grid-template-columns: repeat(var(--span, 1), minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.photo { composes: thumb from '../../om/thumb.module.css'; text-decoration: none; }
+/* the house square at the grid's width, 4 : 3, a card's corner — order-proof over the thumb's own 36 and r4 (the load-order lesson, REG-2883…) */
+.photo.photo { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: var(--om-radius-2); }
+.photo:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.photo > img { transition: transform var(--motion-hover); }
+.photo:hover > img { transform: scale(1.02); }
+.photo[data-words] { align-items: flex-start; justify-content: flex-start; padding: var(--om-spacing-3); }
+.photoWords { display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; }
+.photoWords > span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.photoCaption { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.photoTitle { color: var(--om-color-on-surface-default); }
+@media (prefers-reduced-motion: reduce) { .photo > img { transition: none; } .photo:hover > img { transform: none; } }
+
+/* ── the ring (components/dashboard/cards/day-ring.tsx — Needs you's All caught up draws it) ── */
+.ring { display: block; flex: none; }
+.ringTrack { stroke: var(--om-color-surface-variant); }
+.ringArc { stroke: var(--om-color-primary-default); transition: stroke-dasharray 0.4s var(--om-ease-standard, ease); }
+@media (prefers-reduced-motion: reduce) { .ringArc { transition: none; } }
+
+/* ── the ghost (card-ghosts.tsx): the week's row as the rail lays it, and a finger's ⋮ only where fingers are ── */
+.ghostTrack { display: flex; gap: 2px; min-width: 0; overflow: hidden; }
+.ghostTouch.ghostTouch { display: none; }
+.ghostDesk.ghostDesk { visibility: hidden; }
+.ghostToday.ghostToday { background: var(--om-color-primary-variant); }
+/* On site's ghost: three across at a desk, two on a phone (the card's `cap`), its one group the row's width */
+@media (max-width: 767px) {
+  .ghostPhotos.ghostPhotos { --site-cols: 2; }
+  .ghostPhotos .photoGroup { grid-column: 1 / -1; }
+  .ghostPhotos .photoRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (hover: none) and (max-width: 1024px) { .ghostTouch.ghostTouch { display: inline-flex; } .ghostDesk.ghostDesk { display: none; } }
+/* (the calm UI build 2026-10-27 — the audit's 1-28) a phone's cards carry no ⋮ — neither does their ghost */
+@media (max-width: 767px) { .ghostTouch.ghostTouch.ghostTouch { display: none; } }
+
+/* ── a narrow card (a phone, a card a third of a tablet): the week takes its own row, spread; a row's time leads its caption ── */
+@container dashcard (max-width: 519px) {
+  .head[data-wide] { flex-wrap: wrap; }
+  .head[data-wide] .headRight { flex: 1 0 100%; order: 3; }
+  .head[data-wide] .tools.tools { margin-left: auto; }
+  .head[data-wide] .week, .head[data-wide] .weekRail, .head[data-wide] .ghostTrack { flex: 1; }
+  .head[data-wide] .ghostTrack { justify-content: space-between; gap: 0; }
+  .head[data-wide] .weekRail > div:first-child > div { min-width: 100%; justify-content: space-between; gap: 0; }
+  .agendaRow { grid-template-columns: 24px minmax(0, 1fr) auto; align-items: start; }
+  .mark { height: 24px; }
+  .act, .rowMore { align-self: center; }
+  .agenda[data-menus] .agendaRow { grid-template-columns: 24px minmax(0, 1fr) auto 28px; }
+  .when { display: none; }
+  .whenInline { display: inline; }
+  .title, .caption { white-space: normal; overflow-wrap: anywhere; }
+  .caption { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  /* a project's name is how it is known, and a finger has no hover to read a cut one: it takes two lines here, its line two as well */
+  .projectName, .projectLine { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .projectTop { align-items: flex-start; }
+  .teamRow { grid-template-columns: minmax(0, 1fr) 72px 48px; column-gap: var(--om-spacing-3); }
+  .stageRow { grid-template-columns: 88px minmax(0, 1fr) 36px; }
+}
+
+/* a card too narrow for its title and its fact on one line (a glance column on a tablet held sideways, a phone at 320): the fact takes the
+   next line, under the title — never pushed to the right of an empty line */
+@container dashcard (max-width: 299px) {
+  .head { flex-wrap: wrap; }
+  .headRight { flex: 1 0 100%; order: 3; margin-left: 0; justify-content: flex-start; }
+  .head .tools.tools { margin-left: auto; }
+}
+
+/* ── ≤1024: the house scale on the move — 16 for a name or a sentence, 14 for the rest ── */
+@media (max-width: 1024px) {
+  .title, .projectName, .teamName { font: var(--om-type-subtitle-l); }
+  .caption, .projectLine, .teamCaption, .photoCaption, .photoWords, .dayName, .when, .loadFigure, .projectState { font: var(--om-type-body-m); }
+  .teamRow[data-full] .loadFigure, .teamRow[data-over] .loadFigure { font: var(--om-type-subheading-m); }
+  .stageName { font: var(--om-type-body-l); }
+  .stageCount { font: var(--om-type-subheading-l); }
+  .crewLabel { font: var(--om-type-subtitle-l); }
+}
+/* a finger's 44 (REG-273 · REG-307): rows, links and verbs grow; under a finger the row's ⋮ is always on (no hover there) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .stageRow, .projectRow, .teamRow, .agendaRow { min-height: 44px; }
+  .stageRow { padding-block: var(--om-spacing-2); }
+  .verb.verb { min-height: 44px; }
+  .textLink.textLink, .moreLink.moreLink, .headLink.headLink { display: inline-flex; align-items: center; min-height: 44px; }
+  .head { min-height: 44px; }
+  .dayCell { min-height: 56px; }
+}
+@media (hover: none) and (max-width: 1024px) {
+  .rowMore { opacity: 1; }
+  .agenda[data-menus] .agendaRow { grid-template-columns: 88px 24px minmax(0, 1fr) auto 44px; }
+}
+@container dashcard (max-width: 519px) {
+  @media (hover: none) and (max-width: 1024px) {
+    .agenda[data-menus] .agendaRow { grid-template-columns: 24px minmax(0, 1fr) auto 44px; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .tools, .rowMore { transition: none; } }

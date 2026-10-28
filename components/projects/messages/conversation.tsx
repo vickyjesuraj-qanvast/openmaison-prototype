@@ -31,11 +31,12 @@ const POLL_MS = 8000
 /** (UC-069) How many earlier pages a search's landing (`?at=`) reads back to find its line. */
 const AT_PAGES = 5
 
-/** "Benjamin Han and Mei Ling read this on their page" — who the team writes to (H-Q11). */
+/** "Benjamin and Mei Ling see this" — who the team writes to (H-Q11). (the calm UI build 2026-10-27, 1-21 · W-121) said once, by first name, under
+    the composer only (was "Benjamin Han and Mei Ling Han read this on their page", in the head AND under the composer). */
 export function readersLine(p: ConversationData['people']): string {
-  const names = [p.client, ...p.household]
+  const names = [p.client, ...p.household].map((n) => n.trim().split(/\s+/)[0] ?? n.trim())
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0]!
-  return p.invited ? `${list} ${names.length > 1 ? 'read' : 'reads'} this on their page` : `${p.client} hasn’t been invited to their page yet — messages wait there for when they are`
+  return p.invited ? `${list} ${names.length > 1 ? 'see' : 'sees'} this` : `${p.client} hasn’t been invited to their page yet — messages wait there for when they are`
 }
 /** (parity map, UC-064) Who reads a conversation, by its kind — the composer's hint. (pending modules S26) a lead's Team conversation and a
     members' one say theirs. */
@@ -73,7 +74,8 @@ export function conversationHref(d: Pick<ConversationData, 'key' | 'kind' | 'pro
  * Messages — lands on one) and ⋮ Pin to top · Mute · Copy link. The composer's "+" (Photo · File · Voice note · The site's location · A
  * contact) and the emoji button; under the client's newest unanswered message, two suggested replies by rule — a tap fills the box.
  */
-export function Conversation({ data: initial, onRead, headStart, onLeft, onStartGroup }: { data: ConversationData; onRead?: () => void; /** the head's start — the project tab's Client · Team */ headStart?: ReactNode
+export function Conversation({ data: initial, onRead, headStart, onLeft, onStartGroup, clientChip = true }: { data: ConversationData; onRead?: () => void; /** the head's start — the project tab's Team chat link */ headStart?: ReactNode
+  /** (the calm UI build 2026-10-27, 3-13) the client's lines say "Client" — /chat's, where threads mix; a project's client-only one passes false */ clientChip?: boolean
   /** (pending modules S26) a group this member left from its Details — Messages closes it and offers Undo */ onLeft?: (o: { id: string; lineId: string; title: string }) => void
   /** (S26) two people's conversation → New group with them (Messages' own dialog) */ onStartGroup?: (memberIds: string[]) => void }) {
   const snackbar = useSnackbar()
@@ -282,7 +284,7 @@ export function Conversation({ data: initial, onRead, headStart, onLeft, onStart
       <div ref={scroller} className={styles.scroll} data-testid="conversation-scroll">
         {data.more ? <span className={styles.earlier}><Button appearance="text" onPress={() => { void earlier() }}>Show earlier messages</Button></span> : null}
         {data.lines.length ? (
-          <ThreadLines items={data.lines} me={{ kind: 'studio', id: data.me.id }} readAt={readAt} now={data.now} clientChip testId="conversation-lines"
+          <ThreadLines items={data.lines} me={{ kind: 'studio', id: data.me.id }} readAt={readAt} now={data.now} clientChip={clientChip} testId="conversation-lines"
                        eventText={(i) => (i.event ? { text: i.body, icon: EVENT_ICON[i.event] ?? 'group' } : null)}
                        highlight={current ? { query: finding ? query : '', ids: finding ? ids : [current], current } : undefined} after={after}
                        onRemove={(l) => { void remove(l.id) }}

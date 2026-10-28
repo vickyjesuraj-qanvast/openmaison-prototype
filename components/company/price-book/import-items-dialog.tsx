@@ -17,6 +17,15 @@ import { parseCsv } from '@/lib/csv'
 import { parseXlsx } from '@/lib/xlsx'
 import { ITEM_KINDS, ITEM_KIND_LABEL, type ItemKind } from '@/lib/quotes/items-model'
 import styles from './price-book.module.css'
+import { HowItWorks } from './how-it-works'
+
+/** (the calm UI build 2026-10-27, the UI audit's 4-40 · W-470 · W-623) what the import's two-line subtitle and its fields' helpers said. */
+const HOW_IMPORT = [
+  `A CSV or XLSX file, or rows copied from Excel or Google Sheets — up to ${IMPORT_LIMIT} rows at a time.`,
+  'A header row (Item · Unit · Cost…) names the columns for you.',
+  'The book’s own export reads back in — the sheet carries no photos.',
+  'Vendor: for rows without a vendor of their own — from Company › Finance › Vendors.',
+]
 
 /**
  * (REG-594) Import from a spreadsheet: the rows pasted here go through the quote editor's column mapping (REG-476) and land in
@@ -63,7 +72,7 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades, costs
   return (
     <>
       <Dialog open={open && !mapping} onClose={onClose} title="Import from a spreadsheet" size="modal" width={600}
-              subtitle={`A CSV or XLSX file, or rows copied from Excel or Google Sheets — up to ${IMPORT_LIMIT} rows at a time. A header row (Item · Unit · Cost…) names the columns for you.`}
+              subtitle={`Excel or CSV, up to ${IMPORT_LIMIT} rows.`}   /* (the calm UI build 2026-10-27, W-470) one line; the rest under How the Price book works */
               footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!ready} onPress={() => setMapping(true)}>Next</Button></>}>
         <div className={styles.fields} data-testid="import-dialog">
           {/* (sweep S5 #6) Back from the mapping keeps the file: it shows here, Next maps it again, ✕ lets it go for pasted rows */}
@@ -72,15 +81,17 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades, costs
             <div className={styles.fileRow} data-testid="import-file"><Icon name="table" size={20} weight={300} /><span className={styles.fileName}>{(() => { const n = file.rows.length - (guessHeader(file.rows) ? 1 : 0); return `${file.name} · ${n} ${n === 1 ? 'item' : 'items'}` })()}</span>
               <Tooltip label="Remove the file"><IconButton icon="close" label={`Remove ${file.name}`} size={24} variant="bare" iconSize={18} onClick={() => setFile(null)} /></Tooltip></div>
           ) : null}
-          <Dropzone variant="compact" title={<>Drop a CSV or XLSX file, or <b>browse</b></>} helper="The book’s own export reads back in — the sheet carries no photos" accept=".csv,.xlsx,.xls,text/csv" onPick={(f) => { void read(f) }} />
+          <Dropzone variant="compact" title={<>Drop a CSV or XLSX file, or <b>browse</b></>} accept=".csv,.xlsx,.xls,text/csv" onPick={(f) => { void read(f) }} />
           <div className={styles.pasteBox}>
             <TextArea label="Or paste the rows here" value={text} onChange={(v: string) => setText(v)} description={text.trim() && !ready ? 'That looks like a single value — paste whole rows with tabs between the columns.' : undefined} />
           </div>
-          <VendorNameField label="Vendor (optional)" value={vendor} onChange={setVendor} directory={vendors.list} onAdd={vendors.add} maxLength={80} helper="For rows without a vendor of their own — from Company › Finance › Vendors" testId="import-vendor" />
+          <VendorNameField label="Vendor (optional)" value={vendor} onChange={setVendor} directory={vendors.list} onAdd={vendors.add} maxLength={80} testId="import-vendor" />
+          {/* (the calm UI build 2026-10-27, the UI audit's 4-40 · W-623) the subtitle's and the fields' explanations, one press away */}
+          <HowItWorks points={HOW_IMPORT} testId="import-how" />
         </div>
       </Dialog>
       <PasteItemsDialog open={open && mapping} text={text} grid={file?.rows ?? null} source={file?.name ?? null} anchor={null} target="book" book={book} trades={trades} vendor={vendor.trim() || null} costs={costs} units={units}
-                        bookKind={{ label: 'Rows with no Kind', options: ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k]), value: ITEM_KIND_LABEL[kind], onChange: (v) => setKind(ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === v) ?? 'purchase') }}
+                        bookKind={{ label: 'Rows with no Type', options: ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k]), value: ITEM_KIND_LABEL[kind], onChange: (v) => setKind(ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === v) ?? 'purchase') }}
                         onClose={onClose} onBack={() => setMapping(false)} onAdd={(lines, _place, match) => { setMapping(false); void onImport(lines, vendor.trim() || null, match ?? 'update', kind) }} />
     </>
   )

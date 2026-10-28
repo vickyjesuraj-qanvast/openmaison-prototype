@@ -19,12 +19,13 @@ export function QuotesEmpty({ onFromScratch, onFromTemplate, onUpload }: { onFro
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/figma-assets/empty-quotes.svg" width={180} height={176} alt="" className={styles.art} />
         <div className={styles.texts}>
-          <p className={styles.title}>Create your first quote</p>
-          <p className={styles.body}>Create quotes and share it with your clients</p>
+          {/* (the calm UI build 2026-10-27, 2-23 · W-161) a sentence that says what to do — "share it" read as a typo */}
+          <p className={styles.title}>No quote yet</p>
+          <p className={styles.body}>Make one from a template or upload your own.</p>
         </div>
         <div className={styles.buttons}>
-          <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From Scratch</Button>
-          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="Create Quote">From Template</Button>   {/* (REG-735) C, while the toolbar's Create steps back */}
+          <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From scratch</Button>
+          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="New quote">From a template</Button>   {/* (REG-735) C, while the toolbar's Create steps back */}
           {onUpload ? <Button appearance="text" onPress={onUpload} data-testid="quotes-empty-upload">Upload a quote</Button> : null}
         </div>
       </div>

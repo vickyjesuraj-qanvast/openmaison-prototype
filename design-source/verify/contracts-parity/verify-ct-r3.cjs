@@ -31,11 +31,11 @@ const caseTrust = async (pg) => {
 
   await step('a new contract asks to read to the end and tick to accept; the studio can change both', async () => {
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
-    await page.getByRole('button', { name: /^New Contract/ }).last().click(); await page.getByRole('menuitem', { name: 'From the studio agreement' }).click()
+    await page.getByRole('button', { name: /^New contract/i }).last().click(); await page.getByRole('menuitem', { name: 'From the studio agreement' }).click()
     await page.getByTestId('contract-editor').waitFor({ timeout: 15000 }); await ready(page)
     NEW = page.url().split('/contracts/')[1].split('?')[0]
     ok('both gates on for a new contract', sql(`select requires_scroll || requires_accept from contracts where id='${NEW}'`) === '11')
-    await page.getByRole('button', { name: 'eSignatures' }).click()
+    await page.getByRole('button', { name: 'Signatures', exact: true }).filter({ hasText: 'draw' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) eSignatures → Signatures (4-19)
     const g = page.getByTestId('esign-gates'); await g.waitFor()
     ok('eSignatures › Before the client signs shows them', (await g.getByRole('switch').count()) === 2 || (await g.locator('input[type=checkbox]').count()) === 2)
     await g.getByLabel('The words they tick').fill('I have read this agreement and I accept it.')
@@ -49,7 +49,7 @@ const caseTrust = async (pg) => {
     // approved first; (REG-786, UX audit C8) a Draft's copy icon reads "Copy link — marks it Sent"
     sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${NEW}')`)
     await page.reload(); await page.getByTestId('contract-editor').waitFor(); await ready(page)
-    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(800)
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.getByRole('menuitem', { name: 'Copy signing link' }).click(); await snack(page, 'waiting for signature now')   // (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-156 · W-363; await page.waitForTimeout(800)
     const client = await browser.newContext({ viewport: { width: 1440, height: 1024 } })   // (S42 B-02, a deliberate change of this rule) the client's own browser — the studio's never stamps Viewed
     const sp = await client.newPage(); await sp.goto(`${BASE}/sign/${sql(`select sign_token from contracts where id='${NEW}'`)}`); await ready(sp)   // (pending modules S03, a deliberate change of this rule) the link is the contract's token, never its id
     ok('the first open is stamped', sql(`select viewed_at is not null from contracts where id='${NEW}'`) === '1')
@@ -107,7 +107,7 @@ const caseTrust = async (pg) => {
     await dlg.getByRole('checkbox', { name: 'Payment Terms' }).click({ force: true }); await dlg.getByRole('checkbox', { name: 'Scope of Works' }).click({ force: true })
     await page.waitForTimeout(300)
     await dlg.getByRole('button', { name: 'Copy link' }).click()
-    await snack(page, 'the documents are Sent to Client now'); await page.waitForTimeout(800)
+    await snack(page, 'the documents are waiting for signature now')   // (the calm UI build 2026-10-27, a deliberate change) W-363; await page.waitForTimeout(800)
     const bid = sql(`select bundle_id from contracts where id='probe-ct3-a'`)
     ok('positions follow the ticks', sql(`select title from contracts where bundle_id='${bid}' order by bundle_position`) === 'Payment Terms\nScope of Works')
     const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/bundle/${bid}`); await ready(sp)
@@ -136,7 +136,7 @@ const caseTrust = async (pg) => {
     await page.waitForURL(/\/templates\/contracts\//); await ready(page)
     const tid = page.url().split('/templates/contracts/')[1].split('?')[0]
     ok('a new template’s gates are on', sql(`select requires_scroll || requires_accept from contract_templates where id='${tid}'`) === '11')
-    await page.getByRole('button', { name: 'eSignatures' }).click()
+    await page.getByRole('button', { name: 'Signatures', exact: true }).filter({ hasText: 'draw' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) eSignatures → Signatures (4-19)
     await page.getByTestId('esign-gates').waitFor()
     ok('and the template editor shows them', await page.getByTestId('esign-gates').isVisible())
     await page.keyboard.press('Escape')

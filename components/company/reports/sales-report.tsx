@@ -21,7 +21,19 @@ import {
   type FlowRow, type FunnelStep, type Granularity, type MemberSales, type PipelineRow, type QuietBand, type QuietMember, type SalesReport, type SourceSales,
 } from '@/lib/leads/sales'
 import { ReportTable } from './report-table'
+import { FoldButton, HowCounted } from './report-pill'
 import styles from './sales-report.module.css'
+
+/** (the calm UI build 2026-10-27 — 5-21, REG-817) What the folds drew last on the report's opening range, for its ghost: By source's shown rows
+    and the ones folded under them. */
+export const SALES_FOLD = { sources: 'om.count.sales.sources.shown', rest: 'om.count.sales.sources.rest' } as const
+/** (5-21) Going quiet's two views, one section: by how long the lead has been quiet, or by member (was its own second table) */
+export const QUIET_VIEWS = [{ value: 'bands', label: 'By days quiet' }, { value: 'members', label: 'By member' }] as const
+/** (5-21) By source: the sources that won a lead lead the table; the rest fold under it — all of them when none has won yet */
+export const sourceFold = (sources: readonly SourceSales[]) => {
+  const won = sources.filter((s) => s.won > 0)
+  return won.length && won.length < sources.length ? { shown: won, rest: sources.filter((s) => s.won === 0) } : { shown: [...sources], rest: [] as SourceSales[] }
+}
 
 /*
  * (pending modules S45A — H-UHD-1; 1.0's six sales reports, urbanhomedemo 479480a5e · 4da810229; his "build everything and complete it"
@@ -93,13 +105,21 @@ const member = (r: { name: string; role: string; color: string }) => (
 const two = (a: ReactNode, b: ReactNode) => <span className={styles.two}><span className={styles.memberName}>{a}</span>{b ? <span className={styles.memberRole}>{b}</span> : null}</span>
 
 /** One of the report's sections: its title and help, the section's tools and Column settings, its table on the listing's model or its one line. */
-function Section<R extends { id: string }>({ id, title, help, note, table, defs, rows, render, empty, tools, first = false, children }: {
+function Section<R extends { id: string }>({ id, title, help, note, table, defs, rows, render, empty, tools, first = false, children, fold, tableFold }: {
   id: string; title: string; help: string; /** what the figures say, under the help — its own line */ note?: string | null; table: string; defs: readonly TableColumnDef[]; rows: readonly R[]; render: (r: R, key: string) => ReactNode; empty: string
   tools?: ReactNode; first?: boolean; children?: ReactNode
+  /** (the calm UI build 2026-10-27 — 5-21, T-14) rows folded under the table, one text button away */
+  fold?: { rows: readonly R[]; more: string; less: string; testId: string }
+  /** (5-21) the whole table folded under the section's chart — its figures one text button away */
+  tableFold?: { more: string; less: string; testId: string }
 }) {
   const mobile = useMediaQuery(MOBILE)
   const cols = useTableColumns(table, defs, mobile)
   const [open, setOpen] = useState(false)
+  const [unfolded, setUnfolded] = useState(false)
+  const [tableOpen, setTableOpen] = useState(false)
+  const shown = fold && unfolded ? [...rows, ...fold.rows] : rows
+  const tableShown = !tableFold || tableOpen
   return (
     <section className={`${styles.section} ${first ? '' : styles.block}`} aria-labelledby={`sales-${id}`} data-testid={`sales-${id}`}>
       <div className={styles.sectionHead}>
@@ -108,18 +128,20 @@ function Section<R extends { id: string }>({ id, title, help, note, table, defs,
           <span className={styles.sectionHelp}>{help}</span>
           {note ? <span className={styles.sectionNote} data-testid={`sales-${id}-note`}>{note}</span> : null}
         </div>
-        {tools || (!mobile && rows.length) ? (
+        {tools || (!mobile && rows.length && tableShown) ? (
           <span className={styles.sectionTools}>
             {tools}
-            {!mobile && rows.length ? <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setOpen(true)} /></Tooltip> : null}
+            {!mobile && rows.length && tableShown ? <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setOpen(true)} /></Tooltip> : null}
           </span>
         ) : null}
       </div>
       {children}
-      {rows.length ? (
-        <ReportTable css={styles} table={table} label={title} testId={`sales-${id}-table`} rowTestId={`sales-${id}-row`} rows={rows}
+      {tableFold && rows.length ? <FoldButton open={tableOpen} more={tableFold.more} less={tableFold.less} onToggle={() => setTableOpen((o) => !o)} testId={tableFold.testId} /> : null}
+      {!tableShown ? null : shown.length ? (
+        <ReportTable css={styles} table={table} label={title} testId={`sales-${id}-table`} rowTestId={`sales-${id}-row`} rows={shown}
                      columns={cols.columns} onReorder={cols.reorder} render={render} />
       ) : <p className={styles.empty} data-testid={`sales-${id}-empty`}>{empty}</p>}
+      {fold && fold.rows.length ? <FoldButton open={unfolded} more={fold.more} less={fold.less} onToggle={() => setUnfolded((o) => !o)} testId={fold.testId} /> : null}
       <ColumnSettingsDrawer open={open} onClose={() => setOpen(false)} pinning={{ max: 3 }} columns={cols.all} onSave={cols.save} onReset={cols.reset} />
     </section>
   )
@@ -127,12 +149,21 @@ function Section<R extends { id: string }>({ id, title, help, note, table, defs,
 
 /** (S45A) The Sales report's body — the Leads tab hands it the report on its range and the flow's granularity. */
 export function SalesReportBody({ report, range, onGranularity }: { report: SalesReport; range: Range; onGranularity: (g: Granularity) => void }) {
+  const sources = sourceFold(report.sources)
+  /* (the calm UI build 2026-10-27 — 5-21) Going quiet's two tables are one section with a switch; a range with no quiet member reads by days */
+  const [quietPick, setQuietView] = useState<'bands' | 'members'>('bands')
+  const quietView = quietPick === 'members' && report.quietMembers.length ? 'members' : 'bands'
+  const quietTools = report.quietMembers.length && report.quietBands.length
+    ? <Chips label="Going quiet" testId="sales-quiet-view" options={QUIET_VIEWS.map((v) => ({ value: v.value, label: v.label }))} value={quietView} onChange={(v) => setQuietView(v as 'bands' | 'members')} />
+    : null
   /* (REG-708 · REG-817) the ghost's blocks next time: what the report drew on the range it opens on */
   useEffect(() => {
     if (range !== DEFAULT_RANGE) return
     setFlagPref(SALES_SHAPE.rows, report.inRange > 0); setFlagPref(SALES_SHAPE.open, report.pipeline.length > 0); setFlagPref(SALES_SHAPE.chart, report.chart !== null)
     setFlagPref(SALES_SHAPE.leak, report.leak !== null); setFlagPref(SALES_SHAPE.quietMembers, report.quietMembers.length > 0)
+    const fold = sourceFold(report.sources)
     setCountPref(SALES_COUNTS.members, report.members.length); setCountPref(SALES_COUNTS.sources, report.sources.length); setCountPref(SALES_COUNTS.pipeline, report.pipeline.length)
+    setCountPref(SALES_FOLD.sources, fold.shown.length); setCountPref(SALES_FOLD.rest, fold.rest.length)   // (5-21) the fold's shape
     if (report.granularity === defaultGranularity(range)) setCountPref(SALES_COUNTS.flow, report.flow.length)   // the page opens on the range's own granularity
     setCountPref(SALES_COUNTS.quietMembers, report.quietMembers.length)
   }, [report, range])
@@ -170,7 +201,9 @@ export function SalesReportBody({ report, range, onGranularity }: { report: Sale
           }
         }} />
 
-      <Section<SourceSales> id="sources" title={SECTIONS.sources.title} help={SECTIONS.sources.help} table="sales-sources" defs={SOURCE_COLS} rows={report.sources} empty={SOURCES_EMPTY}
+      {/* (the calm UI build 2026-10-27 — 5-21, T-14) the sources that won a lead first; the rest one text button away */}
+      <Section<SourceSales> id="sources" title={SECTIONS.sources.title} help={SECTIONS.sources.help} table="sales-sources" defs={SOURCE_COLS} rows={sources.shown} empty={SOURCES_EMPTY}
+        fold={sources.rest.length ? { rows: sources.rest, testId: 'sales-sources-more', more: `Show ${sources.rest.length} more ${sources.rest.length === 1 ? 'source' : 'sources'} with no wins yet`, less: `Hide the ${sources.rest.length} with no wins yet` } : undefined}
         render={(r, key) => {
           switch (key) {
             case 'source': return <span className={styles.memberName}>{r.source}</span>
@@ -197,7 +230,10 @@ export function SalesReportBody({ report, range, onGranularity }: { report: Sale
           }
         }} />
 
+      {/* (the calm UI build 2026-10-27 — 5-21) Over time reads as its chart (the chart's own Show the numbers); the table of every period's
+          figures — conversion and won value too — folds under it */}
       <Section<FlowRow> id="flow" title={SECTIONS.flow.title} help={SECTIONS.flow.help} table="sales-flow" defs={FLOW_COLS} rows={[...report.flow].reverse()} empty={FLOW_EMPTY}
+        tableFold={report.chart ? { testId: 'sales-flow-more', more: 'Show the table', less: 'Hide the table' } : undefined}
         tools={report.flow.length ? <Chips label="Period" testId="sales-granularity" options={GRANULARITY} value={report.granularity} onChange={(v) => onGranularity(v as Granularity)} /> : null}
         render={(r, key) => {
           switch (key) {
@@ -214,7 +250,9 @@ export function SalesReportBody({ report, range, onGranularity }: { report: Sale
         {report.chart ? <div className={styles.chart} data-testid="sales-flow-chart"><ArticleChart spec={report.chart} /></div> : null}
       </Section>
 
-      <Section<QuietBand> id="quiet" title={SECTIONS.quiet.title} help={SECTIONS.quiet.help} note={quietNote(report)} table="sales-quiet" defs={BAND_COLS} rows={report.quietBands} empty={QUIET_EMPTY}
+      {/* (the calm UI build 2026-10-27 — 5-21) Going quiet is one section: by days quiet, or by member (its second table before) — a switch */}
+      {quietView === 'bands' ? (
+      <Section<QuietBand> id="quiet" title={SECTIONS.quiet.title} help={SECTIONS.quiet.help} note={quietNote(report)} table="sales-quiet" defs={BAND_COLS} rows={report.quietBands} empty={QUIET_EMPTY} tools={quietTools}
         render={(r, key) => {
           switch (key) {
             case 'band': return <span className={styles.memberName}>{r.label}</span>
@@ -223,9 +261,8 @@ export function SalesReportBody({ report, range, onGranularity }: { report: Sale
             default: return null
           }
         }} />
-
-      {report.quietMembers.length ? (
-        <Section<QuietMember> id="quiet-members" title={SECTIONS.quietMembers.title} help={SECTIONS.quietMembers.help} table="sales-quiet-members" defs={QUIET_MEMBER_COLS} rows={report.quietMembers} empty={QUIET_EMPTY}
+      ) : (
+        <Section<QuietMember> id="quiet-members" title={SECTIONS.quiet.title} help={SECTIONS.quietMembers.help} note={quietNote(report)} table="sales-quiet-members" defs={QUIET_MEMBER_COLS} rows={report.quietMembers} empty={QUIET_EMPTY} tools={quietTools}
           render={(r, key) => {
             switch (key) {
               case 'member': return member(r)
@@ -235,9 +272,10 @@ export function SalesReportBody({ report, range, onGranularity }: { report: Sale
               default: return null
             }
           }} />
-      ) : null}
+      )}
 
-      <p className={styles.foot} data-testid="sales-foot">{SALES_FOOT}</p>
+      {/* (the calm UI build 2026-10-27 — 5-21, T-05) the method, one press away */}
+      <HowCounted testId="sales-foot">{SALES_FOOT}</HowCounted>
     </div>
   )
 }

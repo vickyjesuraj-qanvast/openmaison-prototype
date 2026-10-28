@@ -25,6 +25,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s30')
@@ -81,7 +84,7 @@ const P = 'pm2s30'   // the probe's own rows
   const pathOf = (p) => { const u = new URL(p.url()); return u.pathname + u.search }
   /* the sign-in page is live once its reveal has let go (the form is inert under the ghost's hold) */
   const ready = async (p, testId = 'sign-in') => { await p.waitForFunction((id) => { const e = document.querySelector(`[data-testid="${id}"]`); return !!e && !e.closest('[inert]') }, testId, { timeout: 15000 }).catch(() => {}); await settle(p, 300) }
-  const field = (p) => p.getByLabel('Mobile number or email')
+  const field = (p) => p.getByLabel(/^Mobile number or (work )?email/)   // (the calm UI build 2026-10-27, a deliberate change) the label says work email, as the lede does
   const fieldError = (p) => text(p.locator('[data-testid="sign-in"] form [role="alert"], [data-testid="sign-in"] form [class*="error"]'))
   const askCode = async (p, contact) => { await ready(p); await field(p).fill(contact); await p.getByTestId('sign-in-send').click(); await settle(p, 1000) }
   const typeCode = async (p, testId, code = '123456') => { await p.getByTestId(testId).first().click(); await p.keyboard.type(code); await settle(p, 200) }
@@ -96,7 +99,7 @@ const P = 'pm2s30'   // the probe's own rows
     await settle(p, 1200)
   }
   const studioBlock = (p) => p.locator('button[aria-haspopup="menu"][aria-label^="Demo Studio"]')
-  const openMenu = async (p) => { await studioBlock(p).click(); await settle(p, 600); return p.locator('[role="menu"][aria-label="View as"]') }
+  const openMenu = async (p) => { await studioBlock(p).click(); await settle(p, 600); await openDemo(p); return p.locator('[role="menu"][aria-label="View as"]') }
   const signOutDesk = async (p) => { const m = await openMenu(p); await m.getByTestId('sign-out').click(); await p.waitForURL(/\/sign-in/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200) }
   const notice = async (p) => (await text(p.getByTestId('sign-in-notice'))).replace(/^(logout|schedule|lock|link_off)\s*/, '')   // the glyph's ligature first
   const sessions0 = Number(sql(`select count(*) from studio_sessions`))
@@ -144,7 +147,7 @@ const P = 'pm2s30'   // the probe's own rows
       await c.evaluate(() => { localStorage.setItem('om.search.recent', '["kenji"]'); localStorage.setItem('om.search.opened', '[]'); localStorage.setItem('om.columns.probe', '{"keep":1}'); sessionStorage.setItem('om.probe.tab', '1') })
       const menu = await openMenu(c)
       const order = await menu.getByTestId('you-group').locator('[data-testid]').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid')).filter((t) => ['open-profile', 'you-accepting', 'sign-out'].includes(t)))
-      ok(order.join(',') === 'open-profile,you-accepting,sign-out', `Sign out is the You group’s last row — under Your profile and Open to new leads (${order.join(',')})`)
+      ok(order.join(',') === 'open-profile,sign-out', `Sign out is the You group’s last row — under Your profile (${order.join(',')})`)   // (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-39: Take new leads lives on Your profile now)
       ok(await text(menu.getByTestId('sign-out').locator('[class*="__label"]')) === 'Sign out' && await menu.getByTestId('sign-out').getAttribute('role') === 'menuitem', 'a menu row in the house words: “Sign out”')
       const glyph = await menu.getByTestId('sign-out').locator('.msr, .mso, [class*="icon"]').first().evaluate((e) => [e.textContent, Math.round(e.getBoundingClientRect().width)]).catch(() => ['', 0])
       ok(glyph[0] === 'logout' && glyph[1] <= 24, `its glyph is the font’s own (“logout” drawn ${glyph[1]} wide, not the word)`)
@@ -187,7 +190,7 @@ const P = 'pm2s30'   // the probe's own rows
       await go(c, '/sign-in', 400); await ready(c)
       ok(await text(c.locator('h1')) === 'Sign in to OpenMaison' && /^Enter your mobile number or work email\. We’ll send you a 6-digit code\.$/.test(await text(c.getByTestId('sign-in-lede'))), 'OpenMaison’s sign-in: the title, then what it will do')
       ok(await c.locator('[data-testid="sign-in"] img[alt="OpenMaison"]').count() === 1, 'in OpenMaison’s frame — the rail’s mark and wordmark')
-      ok(await text(c.getByTestId('sign-in-demo')) === 'Demo only — no text or email is sent: any six digits sign you in.' && /^Dane, the studio’s Owner, signs in with dane@demostudio\.sg\.$/.test(await text(c.getByTestId('sign-in-hint'))), 'the stand-in says so plainly, and who to try')
+      ok(/^Demo: any 6 digits work — try dane@demostudio\.sg$/.test(await text(c.getByTestId('sign-in-demo'))) && await text(c.getByTestId('sign-in-hint')) === 'dane@demostudio.sg', 'the stand-in says so plainly, and who to try — one quiet box')   // (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-46)
       await c.getByTestId('sign-in-send').click(); await settle(c, 400)
       ok(/Enter your mobile number or email/.test(await fieldError(c)), 'nothing typed: “Enter your mobile number or email”')
       await field(c).fill('98837542'); await settle(c, 200)
@@ -289,11 +292,12 @@ const P = 'pm2s30'   // the probe's own rows
 
     // ── 6 · Accounting's home; never another site ──────────────────────────────────────────────────────────────────────────────────────
     if (want(6)) {
-      console.log('6 · Accounting lands on Finance; `next` stays inside the app')
+      console.log('6 · Accounting lands on her home (the Dashboard since Q-08); `next` stays inside the app')
       const C = await desk(); await C.addCookies([{ name: 'om_seen', value: 'out', url: BASE }]); const c = await page(C, 'priya')
       await go(c, '/sign-in?next=%2F%2Fevil.example%2Fx', 400)
       await signIn(c, '+65 9641 7305')   // (S42 B-18, a deliberate change of the demo's data) Priya's own number — 9182 7364 is Mei Ling Han's
-      ok(new URL(c.url()).host === new URL(BASE).host && pathOf(c).startsWith('/company/finance'), `Priya (+65 typed) lands on Finance, her home — a next of //evil.example is ignored (${c.url()})`)
+      /* (Dashboard redesign 2026-10-26, a deliberate change — his Q-08) Accounting's home is the Dashboard, its money layout (`homeOfRole`) */
+      ok(new URL(c.url()).host === new URL(BASE).host && pathOf(c) === '/dashboard', `Priya (+65 typed) lands on the Dashboard, her home — a next of //evil.example is ignored (${c.url()})`)
       await C.close()
     }
 
@@ -365,7 +369,9 @@ const P = 'pm2s30'   // the probe's own rows
       const D = await desk(); const d = await page(D, 'dane-members')
       await go(d, '/company/members', 1400)
       const row = d.getByTestId('member-row').filter({ has: d.locator('span[class*="__name"]').filter({ hasText: /^Germaine/ }) })
-      await row.getByRole('button', { name: 'Deactivate' }).click(); await settle(d, 600)
+      /* (the calm UI build 2026-10-27, a deliberate change) B5 5-01: Deactivate is the row's ⋮ ("More for Germaine") — open it, then its row */
+      await row.getByTestId('member-more').click(); await settle(d, 500)
+      await d.getByRole('menu').getByRole('menuitem', { name: /^Deactivate/ }).click(); await settle(d, 600)
       const dlg = d.getByRole('dialog').filter({ hasText: /Deactivate/ })
       if (await dlg.count()) { await dlg.getByRole('button', { name: /^Deactivate/ }).last().click(); await settle(d, 1200) }
       await waitSnack(d, /Germaine deactivated/)
@@ -472,7 +478,8 @@ const P = 'pm2s30'   // the probe's own rows
       const C = await desk(); await C.addCookies([{ name: 'om_seen', value: 'out', url: BASE }]); const c = await page(C, 'reset')
       await go(c, '/sign-in', 400); await signIn(c, '98837542')
       ok(!!(await cookie(C, 'om_session')), 'signed in as Sarah (a session cookie)')
-      await c.getByRole('button', { name: 'Maison AI' }).first().click(); await settle(c, 800)
+      await go(c, '/tasks', 900)   // (Dashboard redesign 2026-10-26, a deliberate change) sign-in lands on the Dashboard, where Maison AI is the docked field (Q-02) — the floating button and its sheet's reset are on every other page
+      await c.getByRole('button', { name: 'Maison AI', exact: true }).first().click(); await settle(c, 800)
       await c.getByRole('button', { name: /Reset prototype to base/ }).click(); await settle(c, 500)
       await c.getByRole('dialog', { name: 'Reset the prototype?' }).getByRole('button', { name: 'Reset' }).click()
       await c.waitForLoadState('networkidle').catch(() => {}); await settle(c, 4000)

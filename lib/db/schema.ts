@@ -145,6 +145,14 @@ export const members = sqliteTable('members', {
   noticeEmail: text('notice_email'),
   noticeEmailAt: integer('notice_email_at', { mode: 'timestamp' }),
   noticeMuted: text('notice_muted'),
+  /* (the Dashboard redesigned, 2026-10-26 — his marks P-02 · Q-06 · Q-07 on https://claude.ai/artifact/5d1yTNS7mtU47teLjeP2WY) The member's
+     visits to the Dashboard: `dashboard_seen_at` = their latest view; `dashboard_since_at` = the mark "Since you were last here" counts from —
+     the view before this sitting's (a new sitting starts when the latest view is more than `SITTING_GAP` old, lib/dashboard/since.ts). Both
+     move with the demo day on a restore (lib/db/time-columns.ts). `dashboard_prefs` = their own page (a JSON object, lib/dashboard/frame.ts
+     `DashPrefs`): the cards they hid for themselves and an Owner's or Admin's Studio / Mine. */
+  dashboardSeenAt: integer('dashboard_seen_at', { mode: 'timestamp' }),
+  dashboardSinceAt: integer('dashboard_since_at', { mode: 'timestamp' }),
+  dashboardPrefs: text('dashboard_prefs'),
 })
 
 /* (pending modules S09 — 1.0's `studio_invitations`, migration 080, kept under 1.0's name for the port) An invitation to join the studio: Company ›
@@ -3255,6 +3263,21 @@ export const conversationPrefs = sqliteTable(
   (t) => [uniqueIndex('conversation_prefs_uq').on(t.memberId, t.conversation)],
 )
 export type ConversationPref = typeof conversationPrefs.$inferSelect
+
+/* ── (the Dashboard redesigned, 2026-10-26 — his mark Q-05: "Not today" on a Needs you row) A row a member set aside for today: it leaves their
+   Needs you and comes back on `until_day` (a day number, lib/projects/schedule-model.ts `dayOf`) — or as soon as the row itself changes
+   (`row_key` names the row and what it is about, lib/dashboard/needs.ts). One member's, never the studio's: the work still waits on it. ── */
+export const dashboardSnoozes = sqliteTable(
+  'dashboard_snoozes',
+  {
+    memberId: text('member_id').notNull(),
+    rowKey: text('row_key').notNull(),
+    untilDay: integer('until_day').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => [uniqueIndex('dashboard_snoozes_uq').on(t.memberId, t.rowKey)],
+)
+export type DashboardSnooze = typeof dashboardSnoozes.$inferSelect
 
 /* ── (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) 1.0's free chats
    (`conversations` · `conversation_participants` · `messages` · `conversation_files`, src/app/api/chats/records/**) in 2.0's shape: a

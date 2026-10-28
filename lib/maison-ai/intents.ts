@@ -35,6 +35,10 @@ export type IntentId =
   | 'qanvast_listing'
   /* (pending modules S41b-5) the studio's Qanvast account — its lead credits, its reviews and rank (Qanvast Ops › Lead credits · Reviews) */
   | 'qanvast_credits' | 'qanvast_reviews'
+  /* (the Dashboard redesigned 2026-10-26 — his marks P-01 · P-10 · Q-03 · lane D4) the docked field's suggestions, each answered with its cards:
+     "How is cash this month?" (figures · four weeks · doors), "Remind Ryan about VO-2" (the quote's reminder, proposed), "Kelvin’s budget vs
+     similar leads" (a comparison) */
+  | 'cash' | 'remind_client' | 'compare_lead'
 
 /** Where the question was asked: the project page it was asked on, the milestone it is about (the milestone panel's "Ask Maison AI about this"). */
 export type AskContext = { projectId: string | null; milestoneId: string | null }
@@ -74,6 +78,11 @@ const INTENTS: IntentDef[] = [
   /* (pending modules S10) the changes Maison AI proposes behind one confirm — they outweigh the questions their words also hold */
   { id: 'stop_repeat', words: [W(/\b(stop|cancel|end|pause|halt)\b[^.?!]{0,30}\b(repeat(s|ing)?|recurring|rent|subscriptions?|retainer|monthly|weekly|yearly)\b/, 8)] },
   { id: 'task_done', words: [W(/\b(mark|tick|set|check)\b[^.?!]{0,60}\b(done|complete|completed|finished)\b/, 7), W(/\b(i'?ve |i have )?(done|finished|completed)\b[^.?!]{0,10}\bthe\b[^.?!]{0,40}\btask\b/, 7)], unless: /\bmilestones?\b/ },
+  /* (the Dashboard redesigned 2026-10-26, lane D4) a client nudged about a quote or a variation order waiting on them — "Remind Ryan about VO-2",
+     "nudge Aisha on OM-10009" — never "remind me" (the member's own task, below) */
+  { id: 'remind_client', words: [W(/\b(remind|nudge|chase)\b(?!\s+(me|us|myself)\b)/, 6), W(/\b(om|vo)-?\s?\d+\b|\b(quotes?|variation orders?|vos?)\b/, 3)], unless: /\bremind (me|us|myself)\b|\b(invoices?|inv-?\s?\d+|payments?)\b|^(?!.*\b(remind|nudge|chase)\b)/ },   // the verb is what asks it: "the quote for Ryan" is the quotes' question
+  /* (the Dashboard redesigned 2026-10-26, lane D4 — the drawn phone sheet's "His budget vs similar") a lead beside the studio's like leads */
+  { id: 'compare_lead', words: [W(/\b(vs\.?|versus|compared? (to|with)|against|beside)\b[^.?!]{0,30}\b(similar|others?|the rest|usual|average|typical|like)\b/, 8), W(/\bcompare\b[^.?!]{0,40}\b(similar|others?|usual|average|typical)\b/, 8), W(/\bbudget\b/, 1)] },
   { id: 'remind', words: [W(/\bremind (me|us)\b/, 8), W(/\b(add|create|make|set|put|log|new)\b[^.?!]{0,20}\b(task|reminder|to-?do)\b/, 7), W(/\bset (up )?(a )?follow[- ]?up\b/, 7), W(/^follow[- ]?up with\b/, 7)] },
   /* (pending modules S29) the writing help, asked in words: it sits where the words are written — the answer says where, and how it works */
   { id: 'writing', words: [W(/\b(improve|shorten|tidy|polish|reword|rewrite|simplify|expand|proof-?read|spell ?check)\b[^.?!]{0,40}\b(terms|t&cs?|t and c|notes|descriptions?|wording|words|text|writing|contract|clauses?|letter|intro(duction)?|messages?)\b/, 9), W(/\bplain english\b/, 7), W(/\b(grammar|spelling)\b/, 4)] },
@@ -92,6 +101,9 @@ const INTENTS: IntentDef[] = [
   { id: 'gst', words: [W(/\bgst\b/, 6), W(/\btax(es)?\b/, 4), W(/\bquarter(ly)?\b/, 1), W(/\b(return|iras|file)\b/, 1)] },
   { id: 'pnl', words: [W(/\b(p ?& ?l|p and l|profit and loss|income statement|revenue|turnover|sales)\b/, 6), W(/\bhow much (did|have|has) (we|i|the studio) (make|made|earn|earned|invoice|invoiced|bill|billed)\b/, 6)] },
   { id: 'margin', words: [W(/\b(margins?|profits?|profitab(le|ility)|losing money|making money|thinnest|earn(ing)?s?)\b/, 5)] },
+  /* (the Dashboard redesigned 2026-10-26, lane D4) "How is cash this month?" — the month's money in and out, four weeks ahead (the cash flow
+     report's own figures); "cash flow" stays the report's 90 days */
+  { id: 'cash', words: [W(/\bcash\b/, 6), W(/\b(how('?s| is| are)|what'?s)\b[^.?!]{0,20}\bmoney\b[^.?!]{0,30}\b(this|the) (month|week)\b/, 7)], unless: /\bcash ?-?flow\b/ },
   { id: 'cashflow', words: [W(/\bcash ?-?flow\b/, 7), W(/\b(money (coming )?in|coming in|money out|next 90 days|forecast|runway|cash position)\b/, 4)] },
   /* what the studio owes is the vendors' side ("what do we owe", "payables") — never "who owes the studio" */
   { id: 'vendors', words: [W(/\b(vendors?|suppliers?|sub-?cons?|subcontractors?)\b/, 3), W(/\b(spend|spent|spending|costs?|paid out|purchase orders?|pos?|bills?)\b/, 2), W(/\b(we|i|do we|does the studio|studio) owes?\b|\bowe (the )?(vendors?|suppliers?)\b|\bpayables?\b/, 5)] },
@@ -120,7 +132,7 @@ const INTENTS: IntentDef[] = [
   { id: 'setup', words: [W(/\b(set ?up|setup)\b[^.?!]{0,30}\b(left|still|remaining|missing|finish(ed)?)\b/, 6), W(/\b(left|still|what) to set ?up\b/, 6), W(/\bset ?up (the |my |our )?studio\b/, 6), W(/\b(get(ting)? started|onboarding)\b/, 4)] },
   { id: 'quotes', words: [W(/\bquotes?\b/, 3), W(/\b(optimi[sz]e|improve|check|review)\b[^.?!]{0,20}\bquote\b/, 3), W(/\b(approv\w*|pending|waiting|expir\w*|valid|unanswered|no (reply|answer)|not (answered|replied)|signed|confirmed|drafts?|sent|open|this week)\b/, 2)] },
   /* (pending modules S23) before "my_tasks" and "next": a meeting named wins */
-  { id: 'next_meeting', words: [W(/\b(prepare|prep|brief|ready|get me ready)\b[^.?!]{0,40}\bmeeting\b/, 8), W(/\bnext meeting\b/, 7), W(/\bmeeting (prep|brief)\b/, 7)] },
+  { id: 'next_meeting', words: [W(/\b(prepare|prep|brief|ready|get me ready)\b[^.?!]{0,40}\bmeeting\b/, 8), W(/\b(prepare|prep) me\b/, 8), W(/\bnext meeting\b/, 7), W(/\bmeeting (prep|brief)\b/, 7)] },   // (the Dashboard redesigned 2026-10-26, lane D4) "prepare me for 2 PM with Kelvin" — the docked field's suggestion
   { id: 'meetings', words: [W(/\bmeetings?\b/, 4), W(/\b(this week|today|tomorrow|upcoming|coming up|planned|booked)\b/, 1), W(/\bbriefs?\b[^.?!]{0,30}\b(save|saved|waiting|to save)\b/, 6)] },
   { id: 'my_tasks', words: [W(/\b(my|i|me)\b[^.?!]{0,30}\btasks?\b/, 5), W(/\btasks?\b/, 3), W(/\b(today|overdue|late|due|this week|tomorrow)\b/, 1), W(/\bto-?do list\b|\bmy to-?dos?\b/, 3),
     W(/\b(what do i|what should i|what have i got|what'?s on|what is on)\b[^.?!]{0,30}\b(today|tomorrow|this week|to do)\b/, 5)] },

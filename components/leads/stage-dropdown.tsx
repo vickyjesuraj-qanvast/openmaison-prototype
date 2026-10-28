@@ -35,8 +35,14 @@ const isTouchPointer = () => typeof window !== 'undefined' && window.matchMedia(
 export type NextMove = { label: string; onPress: () => void; why?: string | null; fix?: { label: string; onPress: () => void } | null }
 
 export function StageDropdown({
-  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1, subject, next = null,
+  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1, subject, next = null, wonTestId, onLocked,
 }: {
+  /** (the calm UI build 2026-10-27 — audit 2-05) A press on a locked row, at every width: the lead page answers it as the locked Convert to Project
+   *  answered (the whole path to Won, the way on as the snackbar's action) — the Won row is where Convert's lock lives now */
+  onLocked?: (stage: Stage, why: string) => void
+  /** (the calm UI build 2026-10-27 — audit 2-05) the lead page's locked "Convert to Project" left its header for this row: its handle rides on
+   *  the Won row while Won is out of reach */
+  wonTestId?: string
   /** (Leads on the move, P-05) A finger's sheet or menu (a phone, a touch tablet) leads with the next move; a mouse keeps the mock's menu. */
   next?: NextMove | null
   open: boolean
@@ -61,14 +67,21 @@ export function StageDropdown({
   /* A locked stage is a disabled DropdownItem (aria-disabled — it takes no press, and the arrows pass it by); the Tooltip explains the
      lock, and on touch, where no tooltip fires, a tap on the row answers with the same sentence in the snackbar (REG-273). The row's
      press lands on this box (`display: contents`), since the disabled item itself runs nothing. */
+  /* (the calm UI build 2026-10-27 — audit 2-05, W-150) A finger's sheet printed the same refusal under every locked row ("Complete Contacted
+     first" three times): when the locked active stages share one reason it is said ONCE, under the stages (or not at all when the next
+     move's block above already says it); the rows stay locked. A reason of its own stays in its row. */
+  const reasons = STAGES.map((s) => blocked?.(s) ?? null).filter((w): w is string => !!w)
+  const shared = finger && reasons.length > 1 && reasons.every((w) => w === reasons[0]) ? reasons[0]! : null
+  const sharedLine = shared && shared !== next?.why ? shared : null
   const item = (s: Stage) => {
     const why = blocked?.(s) ?? null
     const isCurrent = s === current
     const done = !isCurrent && (STAGES as readonly string[]).indexOf(s) <= doneThrough && (STAGES as readonly string[]).includes(s)
+    const rowWhy = finger && why && why !== shared ? why : undefined
     return (
-      <span key={s} className={ddStyles.row} onClick={why && !finger ? () => { if (isTouchPointer()) snackbar({ message: why, key: REFUSED_KEY }) } : undefined}>   {/* (S43E W1-01) the house Tooltip says it on touch too — one keyed snackbar; (leads on the move, A-06) a finger's row prints it instead */}
+      <span key={s} className={ddStyles.row} onClick={why && onLocked ? () => onLocked(s, why) : why && !finger ? () => { if (isTouchPointer()) snackbar({ message: why, key: REFUSED_KEY }) } : undefined}>   {/* (S43E W1-01) the house Tooltip says it on touch too — one keyed snackbar; (leads on the move, A-06) a finger's row prints it instead */}
         <Tooltip label={why ?? ''} side="right" disabled={!why || finger}>
-          <DropdownItem disabled={!!why} title={finger && why ? why : undefined} selected={isCurrent} meta={isCurrent ? 'current' : undefined} onSelect={() => onSelect(s)}>
+          <DropdownItem disabled={!!why} title={rowWhy} testId={s === 'Won' && why ? wonTestId : undefined} selected={isCurrent} meta={isCurrent ? 'current' : undefined} onSelect={() => onSelect(s)}>
             <span className={ddStyles.itemText}>{s}</span>
             {done ? <span className={ddStyles.done} aria-hidden><Icon name="check_circle" size={20} fill /></span> : null}
           </DropdownItem>
@@ -112,6 +125,7 @@ export function StageDropdown({
       {nextBlock}
       <DropdownLabel tone="green" dot>Active</DropdownLabel>
       {STAGES.map(item)}
+      {sharedLine ? <p className={ddStyles.sharedWhy} data-testid="stage-shared-why">{sharedLine}</p> : null}
       <DropdownDivider />
       <DropdownLabel tone="orange" dot>Inactive</DropdownLabel>
       {INACTIVE_STAGES.map(item)}

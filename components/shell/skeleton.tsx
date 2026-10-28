@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'rea
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './skeleton.module.css'
 import emptyCard from '@/components/om/empty-card.module.css'
+import kit from './ghost-kit.module.css'   // (the calm UI build 2026-10-27) the ToolbarSearch box's own width per pointer, a desk-only tool
 
 /**
  * Ghost loader — shown on every load / refresh of every page (user rule,
@@ -276,9 +277,8 @@ export function QanvastSkeleton() {
     <GhostSheet label="Loading Qanvast leads" l1>
       <div className={styles.header}>
         <Bone w={120} h={28} />
+        {/* (the calm UI build 2026-10-27, 2-27 — B2's request) the title and ⋮ only: Add Lead and Insights are the ⋮'s rows now */}
         <div className={styles.headerActions}>
-          <Bone w={110} h={36} r="var(--om-radius-1)" />
-          <Bone w={121} h={36} r="var(--om-radius-1)" />
           <Bone w={36} h={36} r="var(--om-radius-1)" />
         </div>
       </div>
@@ -287,11 +287,12 @@ export function QanvastSkeleton() {
       </div>
       <div className={pageStyles.content}>
         <div className={styles.toolbar}>
-          <Bone w={151} h={36} r="var(--om-radius-1)" />
+          <Bone w={124} h={36} r="var(--om-radius-1)" />   {/* (the calm UI build 2026-10-27, 2-11) "All leads · n" */}
+          {/* (the calm UI build 2026-10-27, 2-27) Request Leads went into the header's ⋮ — the search, Filters and Column settings stay */}
           <div className={styles.toolbarRight}>
-            <Bone w={133} h={36} r="var(--om-radius-1)" />
+            <span className={`${kit.slot} ${kit.search}`}><Bone w="100%" h={36} r="var(--om-radius-1)" /></span>
             <Bone w={36} h={36} r="var(--om-radius-1)" />
-            <Bone w={36} h={36} r="var(--om-radius-1)" />
+            <span className={kit.desk}><Bone w={36} h={36} r="var(--om-radius-1)" /></span>   {/* Column settings — a desk tool */}
           </div>
         </div>
         <div className={styles.tableWrap}>

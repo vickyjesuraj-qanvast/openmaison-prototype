@@ -88,7 +88,7 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   newMenu: (close: () => void, place: LibraryPlace) => ReactNode
   /** The status filter's choices after "All · n" — (REG-666) one pill, "{filterLabel}: All ▾", scoped to the open folder. */
   filters?: LibraryFilter<T>[]
-  /** The pill's word: "Status" · "Kind" (default "Show"). */
+  /** The pill's word — what it filters: "Status" · "Kind" · "Type" · "Use" (default "Status"; never "Show", the UI audit's 4-24). */
   filterLabel?: string
   /** Search beyond the title (the body's words). */
   searchText?: (t: T) => string
@@ -423,7 +423,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
         <DropdownDivider />
         <DropdownItem onSelect={() => { closeMenu(); void act(`duplicate the ${noun.one}`, () => settle(p.onDuplicate(t))) }} disabled={!!dupWhy} help={once(dupWhy, [moveWhy, renameWhy, delWhy])}>Duplicate</DropdownItem>
         {/* (F119) a fixed entry (a lead's design) is never filed nor renamed here — the rows leave rather than wait greyed forever */}
-        {F && !fixed ? <DropdownItem onSelect={() => { closeMenu(); openMove([t.id], []) }} disabled={!!moveWhy} help={once(moveWhy, [renameWhy, delWhy])}>Move to Folder</DropdownItem> : null}
+        {F && !fixed ? <DropdownItem onSelect={() => { closeMenu(); openMove([t.id], []) }} disabled={!!moveWhy} help={once(moveWhy, [renameWhy, delWhy])}>Move to folder</DropdownItem> : null}
         {fixed ? null : <DropdownItem onSelect={() => { closeMenu(); setRename({ id: t.id, name: t.title }) }} disabled={!!renameWhy} help={once(renameWhy, [delWhy])}>Rename</DropdownItem>}
         <DropdownDivider />
         <DropdownItem tone="danger" onSelect={() => { closeMenu(); setDel(t) }} disabled={!!delWhy} help={delWhy}>Delete</DropdownItem>
@@ -513,7 +513,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const allFixed = bulkFolders.length === 0 && bulkEntries.length > 0 && bulkEntries.every((id) => { const t = items.find((x) => x.id === id); return !!t && !!p.fixed?.(t) })
   const bulkActions: LibraryBulkAction[] = F
     ? [
-        ...(allFixed ? [] : [{ label: 'Move to Folder', onClick: () => bulkMove(bulkEntries, bulkFolders) }]),
+        ...(allFixed ? [] : [{ label: 'Move to folder', onClick: () => bulkMove(bulkEntries, bulkFolders) }]),
         ...(p.bulk && bulkFolders.length === 0 ? p.bulk(bulkEntries, clearSelection) : [{ label: 'Delete', tone: 'danger' as const, onClick: () => bulkDelete(bulkEntries, bulkFolders) }]),
       ]
     : p.bulk?.([...liveSelected], clearSelection) ?? []
@@ -534,7 +534,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
     const nF = fs.filter((f) => !folderBlockOf(f)).length
     /* (critic 14) what stays is named, with its reason — the row's own rule (its maker, an Owner or an Admin) */
     const kept = [...e.flatMap((t) => { const why = delBlock(t); return why ? [{ name: t.title, why }] : [] }), ...fs.flatMap((f) => { const why = folderBlockOf(f); return why ? [{ name: f.name, why }] : [] })]
-    return [okE ? `${countLine(okE, noun.one, noun.many)} ${okE === 1 ? 'goes' : 'go'} to ${p.deletedLabel ?? 'Deleted Templates'} — you can restore ${okE === 1 ? 'it' : 'them'} there.` : null,
+    return [okE ? `${countLine(okE, noun.one, noun.many)} ${okE === 1 ? 'goes' : 'go'} to ${p.deletedLabel ?? 'Deleted templates'} — you can restore ${okE === 1 ? 'it' : 'them'} there.` : null,
       nF ? `${countLine(nF, 'folder', 'folders')} ${nF === 1 ? 'goes' : 'go'}; what ${nF === 1 ? 'it holds' : 'they hold'} moves up a level.` : null,
       kept.length ? keptLine(kept, '') : null].filter(Boolean).join(' ')
   })()
@@ -572,7 +572,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
         <div className={styles.where}>
           {F && openFolderRow ? (
             <FolderCrumbs root={root} trail={trail} onGo={go} menuOpen={folderMenu === openFolderRow.id} onMenu={(el) => openFolderMenu(openFolderRow, el)} />
-          ) : <h2 className={styles.here}>{F ? root : `${faceted.length} ${faceted.length === 1 ? noun.one : noun.many}`}</h2>}
+          ) : <h2 className={styles.here}>{F ? root : `${noun.many.charAt(0).toUpperCase()}${noun.many.slice(1)}`}</h2>}   {/* (the calm UI build 2026-10-27, W-466 · 6-20) a library with no folders is named, not counted ("Layouts") — the scope pill's menu counts */}
         </div>
         <div className={`${gallery.toolbarEnd} ${styles.end}`}>
           {/* (wave E, gallery-9) Two groups — what narrows the list, and the tools. From 768 up both melt into the one cluster (display:
@@ -588,11 +588,12 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             </span>
           ))}
             <>
-              <ScopePill ref={statusAnchor} label={`${p.filterLabel ?? 'Show'}: ${activeFilter === 'all' ? 'All' : (p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? 'All'}`}
-                         short={activeFilter === 'all' ? 'All' : (p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? 'All'}
+              {/* (the calm UI build 2026-10-27, the UI audit's 4-24 · W-383) the pill is named by what it filters — Status · Kind · Type · Use —
+                  never "Show", and a phone keeps the noun ("Kind: All"): the short label that dropped it is gone */}
+              <ScopePill ref={statusAnchor} label={`${p.filterLabel ?? 'Status'}: ${activeFilter === 'all' ? 'All' : (p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? 'All'}`}
                          open={statusOpen} scoped={activeFilter !== 'all'} onClick={() => setStatusOpen((o) => !o)} />
               {/* (REG-728) a status list: the width scale's 240 */}
-              <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle={p.filterLabel ?? 'Show'}>
+              <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle={p.filterLabel ?? 'Status'}>
                 <DropdownItem role="menuitemradio" checked={activeFilter === 'all'} onSelect={() => { setStatusOpen(false); setFilter('all') }}>All · {faceted.length}</DropdownItem>
                 {(p.filters ?? []).map((f) => (
                   <DropdownItem key={f.key} role="menuitemradio" checked={activeFilter === f.key} onSelect={() => { setStatusOpen(false); setFilter(f.key) }}>{f.label} · {counts[f.key] ?? 0}</DropdownItem>
@@ -609,8 +610,8 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             /* (REG-664) New Folder, as the Files tab's toolbar has it — in the open folder. (wave E, gallery-9) On a phone it rides New ▾ (its
                last row), so the one row keeps the scope, New, Search, Filters and ⋮; it stays out here when New ▾ is closed to this member. */
             <span className={styles.folderSlot} data-keep={p.newBlock || p.newAction ? '' : undefined}>
-              <Tooltip label={F.block ?? 'New Folder'}>
-                <span className={styles.newFolder}><IconButton icon="create_new_folder" label="New Folder" disabled={!!F.block} onClick={() => setNaming({ open: true, folder: null })} /></span>
+              <Tooltip label={F.block ?? 'New folder'}>
+                <span className={styles.newFolder}><IconButton icon="create_new_folder" label="New folder" disabled={!!F.block} onClick={() => setNaming({ open: true, folder: null })} /></span>
               </Tooltip>
             </span>
           ) : null}
@@ -619,7 +620,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             <span className={gallery.newAnchor}>
               {phone ? (
                 <Tooltip label={newAction.label} shortcut="create"><IconButton icon="add" label={newAction.label} variant="primary" onClick={newAction.onPress} data-testid="new-template" data-kb="create" data-kb-label={newAction.label} /></Tooltip>
-              ) : <Button variant="primary" appearance="outlined" onPress={newAction.onPress} data-testid="new-template" data-kb="create" data-kb-label={newAction.label}>{newAction.label}</Button>}
+              ) : <Button onPress={newAction.onPress} data-testid="new-template" data-kb="create" data-kb-label={newAction.label}>{newAction.label}</Button>}   {/* (the calm UI build 2026-10-27, 5-29 · T-03 — B5's request) the page's one filled create, as every Company page's */}
             </span>
           ) : (
           <LibraryNewButton open={newOpen} onOpenChange={setNewOpen} block={p.newBlock ?? null}>
@@ -627,7 +628,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             {phone && F && !p.newBlock ? (
               <>
                 <DropdownDivider />
-                <DropdownItem onSelect={() => { setNewOpen(false); setNaming({ open: true, folder: null }) }} disabled={!!F.block} help={F.block}>{p.newIcons ? <span className={styles.menuIcon}><Icon name="create_new_folder" size={20} weight={300} />New Folder</span> : 'New Folder'}</DropdownItem>
+                <DropdownItem onSelect={() => { setNewOpen(false); setNaming({ open: true, folder: null }) }} disabled={!!F.block} help={F.block}>{p.newIcons ? <span className={styles.menuIcon}><Icon name="create_new_folder" size={20} weight={300} />New folder</span> : 'New folder'}</DropdownItem>
               </>
             ) : null}
           </LibraryNewButton>
@@ -660,7 +661,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
                         widen={openFolderRow && query.trim() ? { label: `Search all of ${root}`, onPress: () => go(null) } : undefined} />
       ) : browsing && openFolderRow && listed.length === 0 && shownFolders.length === 0 ? (
         /* (REG-664) An open folder with nothing inside says so. */
-        <FolderEmpty help={`Move ${noun.many} here from their ⋯ menu, or make a folder inside it with New Folder.`} />
+        <FolderEmpty help={`Move ${noun.many} here from their ⋯ menu, or make a folder inside it with New folder.`} />
       ) : listed.length === 0 && shownFolders.length === 0 ? (
         <div className={gallery.empty} role="status">
           <span className={gallery.emptyGlyph}><Icon name={kind.icon} size={40} weight={300} /></span>
@@ -702,7 +703,9 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
       ) : (
         <div className={styles.gridStack} data-kb-list={noun.one}>
           {shownFolders.length ? (
-            <FolderGroup ids={shownFolders.map((f) => f.id)} selected={liveSelected} onSelect={selectable ? (next) => setSelected(next) : undefined} min={248}>
+            /* (the calm UI build 2026-10-27, 4-37 · 6-20) no "☐ Folders" head: the cards read as folders and each keeps its tick; selecting every
+               folder at once is the list view's Select all (every folder and entry shown) */
+            <FolderGroup head={false} ids={shownFolders.map((f) => f.id)} selected={liveSelected} onSelect={selectable ? (next) => setSelected(next) : undefined} min={248}>
               {shownFolders.map((f) => (
                 <FolderCard key={f.id} name={f.name} count={folderCount(f)} selected={liveSelected.has(f.id)} onToggle={selectable ? () => toggleOne(f.id) : undefined}
                             onOpen={() => go(f.id)} menuOpen={folderMenu === f.id} onMenu={(el) => openFolderMenu(f, el)} />
@@ -759,7 +762,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
               )
             })() : null}
           </PortalMenu>
-          <NameDialog open={naming.open} title={naming.folder ? 'Rename Folder' : 'Create Folder'} initial={naming.folder?.name ?? ''}
+          <NameDialog open={naming.open} title={naming.folder ? 'Rename folder' : 'New folder'} initial={naming.folder?.name ?? ''}
                       validate={(name) => folderNameProblem(name, foldersIn(flist, naming.folder ? naming.folder.parentId : openId), naming.folder?.id ?? null)}
                       onSave={saveFolderName} onClose={() => setNaming((n) => ({ ...n, open: false }))} />
           <MoveDialog open={move.open} title={moveTitle} root={root} folders={flist} moving={[...move.entries, ...move.folders]} current={moveFrom}
@@ -790,7 +793,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
       {selectable ? <DetailBulkBar count={liveSelected.size} actions={bulkActions} onClear={clearSelection} /> : null}
       {p.facets?.length ? (
         <Dialog open={facetsOpen} onClose={() => setFacetsOpen(false)} title="Filters" size="form" width={400}
-                footer={<><Button variant="secondary" appearance="outlined" isDisabled={!activeFacets.length} onPress={() => setFacet({})}>Clear All</Button><Button onPress={() => setFacetsOpen(false)}>Done</Button></>}>
+                footer={<><Button variant="secondary" appearance="outlined" isDisabled={!activeFacets.length} onPress={() => setFacet({})}>Clear all</Button><Button onPress={() => setFacetsOpen(false)}>Done</Button></>}>
           <div className={styles.facets} data-testid="library-facets">
             {p.facets.map((f) => (
               <TextField key={f.key} label={f.label} mode="select" options={[f.any ?? `Any ${f.label.toLowerCase()}`, ...f.options]} value={facet[f.key] && f.options.includes(facet[f.key]!) ? facet[f.key]! : f.any ?? `Any ${f.label.toLowerCase()}`}
@@ -809,7 +812,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
                            onDeleteForever={(ids) => act(ids.length === 1 ? `delete the ${noun.one} forever` : `delete the ${noun.many} forever`, () => settle(p.onDeleteForever(ids)),
                              (v) => purgedLine(v, ids.length, ids.length === 1 ? `${deleted.find((t) => t.id === ids[0])?.title ?? Noun} deleted forever` : `${ids.length} ${noun.many} deleted forever`))}
                            /* (verify round 1, F129) the line says what happened — never "Trash emptied" while the rows stay */
-                           onEmptyTrash={(expected) => act('empty the trash', () => settle(p.onEmptyTrash()), (v) => purgedLine(v, expected, 'Trash emptied'))} />
+                           onEmptyTrash={(expected) => act('delete them all forever', () => settle(p.onEmptyTrash()), (v) => purgedLine(v, expected, 'Deleted forever'))} />
       {p.children}
     </>,
   )

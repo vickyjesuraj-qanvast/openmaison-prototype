@@ -32,7 +32,7 @@ const FILMS = {
   'nav-brand-tplq': { start: '/company/templates/brand', go: tab('Quotes') },
   'nav-tplq-contracts': { start: '/company/templates/quotes', go: tab('Contracts') },
   'nav-profile-members': { start: '/company/profile', go: railCompany('Members') },
-  'nav-leads-insights': { start: '/leads', go: async (p) => { await p.getByRole('link', { name: /Insights/ }).or(p.getByRole('button', { name: /Insights/ })).first().click() } },
+  'nav-leads-insights': { start: '/leads', go: async (p) => { await p.getByRole('button', { name: 'More options' }).first().click(); await p.waitForTimeout(300); await p.getByTestId('leads-reports').click() } },   // (the calm UI build 2026-10-27, a deliberate change) B2 2-13: the listing's Insights is the ⋮'s Reports row
   'nav-leads-lead': { start: '/leads', go: async (p) => { await p.getByText('Kevin Ng', { exact: true }).first().click() } },
 }
 ;(async () => {

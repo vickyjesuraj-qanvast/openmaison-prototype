@@ -1,0 +1,1100 @@
+[
+ {
+  "now": "Category (Items column, View by, Price book field)",
+  "proposed": "Trade",
+  "where": [
+   "/quotes/[id] Items head + View by",
+   "/company/price-book column + item dialog",
+   "lib/quotes/items-model.ts:34",
+   "lib/quotes/items-model.ts:50",
+   "components/company/price-book/item-dialog.tsx"
+  ],
+  "why": "Settings, the template editor (“Group the items by: Trade”) and the Items note (“prints lines by trade”) already call it Trade — two names for one field.",
+  "kind": "name"
+ },
+ {
+  "now": "Add Category",
+  "proposed": "Add trade",
+  "where": [
+   "/quotes/[id] Items section row",
+   "lib/quotes/items-model.ts:50"
+  ],
+  "why": "Follows the Trade rename.",
+  "kind": "label"
+ },
+ {
+  "now": "BY CATEGORY · 11 · share of the subtotal",
+  "proposed": "By trade",
+  "where": [
+   "/quotes/[id] totals card",
+   "components/quotes/editor/items/items-summary.tsx:230"
+  ],
+  "why": "Trade rename; the count and the explanation add nothing.",
+  "kind": "heading"
+ },
+ {
+  "now": "Uncategorized",
+  "proposed": "No trade",
+  "where": [
+   "/quotes/[id] View by: Category bucket",
+   "components/quotes/editor/items/items-section.tsx:1069"
+  ],
+  "why": "Trade rename; US spelling.",
+  "kind": "label"
+ },
+ {
+  "now": "Any category",
+  "proposed": "Any trade",
+  "where": [
+   "/company/price-book Filters"
+  ],
+  "why": "Trade rename.",
+  "kind": "label"
+ },
+ {
+  "now": "Kind (Price book)",
+  "proposed": "Type",
+  "where": [
+   "/company/price-book column, item dialog, “Kind: All” pill"
+  ],
+  "why": "The quote’s Items table calls the same field “Type”.",
+  "kind": "name"
+ },
+ {
+  "now": "Vendor/Sub",
+  "proposed": "Vendor",
+  "where": [
+   "/quotes/[id] Column settings",
+   "lib/quotes/items-model.ts:50"
+  ],
+  "why": "The Price book and Finance say Vendor.",
+  "kind": "label"
+ },
+ {
+  "now": "Section label",
+  "proposed": "Print group (hidden by default)",
+  "where": [
+   "/quotes/[id] Items column, View by",
+   "lib/quotes/items-model.ts:34"
+  ],
+  "why": "A fourth grouping beside Section, Trade and Room; if kept, say what it is for and hide it by default (REG-574).",
+  "kind": "name"
+ },
+ {
+  "now": "Schedules (Company › Templates tab)",
+  "proposed": "Project schedules",
+  "where": [
+   "/company/templates/schedules",
+   "lib/company/sections.ts:44"
+  ],
+  "why": "Sits beside “Payment schedules”; two tabs, one noun.",
+  "kind": "name"
+ },
+ {
+  "now": "Milestones / Add a milestone / 4 milestones (payment schedule editor)",
+  "proposed": "Payments / Add a payment / 4 payments",
+  "where": [
+   "/templates/payments/[id]",
+   "components/company/templates/editors/payment-template-editor.tsx:117"
+  ],
+  "why": "Milestones are the project Schedule’s works; the quote calls the same rows payments.",
+  "kind": "label"
+ },
+ {
+  "now": "Manage payment templates",
+  "proposed": "Manage payment schedules",
+  "where": [
+   "/quotes/[id] Payment Schedule ▾",
+   "components/quotes/editor/payments/payments-section.tsx:299"
+  ],
+  "why": "The tab is “Payment schedules”.",
+  "kind": "label"
+ },
+ {
+  "now": "Sent for Approval (quote status)",
+  "proposed": "Waiting for approval",
+  "where": [
+   "/quotes status menu + pills",
+   "lib/leads/quote-filters.ts:10"
+  ],
+  "why": "Chips say “Waiting for my approval”, templates “Awaiting approval”, invoices “Waiting for approval” — one state, four names.",
+  "kind": "status"
+ },
+ {
+  "now": "Awaiting approval (quote templates)",
+  "proposed": "Waiting for approval",
+  "where": [
+   "/company/templates/quotes",
+   "components/company/templates/quote-templates-gallery.tsx:89",
+   "components/templates/editor/template-editor.tsx:329"
+  ],
+  "why": "Same state as the quote’s and invoice’s.",
+  "kind": "status"
+ },
+ {
+  "now": "Sent to Client (quote status)",
+  "proposed": "With client",
+  "where": [
+   "/quotes · /quotes/[id] status pill",
+   "lib/leads/quote-filters.ts:10"
+  ],
+  "why": "A VO shows the same status as “With the client” (lib/projects/money.ts:509); chip “Waiting on client”.",
+  "kind": "status"
+ },
+ {
+  "now": "With the client (VO status)",
+  "proposed": "With client",
+  "where": [
+   "/quotes/[id] (VO) · /projects/[id]/money",
+   "lib/projects/money.ts:509"
+  ],
+  "why": "One word for quote and VO.",
+  "kind": "status"
+ },
+ {
+  "now": "Waiting on client · 3",
+  "proposed": "With client · 3",
+  "where": [
+   "/quotes to-do chip",
+   "components/leads/quotes/quotes-toolbar.tsx:31"
+  ],
+  "why": "Matches the status word.",
+  "kind": "label"
+ },
+ {
+  "now": "Sent to Client (contract status)",
+  "proposed": "Waiting for signature",
+  "where": [
+   "/contracts status",
+   "components/leads/contracts/contracts-table.tsx"
+  ],
+  "why": "A contract out with the client is waiting to be signed; the quote’s word hides that.",
+  "kind": "status"
+ },
+ {
+  "now": "Shared / Private (under each quote number)",
+  "proposed": "(remove) — or a lock glyph with tooltip “Only your team can see this quote”",
+  "where": [
+   "/quotes title cell",
+   "components/leads/quotes/quotes-table.tsx:268"
+  ],
+  "why": "Unclear to whom; contradicts a Sent date on Approved rows.",
+  "kind": "label"
+ },
+ {
+  "now": "Due (quotes list column)",
+  "proposed": "Follow up",
+  "where": [
+   "/quotes",
+   "components/leads/quotes/quotes-table.tsx:75"
+  ],
+  "why": "It is a follow-up reminder, not a payment due or validity date.",
+  "kind": "label"
+ },
+ {
+  "now": "Set due date for {quote}",
+  "proposed": "Set a follow-up date",
+  "where": [
+   "/quotes Due cell",
+   "components/leads/quotes/quotes-table.tsx:350"
+  ],
+  "why": "Follows the column rename.",
+  "kind": "label"
+ },
+ {
+  "now": "Sets the quote’s Due date and adds a follow-up task for you",
+  "proposed": "Adds a follow-up task for you on that day",
+  "where": [
+   "Send for confirmation dialog"
+  ],
+  "why": "Says what happens in the studio’s words.",
+  "kind": "helper"
+ },
+ {
+  "now": "Quote Valid Until",
+  "proposed": "Valid until",
+  "where": [
+   "/quotes/[id] General Info",
+   "components/quotes/editor/general-info.tsx:79",
+   "lib/templates/readiness.ts:26"
+  ],
+  "why": "VOs, the phone and the client page already say “Valid until”.",
+  "kind": "label"
+ },
+ {
+  "now": "Its validity ended on 24 Sep ’26 — extend Quote Valid Until if the price still stands.",
+  "proposed": "The price was valid until 24 Sep. Change Valid until if it still stands.",
+  "where": [
+   "/quotes/[id] sent banner",
+   "components/quotes/editor/quote-bars.tsx:82"
+  ],
+  "why": "A field name capitalised inside a sentence reads as system text.",
+  "kind": "helper"
+ },
+ {
+  "now": "Valid until … has passed — nothing is blocked; extend Quote Valid Until if the price still stands",
+  "proposed": "Valid until 24 Sep has passed. Change Valid until if the price still stands.",
+  "where": [
+   "/quotes Expired tooltip",
+   "components/leads/quotes/quotes-table.tsx:272"
+  ],
+  "why": "Same as the banner.",
+  "kind": "helper"
+ },
+ {
+  "now": "Valid 30 days (template card)",
+  "proposed": "Valid for 30 days",
+  "where": [
+   "/quotes/[id] Template card"
+  ],
+  "why": "Matches the template’s “Valid for (days)”.",
+  "kind": "label"
+ },
+ {
+  "now": "Send for digital signature",
+  "proposed": "Send for signature",
+  "where": [
+   "/contracts/[id] Send dialog title",
+   "components/contracts/editor/dialogs.tsx"
+  ],
+  "why": "The quote’s Send ▾ row says “Send for signature”.",
+  "kind": "heading"
+ },
+ {
+  "now": "Your client reviews and signs in their browser. A one-time code confirms it’s them — demo only: no text is sent, any six digits sign it. The link opens for 7 days from when you send it.",
+  "proposed": "Your client signs on their phone; a one-time code confirms it’s them.",
+  "where": [
+   "/contracts/[id] Send dialog",
+   "lib/contracts/model.ts:69"
+  ],
+  "why": "Three lines in the dialog head; demo talk in the real flow (move it to a tooltip).",
+  "kind": "helper"
+ },
+ {
+  "now": "Send for confirmation — The client confirms the quote on a link — no signature yet",
+  "proposed": "Ask to confirm — Your client taps Confirm on a link. No signature yet.",
+  "where": [
+   "/quotes/[id] Send ▾",
+   "components/quotes/send/send-button.tsx"
+  ],
+  "why": "Plainer, one dash.",
+  "kind": "label"
+ },
+ {
+  "now": "Send for signature — Add the T&Cs and raise the agreement to sign",
+  "proposed": "Send to sign — Your client signs an agreement made from this quote.",
+  "where": [
+   "/quotes/[id] Send ▾",
+   "components/quotes/send/send-button.tsx:49"
+  ],
+  "why": "“Raise the agreement” is jargon.",
+  "kind": "label"
+ },
+ {
+  "now": "Sent it another way — The client has it already — marks it Sent to Client, sends nothing",
+  "proposed": "Mark as sent — You sent it yourself; nothing goes out.",
+  "where": [
+   "/quotes/[id] Send ▾",
+   "components/quotes/send/send-button.tsx:53"
+  ],
+  "why": "A verb like its neighbours; says what happens.",
+  "kind": "label"
+ },
+ {
+  "now": "Choose a contract template — Pick a template to start the contract from.",
+  "proposed": "Which agreement should they sign?",
+  "where": [
+   "Send for signature / Create contract picker",
+   "components/quotes/send/contract-from-quote.tsx"
+  ],
+  "why": "The studio pressed Send; the picker should answer that.",
+  "kind": "heading"
+ },
+ {
+  "now": "Start from the studio agreement · Use template",
+  "proposed": "Continue (the studio agreement pre-selected)",
+  "where": [
+   "contract template picker foot"
+  ],
+  "why": "Two buttons for the same choice.",
+  "kind": "label"
+ },
+ {
+  "now": "eSignatures",
+  "proposed": "Signatures",
+  "where": [
+   "/contracts/[id] toolbar + panel",
+   "components/contracts/editor/esign-panel.tsx"
+  ],
+  "why": "Software word.",
+  "kind": "name"
+ },
+ {
+  "now": "Fillable fields",
+  "proposed": "Signature boxes",
+  "where": [
+   "/contracts/[id] eSignatures panel",
+   "components/contracts/editor/esign-panel.tsx:59"
+  ],
+  "why": "Software word.",
+  "kind": "heading"
+ },
+ {
+  "now": "Your saved signature, from the quote editor",
+  "proposed": "Your signature — from Your profile",
+  "where": [
+   "eSignatures panel",
+   "lib/contracts/tokens.ts:33"
+  ],
+  "why": "The signature lives on Your profile (S01).",
+  "kind": "helper"
+ },
+ {
+  "now": "Place the fields where the parties sign. The client’s field is where they sign online once you send the link.",
+  "proposed": "Put a box where each person signs.",
+  "where": [
+   "eSignatures panel"
+  ],
+  "why": "One line; “parties” is legal register.",
+  "kind": "helper"
+ },
+ {
+  "now": "Automation (bell icon)",
+  "proposed": "Reminders… (in ⋮)",
+  "where": [
+   "/contracts/[id] header",
+   "components/contracts/editor/contract-editor.tsx:550"
+  ],
+  "why": "A bell is the app’s notifications icon.",
+  "kind": "label"
+ },
+ {
+  "now": "Copy link — marks it Sent",
+  "proposed": "(remove from header; Copy link stays in the Send dialog)",
+  "where": [
+   "/contracts/[id] header · preview",
+   "components/contracts/editor/contract-editor.tsx:554"
+  ],
+  "why": "A copy icon that changes the status surprises.",
+  "kind": "label"
+ },
+ {
+  "now": "Marked signed on 8 Aug ’26. This is the copy kept at that moment; an Owner or an Admin can move it back from the status.",
+  "proposed": "Signed on 8 Aug ’26 — this copy is locked. An Owner or Admin can undo the signing from the status menu.",
+  "where": [
+   "/contracts/[id] signed banner",
+   "components/contracts/editor/contract-banner.tsx:56"
+  ],
+  "why": "“Move it back from the status” is unclear.",
+  "kind": "helper"
+ },
+ {
+  "now": "How fields fill in (snackbar)",
+  "proposed": "Tooltip: “Fields fill in from the lead, the quote and your studio.”",
+  "where": [
+   "/templates/contracts/[id]",
+   "components/contracts/editor/contract-template-editor.tsx:277"
+  ],
+  "why": "Help in a vanishing snackbar.",
+  "kind": "helper"
+ },
+ {
+  "now": "Private link / Secure signing / View only (client page badges)",
+  "proposed": "Private link",
+  "where": [
+   "/confirm · /sign · /quote/[token]",
+   "components/quotes/confirm/confirm-page.tsx:193",
+   "components/contracts/sign/signing-page.tsx:194",
+   "components/quotes/view/quote-view-page.tsx:72"
+  ],
+  "why": "One reassurance on every client page.",
+  "kind": "label"
+ },
+ {
+  "now": "Save a copy (sign phone) / Download (view phone)",
+  "proposed": "Download a copy",
+  "where": [
+   "/sign/[token] 390 · /quote/[token] 390",
+   "components/contracts/sign/sign-bar.tsx"
+  ],
+  "why": "Desk pages say “Download a copy”.",
+  "kind": "label"
+ },
+ {
+  "now": "Quotation OM-10004 / Signs quotation OM-10004",
+  "proposed": "Quote OM-10004",
+  "where": [
+   "/sign/[token]",
+   "components/contracts/sign/sign-hero.tsx"
+  ],
+  "why": "Every other client page says quote.",
+  "kind": "name"
+ },
+ {
+  "now": "As cards ›",
+  "proposed": "See the quote ›",
+  "where": [
+   "/sign/[token] 390",
+   "components/contracts/sign/sign-hero.tsx"
+  ],
+  "why": "Means nothing to a client.",
+  "kind": "label"
+ },
+ {
+  "now": "As printed / View as printed",
+  "proposed": "See it as printed",
+  "where": [
+   "/quotes/[id] 390 · /confirm 390 · /quote/[token] 390",
+   "components/quotes/confirm/quote-stage.tsx:24"
+  ],
+  "why": "One phrase.",
+  "kind": "label"
+ },
+ {
+  "now": "Hi Serena, this is the quote Germaine is preparing for you. It updates here as they work on it — there’s nothing to confirm or sign on this page.",
+  "proposed": "Hi Serena, here is your quote from Germaine. It stays up to date on this page. (while still a draft: “… Germaine is still working on it.”)",
+  "where": [
+   "/quote/[token]",
+   "lib/quotes/view-link.ts:45"
+  ],
+  "why": "Shown on a quote already sent.",
+  "kind": "helper"
+ },
+ {
+  "now": "valid until 24 Sep ’26 (after that date, client page)",
+  "proposed": "This price was valid until 24 Sep — ask Germaine if it still stands.",
+  "where": [
+   "/confirm/[token] 390",
+   "components/quotes/confirm/confirm-page.tsx:205"
+  ],
+  "why": "The client confirms a price the studio no longer stands behind.",
+  "kind": "helper"
+ },
+ {
+  "now": "Last changed 27 Aug",
+  "proposed": "Last changed 27 Aug ’26",
+  "where": [
+   "/quote/[token]",
+   "components/quotes/view/quote-view-page.tsx:92"
+  ],
+  "why": "Every other date has its year.",
+  "kind": "label"
+ },
+ {
+  "now": "Sales Contract / CONTRACT FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES (default quote template)",
+  "proposed": "Quotation / QUOTATION FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES",
+  "where": [
+   "Preview, confirm and view pages",
+   "lib/templates/presets.ts"
+  ],
+  "why": "The client is told this is not the contract.",
+  "kind": "heading"
+ },
+ {
+  "now": "Gst {gst_rate}:",
+  "proposed": "GST {gst_rate}:",
+  "where": [
+   "default template totals",
+   "lib/templates/presets.ts:50"
+  ],
+  "why": "Acronym in capitals.",
+  "kind": "label"
+ },
+ {
+  "now": "Variation order VO-1 — to contract OM-10009",
+  "proposed": "Variation order VO-1 to quotation OM-10009",
+  "where": [
+   "VO print + confirm page",
+   "lib/templates/fields.ts:89"
+  ],
+  "why": "OM-10009 is the quote number.",
+  "kind": "heading"
+ },
+ {
+  "now": "Rename Quote · Duplicate and Edit · Save as Template · Version History",
+  "proposed": "Rename quote · Duplicate and edit · Save as template · Version history",
+  "where": [
+   "/quotes/[id] ⋮",
+   "components/quotes/editor/editor-header.tsx:170"
+  ],
+  "why": "Sentence case, as the rest of the menu.",
+  "kind": "label"
+ },
+ {
+  "now": "Save as new template (Template card) / Save as Template (⋮)",
+  "proposed": "Save as template",
+  "where": [
+   "/quotes/[id]",
+   "components/quotes/editor/template-bar.tsx:40"
+  ],
+  "why": "One action, three spellings.",
+  "kind": "label"
+ },
+ {
+  "now": "Preview and Share · Copy Link · Create contract",
+  "proposed": "Preview and share · Copy link · Create contract from this quote",
+  "where": [
+   "/quotes row ⋮",
+   "components/leads/quotes/quotes-table.tsx:402"
+  ],
+  "why": "Casing; the editor’s ⋮ says “Create contract from this quote”.",
+  "kind": "label"
+ },
+ {
+  "now": "Manage Templates · Quotes Settings · Archived Quotes · Deleted Quotes",
+  "proposed": "Manage templates · Quote settings · Archived quotes · Deleted quotes",
+  "where": [
+   "/quotes page ⋮",
+   "components/leads/quotes/quotes-toolbar.tsx:125"
+  ],
+  "why": "Sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "From the studio agreement · From Template · Import from File",
+  "proposed": "From the studio agreement · From a template · Import a file",
+  "where": [
+   "/contracts New Contract ▾",
+   "components/leads/contracts/contracts-toolbar.tsx:117"
+  ],
+  "why": "Sentence case, parallel.",
+  "kind": "label"
+ },
+ {
+  "now": "New Contract / Create Quote",
+  "proposed": "New contract / New quote",
+  "where": [
+   "/contracts · /quotes toolbar"
+  ],
+  "why": "Sister lists, one verb.",
+  "kind": "label"
+ },
+ {
+  "now": "Start a quote (dialog title)",
+  "proposed": "New quote",
+  "where": [
+   "Create Quote modal",
+   "components/quotes/create-quote-modal.tsx:206"
+  ],
+  "why": "The button that opens it should name it.",
+  "kind": "heading"
+ },
+ {
+  "now": "Blank Quote — The default template’s settings, an empty table",
+  "proposed": "Blank quote — Start with an empty quote",
+  "where": [
+   "Create Quote modal",
+   "components/quotes/create-quote-modal.tsx:368"
+  ],
+  "why": "Plain; sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "FROM A TEMPLATE · 3 SAVED / MORE WAYS TO START",
+  "proposed": "From a template / More ways to start",
+  "where": [
+   "Create Quote modal",
+   "components/quotes/create-quote-modal.tsx:357"
+  ],
+  "why": "No capitals, no count.",
+  "kind": "heading"
+ },
+ {
+  "now": "Describe the scope — we draft a categorized quote from your 10-item price book",
+  "proposed": "Describe the work; Maison AI drafts it from your Price book.",
+  "where": [
+   "Create Quote modal",
+   "components/quotes/create-quote-modal.tsx:425"
+  ],
+  "why": "US spelling; “10-item” is noise.",
+  "kind": "helper"
+ },
+ {
+  "now": "XLSX · CSV · PDF · 5 AI CREDITS",
+  "proposed": "Excel, CSV or PDF · 5 credits",
+  "where": [
+   "Create Quote › Upload a quote tag"
+  ],
+  "why": "Sentence case; file words a studio uses.",
+  "kind": "label"
+ },
+ {
+  "now": "LEAD (Contracts column)",
+  "proposed": "Client",
+  "where": [
+   "/contracts",
+   "components/leads/contracts/contracts-table.tsx:74"
+  ],
+  "why": "Tools › Quotes calls the same person Client.",
+  "kind": "label"
+ },
+ {
+  "now": "Signed Copy (Contracts column)",
+  "proposed": "(remove — ⋮ › Download signed copy)",
+  "where": [
+   "/contracts",
+   "components/leads/contracts/contracts-table.tsx:77"
+  ],
+  "why": "Shows the same cut file name on every row.",
+  "kind": "label"
+ },
+ {
+  "now": "Search title, status, date…",
+  "proposed": "Search client, title, quote number…",
+  "where": [
+   "/contracts search"
+  ],
+  "why": "Matches what the studio knows; Quotes says client.",
+  "kind": "label"
+ },
+ {
+  "now": "Signed · signed 15 Sep ’26 (phone card)",
+  "proposed": "Signed 15 Sep ’26",
+  "where": [
+   "/quotes 390 · /contracts 390",
+   "components/leads/quotes/quote-card-words.ts"
+  ],
+  "why": "The word twice.",
+  "kind": "label"
+ },
+ {
+  "now": "General Info · Payment Schedule · Terms and Conditions · Additional Notes (desk tabs)",
+  "proposed": "General info · Payment schedule · Terms and conditions · Additional notes",
+  "where": [
+   "/quotes/[id] anchor tabs + card heads",
+   "components/quotes/editor/editor-tabs.tsx"
+  ],
+  "why": "The phone section list already writes them so.",
+  "kind": "name"
+ },
+ {
+  "now": "Quote Title · Project Ref # · Property Type · Site Address · Customer ID",
+  "proposed": "Title · Project ref · Property type · Site address · Customer ID",
+  "where": [
+   "/quotes/[id] General Info",
+   "components/quotes/editor/general-info.tsx:64"
+  ],
+  "why": "Sentence case; “Quote” is implied.",
+  "kind": "label"
+ },
+ {
+  "now": "Issuing Entity / GST-Registered",
+  "proposed": "Issued by / GST registered",
+  "where": [
+   "/quotes/[id] totals area",
+   "components/quotes/editor/items/items-summary.tsx:67"
+  ],
+  "why": "Contracts and Finance say “Issued by”.",
+  "kind": "label"
+ },
+ {
+  "now": "Prints where the quote’s template has the Remarks field",
+  "proposed": "Shows on the printed quote",
+  "where": [
+   "/quotes/[id] Remarks helper",
+   "components/quotes/editor/general-info.tsx:97"
+  ],
+  "why": "Explains the template’s internals; also shown on VOs.",
+  "kind": "helper"
+ },
+ {
+  "now": "Add a Payment",
+  "proposed": "Add a payment",
+  "where": [
+   "/quotes/[id] Payment Schedule",
+   "components/quotes/editor/payments/payments-section.tsx:449"
+  ],
+  "why": "Sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "Payment name · Description / Trigger · Percentage (%) · Amount (S$)",
+  "proposed": "Payment · When · Share · Amount",
+  "where": [
+   "/quotes/[id] Payment Schedule heads",
+   "components/quotes/editor/payments/payments-section.tsx:54"
+  ],
+  "why": "Shorter heads; “Trigger” is jargon.",
+  "kind": "label"
+ },
+ {
+  "now": "On Approval (payment due)",
+  "proposed": "On signing",
+  "where": [
+   "/quotes/[id] Payment Schedule"
+  ],
+  "why": "The same row’s description says “Upon signing”; the client never sees an approval.",
+  "kind": "label"
+ },
+ {
+  "now": "Additional Discount / Discount / + Add a discount",
+  "proposed": "+ Add a discount (one entry; named rows once added)",
+  "where": [
+   "/quotes/[id] totals",
+   "components/quotes/editor/items/items-summary.tsx:111"
+  ],
+  "why": "Three discount rows with no discount.",
+  "kind": "label"
+ },
+ {
+  "now": "Round Prices (link beside Total)",
+  "proposed": "Round prices… (Items ⋮)",
+  "where": [
+   "/quotes/[id] totals",
+   "components/quotes/editor/items/items-summary.tsx:145"
+  ],
+  "why": "Reads as part of the Total label.",
+  "kind": "label"
+ },
+ {
+  "now": "Export As",
+  "proposed": "Export…",
+  "where": [
+   "/quotes/[id] under the Items table",
+   "components/quotes/editor/items/items-table.tsx:900"
+  ],
+  "why": "Casing.",
+  "kind": "label"
+ },
+ {
+  "now": "Client signs online — Requested when you send · signed on approval",
+  "proposed": "Olivia signs here when she accepts the quote online.",
+  "where": [
+   "/quotes/[id] Signature",
+   "components/quotes/editor/signature/signature-section.tsx:110"
+  ],
+  "why": "“On approval” is the studio’s internal step; repeats the switch.",
+  "kind": "helper"
+ },
+ {
+  "now": "NRIC: Requested when you send",
+  "proposed": "NRIC: asked when you send",
+  "where": [
+   "/quotes/[id] Signature"
+  ],
+  "why": "Plain.",
+  "kind": "helper"
+ },
+ {
+  "now": "Default Quote PDF prints lines by trade, so these sections don’t show on the printed quote.",
+  "proposed": "Prints by trade — your sections are for you. (once, in the Template card)",
+  "where": [
+   "/quotes/[id] Items note",
+   "components/quotes/editor/items/items-section.tsx:1349"
+  ],
+  "why": "An always-on note above the table; say it once where the template is chosen.",
+  "kind": "helper"
+ },
+ {
+  "now": "By trade › room · Default: 10/30/30/30 · Valid 30 days · GST · signs online",
+  "proposed": "Prints with Default Quote PDF (v1)",
+  "where": [
+   "/quotes/[id] Template card",
+   "components/quotes/editor/template-bar.tsx:35"
+  ],
+  "why": "Shorthand for settings already applied.",
+  "kind": "helper"
+ },
+ {
+  "now": "Sum · 16 priced items / Subtotal · 16 items / 16 lines",
+  "proposed": "16 items",
+  "where": [
+   "/quotes/[id] · phone headers",
+   "components/quotes/editor/items/items-table.tsx:680",
+   "components/quotes/screen/quote-screen.tsx:86"
+  ],
+  "why": "“Lines” is a spreadsheet word; one count.",
+  "kind": "label"
+ },
+ {
+  "now": "19 lines · valid until … (client page)",
+  "proposed": "19 items · valid until …",
+  "where": [
+   "/confirm · /quote/[token]",
+   "components/quotes/confirm/confirm-page.tsx:205"
+  ],
+  "why": "Clients don’t count “lines”.",
+  "kind": "label"
+ },
+ {
+  "now": "Copy Name · Show Full Content (row menus)",
+  "proposed": "(remove)",
+  "where": [
+   "/quotes/[id] Items ⋮",
+   "components/quotes/editor/items/table-menus.tsx"
+  ],
+  "why": "Tool words; ⌘C and the row chevron already do it.",
+  "kind": "label"
+ },
+ {
+  "now": "Move Item › (on a section)",
+  "proposed": "Move section ›",
+  "where": [
+   "/quotes/[id] section ⋮"
+  ],
+  "why": "It moves the section.",
+  "kind": "label"
+ },
+ {
+  "now": "Mark as Optional · Add Sub-section · Skip the number",
+  "proposed": "Mark as optional · Add sub-section · No number",
+  "where": [
+   "/quotes/[id] line ⋮"
+  ],
+  "why": "Sentence case; shorter.",
+  "kind": "label"
+ },
+ {
+  "now": "Save section to My Sections / From My Items · …",
+  "proposed": "Save to Price book / From the Price book · …",
+  "where": [
+   "/quotes/[id] row ⋮"
+  ],
+  "why": "“My” reads personal; the book is the studio’s.",
+  "kind": "label"
+ },
+ {
+  "now": "My Items · My Sections (Price book tabs)",
+  "proposed": "Items · Sections",
+  "where": [
+   "/company/price-book",
+   "lib/company/folder-libraries.ts:13"
+  ],
+  "why": "“My” reads personal.",
+  "kind": "name"
+ },
+ {
+  "now": "My Templates (Terms / Notes link)",
+  "proposed": "Templates",
+  "where": [
+   "/quotes/[id] Terms and Conditions · Additional Notes",
+   "components/quotes/editor/text/templates-modal.tsx"
+  ],
+  "why": "Same reason.",
+  "kind": "label"
+ },
+ {
+  "now": "Terms and Conditions Templates · Create New · Manage Templates",
+  "proposed": "Terms and conditions templates · New template · Manage templates",
+  "where": [
+   "/quotes/[id] templates modal",
+   "components/quotes/editor/text/templates-modal.tsx:127"
+  ],
+  "why": "Casing; Create New should not be the filled button next to Add.",
+  "kind": "label"
+ },
+ {
+  "now": "0 Comments + No comments on this quote’s lines yet. Comment on a line from its ⋯ menu, or pick one below.",
+  "proposed": "No comments yet — pick a line below.",
+  "where": [
+   "/quotes/[id] Comments drawer"
+  ],
+  "why": "Say it once.",
+  "kind": "empty"
+ },
+ {
+  "now": "Chat with your team here / Submit",
+  "proposed": "Write a comment / Send",
+  "where": [
+   "/quotes/[id] Comments composer",
+   "components/quotes/editor/line-comments.tsx"
+  ],
+  "why": "“Submit” is a form word.",
+  "kind": "label"
+ },
+ {
+  "now": "Status: All / Show: All / Kind: All",
+  "proposed": "Status: All · Kind: All · Use: All (never “Show”)",
+  "where": [
+   "/company/templates/* · /company/price-book",
+   "components/company/templates/library-gallery.tsx:591"
+  ],
+  "why": "One pill, named by what it filters.",
+  "kind": "label"
+ },
+ {
+  "now": "Not used yet / Not a default anywhere / No schedule started from it yet",
+  "proposed": "(nothing until used) — “Used by 6 quotes”",
+  "where": [
+   "/company/templates/* cards",
+   "components/company/templates/payment-templates-gallery.tsx:54",
+   "components/company/templates/schedules/schedule-templates-gallery.tsx:67"
+  ],
+  "why": "Repeated placeholder on every card.",
+  "kind": "label"
+ },
+ {
+  "now": "AT HANDOVER · STUDIO DEFAULT · DEFAULT · TERMS · NOTES (card tags)",
+  "proposed": "At handover · Studio default · Default · Terms · Notes",
+  "where": [
+   "/company/templates/*"
+  ],
+  "why": "Tags in sentence case.",
+  "kind": "label"
+ },
+ {
+  "now": "Default: 10/30/30/30 (template name) + 4 milestones · 10/30/30/30",
+  "proposed": "10/30/30/30 (name) + Studio default chip",
+  "where": [
+   "/company/templates/payments · /templates/payments/default"
+  ],
+  "why": "The split shows five times on one screen.",
+  "kind": "label"
+ },
+ {
+  "now": "Each one starts its gap in days after the one before ends; a negative gap overlaps them.",
+  "proposed": "Gap = days between one milestone and the next. Use a minus number to overlap.",
+  "where": [
+   "/templates/schedules/[id]",
+   "components/company/templates/schedules/schedule-template-editor.tsx:142"
+  ],
+  "why": "Plainer.",
+  "kind": "helper"
+ },
+ {
+  "now": "New quotes (template editor tab)",
+  "proposed": "Quote settings",
+  "where": [
+   "/templates/[id] left tabs",
+   "components/templates/editor/"
+  ],
+  "why": "Reads like a list of quotes (REG-569 named it; flagged).",
+  "kind": "name"
+ },
+ {
+  "now": "A new quote from this template starts with these — once you publish. Quotes you already have keep their own settings; a Draft quote can take these from its template card (Apply defaults).",
+  "proposed": "New quotes from this template start with these.",
+  "where": [
+   "/templates/[id] New quotes tab"
+  ],
+  "why": "Four clauses for one idea.",
+  "kind": "helper"
+ },
+ {
+  "now": "This template is deleted — the quotes on it would keep printing v0.",
+  "proposed": "This draft is deleted. Restore",
+  "where": [
+   "/templates/[id] deleted draft",
+   "components/templates/editor/template-editor.tsx:420"
+  ],
+  "why": "“v0” on a never-published draft.",
+  "kind": "helper"
+ },
+ {
+  "now": "Every template starts from this kit — its logo, stamp, badges, colours and type. Change one thing here and every template that uses it follows. A template can still differ on its own Brand tab.",
+  "proposed": "Your logo, colours and fonts — every template uses them.",
+  "where": [
+   "/company/templates/brand",
+   "components/company/templates/brand-kit-view.tsx:125"
+  ],
+  "why": "Two lines of explanation at the top.",
+  "kind": "helper"
+ },
+ {
+  "now": "Band (brand colour name)",
+  "proposed": "Table band",
+  "where": [
+   "/company/templates/brand · template editor Brand tab"
+  ],
+  "why": "“Band” alone is unclear.",
+  "kind": "label"
+ },
+ {
+  "now": "Lines already on a quote keep what they copied; new picks take these values.",
+  "proposed": "Quotes that already use this item keep their prices.",
+  "where": [
+   "/company/price-book item dialog",
+   "components/company/price-book/item-dialog.tsx:159"
+  ],
+  "why": "Plainer.",
+  "kind": "helper"
+ },
+ {
+  "now": "The studio’s units — Settings › Quotes & pricing / The studio’s trades — Settings › Quotes & pricing",
+  "proposed": "(remove; select ends with “Manage units…” / “Manage trades…”)",
+  "where": [
+   "/company/price-book item dialog",
+   "components/company/price-book/item-dialog.tsx:178"
+  ],
+  "why": "Helper under each select.",
+  "kind": "helper"
+ },
+ {
+  "now": "Who supplies it — the same product from two vendors is two items",
+  "proposed": "(remove; in “How the Price book works”)",
+  "where": [
+   "/company/price-book item dialog",
+   "components/company/price-book/item-dialog.tsx:197"
+  ],
+  "why": "Explains a rule on a form field.",
+  "kind": "helper"
+ },
+ {
+  "now": "A product or spec page — the line keeps it; it never prints",
+  "proposed": "Never printed",
+  "where": [
+   "/company/price-book item dialog",
+   "components/company/price-book/item-dialog.tsx:206"
+  ],
+  "why": "Shorter.",
+  "kind": "helper"
+ },
+ {
+  "now": "A CSV or XLSX file, or rows copied from Excel or Google Sheets — up to 500 rows at a time. A header row (Item · Unit · Cost…) names the columns for you.",
+  "proposed": "Excel or CSV, up to 500 rows.",
+  "where": [
+   "/company/price-book Import"
+  ],
+  "why": "Two-line subtitle.",
+  "kind": "helper"
+ },
+ {
+  "now": "The book’s own export reads back in — the sheet carries no photos",
+  "proposed": "(remove)",
+  "where": [
+   "/company/price-book Import dropzone"
+  ],
+  "why": "Insider.",
+  "kind": "helper"
+ },
+ {
+  "now": "Saved 7 Sept ’26",
+  "proposed": "Saved 7 Sep ’26",
+  "where": [
+   "/contracts/[id] · library editors",
+   "lib/contracts/model.ts:48"
+  ],
+  "why": "House month is “Sep”.",
+  "kind": "label"
+ },
+ {
+  "now": "7/10/2026 (DateField display)",
+  "proposed": "7 Oct 2026",
+  "where": [
+   "/quotes/[id] Valid until · /contracts/[id] Contract date",
+   "lib/format.ts:99"
+  ],
+  "why": "Ambiguous d/m vs m/d; every other date is written out (REG-34).",
+  "kind": "label"
+ },
+ {
+  "now": "FROM TEMPLATE (contract header tag)",
+  "proposed": "(remove)",
+  "where": [
+   "/contracts/[id] header + phone hero",
+   "components/contracts/editor/contract-editor.tsx:541"
+  ],
+  "why": "Adds nothing to the task.",
+  "kind": "label"
+ },
+ {
+  "now": "VERSION 1 · DRAFT (tags beside the Draft ▾ pill)",
+  "proposed": "OM-10001 · v1 (grey subtitle; status only in the pill)",
+  "where": [
+   "/quotes/[id] header",
+   "components/quotes/editor/editor-header.tsx:116"
+  ],
+  "why": "Status said twice, in capitals.",
+  "kind": "label"
+ }
+]

@@ -2,7 +2,7 @@ import { Bone, GhostSheet } from '@/components/shell/skeleton'
 import { Words } from '@/components/shell/ghost-kit'
 import { cx } from '@/components/site/primitives'
 import { START, TOOL_INFO } from '@/lib/visualizer/trial/content'
-import { SAMPLE_ONLY, type TrialTool } from '@/lib/visualizer/trial/policy'
+import { allowanceLine, SAMPLE_ONLY, TRIAL_LIMIT, type TrialTool } from '@/lib/visualizer/trial/policy'
 import s from '@/components/site/site.module.css'
 import p from '@/components/site/pages.module.css'
 import g from '@/components/site/site-ghosts.module.css'
@@ -28,7 +28,7 @@ export function TrialGhost({ tool = false }: { /** a tool's page — one title w
             <div className={p.crumbs}><Bone w={tool ? 176 : 112} h={16} /><Bone w={8} h={16} /><Bone w={tool ? 88 : 48} h={16} /></div>
             <div className={t.hero} data-tool={tool || undefined}>
               <div>
-                <Words className={s.eyebrow}>{`${START.eyebrow} · 3 of 3 free renders left`}</Words>
+                <Words className={s.eyebrow}>{`${START.eyebrow} · ${allowanceLine(TRIAL_LIMIT)}`}</Words>   {/* (the calm UI build 2026-10-27, W-463) the page's own line */}
                 {info ? <Words as="h2" className={cx(s.displayL, p.mt20)}>{info.title}</Words> : tool ? <h2 className={cx(s.displayL, p.mt20)} aria-hidden><Bone w="34%" h={44} r={4} /></h2> : <Words as="h2" className={cx(s.displayL, p.mt20)}>{START.title}</Words>}
                 {info ? <Words as="p" className={cx(s.lede, p.mt20)}>{info.subtitle}</Words> : tool ? <div className={cx(g.lines, p.mt20)}><Bone w="100%" h={16} /><Bone w="72%" h={16} /></div> : <Words as="p" className={cx(s.lede, p.mt20)}>{START.lede}</Words>}
                 <div className={cx(t.uploadRow, p.mt32)}><Bone w={232} h={48} r={4} className={g.button} /></div>

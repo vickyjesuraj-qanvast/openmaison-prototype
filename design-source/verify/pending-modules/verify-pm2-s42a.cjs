@@ -26,6 +26,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s42a')
@@ -110,7 +113,8 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     const kitchen = json(`select u.id, u.published_at as at, (select e.at from lead_events e where e.kind = 'project_update_posted' and e.detail like '%' || u.id || '%') as ev from project_updates u where u.title = 'Kitchen cabinets are in'`)[0]
     ok(!!kitchen && NOW() - kitchen.at < 12 * DAY, 'R125: the newest site update is inside the Dashboard’s fortnight', kitchen ? `${((NOW() - kitchen.at) / DAY).toFixed(1)} days ago` : '')
     ok(!!kitchen && kitchen.ev === kitchen.at, 'R125: its Activity line is on its update’s moment')
-    ok(await p.locator('div[data-card="updates"]').count() === 1 && /Kitchen cabinets are in/.test(await p.locator('div[data-card="updates"]').innerText()), 'the Dashboard’s Site updates shows it')
+    /* (Dashboard redesign 2026-10-26, a deliberate change — lane D3) Site updates is On site: the week's photos, each named by its update */
+    ok(await p.locator('div[data-card="site"]').count() === 1 && (await p.locator('div[data-card="site"] [data-testid="site-photo"]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''))).some((l) => /Kitchen cabinets are in/.test(l)), 'the Dashboard’s On site shows it')
     // the restore: a snapshot of this database, restored the same day and 40 days later
     const fixture = path.join(os.tmpdir(), `pm2-s42a-fixture-${process.pid}.json`)
     const today = dayOf(NOW())
@@ -147,7 +151,10 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     // restored earlier in the day than the snapshot was taken: what happened is eased into the last day — never after now; what is planned keeps
     // its whole days (a task due at 10:00 is still due at 10:00); nothing changes order
     const taken = Date.parse(JSON.parse(fs.readFileSync(fixture, 'utf8')).takenAt)
-    const early = copy('early'), earlyAt = taken + 40 * DAY * 1000 - 5 * 3600 * 1000
+    /* (2026-10-27) "earlier in the day" stays inside the snapshot's own day on the process clock (the restore's day): five hours back, or
+       less when the snapshot was taken before 5 AM — a run at 3 AM otherwise restored on the day before and every planned moment rode 39 days */
+    const intoDay = taken - new Date(taken).setHours(0, 0, 0, 0)
+    const early = copy('early'), earlyAt = taken + 40 * DAY * 1000 - Math.max(1000, Math.min(5 * 3600 * 1000, intoDay - 60 * 1000))
     tsx(early, 'restore', fixture, new Date(earlyAt).toISOString())
     let ahead = [], plannedOff = []
     /* the AI credits story keeps S08b's own move (whole days, capped by its ledger) — its tables are that probe's (pm2-s08b) */
@@ -205,18 +212,27 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     as('huimin')
     await go(p, '/dashboard', 2200)
     const brief = (await p.getByTestId('dashboard').innerText()).replace(/\s+/g, ' ')
-    ok(/Good (morning|afternoon|evening), Hui Min\./.test(brief), 'the brief greets “Hui Min” (the name as the studio wrote it)', brief.slice(0, 120))
-    const mw = p.locator('div[data-card="my-work"]')
-    ok(await mw.getByTestId('my-work-quiet').count() === 1 && /Nothing on your list/.test(await mw.innerText()), 'MY TASKS: one quiet row — “Nothing on your list · Tasks given to you land here”')
-    ok(await mw.getByRole('button', { name: 'Create New Task' }).count() === 0 && await mw.locator('img').count() === 0, 'no first-run illustration, no filled Create New Task')
+    /* (Dashboard redesign 2026-10-26, a deliberate change — his P-02, lane D1) the brief's greeting became the page's title */
+    ok(/^Good (morning|afternoon|evening), Hui Min$/.test((await p.getByTestId('greeting-title').innerText()).trim()), 'the greeting greets “Hui Min” (the name as the studio wrote it)', brief.slice(0, 120))
+    /* (Dashboard redesign 2026-10-26, a deliberate change — lane D3) MY TASKS is Your day: no task of hers on it, and a week with nothing in it
+       says so with one quiet Add a task (an outlined button, never a filled Create New Task, no illustration) */
+    const mw = p.locator('div[data-card="day"]')
+    ok(await mw.getByTestId('day-tick').count() === 0, 'Your day: no task of hers — she has none')
+    ok(await mw.getByRole('button', { name: /^(Create New Task|New task)/ }).count() === 0 /* (the calm UI build 2026-10-27, a deliberate change) B2: "New task" */ && await mw.locator('img:not([src*="maison-ai-mark"]):not([src*="whatsapp"])').count() === 0 && await mw.locator('[data-appearance="filled"]').count() === 0, 'no first-run illustration (the Ask’s Maison AI mark is a mark), no filled Create New Task')
     await shot(p, 'a06-mytasks-quiet-1440')
-    await mw.getByTestId('my-work-add').click(); await p.waitForURL(/\/tasks/, { timeout: 8000 }).catch(() => {})
-    ok(/\/tasks/.test(p.url()), 'Add a task opens Tasks to add one', p.url())
+    if (await mw.getByTestId('day-quiet').count()) {
+      ok(/Nothing planned this week/.test(await mw.innerText()), 'a quiet week says “Nothing planned this week”')
+      await mw.getByTestId('day-add').click(); await p.waitForURL(/\/tasks/, { timeout: 8000 }).catch(() => {})
+      ok(/\/tasks/.test(p.url()), 'Add a task opens Tasks to add one', p.url())
+    }
     // the loader as it streams (no script): MY TASKS draws its one quiet row
+    /* (Dashboard redesign 2026-10-26, a deliberate change — lane D1) MY TASKS is Your day: the loader draws its quiet week (the one line and
+       Add a task), never agenda rows — the shell's seed `dashboard.week` says so before this browser has seen the page */
     const nojs = await desk({ javaScriptEnabled: false }); const np = await nojs.newPage()
     await np.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' }); await np.waitForTimeout(1500)
-    const ghostRows = await np.locator('span[data-card="my-work"] [class*="__group"] > [data-static]:visible').count()   // the loader's (the page's own reveal ghost streams in hidden)
-    ok(ghostRows === 1, 'A-16: the ghost’s MY TASKS draws the page’s one row (not three)', `${ghostRows}`)
+    const ghostDay = np.locator('[data-slot="day"]:visible').first()   // the loader's (the page's own reveal ghost streams in hidden)
+    const ghostRows = await ghostDay.locator('[class*="__agendaRow"]').count(), ghostQuiet = await ghostDay.locator('[class$="__quiet"]').count()
+    ok(ghostRows === 0 && ghostQuiet === 1, 'A-16: the ghost’s Your day draws the page’s quiet week (not three rows)', `${ghostRows} rows · ${ghostQuiet} quiet`)
     await nojs.close()
     as('dane')
 
@@ -228,7 +244,8 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     ok(await p.locator('div[data-card="team"]').count() === 0, 'with no running project and nobody it lists, there is no empty Workload card')
     const nj = await desk({ javaScriptEnabled: false }); const njp = await nj.newPage()
     await njp.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' }); await njp.waitForTimeout(1500)
-    ok(await njp.locator('span[data-card="team"]').count() === 0 && await njp.locator('span[data-card="needs"]:visible').count() === 1, 'A-16: …and its ghost draws none')
+    /* (Dashboard redesign 2026-10-26, a deliberate change — lane D1) Workload is the Team card; the ghost's regions are the frame's slots */
+    ok(await njp.locator('[data-slot="team"]:visible').count() === 0 && await njp.locator('[data-slot="needs"]:visible').count() === 1, 'A-16: …and its ghost draws none')
     await nj.close()
     for (const s of stages0) sql(`update projects set stage = '${s.stage}' where id = '${s.id}'`)
     for (const m of active0) sql(`update members set is_active = ${m.is_active} where id = '${m.id}'`)
@@ -282,8 +299,8 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     { const c = await touch(); const tp = await c.newPage(); watch(tp, '390')
       await tp.goto(BASE + '/settings?section=notifications', { waitUntil: 'networkidle' }); await tp.waitForTimeout(2000)
       const labels = (await tp.getByRole('tab').allInnerTexts()).map((t) => t.trim())
-      const idx = labels.indexOf('Notifications')
-      const live = await tp.getByRole('tab', { name: 'Notifications' }).boundingBox()
+      const idx = labels.indexOf('Studio notifications')   // (the calm UI build 2026-10-27, a deliberate change) 1-41: the Settings tab reads "Studio notifications"
+      const live = await tp.getByRole('tab', { name: 'Studio notifications' }).boundingBox()
       await c.close()
       const g = await touch(390, 844, { javaScriptEnabled: false }); const gp = await g.newPage()
       await gp.goto(BASE + '/settings?section=notifications', { waitUntil: 'domcontentloaded' }); await gp.waitForTimeout(1500)
@@ -304,17 +321,19 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     ok(/This project isn’t one you can open/.test(await p.locator('body').innerText()), 'a project’s address keeps its own record-not-found')
 
     console.log('A-12 · the Dashboard’s Maison AI button starts tucked on a phone')
+    /* (Dashboard redesign 2026-10-26, a deliberate change — his Q-02) the floating button steps aside on the Dashboard at every width: Maison AI is
+       the docked field there — on a phone the field-shaped button above the dock, out at the top and at the page's end (lane D4's probe walks it) */
     { const c = await touch(); const tp = await c.newPage(); watch(tp, '390')
       await tp.goto(BASE + '/dashboard', { waitUntil: 'networkidle' }); await tp.waitForTimeout(2000)
-      const fab = tp.locator('button[aria-label="Maison AI"]').locator('xpath=..').locator('xpath=..')
-      ok(await tp.locator('[data-tucked] button[aria-label="Maison AI"]').count() === 1, 'at the top of the Dashboard the button is tucked (the Review buttons are clear)')
+      const acc = tp.locator('[data-testid="dock-accessory"]')
+      ok(await tp.locator('[data-maison-fab]').count() === 0 && await acc.count() === 1 && ((await acc.boundingBox())?.width ?? 0) > 300, 'at the top of the Dashboard no floating button sits over the Review buttons — the docked field’s accessory is Maison AI there')
       ok((await sideways(tp)) <= 0, 'no sideways scroll at 390', `${await sideways(tp)}`)
       await tp.screenshot({ path: path.join(dir, 'a12-dashboard-390.png') })
       await tp.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await tp.waitForTimeout(900)
-      ok(await tp.locator('[data-tucked] button[aria-label="Maison AI"]').count() === 0, 'at the end of the page it comes back')
+      ok(((await acc.boundingBox())?.width ?? 0) > 300, 'at the end of the page the field is out')
       await tp.goto(BASE + '/leads', { waitUntil: 'networkidle' }); await tp.waitForTimeout(1500)
       ok(await tp.locator('[data-tucked] button[aria-label="Maison AI"]').count() === 0, 'another page keeps it out at the top')
-      void fab; await c.close() }
+      await c.close() }
 
     console.log('A-13 · A-14 · the not-found pages')
     await go(p, '/dashboard', 1200)
@@ -332,7 +351,7 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     const prof = (await p.getByTestId('your-profile').innerText()).replace(/\s+/g, ' ')
     ok(/on the invoices, orders and payments you handle/.test(prof) && !/the quotes you prepare/.test(prof), 'Your details: “… on the invoices, orders and payments you handle …”, no quotes')
     ok(/Shown on the papers you send/.test(prof), 'Email: “Shown on the papers you send”')
-    ok(/A mobile signs you in and gets WhatsApp notices/.test(prof) && !/clients see it on their portal/.test(prof), 'Phone: “A mobile signs you in and gets WhatsApp notices”')
+    ok(/A mobile signs you in and gets WhatsApp (notices|notifications)/.test(prof) /* (the calm UI build 2026-10-27, a deliberate change) 1-41: "notifications" */ && !/clients see it on their portal/.test(prof), 'Phone: “A mobile signs you in and gets WhatsApp notices”')
     await shot(p, 'a15-profile-accounting-1440')
     as('dane')
     await go(p, '/profile', 1800)
@@ -356,7 +375,7 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
       await sp2.goto(BASE + '/sign-in', { waitUntil: 'networkidle' }); await sp2.waitForTimeout(1200)
       if (/\/sign-in/.test(sp2.url())) {
         await sp2.waitForFunction(() => { const e = document.querySelector('[data-testid="sign-in"]'); return !!e && !e.closest('[inert]') }, null, { timeout: 15000 }).catch(() => {})
-        await sp2.getByLabel('Mobile number or email').fill('dane@demostudio.sg'); await sp2.getByTestId('sign-in-send').click(); await sp2.waitForTimeout(1500)
+        await sp2.getByLabel(/^Mobile number or (work )?email/).fill('dane@demostudio.sg'); await sp2.getByTestId('sign-in-send').click(); await sp2.waitForTimeout(1500)
         /* (pending modules S43A, a deliberate change of this rule) A·1 is built: a code signs in this browser alone, so the fallback line is gone */
         ok(await sp2.getByTestId('sign-in-one-at-a-time').count() === 0 && /Demo only/.test(await sp2.getByTestId('sign-in-demo').innerText().catch(() => '')), 'the sign-in code step no longer says “one signed-in member at a time” (S43A built A·1) — the demo line stays')
         await sp2.getByTestId('sign-in-digit').first().click(); await sp2.keyboard.type('123456'); await sp2.waitForTimeout(300)
@@ -371,7 +390,8 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     await go(p, '/dashboard', 1800)
     const profit = await p.getByTestId('tile-profit').innerText().catch(() => '')
     ok(!!profit && !/Revenue −/.test(profit), 'the Profit tile never says “Revenue −S$…”', profit.replace(/\s+/g, ' '))
-    if (/−S\$/.test(profit.split('\n')[1] ?? '')) ok(/Credit notes S\$[\d,.]+ more than invoiced this month|Margin|Revenue S\$/.test(profit), 'a below-nothing month names the credit notes')
+    /* (Dashboard redesign 2026-10-26, a deliberate change) Pulse writes its sums short ("Credit notes S$ 1.2K more than invoiced") */
+    if (/−S\$/.test(profit)) ok(/Credit notes S\$ ?[\d,.]+K? more than invoiced|Margin|Revenue S\$|on S\$ [\d.,]+K? invoiced/.test(profit), 'a below-nothing month names the credit notes')
 
     console.log('A-18 · “3D” everywhere')
     const clip = fs.readFileSync(path.join(REPO, 'lib/visualizer/spatial/clip.ts'), 'utf8')

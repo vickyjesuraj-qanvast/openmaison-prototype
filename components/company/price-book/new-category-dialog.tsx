@@ -41,16 +41,16 @@ export function NewCategoryDialog({ open, trades, onClose, onAdded }: {
       if ('error' in r) { setRefused(r.error); return }
       onAdded(r.name, r.trades)
       snackbar({ message: `${r.name} added to the trades` })   // Settings › Trades' own words for an add
-    } catch { snackbar({ message: couldnt('add the category') }) }
+    } catch { snackbar({ message: couldnt('add the trade') }) }
     finally { setBusy(false) }
   }
   return (
-    <Dialog open={open} onClose={onClose} title="New category" size="form" width={400} nested portal closeOnScrim={false}
+    <Dialog open={open} onClose={onClose} title="New trade" size="form" width={400} nested portal closeOnScrim={false}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={busy || !!taken || full} onPress={() => { void save() }}>{busy ? 'Adding…' : 'Add'}</Button></>}>
       <div data-testid="new-category">
         <TextField label="Name" required value={name} autoFocus maxLength={40} error={error}
                    onChange={(v) => { setName(v); setRefused(null) }}
-                   helper="It joins the studio’s trades — every quote’s Category list offers it too"
+                   helper="It joins the studio’s trades — every quote’s Trade list offers it too"
                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void save() } }} />
       </div>
     </Dialog>

@@ -257,7 +257,7 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
                     .then((ok) => { if (ok) snackbar({ message: shownLine(file.name, on, box.designs), actionLabel: 'Undo', onAction: () => { void run('undo that', () => setFilesShown(lead.id, [file.id], !on), undefined, REFRESH) } }) })
                 }} help={file.shownToClientAt ? 'It leaves the client’s portal' : 'It appears in the client’s portal'}>{file.shownToClientAt ? 'Stop showing to client' : 'Show to client'}</DropdownItem>
                 {visualize ? <DropdownItem onSelect={() => { setKebabOpen(false); void openInVisualizer() }}>{visualize}</DropdownItem> : null}   {/* (REG-675, AI Visualizer Q-31; F095 a render opens its version) */}
-                {isPlan ? <DropdownItem onSelect={() => { setKebabOpen(false); setPicture3d(true) }} help="Place its rooms on it, then see it in 3D">Make a 3D picture</DropdownItem> : null}   {/* (pending modules S28) */}
+                {isPlan ? <DropdownItem onSelect={() => { setKebabOpen(false); setPicture3d(true) }} help="Place its rooms on it, then see it in 3D">Trace a floor-plan photo</DropdownItem> : null}   {/* (pending modules S28) — (the calm UI build 2026-10-27, B6's request — 6-06) the planner's own words */}
                 {/* (S42 audit C-03, call C·4) a money paper stays as it was filed — no Move, Duplicate, Rename or Delete */}
                 {paper ? null : <>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
@@ -333,7 +333,7 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
           {/* (gaps build E, item 3 — 1.0's lightbox strip, H-146 · H-152) every file of the folder as the house square thumbnail, the open one ringed;
               a press opens it, as ← / → and the edge buttons do. Shown once the folder holds more than one file. */}
           {siblings.length > 1 ? (
-            <nav className={styles.strip} aria-label={`Files in ${folder?.name ?? 'All Files'}`} data-testid="viewer-strip">
+            <nav className={styles.strip} aria-label={`Files in ${folder?.name ?? 'All files'}`} data-testid="viewer-strip">
               <ol ref={stripRef} className={styles.stripList}>
                 {siblings.map((f) => {
                   const on = f.id === file.id
@@ -388,7 +388,7 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
       {/* Rename File (931:39434) */}
       <NameDialog
         open={renaming}
-        title="Rename File"
+        title="Rename file"
         initial={file.name}
         onClose={() => setRenaming(false)}
         onSave={(name) => { setRenaming(false); void run('rename the file', () => renameFile(file.id, name), 'Renamed', REFRESH) }}
@@ -413,13 +413,13 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
       {/* Move dialog (931:39216) — browses every folder of the lead; the destination name feeds the "Moved to <folder>" snackbar. */}
       <MoveDialog
         open={moving}
-        title={`Move “${file.name}”`} root="All Files" moving={[file.id]} current={folder?.id ?? null}
+        title={`Move “${file.name}”`} root="All files" moving={[file.id]} current={folder?.id ?? null}
         folders={files.filter((f) => f.kind === 'folder' && !f.deletedAt).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null }))}
         entries={files.filter((f) => f.kind !== 'folder' && !f.deletedAt).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, thumb: f.thumb }))}
         onClose={() => setMoving(false)}
         onMove={(parentId: string | null) => {
           setMoving(false)
-          const dest = parentId ? files.find((f) => f.id === parentId)?.name ?? 'folder' : 'All Files'
+          const dest = parentId ? files.find((f) => f.id === parentId)?.name ?? 'folder' : 'All files'
           void run('move the file', () => moveFiles([file.id], parentId), `Moved to ${dest}`, REFRESH)
         }}
         onCreateFolder={async (name: string, parentId: string | null) => {
@@ -431,8 +431,8 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
       />
 
       <ConfirmDialog
-        open={!!deletingComment} title="Delete Comment" confirmLabel="Yes" cancelLabel="No"
-        message="Are you sure you want to delete this comment? This action cannot be undone."
+        open={!!deletingComment} title="Delete comment" confirmLabel="Delete"
+        message="Delete this comment? This can’t be undone."
         onCancel={() => setDeletingComment(null)}
         onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteFileComment(id), 'Comment deleted') }}
       />

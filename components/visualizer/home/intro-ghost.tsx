@@ -1,11 +1,9 @@
 'use client'
 
-import { useFlagPref } from '@/lib/prefs'
-import { INTRO_PREF, VisualizerIntro } from './intro'
+import { VisualizerIntro } from './intro'
 
-/** (verify round 1, F166) The route's ghost can't know the member's choice on the server, so the intro's bone asks the browser: on a soft
-    navigation (Tools › AI Visualizer, a Back) the dismissed intro is never drawn; on a cold load the server's first frame keeps it. */
-export function VisualizerIntroGhost({ hasDesigns }: { hasDesigns: boolean }) {
-  const [hidden] = useFlagPref(INTRO_PREF, false)
-  return hidden ? null : <VisualizerIntro ghost hasDesigns={hasDesigns} />
+/** (verify round 1, F166) The route's ghost of the landing's intro. (the calm UI build 2026-10-27, 6-10) The intro is one line now, with
+    nothing to dismiss, so the ghost always draws it — the page always shows it above a gallery in use. */
+export function VisualizerIntroGhost() {
+  return <VisualizerIntro ghost />
 }

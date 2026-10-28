@@ -43,7 +43,9 @@ export function NewMessageMenu({ start, onMember, onGroup, onClient }: {
           <IconButton icon="add" label="New message" variant="primary" aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="New message" onClick={toggle} data-testid="chat-new" />
         </Tooltip>
       ) : (
-        <Button variant="primary" appearance="filled" iconEnd={<span className={toolbar.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+        /* (the calm UI build 2026-10-27, 1-21 · T-03) outlined — the open conversation's Send is the screen's one filled button (the phone's "+"
+           stays filled: on a phone the list and a conversation are two screens) */
+        <Button variant="secondary" appearance="outlined" iconEnd={<span className={toolbar.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                 aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="New message" onPress={toggle} data-testid="chat-new">New message</Button>
       )}
       <Dropdown open={open} onClose={close} align="right" width={MENU_WIDTH.wide} sheetTitle={sub === 'members' ? 'A member' : 'New message'}>

@@ -47,8 +47,17 @@ const linkDiff = (page) => page.evaluate(() => {
   const diffs = all.map((a, i) => ({ a, i })).filter(({ i }) => now[i] !== old[i]).map(({ a, i }) => ({ cls: String(a.className), now: now[i], old: old[i], text: (a.textContent || '').trim().slice(0, 40) }))
   return { count: all.length, diffs }
 })
+/* (the calm UI build 2026-10-27, a deliberate change — audit 1-40) the studio block's menu holds the demo's tools under one "Demo" fold (View as ·
+   plan · studios), closed until pressed and remembered per browser (`om.viewas.demo`): open it when it is closed, then pick the member */
+const openDemo = async (page) => {
+  const m = page.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first()
+  await m.waitFor({ timeout: 8000 }).catch(() => {})
+  const f = m.getByTestId('demo-fold')
+  if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await page.waitForTimeout(300) }
+}
 const viewAs = async (page, who) => {
   await page.getByRole('button', { name: /Demo Studio.*View as/ }).click()
+  await openDemo(page)
   await page.getByRole('menuitemradio', { name: new RegExp(`^${who}\\b`) }).first().click()
   await snack(page, new RegExp(`Viewing as ${who}`)); await page.waitForTimeout(800)
 }
@@ -114,8 +123,8 @@ const viewAs = async (page, who) => {
     /* Invite to Portal › Copy. (REG-966, Projects round 4a) Invite to Portal now opens the Client access panel in place of the bare Invite
        dialog; its "Their page" Copy goes through copyText (the same fallback) and says "Address copied". */
     await p.getByRole('button', { name: 'More options' }).first().click()
-    await p.getByRole('menuitem', { name: 'Invite to Portal' }).click()
-    const dlg = p.getByRole('dialog', { name: 'Invite to Portal' }).last()   // (one-home N-15, a deliberate change of this rule) the panel's title is "Invite to Portal" now
+    await p.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click() /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */
+    const dlg = p.getByRole('dialog', { name: /^(Client portal|Invite to Portal)$/ }).last()   /* (the calm UI build 2026-10-27, a deliberate change) the panel's title is "Client portal" (3-25) */   // (one-home N-15, a deliberate change of this rule) the panel's title is "Invite to Portal" now
     await dlg.getByTestId('access-address').waitFor()
     await dlg.getByRole('button', { name: 'Copy', exact: true }).click()
     const t2 = await snack(p, /Address copied|Couldn’t copy/)
@@ -137,8 +146,9 @@ const viewAs = async (page, who) => {
     await p.getByRole('menuitem', { name: 'Copy Link' }).click()
     ok('b-copy a copy that fails shows the house failure line', /Couldn’t copy — please try again/.test(await snack(p, /Couldn’t copy/)))
     await shot(p, 'b-copy-failure-snackbar', { x: 0, y: 824, width: 760, height: 200 })
-    /* Add an entity makes an id without crypto.randomUUID */
-    await p.goto(`${BASE}/company/profile`); await ready(p)
+    /* Add an entity makes an id without crypto.randomUUID — (the calm UI build 2026-10-27, a deliberate change — audit 5-36) Company › Profile is
+       four tabs on one page; Issuing entities & bank details is `?tab=entities` */
+    await p.goto(`${BASE}/company/profile?tab=entities`); await ready(p)
     const before = await p.locator('input').count()
     await p.getByRole('button', { name: 'Add an entity' }).click(); await p.waitForTimeout(500)
     ok('b-copy Add an entity works without crypto.randomUUID', (await p.locator('input').count()) > before && !errors.some((e) => /randomUUID/.test(e)), errors.join(' | '))
@@ -155,11 +165,14 @@ const viewAs = async (page, who) => {
        (pending modules S41b-5, a deliberate change of this rule) Lead credits is live now (1.0's Qanvast line's Credits) — the plain
        "Coming soon" comes from the same page's Request Leads, still a signpost (REG-193) */
     await page.goto(`${BASE}/qanvast-ops`); await ready(page); await page.mouse.move(1430, 100)
-    const soon = page.getByRole('button', { name: 'Request Leads' }).first()
+    /* (the calm UI build 2026-10-27, a deliberate change) B2 2-27: Request leads is the header ⋮'s row (`qanvast-request-leads`) — it still says Coming soon */
+    await page.getByRole('button', { name: 'More options' }).first().click(); await page.waitForTimeout(300)
+    const soon = page.getByTestId('qanvast-request-leads').first()
     await soon.click(); await page.mouse.move(1430, 100)
     const plain = await lifetime(page, /Coming soon in OpenMaison 2\.0/)
     ok('g-snackbar a plain one-line message stays 4 s', plain > 3700 && plain < 4800, `${plain} ms`)
-    /* hovered: the clock stops; it runs on with what was left */
+    /* hovered: the clock stops; it runs on with what was left — (the calm UI build 2026-10-27) the row's press closed the ⋮: open it again */
+    await page.getByRole('button', { name: 'More options' }).first().click(); await page.waitForTimeout(300)
     await soon.click(); await page.mouse.move(1430, 100)
     let held = false
     const hovered = await lifetime(page, /Coming soon in OpenMaison 2\.0/, { during: async (seen) => {
@@ -177,6 +190,7 @@ const viewAs = async (page, who) => {
     /* an action: View as James — "Back to Dane" */
     await page.goto(`${BASE}/leads`); await ready(page)
     await page.getByRole('button', { name: /Demo Studio.*View as/ }).click()
+    await openDemo(page)   // (the calm UI build 2026-10-27, a deliberate change) 1-40: View as is under the Demo fold
     await page.getByRole('menuitemradio', { name: /^James\b/ }).first().click(); await page.mouse.move(1430, 100)
     let act = null
     const withAction = await lifetime(page, /Viewing as James/, { during: async () => {
@@ -230,31 +244,32 @@ const viewAs = async (page, who) => {
     await page.locator('aside[aria-label="Lead info"] [data-kb="assign"]').first().click()
     const pop = page.getByRole('dialog', { name: 'Assign Member' }); await pop.waitFor(); await page.waitForTimeout(400)
     const box = pop.getByTestId('assign-suggestion')
-    const who = ((await box.innerText()).match(/Suggested · ([^\n]+)/) || [])[1]?.trim()
+    const who = ((await box.innerText()).match(/Suggested: ([^\n]+)/) || [])[1]?.trim()   // (the calm UI build 2026-10-27, a deliberate change) 2-41: "Suggested: Sarah" 
     await shot(page, 'x-suggest-box', await pop.boundingBox().then((b) => ({ x: b.x - 8, y: b.y - 8, width: b.width + 16, height: b.height + 16 })))
-    await box.getByRole('button', { name: `Assign to ${who}` }).click()
-    const t = await snack(page, /Members updated|Couldn’t/)
+    await box.getByRole('button', { name: `Assign ${who}`, exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) 2-41: "Assign Sarah"
+    const t = await snack(page, /Members saved|Couldn’t/)   // (the calm UI build 2026-10-27, a deliberate change) 2-34: "Members saved" 
     await page.waitForTimeout(600)
     const ids = sql(`select group_concat(m.name) from lead_assignees a join members m on m.id = a.member_id where a.lead_id = '${OLIVIA}'`)
-    ok('x-suggest one press assigns the suggested member (same snackbar as Assign)', !!who && /Members updated/.test(t) && ids === who && (await pop.count()) === 0, `${who} → ${ids} · ${t.trim()}`)
+    ok('x-suggest one press assigns the suggested member (same snackbar as Assign)', !!who && /Members saved/.test(t) && ids === who && (await pop.count()) === 0, `${who} → ${ids} · ${t.trim()}`)
   })
 
   /* ── g-newtab: Open existing lead → a new tab; the form stays as typed ── */
   await step('g-newtab', async () => {
     await page.goto(`${BASE}/leads`); await ready(page)
-    await page.getByRole('button', { name: 'Add Lead' }).click()
-    await page.getByRole('menuitem', { name: /^Create New Lead/ }).click()
-    const form = page.getByRole('dialog', { name: 'Create New Lead' }); await form.waitFor(); await page.waitForTimeout(400)
-    await form.getByLabel('Lead name').fill('Probe Duplicate')
-    await form.getByLabel('Lead phone number').fill('91238803')
-    await form.getByRole('button', { name: 'Create', exact: true }).click()
-    const dup = page.getByRole('dialog').filter({ hasText: 'A lead with this phone already exists' }).last(); await dup.waitFor()
+    /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: New lead ▾ › Type in a lead opens "New lead" (Name* · Mobile number*, Add lead); the duplicate's title "Already in your leads" */
+    await page.getByRole('button', { name: 'New lead' }).click()
+    await page.getByRole('menuitem', { name: /^Type in a lead/ }).click()
+    const form = page.getByRole('dialog', { name: 'New lead' }); await form.waitFor(); await page.waitForTimeout(400)
+    await form.getByLabel('Name*', { exact: true }).fill('Probe Duplicate')
+    await form.getByLabel('Mobile number*', { exact: true }).fill('91238803')
+    await form.getByRole('button', { name: 'Add lead', exact: true }).click()
+    const dup = page.getByRole('dialog').filter({ hasText: /A lead with this phone already exists|Already in your leads/ }).last(); await dup.waitFor()
     await shot(page, 'g-newtab-duplicate-warning')
     const [tab] = await Promise.all([ctx.waitForEvent('page'), dup.getByRole('button', { name: 'Open existing lead' }).click()])
     await tab.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(500)
     ok('g-newtab Open existing lead opens it in a new tab', tab.url().includes(`/leads/${lead('Kenji Sato')}`), tab.url())
-    ok('g-newtab the form stays open with what was typed; the warning closes', (await dup.count()) === 0 && (await form.isVisible()) && (await form.getByLabel('Lead name').inputValue()) === 'Probe Duplicate' && /9123 8803/.test(await form.getByLabel('Lead phone number').inputValue()))
+    ok('g-newtab the form stays open with what was typed; the warning closes', (await dup.count()) === 0 && (await form.isVisible()) && (await form.getByLabel('Name*', { exact: true }).inputValue()) === 'Probe Duplicate' /* (the calm UI build 2026-10-27, a deliberate change) "Name*" */ && /9123 8803/.test(await form.getByLabel('Mobile number*', { exact: true }).inputValue()) /* (the calm UI build 2026-10-27, a deliberate change) 2-49: the phone is "Mobile number" */)
     await tab.close()
     await shot(page, 'g-newtab-form-kept')
     await form.getByRole('button', { name: 'Cancel' }).click(); await page.waitForTimeout(300)
@@ -299,7 +314,7 @@ const viewAs = async (page, who) => {
   await step('x-return', async () => {
     await page.goto(`${BASE}/leads/${GAVIN}`); await ready(page)
     await page.getByRole('button', { name: 'More options' }).first().click()
-    await page.getByRole('menuitem', { name: 'Return Lead' }).click()
+    await page.getByRole('menuitem', { name: /^(Return Lead|Return to Qanvast)/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) B2: "Return to Qanvast"
     const wiz = page.getByTestId('return-wizard'); await wiz.waitFor()
     // (leads on the move, a deliberate change of this rule — L3 · A-29, return-lead-wizard.tsx's 'late' step): a lead past Qanvast's 30 days
     // opens on the late-return notice first; the demo's Gavin See arrived 56 days before the demo day, so the probe goes on as a late return
@@ -353,7 +368,8 @@ const viewAs = async (page, who) => {
     // (pending modules S22, a deliberate change of this rule) the dock's Dashboard is live — Qanvast Ops' Lead credits tab says Coming soon
     // (pending modules S41b-5, a deliberate change of this rule) Lead credits is live — Request Leads says Coming soon
     await p.goto(`${BASE}/qanvast-ops`); await p.waitForTimeout(1500)
-    await p.getByRole('button', { name: 'Request Leads' }).first().tap()
+    await p.getByRole('button', { name: 'More options' }).first().tap(); await p.waitForTimeout(400)   // (the calm UI build 2026-10-27, a deliberate change) B2 2-27: Request leads is the header ⋮'s row
+    await p.getByTestId('qanvast-request-leads').first().tap()
     let pressHeld = false
     const touched = await lifetime(p, /Coming soon in OpenMaison 2\.0/, { max: 20000, during: async () => {
       await p.waitForTimeout(1000)

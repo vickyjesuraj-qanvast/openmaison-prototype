@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
-import { MetaChip } from '@/components/om/meta-chip'
+import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { Dialog } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
@@ -47,7 +47,6 @@ import { useWritingHelp } from '@/components/writing/writing-help'
 import { docParts } from '@/lib/writing/propose'
 import { OutlinePane } from './outline-pane'
 import { ESignPanel } from './esign-panel'
-import { TitleInput } from './title-input'
 import styles from './contract-editor.module.css'
 
 const AUTOSAVE_MS = 600
@@ -241,7 +240,7 @@ export function ContractTemplateEditor({ data, from, defaultBlock = null }: { da
     { label: 'Can contracts start from it?', answer: () => Promise.resolve(isBlankDoc(body)
       ? { title: 'Not yet — it is empty', text: 'Write the agreement, or insert a field — a contract started from an empty template can’t be sent.' }
       : noClientSign
-        ? { title: 'Not yet — nowhere to sign', text: 'A contract started from it can’t be sent until it has a Client signature.', rows: [{ id: 'esign', label: 'Insert a Client signature', meta: 'eSignatures', run: showSigning }] }
+        ? { title: 'Not yet — nowhere to sign', text: 'A contract started from it can’t be sent until it has a Client signature.', rows: [{ id: 'esign', label: 'Insert a Client signature', meta: 'Signatures', run: showSigning }] }
         : { title: 'Ready to start contracts', text: `It has a place for the client to sign${used.length ? ` and fills in ${used.length === 1 ? '1 field' : `${used.length} fields`} from the lead, the quote and the studio` : ''}. ${usedBy ? `${usedBy === 1 ? '1 contract has' : `${usedBy} contracts have`} started from it.` : 'No contract has started from it yet.'}` }) },
     { label: 'Which fields does it fill in?', answer: () => Promise.resolve(used.length
       ? { title: `${used.length === 1 ? '1 field' : `${used.length} fields`} fill in`, text: 'Each prints the lead’s, the quote’s or the studio’s own words when a contract starts from it.', rows: used.map((k) => ({ id: k, label: TOKEN_LABEL[k] ?? k, meta: fromWhere(k) })) }
@@ -257,10 +256,14 @@ export function ContractTemplateEditor({ data, from, defaultBlock = null }: { da
         {mode === 'desk' ? (
           <>
         <ContractHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Contracts', href: '/company/templates/contracts' }]} title={title.trim() || 'Untitled template'}
-                        chips={<><MetaChip>{pdf ? 'Standard PDF' : 'Template'}</MetaChip>{template.useAtHandover ? <MetaChip>At handover</MetaChip> : null}<MetaChip>{usedBy === 0 ? 'Not used yet' : `Used by ${usedBy} ${usedBy === 1 ? 'contract' : 'contracts'}`}</MetaChip></>}   /* (S44R, C9) the completion letter the Hand over sheet sends */
+                        /* (S44R, C9) the completion letter the Hand over sheet sends. (The calm UI build 2026-10-27, 4-11 · 4-17 · T-06) no tags: "Template"
+                           on a template and the usage count live on the gallery's card; a standard PDF and the handover letter are words */
+                        chips={pdf || template.useAtHandover ? <span className={styles.headWords} data-testid="template-head-words">{[pdf ? 'Standard PDF' : null, template.useAtHandover ? 'Sent at handover' : null].filter(Boolean).join(' · ')}</span> : null}
                         savedLabel={savedLabel(updatedAt, clock)}
                         primary={{ label: 'Done', onPress: close }}
                         menu={<>
+                          {/* (4-17) the name renames here — the meta row's second copy of it left */}
+                          <DropdownItem onSelect={() => setRenaming(title)} disabled={!!changeBlock} title={changeBlock ?? undefined}>Rename…</DropdownItem>
                           <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateContractTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/contracts/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                           {pdf ? <DropdownItem onSelect={() => pdfInput.current?.click()} disabled={!!changeBlock} title={changeBlock ?? undefined}>Replace the PDF…</DropdownItem> : null}
                           <DropdownDivider />
@@ -270,11 +273,10 @@ export function ContractTemplateEditor({ data, from, defaultBlock = null }: { da
                         </>}
                         onClose={close} />
         <div className={styles.meta} data-testid="contract-meta">
-          <TitleInput value={title} placeholder="Template name" aria-label="Template name" maxLength={120} readOnly={!!changeBlock} title={changeBlock ?? undefined}
-                      onChange={(e) => { if (changeBlock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
-          <div className={styles.metaEnd}>
-            {/* (Dane UAT 3.19) one name for the inserted pieces — fields, as the Insert a field ▾ menu that makes them */}
-            {pdf ? null : <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: 'Fields fill in from the lead, the quote and your studio when a contract starts from this template' })}>How fields fill in</Button>}
+          <div className={`${styles.metaEnd} ${styles.metaStart}`}>
+            {/* (Dane UAT 3.19) one name for the inserted pieces — fields, as the Insert a field ▾ menu that makes them. (The calm UI build 2026-10-27,
+                4-48 · W-212) its answer is the house Tooltip on the button — help that vanished in a snackbar was lost */}
+            {pdf ? null : <Tooltip label="Fields fill in from the lead, the quote and your studio."><Button variant="secondary" appearance="text" iconStart={<Icon name="help" size={18} />} onPress={() => {}}>How fields fill in</Button></Tooltip>}
           </div>
         </div>
         {noClientSign ? (
@@ -345,12 +347,13 @@ export function ContractTemplateEditor({ data, from, defaultBlock = null }: { da
                 <p className={moveStyles.note}>Every contract started from this template carries these rules to its signing page.</p>
               </SectionScreen>
             ) : null}
-            <Dialog open={renaming !== null} onClose={() => setRenaming(null)} title="Rename template" size="form" width={400}
+          </>
+        )}
+        {/* (the calm UI build 2026-10-27, 4-17) Rename at every width — the desk's ⋮ and the reading screen's menu */}
+        <Dialog open={renaming !== null} onClose={() => setRenaming(null)} title="Rename template" size="form" width={400}
                     footer={<><Button variant="secondary" appearance="outlined" onPress={() => setRenaming(null)}>Cancel</Button><Button isDisabled={!renaming?.trim()} onPress={doRename}>Rename</Button></>}>
               <TextField label="Template name" required value={renaming ?? ''} maxLength={120} autoFocus onChange={(v) => setRenaming(v)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doRename() } }} />
             </Dialog>
-          </>
-        )}
         <Drawer open={narrow && outlineDrawer} onClose={() => setOutlineDrawer(false)} title="Outline" label="Outline" width="narrow">
           <OutlinePane inDrawer items={outline} onClose={() => setOutlineDrawer(false)} onPick={(i) => { setOutlineDrawer(false); editor.current?.scrollToHeading(i) }} />
         </Drawer>

@@ -21,9 +21,6 @@
 /* The mock's tones the DS Button has no variant for (779:26221 / 26272): green Approve (filled) and red-outlined Reject. Colour-only
    overrides on the DS Button — geometry, hover fill, focus ring and disabled opacity stay the DS's; the doubled class outranks the
    DS's [data-variant][data-appearance] rules whatever the sheet order. Hover darkens to the tone's d80, as primary → primary-hover. */
-.toneGreen.toneGreen[data-variant][data-appearance] { background: var(--om-color-tertiary-green-default); color: var(--om-color-on-tertiary-green-default); }
-.toneGreen.toneGreen[data-variant][data-appearance][data-hovered],
-.toneGreen.toneGreen[data-variant][data-appearance][data-pressed] { background: var(--om-color-on-tertiary-green-variant); }
 .toneRed.toneRed[data-variant][data-appearance] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-red-default); color: var(--om-color-tertiary-red-default); }
 .toneRed.toneRed[data-variant][data-appearance][data-hovered],
 .toneRed.toneRed[data-variant][data-appearance][data-pressed] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-tertiary-red-variant); color: var(--om-color-on-tertiary-red-variant); }
@@ -71,12 +68,6 @@
 /* (REG-729) The house text link (14/600, no underline, its focus ring); the queue's answers keep their tones, and each darkens to its
    own ink on hover — the tone's d80, as the primary one does — where a brightness filter used to. Disabled at half strength, as the
    DS Link's primary disables. */
-.link { composes: link from '../om/text-link.module.css'; }
-.link[data-tone='red'] { color: var(--om-color-tertiary-red-default); }
-.link[data-tone='green'] { color: var(--om-color-tertiary-green-default); }
-.link[data-tone='red']:hover:not(:disabled) { color: var(--om-color-on-tertiary-red-variant); }
-.link[data-tone='green']:hover:not(:disabled) { color: var(--om-color-on-tertiary-green-variant); }
-.link:disabled { opacity: 0.5; }
 .emptyList { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding: var(--om-spacing-4); text-align: center; }
 
 .detail { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -242,8 +233,6 @@
      <label> (the rail is a div, the caption a span, Approve All Clean a button), so it takes a 44px box
      around the same track: the track's size and its optical centre are unchanged. */
   .toolbar > label { min-block-size: 44px; }
-  .link { position: relative; }
-  .link::after { content: ''; position: absolute; inset: -12px -6px; }
   .radioBtn { position: relative; }
   .radioBtn::after { content: ''; position: absolute; inset: -12px; }
 }
@@ -265,3 +254,6 @@
   .cCol { flex: 1 1 176px; min-width: 176px; }
   .cMerged { flex: 1 1 160px; min-width: 160px; }
 }
+
+/* (the calm UI build 2026-10-27 — audit 2-16) A duplicate card says it can be merged — its press opens the comparison; the verbs live in the foot. */
+.cardHint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

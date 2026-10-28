@@ -7,7 +7,9 @@ import { withFrom } from '@/lib/nav'
 import { Button, Radio, RadioGroup } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
+import { ContractPaper } from '@/components/contracts/render/contract-paper'
+import { agreementHtml } from '@/lib/contracts/agreement'
+import type { TokenValues } from '@/lib/contracts/tokens'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { excerptOf } from '@/lib/contracts/tokens'
 import type { ContractPickerData, ContractTemplateOption } from '@/lib/contracts/queries'
@@ -47,21 +49,21 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, 
 }) {
   const [items, setItems] = useState<ContractTemplateOption[] | null>(null)
   const [folders, setFolders] = useState<ContractPickerData['folders']>([])
+  const [paper, setPaper] = useState<ContractPickerData['paper'] | null>(null)
   /* (REG-664) Browse Templates › Contracts' folders; the studio default — (C6) else the only or the last-used one — stays pinned at the top wherever it is filed. */
   const suggested = suggestedTemplate(items ?? [])
   const browse = useFolderBrowse(folders, items ?? [], { query: '', pinned: (t) => t.id === suggested?.id })
   const pathname = usePathname()
   const [picked, setPicked] = useState<string | null>(null)
-  const [pressed, setPressed] = useState<'use' | 'starter'>('use')
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null); setPressed('use'); browse.go(null) } }   // render-phase reset: the list ghosts until the fetch lands
-  const applyTemplate = (id: string) => { if (busy) return; setPressed('use'); void onUse(id) }
-  const starter = () => { if (busy) return; setPressed('starter'); void onStarter() }
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null); browse.go(null) } }   // render-phase reset: the list ghosts until the fetch lands
+  const applyTemplate = (id: string) => { if (busy) return; void onUse(id) }
+  const starter = () => { if (busy) return; void onStarter() }
   useEffect(() => {
     if (!open) return
     let live = true
     /* (REG-632, parity Q-13) The studio's default arrives picked — Use template starts from it. (UX audit C6) Else the only, else the last-used one. */
-    void load().then((r) => { if (live) { setItems(r.templates); setFolders(r.folders); setPicked((p) => p ?? suggestedTemplate(r.templates)?.id ?? null) } }, () => { if (live) setItems([]) })
+    void load().then((r) => { if (live) { setItems(r.templates); setFolders(r.folders); setPaper(r.paper ?? null); setPicked((p) => p ?? suggestedTemplate(r.templates)?.id ?? null) } }, () => { if (live) setItems([]) })
     return () => { live = false }
   }, [open, load])
   /* (quotes on the move 2026-10-22, B-18) ≤767 the cards are a LIST of DS radio rows — "Start from the studio agreement" first, then the
@@ -69,22 +71,25 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, 
      171px cards with 8px previews said nothing, and the foot wrapped to two rows. (Contracts on the move, C4 — P-09 · C-20) The list goes to
      ≤1024: a tablet's 414×328 cards held a 300px grey "paper" with an 8px excerpt — decoration taking 70% of each card. */
   const phone = useMediaQuery(TABLET_DOWN)
-  const pick = picked ?? (phone && items && !suggested ? STARTER : null)
+  /* (the calm UI build 2026-10-27, 4-21 · W-616) one choice, one button at every width: the studio agreement is a choice among the templates
+     (picked when no template is suggested — C6 · Q9's default / only / last-used pick stands), and Continue makes the contract from what is picked */
+  const pick = picked ?? (items && !suggested ? STARTER : null)
   const go = () => { if (!pick) return; if (pick === STARTER) starter(); else applyTemplate(pick) }
-  /* (C4 — C-04 · P-13) in the list (≤1024) a template's standing reads as 14 words, never a 10px uppercase chip; the desk's cards keep the chips */
+  /* (C4 — C-04 · P-13) a template's standing reads as words, never a 10px uppercase chip — (4-38 · T-06) on the desk's cards too */
   const metaWords = (t: ContractTemplateOption) => [t.kind === 'pdf' ? 'PDF' : null, t.isDefault ? 'Default' : t.id === suggested?.id && suggested.why === 'last' ? 'Last used' : null, browse.where(t) || null, `Edited ${displayDate(t.updatedAt)}`].filter(Boolean).join(' · ')
-  const metaOf = (t: ContractTemplateOption) => (
-    <>{t.kind === 'pdf' ? <MetaChip>PDF</MetaChip> : null}{t.isDefault ? <MetaChip>Default</MetaChip> : t.id === suggested?.id && suggested.why === 'last' ? <MetaChip>Last used</MetaChip> : null}{browse.where(t) ? `${browse.where(t)} · ` : ''}Edited {displayDate(t.updatedAt)}</>
-  )
+  /* (4-38) each card draws its template's own page, as Templates › Contracts does — the paper renderer at a third, under the studio's letterhead */
+  const values: TokenValues = paper ? {
+    'client.name': 'Client name', 'client.phone': 'Client phone', 'client.email': 'client@email.com', 'lead.address': 'Property address', 'lead.propertyType': 'Property type', 'lead.projectRef': 'Project ref',
+    'studio.name': paper.studio.name, 'studio.address': paper.studio.address, 'studio.phone': paper.studio.phone, 'studio.email': paper.studio.email, 'studio.uen': paper.studio.uen, 'studio.gst': paper.studio.gstReg,
+    'quote.number': 'OM-00000', 'quote.total': 'S$0.00', 'quote.validUntil': 'Quote valid until', 'date.contract': 'Contract date', 'date.today': 'Today’s date',
+  } : {}
+  const page = (html: string) => (paper
+    ? <span className={styles.paperThumb}><span className={styles.paperScale}><ContractPaper html={html} values={values} brand={paper.brand} studio={paper.studio} studioSignature={null} client={null} compact width={600} /></span></span>
+    : null)
   return (
-    <Dialog open={open} onClose={onClose} title="Choose a contract template" size="modal" width={phone ? 600 : 1200} portal   /* (C4 — C-20) a list needs no 1200 frame on a tablet */
-            subtitle={<span className={styles.sub}>Pick a template to start the contract from. <Link href={withFrom('/company/templates/contracts', pathname)} className={styles.manage}>Manage Templates</Link></span>}
-            footer={phone ? (
-              <Button isDisabled={!pick || busy} onPress={go} data-testid="contract-template-use">{busy ? 'Creating…' : pick === STARTER ? 'Start from the studio agreement' : 'Use template'}</Button>
-            ) : <>
-              <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={starter}>{busy && pressed === 'starter' ? 'Creating…' : 'Start from the studio agreement'}</Button>
-              <Button isDisabled={!picked || busy} onPress={() => { if (picked) applyTemplate(picked) }} data-testid="contract-template-use">{busy && pressed === 'use' ? 'Creating…' : 'Use template'}</Button>
-            </>}>
+    <Dialog open={open} onClose={onClose} title="Which agreement should they sign?" size="modal" width={phone ? 600 : 1200} portal   /* (C4 — C-20) a list needs no 1200 frame on a tablet · (the calm UI build 2026-10-27, 4-21 · W-136) the title answers the press that opened it */
+            subtitle={<span className={styles.sub}><Link href={withFrom('/company/templates/contracts', pathname)} className={styles.manage}>Manage templates</Link></span>}
+            footer={<Button isDisabled={!pick || busy} onPress={go} data-testid="contract-template-use">{busy ? 'Creating…' : 'Continue'}</Button>}>
       {items === null ? (
         <div className={styles.grid} aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className={styles.ghost} />)}</div>
       ) : phone ? (
@@ -93,7 +98,7 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, 
           <RadioGroup aria-label="Contract templates" className={styles.list} value={pick} onChange={(v) => { if (!busy) setPicked(v) }}>
             {browse.openAt ? null : (
               <Radio value={STARTER} className={styles.pick} data-testid="contract-starter-row">
-                <span className={styles.pickText}><span className={styles.pickName}>Start from the studio agreement</span><span className={styles.pickMeta}>The studio’s own agreement, not a template</span></span>
+                <span className={styles.pickText}><span className={styles.pickName}>The studio agreement</span><span className={styles.pickMeta}>The studio’s own agreement, not a template</span></span>   {/* (4-21 · W-616) a choice among the others — Continue makes it */}
               </Radio>
             )}
             {browse.hereEntries.map((t) => (
@@ -109,19 +114,33 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, 
         <div className={styles.empty} role="status">
           <span className={styles.emptyGlyph} aria-hidden><Icon name="contract" size={40} weight={300} /></span>   {/* (REG-729) in the house empty's 72 well */}
           <span className={styles.emptyTitle}>No contract templates yet</span>
-          <span className={styles.emptyHelp}>Save any contract as a template from its editor, or start from the studio agreement below.</span>
+          <span className={styles.emptyHelp}>Save any contract as a template from its editor — Continue starts from the studio agreement.</span>
         </div>
       ) : (
         <div className={styles.browse}>
         {browse.openAt ? <FolderCrumbs root="All templates" trail={browse.trail} onGo={browse.go} /> : null}
         {/* (UX audit C6) the templates first — the one it opens on among them — then the folders */}
-        {browse.hereEntries.length ? (
+        {browse.hereEntries.length || !browse.openAt ? (
         <div className={styles.grid} data-rows={browse.hereFolders.length ? 'fit' : undefined} role="radiogroup" aria-label="Contract templates">
+          {/* (4-21 · W-616) the studio agreement, the first choice — its own page, as the templates' */}
+          {browse.openAt ? null : (
+            <button type="button" role="radio" aria-checked={pick === STARTER} className={styles.card} data-picked={pick === STARTER || undefined} onClick={() => { if (!busy) setPicked(STARTER) }} onDoubleClick={() => { if (busy) return; setPicked(STARTER); starter() }} data-testid="contract-starter-row">
+              {page(agreementHtml()) ?? <span className={styles.thumb}><span className={styles.thumbTitle}>The studio agreement</span><span className={styles.thumbText}>{excerptOf(agreementHtml(), 260)}</span></span>}
+              <span className={styles.name}>The studio agreement</span>
+              <span className={styles.meta}>The studio’s own agreement, not a template</span>
+            </button>
+          )}
           {browse.hereEntries.map((t) => (
-            <button key={t.id} type="button" role="radio" aria-checked={picked === t.id} className={styles.card} data-picked={picked === t.id || undefined} onClick={() => { if (!busy) setPicked(t.id) }} onDoubleClick={() => { if (busy) return; setPicked(t.id); applyTemplate(t.id) }} data-testid="contract-template-option">
-              <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{t.kind === 'pdf' ? `A standard PDF — ${t.fileName ?? t.title}. The lead gets its own copy, read and accepted on the signing link.` : excerptOf(t.body, 260)}</span></span>
+            <button key={t.id} type="button" role="radio" aria-checked={pick === t.id} className={styles.card} data-picked={pick === t.id || undefined} onClick={() => { if (!busy) setPicked(t.id) }} onDoubleClick={() => { if (busy) return; setPicked(t.id); applyTemplate(t.id) }} data-testid="contract-template-option">
+              {/* (4-38) a standard PDF's first page, as the gallery's */}
+              {t.kind === 'pdf' ? (
+                <span className={styles.paperThumb}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className={styles.pdfThumb} src={`/files/contract-template/${t.id}?thumb=1&v=${new Date(t.updatedAt).getTime()}`} alt="" />
+                </span>
+              ) : page(t.body) ?? <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{t.kind === 'pdf' ? `A standard PDF — ${t.fileName ?? t.title}. The lead gets its own copy, read and accepted on the signing link.` : excerptOf(t.body, 260)}</span></span>}
               <span className={styles.name}>{t.title}</span>
-              <span className={styles.meta}>{metaOf(t)}</span>
+              <span className={styles.meta}>{metaWords(t)}</span>
             </button>
           ))}
         </div>

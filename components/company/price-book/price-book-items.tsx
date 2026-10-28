@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -26,7 +26,8 @@ import table from '@/components/company/templates/templates-table.module.css'
 import { LIBRARY_ROOT, folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { changedFieldsWord, type ItemChange } from '@/lib/company/price-book-changes'
 import type { PriceBookItem } from '@/lib/db/schema'
-import { PriceBookItemsGhost } from './price-book-ghost'
+import { ITEMS_TODO_KEY, PriceBookItemsGhost } from './price-book-ghost'
+import { setCountPref } from '@/lib/prefs'
 import { oneSpelling } from '@/lib/settings/trades'
 
 type Row = PriceBookItemRow & LibraryItem
@@ -39,6 +40,12 @@ const inUseReason = (t: PriceBookItemRow) => (t.usedBy > 0 ? `On ${t.usedBy} ${t
 const lowerRule = (why: string) => `${why.charAt(0).toLowerCase()}${why.slice(1).replace(/\.$/, '')}`
 const kindOf = (i: PriceBookItemRow): ItemKind => (isItemKind(i.kind) ? i.kind : 'purchase')
 const unitPrice = (i: PriceBookItemRow) => i.costMinor + i.markupMinor
+/** (the calm UI build 2026-10-27, the UI audit's 4-25) "S$60 (32%)" — whole dollars lose their ".00", the share of the cost rounds to a whole
+    per cent; an item at no cost shows the amount alone. Display only. */
+const markupWords = (i: PriceBookItemRow) => {
+  const amount = money2(i.markupMinor).replace(/\.00$/, '')
+  return i.costMinor > 0 ? `${amount} (${Math.round((i.markupMinor / i.costMinor) * 100)}%)` : amount
+}
 const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookItemsGhost /> }   /* (REG-708) the ghost its loading.tsx draws — (UX audit S8) the list, or the member's own grid */
 
 /**
@@ -95,6 +102,10 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   const categories = useMemo(() => oneSpelling(data.trades, items.map((i) => i.category)), [data.trades, items])
   const kindsPresent = useMemo(() => ITEM_KINDS.filter((k) => items.some((i) => kindOf(i) === k)), [items])
   const proposedCount = items.filter((i) => i.status === 'proposed').length
+  /* (the calm UI build 2026-10-27 — the closing regression) the reveal's ghost draws the to-do chip the page draws ("n approvals"), and the
+     loader remembers it for next time */
+  const shell = useMemo(() => ({ ...SHELL, skeleton: <PriceBookItemsGhost todo={proposedCount} /> }), [proposedCount])
+  useEffect(() => { setCountPref(ITEMS_TODO_KEY, proposedCount) }, [proposedCount])
   const block = (t: PriceBookItemRow) => itemChangeBlock(viewer, t)
   const [sendBack, setSendBack] = useState<PriceBookItemRow | null>(null)
 
@@ -138,7 +149,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   }
   const askSendBack = (t: PriceBookItemRow) => { setEdit({ open: false, item: null }); setSendBack(t) }
   return (
-    <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.items} shell={SHELL} noun={{ one: 'item', many: 'items' }} nameLabel="Item" deletedLabel="Deleted Items"
+    <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.items} shell={shell} noun={{ one: 'item', many: 'items' }} nameLabel="Item" deletedLabel="Deleted items"
       from={from} folders={{ library: 'book-items', list: folders, block: folderBlock(data.viewer) }} items={items.map(toRow)} deleted={deletedItems.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Items" tableKey="price-book-items"
       newMenu={(close, place) => (<>
         <DropdownItem onSelect={() => { close(); setEdit({ open: true, item: null, folderId: place.folderId }) }}>{runsBook ? 'New item' : 'Propose an item'}</DropdownItem>
@@ -147,20 +158,20 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       </>)}
       pageMenu={(shown) => [{ label: 'Export My Items…', onSelect: () => { setWithProposed(false); setExportShown(shown) } }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
       facets={[
-        { key: 'category', label: 'Category', options: categories.filter((c) => items.some((i) => (i.category ?? '').toLowerCase() === c.toLowerCase())), test: (t, v) => (t.category ?? '').toLowerCase() === v.toLowerCase() },
+        { key: 'category', label: 'Trade', options: categories.filter((c) => items.some((i) => (i.category ?? '').toLowerCase() === c.toLowerCase())), test: (t, v) => (t.category ?? '').toLowerCase() === v.toLowerCase() },
         { key: 'vendor', label: 'Vendor', options: data.vendors, test: (t, v) => t.vendor === v },
       ]}
       bulk={runsBook ? (ids, clear) => [
-        { label: 'Set category', onClick: () => setBulkEdit({ kind: 'category', ids, clear }) },
+        { label: 'Set trade', onClick: () => setBulkEdit({ kind: 'category', ids, clear }) },
         { label: 'Set vendor', onClick: () => setBulkEdit({ kind: 'vendor', ids, clear }) },
         ...(costs ? [{ label: 'Set markup', onClick: () => setBulkEdit({ kind: 'markup', ids, clear }) }] : []),
         { label: 'Delete', tone: 'danger', onClick: () => setBulkDelete({ ids, clear }) },
       ] : undefined}
-      filters={[...(imported && imported.size ? [{ key: 'imported', label: 'Just imported', test: (t: Row) => imported.has(t.id), attention: (n: number) => `${n} just imported`, icon: 'upload_file' }] : []), ...(proposedCount ? [{ key: 'proposed', label: 'Proposed', test: (t: Row) => t.status === 'proposed', attention: (n: number) => `${n} proposed` }] : []), ...kindsPresent.map((k) => ({ key: k, label: ITEM_KIND_LABEL[k], test: (t: Row) => t.status !== 'proposed' && kindOf(t) === k }))]}
+      filters={[...(imported && imported.size ? [{ key: 'imported', label: 'Just imported', test: (t: Row) => imported.has(t.id), attention: (n: number) => `${n} just imported`, icon: 'upload_file' }] : []), ...(proposedCount ? [{ key: 'proposed', label: 'Waiting for approval', test: (t: Row) => t.status === 'proposed', attention: (n: number) => `${n} ${n === 1 ? 'approval' : 'approvals'}` }] : []), ...kindsPresent.map((k) => ({ key: k, label: ITEM_KIND_LABEL[k], test: (t: Row) => t.status !== 'proposed' && kindOf(t) === k }))]}
       focusFilter={focus} defaultView="list"   /* (UX audit S8) a member who never picked a view gets the list — the listing's table model */
-      filterLabel="Kind"   /* (REG-666) a proposal counts once — under Proposed, the to-do — so the kinds add up to All */
-      chips={(t) => (t.status === 'proposed' ? <MetaChip color="yellow">Proposed</MetaChip> : null)}
-      listChips={() => null}   /* (REG-820) the list says it in its Status column — the chip in the name cell cut "Skirting, PVC 80 mm" to "Skirting, PVC 8…" */
+      filterLabel="Type"   /* (the calm UI build 2026-10-27, W-536) the quote’s Items table calls the field Type. (REG-666) a proposal counts once — under Proposed, the to-do — so the kinds add up to All */
+      chips={(t) => (t.status === 'proposed' ? <MetaChip color="yellow">Waiting for approval</MetaChip> : null)}
+      listChips={(t) => (t.status === 'proposed' ? <MetaChip color="yellow">Waiting for approval</MetaChip> : null)}   /* (the calm UI build 2026-10-27, the UI audit's 4-12) the one item that waits says so in its name cell — every other row read "Approved"; the Status column rests in Column settings (REG-820's column, kept there) */
       byColumn openLabel={(t) => (block(t) ? 'Open' : 'Edit')} mayChange={block} duplicateBlock={() => (runsBook ? null : BOOK_RULE)}
       restoreBlock={block} purgeBlock={runsBook ? null : BOOK_RULE}
       kebab={(t) => (runsBook && t.status === 'proposed' ? [{ label: 'Approve', onSelect: () => { void approve(t) } }, { label: 'Send back…', onSelect: () => askSendBack(t) }] : [])}
@@ -180,27 +191,30 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       usageWord={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)}   /* (REG-653, Q-18) zero use, said one way */
       columns={[
         /* (REG-820) Status, as Templates › Quotes lists it (the status word and its note): 1.0's words — an item is Approved unless it waits */
-        { key: 'status', label: 'Status', track: '150px', sortable: (t) => (t.status === 'proposed' ? 0 : 1),
-          cell: (t) => <span className={table.status}><span className={table.statusWord} data-tone={t.status === 'proposed' ? 'await' : undefined}>{t.status === 'proposed' ? 'Proposed' : 'Approved'}</span>{t.status === 'proposed' && t.proposer ? <span className={table.statusNote}>by {t.proposer}</span> : null}</span> },
-        { key: 'kind', label: 'Kind', track: '110px', cell: (t) => <span>{ITEM_KIND_LABEL[kindOf(t)]}</span> },
+        { key: 'status', label: 'Status', track: '150px', hidden: true, sortable: (t) => (t.status === 'proposed' ? 0 : 1),
+          cell: (t) => <span className={table.status}><span className={table.statusWord} data-tone={t.status === 'proposed' ? 'await' : undefined}>{t.status === 'proposed' ? 'Waiting for approval' : 'Approved'}</span>{t.status === 'proposed' && t.proposer ? <span className={table.statusNote}>by {t.proposer}</span> : null}</span> },
+        { key: 'kind', label: 'Type', track: '110px', cell: (t) => <span>{ITEM_KIND_LABEL[kindOf(t)]}</span> },
         { key: 'unit', label: 'Unit', track: '96px', cell: (t) => <span className={styles.oneLine}>{t.unit}</span> },
         ...(costs ? [
           { key: 'cost', label: 'Cost', track: '120px', sortable: (t: Row) => t.costMinor, cell: (t: Row) => <span className={styles.num}>{money2(t.costMinor)}</span> },
-          { key: 'markup', label: 'Markup', track: '120px', sortable: (t: Row) => t.markupMinor, cell: (t: Row) => <span className={styles.num}>{money2(t.markupMinor)}</span> },
+          /* (the calm UI build 2026-10-27, the UI audit's 4-25) the markup as the quote shows it — the amount and its share of the cost ("S$60 (32%)") */
+          { key: 'markup', label: 'Markup', track: '120px', sortable: (t: Row) => t.markupMinor, cell: (t: Row) => <span className={styles.num}>{markupWords(t)}</span> },
         ] : []),
         { key: 'price', label: 'Unit price', track: '130px', sortable: (t) => unitPrice(t), cell: (t) => <span className={styles.num}>{money2(unitPrice(t))}</span> },
-        /* (pending modules S12) the share a purchase order from the quote orders on top — off until Column settings turns it on (a purchasing detail) */
-        { key: 'waste', label: 'Waste', track: '96px', hidden: true, sortable: (t) => t.wastePct ?? 0, cell: (t) => <span className={`${styles.num} ${t.wastePct ? '' : styles.muted}`}>{t.wastePct ? `${t.wastePct}%` : '--'}</span> },
-        { key: 'category', label: 'Category', track: '150px', sortable: (t) => (t.category ?? '\uffff').toLowerCase(), cell: (t) => <span className={`${styles.oneLine} ${t.category ? '' : styles.muted}`}>{t.category ?? '--'}</span> },   /* (sweep S5 #33) an empty cell reads "--" (REG-228) */
-        { key: 'vendor', label: 'Vendor', track: '160px', sortable: (t) => (t.vendor ?? '\uffff').toLowerCase(), cell: (t) => <span className={`${styles.oneLine} ${t.vendor ? '' : styles.muted}`}>{t.vendor ?? '--'}</span> },
+        /* (pending modules S12) the share a purchase order from the quote orders on top — off until Column settings turns it on (a purchasing detail).
+           (the calm UI build 2026-10-27, the UI audit's 4-12 · T-08 — sweep S5 #33's "--" retired in this list) an empty cell is quiet */
+        { key: 'waste', label: 'Waste', track: '96px', hidden: true, sortable: (t) => t.wastePct ?? 0, cell: (t) => (t.wastePct ? <span className={styles.num}>{`${t.wastePct}%`}</span> : null) },
+        /* (the calm UI build 2026-10-27, the UI audit's 4-01) the item's grouping is its Trade — Settings' Trades, the print's "by trade" */
+        { key: 'category', label: 'Trade', track: '150px', sortable: (t) => (t.category ?? '\uffff').toLowerCase(), cell: (t) => (t.category ? <span className={styles.oneLine}>{t.category}</span> : null) },
+        { key: 'vendor', label: 'Vendor', track: '160px', sortable: (t) => (t.vendor ?? '\uffff').toLowerCase(), cell: (t) => (t.vendor ? <span className={styles.oneLine}>{t.vendor}</span> : null) },
         { key: 'used', label: 'Used by', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span className={styles.oneLine}>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</span> : <span className={`${styles.oneLine} ${styles.muted}`}>Not on a quote yet</span>) },   /* (sweep S5 #9) one line, never cut */
       ]}
       onOpen={(t) => setEdit({ open: true, item: t })}
       onDuplicate={async (t) => { await settle(duplicatePriceBookItem(t.id)); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}   /* (wave E, E7) a refusal throws its rule for the gallery to say */
       onRename={(t, name) => renamePriceBookItem(t.id, name)}
       onDelete={(t) => deletePriceBookItems([t.id])}
-      deleteMessage={(t) => (t.usedBy > 1 ? `It’s on ${t.usedBy} quotes — they keep their lines. New quotes can’t pick it until you restore it from Deleted Items.`   /* (Dane UAT 3.14) what stays, and what a delete stops */
-        : t.usedBy === 1 ? 'It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted Items.' : 'You can restore it from Deleted Items.')}
+      deleteMessage={(t) => (t.usedBy > 1 ? `It’s on ${t.usedBy} quotes — they keep their lines. New quotes can’t pick it until you restore it from Deleted items.`   /* (Dane UAT 3.14) what stays, and what a delete stops */
+        : t.usedBy === 1 ? 'It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted items.' : 'You can restore it from Deleted items.')}
       onRestore={(ids) => restorePriceBookItems(ids)} onDeleteForever={(ids) => deletePriceBookItemsForever(ids)} onEmptyTrash={() => emptyPriceBookItemTrash()}
       deletedMeta={{ label: 'Unit price', value: (t) => `${money2(unitPrice(t))} / ${t.unit}` }}
       empty={{ title: 'Nothing in My Items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Save to My Items).' : 'Propose an item — an Owner or an Admin approves it for the studio.',
@@ -218,7 +232,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
                   onClose={() => setSendBack(null)} onSubmit={(note) => { const t = sendBack; setSendBack(null); if (t) void run('send the item back', async () => { await settle(sendBackPriceBookItem(t.id, note)); router.refresh() }, `${t.name} sent back to ${t.proposer ?? 'its proposer'}`) }} />
       {/* (REG-627, parity Q-18) Export My Items — 1.0's CSV export, on the house Export dialog: every live item with the columns the list shows. */}
       <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: exportable(items).length, shown: exportable(exportShown).length, noun: 'items' } : undefined}
-                    option={proposedCount ? { label: 'Include proposed items', checked: withProposed, onChange: setWithProposed } : undefined}
+                    option={proposedCount ? { label: 'Include items waiting for approval', checked: withProposed, onChange: setWithProposed } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items} trades={data.trades} units={data.units} costs={costs}
                          onImport={(lines, vendor, match, kind) => { setImportOpen(false); void run('import the items', async () => {
@@ -242,7 +256,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
                           snackbar({ message: `${n} ${n === 1 ? 'item' : 'items'} changed`, actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await settle(undoBulkPriceBook(prev)); router.refresh() }, 'Change undone') } }) })
                       }} />
       <ConfirmDialog open={!!bulkDelete} title={`Delete ${bulkDelete?.ids.length ?? 0} ${bulkDelete?.ids.length === 1 ? 'item' : 'items'}?`} confirmLabel="Delete"
-                     message="Quotes already carrying them keep their lines. New quotes can’t pick them until you restore them from Deleted Items."
+                     message="Quotes already carrying them keep their lines. New quotes can’t pick them until you restore them from Deleted items."
                      onCancel={() => setBulkDelete(null)} onConfirm={() => { const b = bulkDelete; setBulkDelete(null); if (b) void run('delete the items', async () => { await settle(deletePriceBookItems(b.ids)); b.clear(); router.refresh() }, { message: `${b.ids.length} ${b.ids.length === 1 ? 'item' : 'items'} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the items', async () => { await settle(restorePriceBookItems(b.ids)); router.refresh() }, 'Items restored') } }) }} />
     </LibraryGallery>
   )

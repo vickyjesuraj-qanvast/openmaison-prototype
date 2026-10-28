@@ -6,6 +6,7 @@ import type { TemplateDefaults } from '@/lib/templates/model'
 import { Num, Sel, Sw, Txt } from './inspector-controls'
 import controls from './inspector.module.css'
 import styles from './defaults-pane.module.css'
+import { HowItWorks } from '@/components/company/price-book/how-it-works'
 
 type Props = {
   defaults: TemplateDefaults
@@ -38,7 +39,9 @@ export function DefaultsPane({ defaults: d, textTemplates, paymentPresets, onCha
     <div className={styles.pane}>
       <div className={styles.body}>
         {/* (REG-578) The two facts the owner missed: these reach NEW quotes, and only once published. */}
-        <span className={styles.intro}>A new quote from this template starts with these — once you publish. Quotes you already have keep their own settings; a Draft quote can take these from its template card (Apply defaults).</span>
+        {/* (the calm UI build 2026-10-27, W-472) one line; the rest of what it said one press away */}
+        <span className={styles.intro}>New quotes from this template start with these.</span>
+        <HowItWorks label="How this works" testId="defaults-how" points={['They reach new quotes once you publish.', 'Quotes you already have keep their own settings.', 'A Draft quote can take these from its template card (Apply defaults).']} />
         {unpublished ? <span className={`${styles.intro} ${styles.note}`} data-testid="defaults-unpublished">{published ? 'Not published yet — quotes take these once you press Publish changes.' : 'Not published yet — quotes can use this template once you press Publish.'}</span> : null}
         <div className={controls.grid}>
           {/* (REG-581) A split or text that is gone (deleted from its library) reads as the fallback the quote would get, never as a blank. */}

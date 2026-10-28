@@ -26,7 +26,7 @@ export function TabGhostFor({ tab }: { tab: string | undefined }) {
  */
 export type LeadGhostShape = { onProject: boolean; locked: boolean
   /** (S44O — call C6) no filled primary in the header — Marketing's lead past Met, the designer's to move on */ noPrimary?: boolean }
-const COMMON: LeadGhostShape = { onProject: false, locked: true }
+const COMMON: LeadGhostShape = { onProject: false, locked: false }   // (the calm UI build 2026-10-27 — 2-05) no lead page draws the locked Convert any more
 const shapeKey = (leadId: string, k: keyof LeadGhostShape) => `om.shape.lead.${leadId || '_'}.${k === 'onProject' ? 'project' : k === 'noPrimary' ? 'noprimary' : k}`
 
 /** The lead page, once it has drawn: its shape remembered for the loaders' next time (per browser). */

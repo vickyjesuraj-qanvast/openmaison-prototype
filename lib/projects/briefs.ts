@@ -23,7 +23,7 @@ import type { Brief } from '@/lib/leads/briefs'
 import { dayWords, displayDate, moneyCard } from '@/lib/format'
 import type { ClosingSummary } from './handover-model'
 import type { Hold } from './hold'
-import { holdSince, resumeLine } from './hold'
+import { resumeLine } from './hold'
 import type { ProjectStage } from './model'
 import { dateOfDay, dayOf } from './schedule-model'
 
@@ -59,8 +59,11 @@ export type ProjectBriefFacts = {
   closing: ClosingSummary | null
   /** (simplify S-01) The top Needs you row's header words — the brief's first button acts on it; null when nothing waits on the viewer. */
   top?: string | null
-  /** (simplify S-01) The milestone running now, and the schedule's longest wait when it is on the client. */
-  running?: { title: string; end: number } | null
+  /** (the calm UI build 2026-10-27, 3-01 · 3-09) the top row's words lead the brief's buttons only where the page's header doesn't draw them (a phone) */
+  topHere?: boolean
+  /** (simplify S-01) The milestone running now, and the schedule's longest wait when it is on the client. (the calm UI build 2026-10-27, 3-30)
+      `ask`: an ask for more time on it, waiting — who asked and the day they ask to finish (a day number). */
+  running?: { title: string; end: number; ask?: { by: string | null; to: number } | null } | null
   wait?: { title: string; days: number; note: string | null } | null
   /** When it was won (a direct project: added) and completed — epoch ms. */
   wonAt: number
@@ -70,6 +73,13 @@ export type ProjectBriefFacts = {
 
 const lowerFirst = (s: string) => s.replace(/^./, (c) => c.toLowerCase())
 const stop = (s: string) => s.replace(/[.!?]+$/, '')
+
+/** (the calm UI build 2026-10-27, 3-01 · 3-09) The brief never repeats the header's filled button: the top Needs you row's words (`top`) lead its
+    buttons only where the header does not draw them — a phone (`topHere`, the page hides its header button there) — else the brief offers only
+    the other help. */
+function briefPair(f: ProjectBriefFacts, ...xs: (string | null | undefined)[]): [string, string] {
+  return pair(...(f.topHere ? [f.top] : []), ...xs)
+}
 
 /** Two different buttons: the first that applies, then the next one not already taken. */
 function pair(...xs: (string | null | undefined)[]): [string, string] {
@@ -82,19 +92,25 @@ function weekBrief(f: ProjectBriefFacts, today: number): Brief {
   const s = f.schedule
   const next = s?.next && s.next.status === 'not_started' ? s.next : null
   const wait = f.wait ?? null
-  const moving = f.running ? `${f.running.title} runs to ${displayDate(dateOfDay(f.running.end))}. ` : ''
+  /* (the calm UI build 2026-10-27, 3-30 · W-037) a running milestone past its end says it is late — and, when one waits, who asks for how long —
+     never "runs to" a day already gone; and the brief never names the same milestone twice */
+  const late = f.running && f.running.end < today ? today - f.running.end : 0
+  const lateLine = f.running && late > 0
+    ? `${f.running.title} is ${dayWords(late)} late${f.running.ask ? ` — ${f.running.ask.by ?? 'the team'} asks to finish ${displayDate(dateOfDay(f.running.ask.to))}` : ''}` : null
+  const moving = f.running && !lateLine ? `${f.running.title} runs to ${displayDate(dateOfDay(f.running.end))}. ` : ''
   const waits = wait ? ` — it waits on ${f.client}${wait.note ? ` for ${lowerFirst(stop(wait.note))}` : ''}${wait.days ? `, ${dayWords(wait.days)} so far` : ''}` : ''
   const decision = !s || !s.total ? 'Set up the schedule' + ` — ${f.client} sees the milestones and their dates on their page`
     : wait && next && wait.title === next.title ? `${next.title} starts ${displayDate(dateOfDay(next.start))}${waits}`
     : wait ? `${wait.title}${waits}`
     : next ? `${next.title} starts ${displayDate(dateOfDay(next.start))}`
     : s.done === s.total ? 'Every milestone is done — the handover is next'
-    : f.running ? `${f.running.title} is the last one running` : `${s.done} of ${s.total} milestones are done`
-  void today
+    : lateLine ?? (f.running ? 'It is the last milestone running' : `${s.done} of ${s.total} milestones are done`)
+  /* a late milestone is the week's news; the next decision follows it when there is another one */
+  const text = lateLine && decision !== lateLine ? [{ t: `${lateLine}. ` }, { t: `${decision}.`, bold: true }] : [...(moving ? [{ t: moving }] : []), { t: `${decision}.`, bold: true }]
   return {
-    tag: 'This week',
-    text: [...(moving ? [{ t: moving }] : []), { t: `${decision}.`, bold: true }],
-    actions: pair(f.top, BRIEF_ACTIONS.update, BRIEF_ACTIONS.task),
+    tag: '',   // (the calm UI build 2026-10-27, 3-30 · W-629) no "This week" tag — the brief's sentence says the week (the lead's AiBrief draws nothing for an empty tag)
+    text,
+    actions: briefPair(f, BRIEF_ACTIONS.update, BRIEF_ACTIONS.task),
   }
 }
 
@@ -105,7 +121,6 @@ export function projectBriefs(f: ProjectBriefFacts): Brief[] {
 
   if (f.stage === 'completed') {
     const c = f.closing
-    const took = f.completedAt !== null ? Math.max(0, dayOf(new Date(f.completedAt)) - dayOf(new Date(f.wonAt))) : null
     const money = c?.money
     const moneyLine = money
       ? money.outstandingMinor > 0 ? `${moneyCard(money.outstandingMinor)} of ${moneyCard(money.contractMinor)} is still to collect.`
@@ -115,7 +130,8 @@ export function projectBriefs(f: ProjectBriefFacts): Brief[] {
     const late = c && c.milestones.total ? `${c.milestones.late} of ${c.milestones.done} ${c.milestones.done === 1 ? 'milestone' : 'milestones'} finished late` : null
     const days = c?.days.actual != null && c.days.planned != null ? (c.days.actual === c.days.planned ? 'as planned' : c.days.actual > c.days.planned ? `${dayWords(c.days.actual - c.days.planned)} more than planned` : `${dayWords(c.days.planned - c.days.actual)} fewer than planned`) : null
     return [{
-      tag: took !== null ? `Completed · took ${dayWords(took)}` : 'Completed',
+      /* (the calm UI build 2026-10-27, 3-16 · W-151) one length, the closing summary's own: the days on site */
+      tag: c?.days.actual != null ? `Completed · ${dayWords(c.days.actual)} on site` : 'Completed',
       text: [
         { t: `Handed over${f.completedAt !== null ? ` on ${displayDate(new Date(f.completedAt))}` : ''}${days ? `, ${days}` : ''}. ` },
         ...(moneyLine ? [{ t: moneyLine, bold: true }] : late ? [{ t: `${late[0]!.toUpperCase()}${late.slice(1)}.`, bold: true }] : [{ t: 'The closing summary has the figures.', bold: true }]),
@@ -123,7 +139,7 @@ export function projectBriefs(f: ProjectBriefFacts): Brief[] {
       ],
       /* (P1 §6.3) Summarise the project + one that applies — never compliance on a finished job · (pending modules S14) the review ask when
          nothing waits on the viewer (a top row, money to collect, still comes first) */
-      actions: pair(BRIEF_ACTIONS.summary, f.top, BRIEF_ACTIONS.review),
+      actions: pair(BRIEF_ACTIONS.summary, ...(f.topHere ? [f.top] : []), BRIEF_ACTIONS.review),
     }]
   }
 
@@ -132,11 +148,11 @@ export function projectBriefs(f: ProjectBriefFacts): Brief[] {
     return [{
       tag: 'On hold',
       text: [
-        { t: `${holdSince(h)}${h.reason ? ` — “${stop(h.reason)}”` : ''}. ` },
+        /* (the calm UI build 2026-10-27, 3-31) the hold's day and reason are said once, on its Needs your attention row — the brief says when it resumes */
         { t: `${resumeLine(h, f.now)}.`, bold: true },
         { t: ` ${f.client} reads the reason on their schedule.` },
       ],
-      actions: pair(f.top, BRIEF_ACTIONS.task),
+      actions: briefPair(f, BRIEF_ACTIONS.task, BRIEF_ACTIONS.update),
     }]
   }
 
@@ -149,7 +165,7 @@ export function projectBriefs(f: ProjectBriefFacts): Brief[] {
         { t: 'Start it when work begins on site', bold: true },
         { t: ' — its schedule, updates and invoices run from that day.' },
       ],
-      actions: pair(f.top, BRIEF_ACTIONS.task),
+      actions: briefPair(f, BRIEF_ACTIONS.setup, BRIEF_ACTIONS.task),
     }]
   }
 

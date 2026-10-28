@@ -5,6 +5,8 @@
  */
 import { opensPath } from '@/lib/settings/roles'   // (parity map, PR-022)
 
+/** `help` is the section's one line — ⌘K's sub line and the panel row's tooltip (the calm UI build 2026-10-27, 1-15 · 5-40: the panel no longer
+    prints it under the label, where it was always cut). */
 export type CompanySection = { key: string; icon: string; label: string; help: string; href?: string }
 export type CompanyGroup = { title: string; items: CompanySection[] }
 
@@ -14,15 +16,16 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'members', icon: 'group', label: 'Members', help: 'People, roles and who reports to whom', href: '/company/members' },   /* (REG-601) live */
     { key: 'questionnaire', icon: 'quiz', label: 'Questionnaire', help: 'The questions every lead starts with', href: '/company/questionnaire' },   /* (REG-612) live */
     { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
-    { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
+    { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'The items and sections quotes start from', href: '/company/price-book' },   /* (W-267) not "My Items and My Sections" */   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
     { key: 'materials', icon: 'texture', label: 'Materials', help: 'Your own finishes for the AI Visualizer', href: '/company/materials' },   /* (REG-677, AI Visualizer Q-18) 1.0's studio library, now managed */
     { key: 'plan', icon: 'diamond', label: 'Plan & AI credits', help: 'Your plan, the AI credits the team uses, invoices', href: '/company/plan' },   /* (REG-704, AI credits Q-22) 1.0's Usage & credits, on Company's frame */
     { key: 'portal', icon: 'home', label: 'Client portal', help: 'The page your clients sign in to — its address, Live or Paused, who has access', href: '/company/portal' },   /* (Projects r4a, Q-44 · board 9) */
+    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, webhooks and Gmail', href: '/company/integrations' },   /* (REG-602) live · (the calm UI build 2026-10-27 — W-147) with the studio's set-up, so the money group holds money */
   ] },
-  { title: 'Operations', items: [
+  /* (the calm UI build 2026-10-27 — W-147) "Operations" was vague: the group is the studio's money and its reports */
+  { title: 'Money & reports', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Purchase orders, bills, expenses, vendors and commission', href: '/company/finance' },   /* (REG-1360, owner 2026-10-08) the money pages live here — the rail's own Finance item is gone · (REG-1361) its reports went to Reports, so the help no longer names them */
     { key: 'reports', icon: 'analytics', label: 'Reports', help: 'Leads, projects and money, for the whole studio', href: '/company/reports' },   /* (REG-1361, owner 2026-10-08) every report in one place — Leads · Projects · Finance */
-    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, webhooks and Gmail', href: '/company/integrations' },   /* (REG-602) live */
   ] },
 ]
 
@@ -40,8 +43,8 @@ export const TEMPLATE_KINDS: TemplateKind[] = [
   { key: 'contracts', icon: 'contract', label: 'Contracts', title: 'Contract templates', help: 'The agreement a signed quote becomes.', href: '/company/templates/contracts', live: true },   /* (REG-534) live */
   { key: 'tasks', icon: 'task', label: 'Tasks', title: 'Task templates', help: 'Checklists the team adds to a lead in one go.', href: '/company/templates/tasks', live: true },   /* (REG-538) live */
   { key: 'terms', icon: 'gavel', label: 'T&Cs & Notes', title: 'Terms and Notes templates', help: 'The clauses and the notes a quote can carry.', href: '/company/templates/terms', live: true },   /* (REG-538) one page, a Terms · Notes segment — the owner kept Notes off the strip (REG-508) */
-  { key: 'payments', icon: 'payments', label: 'Payment schedules', title: 'Payment schedule templates', help: 'Milestone splits the studio offers.', href: '/company/templates/payments', live: true },   /* (REG-538) live · (one-home N-14) "Payments" also named Finance's Payments out and Settings › Projects' client payments */
-  { key: 'schedules', icon: 'calendar_month', label: 'Schedules', title: 'Schedule templates', help: 'The milestones a project’s schedule can start from.', href: '/company/templates/schedules', live: true },   /* (Projects round 2, Q-12) */
+  { key: 'payments', icon: 'payments', label: 'Payment schedules', title: 'Payment schedule templates', help: 'The payment splits the studio offers.', href: '/company/templates/payments', live: true },   /* (REG-538) live · (one-home N-14) "Payments" also named Finance's Payments out and Settings › Projects' client payments */
+  { key: 'schedules', icon: 'calendar_month', label: 'Project schedules', title: 'Project schedule templates',   /* (the calm UI build 2026-10-27 — 4-06 · W-355) beside Payment schedules, the works' own noun; the key and address stay */ help: 'The milestones a project’s schedule can start from.', href: '/company/templates/schedules', live: true },   /* (Projects round 2, Q-12) */
 ]
 export const templateKind = (key: string) => TEMPLATE_KINDS.find((k) => k.key === key)
 
@@ -55,10 +58,11 @@ export function companySectionOf(path: string): string | undefined {
 }
 
 /** (REG-594) Company › Price book: the two libraries a quote line can start from, as the section's tab strip. */
-export const PRICE_BOOK_TABS = [{ label: 'My Items', href: '/company/price-book' }, { label: 'My Sections', href: '/company/price-book/sections' }] as const
+/* (the calm UI build 2026-10-27 — 4-39 · W-268) "My" read personal; the book is the whole studio's: Items · Sections (the addresses stay) */
+export const PRICE_BOOK_TABS = [{ label: 'Items', href: '/company/price-book' }, { label: 'Sections', href: '/company/price-book/sections' }] as const
 export const PRICE_BOOK_KINDS: Record<'items' | 'sections', TemplateKind> = {
-  items: { key: 'items', icon: 'list_alt', label: 'My Items', title: 'My Items', help: 'Every product and service the studio prices, ready to drop into a quote.', href: '/company/price-book', live: true },
-  sections: { key: 'sections', icon: 'format_list_bulleted', label: 'My Sections', title: 'My Sections', help: 'Whole sections saved from quotes — a room or a trade with its lines.', href: '/company/price-book/sections', live: true },
+  items: { key: 'items', icon: 'list_alt', label: 'Items', title: 'Items', help: 'Every product and service the studio prices, ready to drop into a quote.', href: '/company/price-book', live: true },
+  sections: { key: 'sections', icon: 'format_list_bulleted', label: 'Sections', title: 'Sections', help: 'Whole sections saved from quotes — a room or a trade with its lines.', href: '/company/price-book/sections', live: true },
 }
 
 /** (sweep S4 #26) One ghost bone per tab, as wide as its label reads — the route's loading.tsx (a server component) and CompanyShell's reveal
@@ -87,5 +91,20 @@ export const REPORTS_TABS: ReportsTab[] = [
 export const reportsHome = (runsStudio: boolean, isManager: boolean, /** (parity map, FB-114) Accounting reads Finance's tab only */ books = false) =>
   books && !runsStudio ? REPORTS_TABS.find((t) => t.key === 'finance')!.href : (REPORTS_TABS.find((t) => runsStudio || (t.managers && isManager)) ?? REPORTS_TABS[0]!).href
 
+/** (the calm UI build 2026-10-27 — 5-36) Company › Profile's four tabs, one page (`?tab=`): the details · the companies you quote under and their
+    banks · the studio's registrations and its Qanvast listing · the portal's About page. A card's old address (`#entities`, `#registrations`,
+    `#qanvast`, `#reviews`, `#about`) still lands on it — the page opens the card's tab first (`profileTabOfHash`). */
+export type ProfileTab = 'details' | 'entities' | 'registrations' | 'about'
+export const PROFILE_TABS: { key: ProfileTab; label: string; href: string }[] = [
+  { key: 'details', label: 'Details', href: '/company/profile?tab=details' },
+  { key: 'entities', label: 'Bank & entities', href: '/company/profile?tab=entities' },
+  { key: 'registrations', label: 'Registrations', href: '/company/profile?tab=registrations' },
+  { key: 'about', label: 'About page', href: '/company/profile?tab=about' },
+]
+export const profileTabOf = (v: string | null | undefined): ProfileTab => (PROFILE_TABS.find((t) => t.key === v)?.key ?? 'details')
+const CARD_TAB: Record<string, ProfileTab> = { details: 'details', reviews: 'details', 'social-links': 'details', entities: 'entities', registrations: 'registrations', qanvast: 'registrations', about: 'about' }
+export const profileTabOfHash = (hash: string): ProfileTab | null => CARD_TAB[decodeURIComponent(hash.replace(/^#/, ''))] ?? null
+
 /** (Projects r4a, board 9) Company › Client portal: Set-up · Clients. */
-export const CLIENT_PORTAL_TABS = [{ label: 'Set-up', href: '/company/portal' }, { label: 'Clients', href: '/company/portal/clients' }] as const
+/* (the calm UI build 2026-10-27 — 5-37 · W-366) "Set up", not the hyphenated noun */
+export const CLIENT_PORTAL_TABS = [{ label: 'Set up', href: '/company/portal' }, { label: 'Clients', href: '/company/portal/clients' }] as const

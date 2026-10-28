@@ -32,7 +32,7 @@ export async function answerStage(slug: string, input: { milestoneId: string; an
   const note = input.answer === 'changes' ? clean(input.note, NOTE_MAX) : ''
   if (input.answer === 'changes' && !note) return { error: 'Say what is not right, so your designer can look at it' }
   const s = await stageForAnswer(who.visitor, input.milestoneId)
-  if (!s) return { error: 'This stage isn’t on your schedule any more' }
+  if (!s) return { error: 'This milestone isn’t on your schedule any more' }   // (the calm UI build 2026-10-27, 3-04) the client's word
   const block = confirmBlock(s.row, s.live, who.visitor.homeownerId)
   if (block) return { error: block }
   const now = new Date()
@@ -41,7 +41,7 @@ export async function answerStage(slug: string, input: { milestoneId: string; an
     .where(and(eq(projectMilestones.id, s.milestone.id), isNull(projectMilestones.confirmAnswer), isNotNull(projectMilestones.confirmAskedAt), eq(projectMilestones.status, 'done'), isNull(projectMilestones.deletedAt)))
   if (!r.rowsAffected) {   /* (fix-F, F-03) answered a moment ago — by whom, read again */
     const again = await stageForAnswer(who.visitor, input.milestoneId)
-    return { error: (again && confirmBlock(again.row, again.live, who.visitor.homeownerId)) || 'You have already answered for this stage' }
+    return { error: (again && confirmBlock(again.row, again.live, who.visitor.homeownerId)) || 'You have already answered for this milestone' }
   }
   const title = s.row!.title   // the name as the client read it
   const pid = s.milestone.projectId

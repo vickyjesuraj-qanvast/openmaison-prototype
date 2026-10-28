@@ -34,7 +34,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   const snack = () => p.locator('[role="status"][aria-live="polite"]').last()
   const wizard = () => p.locator('[role="dialog"][aria-label="Move stage"]')
   const primary = () => p.locator('[data-testid="header-primary"] button')
-  const locked = () => p.locator('[data-testid="convert-locked"] button')
+  /* (the calm UI build 2026-10-27, a deliberate change — audit 2-05) the locked Convert to Project left the header: its handle and its refusal are
+     the Stage ▾ menu's Won row now */
+  const locked = () => p.locator('[role="menu"] [data-testid="convert-locked"]')
+  const openStages = async () => { await p.getByRole('button', { name: /^Stage: / }).click(); await p.waitForTimeout(400) }
   const pickStage = async (name) => {
     await p.getByRole('button', { name: /^Stage: / }).click()
     await p.locator('[role="menu"]').getByText(name, { exact: true }).click()
@@ -45,9 +48,11 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   console.log('L6 · Q1 (Convert refusal)')
   await go(`/leads/${L.farah}`)
   ok((await primary().innerText()).trim() === 'Move to Met', 'L6: Contacted lead — the filled primary reads "Move to Met"')
-  ok(await locked().isVisible(), 'L6: Convert to Project stays, outlined and locked')
+  ok(await p.locator('[data-testid="header-primary"]').count() === 1 && !(await p.getByRole('button', { name: 'Convert to Project' }).count()), 'L6: no locked Convert beside the primary (the calm UI build 2026-10-27, a deliberate change)')
+  await openStages()
+  ok(await locked().isVisible() && (await locked().getAttribute('aria-disabled')) === 'true', 'L6: Won is locked in Stage ▾ — the Won row carries Convert\'s handle (the calm UI build 2026-10-27, a deliberate change)')
   await shot('l6-header-contacted-1440')
-  await locked().click()
+  await locked().click({ force: true })
   await p.waitForTimeout(400)
   ok(/Complete Met and Quote Sent first/.test(await snack().innerText()), 'L6: Convert\'s refusal names the whole path — "Complete Met and Quote Sent first"')
   ok(await snack().getByRole('button', { name: 'Move to Met' }).isVisible(), 'Q1: the refusal carries "Move to Met"')
@@ -65,15 +70,15 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   ok(await p.locator('header button[class*="primary"], [data-testid="header-primary"] button').count() >= 1, 'L6: one filled primary in the header')
 
   await go(`/leads/${L.gerald}`)
-  await locked().click(); await p.waitForTimeout(400)
+  await openStages(); await locked().click({ force: true }); await p.waitForTimeout(400)
   ok(/Complete Quote Sent first/.test(await snack().innerText()) && await snack().getByRole('button', { name: 'Move to Quote Sent' }).isVisible(), 'Q1: Met lead — "Complete Quote Sent first" with "Move to Quote Sent"')
 
   // ── L1 · a parked lead: Convert locked; a resume into Won / Quote Sent opens that step ───────────────────────────────
   console.log('L1')
   await go(`/leads/${L.meiling}`)
   ok((await primary().innerText()).trim() === 'Resume at Contacted', 'L1: On Hold lead — the primary is "Resume at Contacted"')
-  await locked().click(); await p.waitForTimeout(400)
-  ok(/Resume at Contacted first/.test(await snack().innerText()), 'L1: Convert stays locked while parked — "Resume at Contacted first"')
+  /* (the calm UI build 2026-10-27, a deliberate change — 2-05) a parked lead's header has no locked Convert: its primary is the resume itself */
+  ok(!(await p.getByRole('button', { name: 'Convert to Project' }).count()), 'L1: no locked Convert while parked — the primary "Resume at Contacted" is the way on')
   await pickStage('Won')
   const confirm = p.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: 'Resume at Won?' })
   ok(await confirm.isVisible(), 'L1: picking Won asks "Resume at Won?"')
@@ -138,10 +143,13 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await go(`/leads/${L.marcus}/notes?new=contact`)
   await p.waitForTimeout(600)
   const editor = p.locator('[data-testid="contact-editor"]').first()
-  await editor.getByRole('radio', { name: 'In person' }).click()
-  ok(await editor.getByText('Attach photos from the visit').isVisible(), 'T3: In person — the attach row asks for photos from the visit')
-  await editor.getByRole('radio', { name: 'Call' }).click()
-  ok(await editor.getByText('Attach screenshots of your call attempts').isVisible(), 'T3: Call — screenshots of your call attempts')
+  /* (the calm UI build 2026-10-27, a deliberate change — 2-08 · W-486 · W-528) the log sheet's words at every width: the stored "In person" reads
+     "Visit"; the attach row is the shorter "Add …", still naming what proves THIS contact */
+  const howIt = (scope) => scope.getByRole('radiogroup', { name: 'How it went', exact: true })
+  await editor.getByRole('radio', { name: 'Visit', exact: true }).click()
+  ok(await editor.getByText('Add photos from the visit').isVisible(), 'T3: Visit — the attach row asks for photos from the visit')
+  await editor.getByRole('radio', { name: 'Call', exact: true }).click()
+  ok(await editor.getByText('Add a screenshot (optional)').isVisible(), 'T3: Call — a screenshot of the call')
   // L9 · pick a day, no time: the log takes the time it is now
   await editor.locator('button[aria-haspopup="dialog"]').first().click()
   await p.waitForTimeout(300)
@@ -155,8 +163,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.waitForTimeout(200)
   const whenText = await editor.innerText()
   ok(whenText.includes(hm(clock)) || whenText.includes(hm(new Date(clock.getTime() - 60000))), `L9: the day picked with no time reads the time now (${hm(clock)}), not 10:00 AM`)
-  await editor.getByRole('combobox', { name: /Outcome/ }).click()
-  await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click()
+  await howIt(editor).getByRole('radio', { name: 'Connected', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) — How it went is chips (was the Outcome select)
   await p.waitForTimeout(200)
   // T1 · Attach → upload a real file → it lands ticked → attached
   await editor.getByRole('button', { name: 'Attach' }).click()
@@ -169,7 +176,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await shot('t1-attach-ticked')
   await modal.getByRole('button', { name: 'Attach 1 File' }).click(); await p.waitForTimeout(800)
   ok(await p.getByText('file-thumb-1.png').first().isVisible(), 'T1: the attachment shows beside the draft')
-  await p.getByRole('button', { name: 'Save', exact: true }).last().click(); await p.waitForTimeout(1500)
+  await p.getByRole('button', { name: 'Save log', exact: true }).last().click(); await p.waitForTimeout(1500)   // (the calm UI build 2026-10-27, a deliberate change) — W-606 "Save log"
   ok(/Contact log saved/.test(await snack().innerText()), 'L2: "Contact log saved"')
   ok(await snack().getByRole('button', { name: 'Move to Contacted' }).isVisible(), 'L2: on a New lead the snackbar offers "Move to Contacted"')
   const noteId = sql(`select id from lead_notes where lead_id='${L.marcus}' and kind='contact' order by created_at desc limit 1`)
@@ -179,9 +186,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.waitForURL(new RegExp(`/leads/${L.marcus}`), { timeout: 10000 })
   await p.waitForTimeout(2500)
   ok(await wizard().isVisible() && /Moving to Contacted/.test(await wizard().innerText()), 'L2: the window opens at Contacted')
-  ok(await wizard().getByRole('radio', { name: 'Call' }).getAttribute('aria-checked') === 'true', 'L2: the log comes filled in (Contacted via Call)')
+  ok(await wizard().getByRole('radio', { name: 'Call', exact: true }).getAttribute('aria-checked') === 'true', 'L2: the log comes filled in (How: Call)')   // (the calm UI build 2026-10-27, a deliberate change) — "Callback requested" is a chip too now
   /* (leads on the move, a deliberate change of this rule — Q-02, his pick 2026-10-23, at every width) the screenshot is optional: the row says so */
-  ok(/Attach screenshots of your call attempts \(optional\)/.test(await wizard().innerText()) && !/Attach screenshots of your call attempts\*/.test(await wizard().innerText()), 'L2 · Q-02: the attach row says "(optional)", no required mark')
+  ok(/Add a screenshot \(optional\)/.test(await wizard().innerText()) && !/Add a screenshot\*/.test(await wizard().innerText()), 'L2 · Q-02: the attach row says "(optional)", no required mark')   // (the calm UI build 2026-10-27, a deliberate change) — W-486
   ok(await wizard().getByText('file-thumb-1.png').count() >= 1, 'L2: the log\'s photo came with it')
   await shot('l2-move-contacted-filled')
   await wizard().getByRole('button', { name: 'Save', exact: true }).click(); await p.waitForTimeout(700)
@@ -195,7 +202,9 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.locator('[role="dialog"]').filter({ hasText: 'Suggested tasks' }).getByRole('button', { name: 'Move without tasks' }).click(); await p.waitForTimeout(1500)
   ok(sql(`select stage from leads where id='${L.marcus}'`) === 'Contacted', 'L10: "Move without tasks" completes the move')
   await go(`/leads/${L.marcus}/notes`)
-  const logs = await p.locator('[data-testid="note-item"]').filter({ hasText: 'Contact log' }).count()
+  /* (the calm UI build 2026-10-27, a deliberate change — 2-46) a contact log's row is titled by channel + outcome ("Call — connected"), so the
+     row is told by its call-log glyph, as the list draws it */
+  const logs = await p.locator('[data-testid="note-item"]').filter({ has: p.locator('[class*="itemIcon"]', { hasText: 'call_log' }) }).count()
   ok(logs === Number(sql(`select count(*) from lead_notes where lead_id='${L.marcus}' and kind='contact'`)), 'L2: the carried log is listed once (no stage duplicate)')
   ok(Number(sql(`select count(*) from lead_notes where lead_id='${L.marcus}'`)) === notesBefore + 1, 'L2: one note written')
 
@@ -210,12 +219,11 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   ok(await wizard().getByText('Attach at least one file').count() === 0 && await wizard().locator('[role="alert"]').count() >= 1, 'L2 · Q-02: the errors are the log’s own fields — no screenshot error')
   await shot('l2-contacted-errors')
   // the case the audit met: every field filled but the screenshot — the one error sits below the fold, and Save brings it into view
-  await wizard().getByRole('radio', { name: 'Call' }).click()
+  await wizard().getByRole('radio', { name: 'Call', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change)
   await wizard().locator('button[aria-haspopup="dialog"]').first().click(); await p.waitForTimeout(300)
   await p.locator('#om-date-picker').getByRole('button', { name: dayLabel, exact: true }).click()
   await p.locator('#om-date-picker').getByRole('button', { name: 'Done' }).click()
-  await wizard().getByRole('combobox', { name: /Outcome/ }).click()
-  await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click(); await p.waitForTimeout(300)
+  await howIt(wizard()).getByRole('radio', { name: 'Connected', exact: true }).click(); await p.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) — How it went is chips
   await wizard().locator('[class*="panel"]').evaluateAll((els) => els.forEach((el) => { el.scrollTop = 0 }))
   await wizard().getByRole('button', { name: 'Save', exact: true }).click(); await p.waitForTimeout(1200)
   /* (leads on the move, a deliberate change of this rule — Q-02) a filled log with no screenshot is complete: Save goes on to Suggested tasks */
@@ -230,19 +238,18 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   const meeting = p.locator('[data-testid="note-item"]').filter({ hasText: 'Meeting log' }).first()
   ok(await meeting.isVisible(), 'T3: the Met stage\'s meeting log is listed under All Notes & Logs')
   await meeting.locator('button').first().click(); await p.waitForTimeout(500)
-  ok(await p.getByText('Added during stage movement — view only').isVisible() && await p.locator('[data-testid="contact-editor"]').getByText('Where').isVisible(), 'T3: it opens read-only — Where · Date & Time')
+  ok(await p.getByText(/From the Met step — read only/).first().isVisible() && await p.locator('[data-testid="contact-editor"]').getByText('Where').first().isVisible(), 'T3: it opens read-only, naming the step it came from — Where · When')   // (the calm UI build 2026-10-27, a deliberate change) — W-106
   await shot('t3-meeting-log')
   await go(`/leads/${L.jasmine}/notes?new=contact`)
   const ed2 = p.locator('[data-testid="contact-editor"]').first()
   await ed2.getByRole('radio', { name: 'WhatsApp' }).click()
-  ok(await ed2.getByText('Attach screenshots of your messages').isVisible(), 'T3: WhatsApp — screenshots of your messages')
+  ok(await ed2.getByText('Add screenshots of the messages').isVisible(), 'T3: WhatsApp — screenshots of the messages')   // (the calm UI build 2026-10-27, a deliberate change) — W-486
   await ed2.locator('button[aria-haspopup="dialog"]').first().click()
   await p.waitForTimeout(300)
   await p.locator('#om-date-picker').getByRole('button', { name: dayLabel, exact: true }).click()
   await p.locator('#om-date-picker').getByRole('button', { name: 'Done' }).click()
-  await ed2.getByRole('combobox', { name: /Outcome/ }).click()
-  await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click()
-  await p.getByRole('button', { name: 'Save', exact: true }).last().click(); await p.waitForTimeout(1500)
+  await howIt(ed2).getByRole('radio', { name: 'Connected', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) — chips, "Save log"
+  await p.getByRole('button', { name: 'Save log', exact: true }).last().click(); await p.waitForTimeout(1500)
   ok(await snack().getByRole('button', { name: 'Add tasks' }).isVisible(), 'T3: a saved log on a Contacted lead offers "Add tasks"')
   await snack().getByRole('button', { name: 'Add tasks' }).click()
   await p.waitForURL(/\/tasks\?add=1/, { timeout: 10000 }).catch(() => {})
@@ -252,35 +259,39 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   console.log('L10 (reasons)')
   await go(`/leads/${L.jasmine}`)
   await pickStage('Lost')
-  const lostDlg = p.locator('[role="dialog"]').filter({ hasText: 'Moving to Lost' })
+  const lostDlg = p.locator('[role="dialog"]').filter({ hasText: 'Mark as lost' })   // (the calm UI build 2026-10-27, a deliberate change) — 2-29: titled by its verb, no subtitle
   ok(await lostDlg.isVisible(), 'L10: Lost dialog opens')
   const reasonVal = (await lostDlg.getByRole('combobox', { name: /Reason/ }).innerText()).trim()
   ok(reasonVal === '', 'L10: no Lost reason chosen on arrival')
-  await lostDlg.getByRole('button', { name: 'Save & Move' }).click(); await p.waitForTimeout(300)
+  await lostDlg.getByRole('button', { name: 'Mark as lost', exact: true }).click(); await p.waitForTimeout(300)
   ok(/Required|required/.test(await lostDlg.innerText()), 'L10: Save asks for a reason')
   await shot('l10-lost-no-reason')
   await lostDlg.getByRole('button', { name: 'Cancel' }).click(); await p.waitForTimeout(300)
   await pickStage('On Hold')
-  const holdDlg = p.locator('[role="dialog"]').filter({ hasText: 'Moving to On Hold' })
+  const holdDlg = p.locator('[role="dialog"]').filter({ hasText: 'Put on hold' })   // (the calm UI build 2026-10-27, a deliberate change)
   ok((await holdDlg.getByRole('combobox', { name: /Reason/ }).innerText()).trim() === '', 'L10: no On Hold reason chosen on arrival')
-  await holdDlg.getByRole('button', { name: 'Save & Move' }).click(); await p.waitForTimeout(300)
+  await holdDlg.getByRole('button', { name: 'Put on hold', exact: true }).click(); await p.waitForTimeout(300)
   ok(/Required|required/.test(await holdDlg.innerText()) && sql(`select stage from leads where id='${L.jasmine}'`) === 'Contacted', 'L10: On Hold also asks for a reason — nothing moved')
   await holdDlg.getByRole('button', { name: 'Cancel' }).click(); await p.waitForTimeout(300)
 
   // ── L7 · Owner is the first assigned member ───────────────────────────────────────────────────────────────────────────
   console.log('L7 · L8')
-  const ownerOf = async () => (await p.locator('aside[aria-label="Lead info"]').innerText()).match(/Owner\s*\n?\s*(.+)/)?.[1]?.trim()
+  /* (the calm UI build 2026-10-27, a deliberate change — 2-14 · W-582 · W-583) no Owner row: the Members list names its first member — the one
+     the New gate asks for — "in charge"; the rule (the first assigned member, never "You") is what L7 checks */
+  const firstMember = async () => (await p.locator('aside[aria-label="Lead info"] [data-testid="info-members"] > *').first().innerText().catch(() => '')).replace(/\s+/g, ' ').trim()
   await go(`/leads/${L.grace}`)
-  ok((await ownerOf()) === 'James', 'L7: a lead assigned to James and Sarah — Owner reads James, not "You"')
+  ok(/^James\b.*in charge/.test(await firstMember()), `L7: a lead assigned to James and Sarah — James is in charge, not "You" (${await firstMember()})`)
   await shot('l7-owner-first-assignee')
   await go(`/leads/${L.olivia}`)
-  ok((await ownerOf()) === '--', 'L7: nobody assigned — Owner reads "--"')
+  ok(await p.locator('aside[aria-label="Lead info"] [data-testid="info-members"]').count() === 0 && await p.locator('aside[aria-label="Lead info"]').getByRole('button', { name: 'Assign members' }).count() >= 1, 'L7: nobody assigned — the Members section offers "Assign members"')   // (the calm UI build 2026-10-27, a deliberate change)
   // ── L8 · an unknown budget ────────────────────────────────────────────────────────────────────────────────────────────
   await go(`/leads/${L.cheryl}`)
   const headerText = await p.locator('header').first().innerText()
   ok(!/S\$\s?0\b/.test(headerText), 'L8: the header chip never reads "S$ 0"')
   const info = await p.locator('aside[aria-label="Lead info"]').innerText()
-  ok(/Budget \(S\$\)\s*\n?\s*--/.test(info), 'L8: the info column\'s Budget reads "--"')
+  /* (the calm UI build 2026-10-27, a deliberate change — 2-03) the column shows only rows with a value: an unknown budget is no row at all, and
+     the section's one "Add …" link offers it; never a number */
+  ok(!/Budget[^\n]*\n?\s*S\$\s?0\b/.test(info) && !/Budget \(S\$\)\s*\n?\s*--/.test(info) && await p.locator('[data-testid="info-add-lead"]').count() === 1, 'L8: an unknown budget is no row — the section\'s "Add …" link offers it, never "S$ 0" or "--"')
   const brief = await p.locator('main, body').first().innerText()
   ok(!/S\$0\b/.test(brief), 'L8: the Maison AI brief never says "S$0"')
   await shot('l8-budget-unknown')
@@ -298,7 +309,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   }
   await p.goto(`${BASE}/leads/${L.farah}`, { waitUntil: 'commit' })
   const g1440 = await ghostBones(p)
-  ok(g1440.locked, 'Ghost (1440): the Overview ghost draws the locked Convert bone between the pill and the primary')
+  ok(!g1440.locked, 'Ghost (1440): the Overview ghost draws no locked Convert bone — the header is the pill and the primary (the calm UI build 2026-10-27, a deliberate change)')
   await shot('ghost-overview-1440')
   await p.waitForTimeout(1500)
   const pageLocked = await locked().isVisible()

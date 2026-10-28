@@ -77,18 +77,20 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     await d.locator('[data-testid="projects-view"]').getByRole('button', { name: 'Workload view' }).click(); await settle(d, 900)
     ok(/view=workload/.test(d.url()) && await d.locator('[data-testid="workload-view"]').count() === 1, 'Workload view opens, and the address keeps it')
     const running = Number(sql(`select count(*) from projects p join leads l on l.id=p.lead_id where p.deleted_at is null and l.deleted_at is null and p.stage <> 'completed'`))
-    ok((await d.locator('[data-testid="workload-caption"]').innerText()).includes(`Counting ${running} running project`), `it counts the ${running} running projects the list shows`)
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-15) the caption is one plain line ("Each person runs up to 4 projects"); what it counts
+       is its tooltip and its data-counted */
+    ok(Number(await d.locator('[data-testid="workload-caption"]').getAttribute('data-counted')) === running && /Each person runs up to \d+ project/.test(await d.locator('[data-testid="workload-caption"]').innerText()), `it counts the ${running} running projects the list shows`)
     const row = (id) => d.locator(`[data-testid="workload-row"][data-person="${id}"]`)
     const michelleN = Number(sql(`select count(*) from projects p join lead_assignees a on a.lead_id=p.lead_id join leads l on l.id=p.lead_id where a.member_id='michelle' and p.deleted_at is null and l.deleted_at is null and p.stage<>'completed'`))
     ok(await row('michelle').getAttribute('data-state') === (michelleN < 2 ? 'room' : michelleN === 2 ? 'full' : 'over') && (await row('michelle').innerText()).includes(`${michelleN} of 2`), `Michelle: ${michelleN} of her capacity 2, said in words`)
     ok((await row('germaine').innerText()).includes('of 3') && await row('germaine').locator('[data-testid="workload-block"]').count() === Number(sql(`select count(*) from projects p join lead_assignees a on a.lead_id=p.lead_id where a.member_id='germaine' and p.deleted_at is null and p.stage<>'completed'`)), 'Germaine: her own capacity 3, one block per running project')
-    ok(/room for 4 more/i.test(await row('alex').innerText()) && (await row('alex').innerText()).includes('studio default'), 'Alex: the studio’s default 4, room for all of it')
+    ok(/4 free slots/i.test(await row('alex').innerText()) && (await row('alex').getAttribute('data-default')) === '', 'Alex: the studio’s default 4, room for all of it')   // (the calm UI build 2026-10-27, a deliberate change — 3-15) "4 free slots"; the default rides data-default
     ok(await row('sarah').count() === 1 && await row('james').count() === 1, 'every Designer and Manager is listed, with nothing on them too')
     await shot(d, '01-workload-1440')
     /* the list's search narrows the view — 1.0 always counted the full list (A-170) */
     await d.locator('input[aria-label="Search projects"]').fill('Benjamin')
     await settle(d, 900)
-    ok((await d.locator('[data-testid="workload-caption"]').innerText()).includes('Counting 1 running project'), 'a search narrows what it counts')
+    ok(await d.locator('[data-testid="workload-caption"]').getAttribute('data-counted') === '1', 'a search narrows what it counts')   // (the calm UI build 2026-10-27, a deliberate change)
     ok(await row('germaine').locator('[data-testid="workload-block"]').count() === 1 && await row('michelle').locator('[data-testid="workload-block"]').count() === 0, '…and each person’s blocks with it')
     await d.locator('[data-testid="workload-block"]').first().click(); await settle(d, 1500)
     ok(d.url().includes(`/projects/${ben}`) && /from=/.test(d.url()), 'a block opens its project, with the way back')
@@ -102,7 +104,7 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     await d.locator('[data-testid="capacity-alex"]').fill('5')
     await d.locator('[data-testid="capacity-save"]').click(); await settle(d, 1500)
     ok(sql(`select project_capacity from members where id='alex'`) === '5' && /Capacity saved for 1 person/.test(await snackText(d)), 'saved: Alex runs up to 5, said once')
-    ok(/room for 5 more/i.test(await row('alex').innerText()), 'the view follows at once')
+    ok(/5 free slots/i.test(await row('alex').innerText()), 'the view follows at once')   // (the calm UI build 2026-10-27, a deliberate change) was "room for 5 more"
     await undo(d)
     ok(sql(`select coalesce(project_capacity,'') from members where id='alex'`) === '', 'Undo puts the studio default back')
     /* the Manager sees their team; a Designer meets no view */
@@ -121,16 +123,17 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     console.log('2 · Company › Reports › Projects (was Projects › Insights, REG-1361)')
     await go(d, '/company/reports/projects')
     ok(await d.locator('[data-testid="project-insights-tiles"] > *').count() === 5 && await d.locator('[data-testid="tile-collection"]').count() === 1, 'an Owner reads five tiles, collection days among them')
-    await d.locator('[data-testid="project-insights-range"]').getByRole('radio', { name: 'All time' }).click(); await settle(d, 500)
+    await d.locator('[data-testid="project-insights-range"]').getByRole('button').first().click(); await settle(d, 400)   // (the calm UI build 2026-10-27, a deliberate change) R-B3-1: the period is the house pill
+    await d.getByRole('menuitemradio', { name: /^All time/ }).click(); await settle(d, 500)
     const startedAll = sql(`select count(*) from projects p join leads l on l.id=p.lead_id where p.deleted_at is null and l.deleted_at is null and p.started_at is not null`)
     const completedAll = sql(`select count(*) from projects p join leads l on l.id=p.lead_id where p.deleted_at is null and l.deleted_at is null and p.stage='completed'`)
     ok((await d.locator('[data-testid="tile-started"]').innerText()).includes(startedAll) && (await d.locator('[data-testid="tile-completed"]').innerText()).includes(completedAll), `All time: ${startedAll} started and ${completedAll} completed, from the records`)
     /* (parity P-28 · P-32, a deliberate change of this rule) the tile is named for its span and reads "n days" — never weeks */
-    { const t = await d.locator('[data-testid="tile-duration"]').innerText(); ok(/Start → Completed/i.test(t) && /\d+ days?|--/.test(t) && !/weeks/.test(t), 'Start → Completed reads in days, never weeks') }
+    { const t = await d.locator('[data-testid="tile-duration"]').innerText(); ok(/Project length|Start → Completed/i.test(t) /* (the calm UI build 2026-10-27, a deliberate change) 5-09 */ && /\d+ days?|--/.test(t) && !/weeks/.test(t), 'Start → Completed reads in days, never weeks') }
     ok(await d.locator('[data-testid="project-insights-member-row"]').count() >= 4, 'By team member lists the people who run projects')
     await shot(d, '02-insights-1440')
     as('james'); await go(d, '/company/reports/projects')
-    ok((await d.locator('[data-testid="project-insights-scope"]').innerText()).startsWith('Your team’s projects') && await d.locator('[data-testid="tile-collection"]').count() === 0, 'a Manager reads their team’s projects, without money')
+    ok(((await d.locator('[data-testid="project-insights-scope"]').getAttribute('data-tip')) ?? '').startsWith('Your team’s projects') /* (the calm UI build 2026-10-27, a deliberate change) R-B3-1: the pill's tooltip */ && await d.locator('[data-testid="tile-collection"]').count() === 0, 'a Manager reads their team’s projects, without money')
     as('sarah'); await go(d, '/company/reports/projects')
     ok(await d.locator('[data-testid="project-insights-gate"]').count() === 1, 'a Designer meets the gate')
     as('dane')
@@ -143,12 +146,16 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     ok(/^Tasks/.test(await d.locator('[role="tab"][aria-selected="true"]').innerText()) && /^Compliance/.test(await d.locator('[data-testid="project-view-chips"] [aria-checked="true"]').innerText()), 'the strip lights Tasks; the view switch marks Compliance')
     /* (simplify S-04 · S-06, a deliberate change of this rule) Compliance stops counting on the strip: its chip carries no count, and its view
        says in grey what is still to do in the phase the project is in — the number the phase's own chip says */
-    const execChip = await d.locator('[data-testid="compliance-phases"] [role="radio"]').filter({ hasText: /^Execution/ }).innerText()
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-08 · 3-29) the phase is the list's one scope pill; its menu says each phase's "n to do",
+       and the view's grey line says "n to do now" */
+    await d.locator('[data-testid="compliance-phases"] button').click(); await settle(d, 300)
+    const execChip = await d.locator('[data-testid="compliance-phase-execution"] [role="menuitemradio"]').innerText()
+    await d.keyboard.press('Escape'); await settle(d, 200)
     const execOpen = (/(\d+) to do/.exec(execChip) ?? [])[1] ?? null
     const note = await d.locator('[data-testid="project-view-note"]').innerText()
-    ok(!/\d/.test(await d.locator('[data-testid="project-view-chips"] [role="radio"]').filter({ hasText: 'Compliance' }).innerText()) && (execOpen ? note.includes(`${execOpen} item`) && /to do this phase/.test(note) : /nothing to do this phase/.test(note)),
-       `the strip doesn’t count Compliance; the view’s grey line says ${execOpen ?? 'nothing'} to do this phase`)
-    ok(await d.locator('[data-testid="compliance-phases"] [aria-checked="true"]').innerText().then((t) => t.startsWith('Execution')), 'it opens on the project’s own phase')
+    ok(!/\d/.test(await d.locator('[data-testid="project-view-chips"] [role="radio"]').filter({ hasText: 'Compliance' }).innerText()) && (execOpen ? note.includes(`${execOpen} to do now`) : /nothing to do now/.test(note)),
+       `the strip doesn’t count Compliance; the view’s grey line says ${execOpen ?? 'nothing'} to do now`)
+    ok(await d.locator('[data-testid="compliance-phases"]').innerText().then((t) => t.trim().startsWith('Execution')), 'it opens on the project’s own phase')
     const item = d.locator('[data-testid="compliance-item"][data-item="HDB_WATER_TEST"]')
     await item.locator('[data-testid="compliance-details"]').click(); await settle(d, 300)
     ok(/Source: HDB/.test(await item.locator('[data-testid="compliance-detail"]').innerText()), 'Details opens what to do and the official source in place')
@@ -163,15 +170,18 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     await d.getByRole('menuitem', { name: /Not needed/ }).click(); await settle(d, 1400)
     ok(sql(`select state from project_compliance where project_id='${ben}' and item_id='HDB_WATER_TEST'`) === 'not_needed', 'Not needed from the row’s menu')
     await undo(d)
-    await d.locator('[data-testid="compliance-phases"]').getByRole('radio', { name: /^Design/ }).click(); await settle(d, 400)
-    ok(/all answered/.test(await d.locator('[data-testid="compliance-phases"]').innerText()) && await d.locator('[data-testid="compliance-done"]').count() === 0, 'Design: every item answered, as the works began')
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-08) the phase from its pill's menu */
+    await d.locator('[data-testid="compliance-phases"] button').click(); await settle(d, 300)
+    ok(/all answered/.test(await d.locator('[data-testid="compliance-phase-design"]').innerText()), 'Design’s row says all answered')
+    await d.locator('[data-testid="compliance-phase-design"] [role="menuitemradio"]').click(); await settle(d, 400)
+    ok(/^Design/.test((await d.locator('[data-testid="compliance-phases"]').innerText()).trim()) && await d.locator('[data-testid="compliance-done"]').count() === 0, 'Design: every item answered, as the works began')
     await go(d, `/projects/${ben}/compliance?item=HDB_RENO_PERMIT`)
     ok(await d.locator('[data-testid="compliance-item"][data-item="HDB_RENO_PERMIT"] [data-testid="compliance-detail"]').count() === 1, 'a deep link opens its item on its phase')
     as('alex'); await go(d, `/projects/${ben}/compliance`)
     ok(await d.locator('[data-testid="compliance-done"]').count() === 0, 'someone not on the team reads the list, with no Mark done')
     as('dane')
     await go(d, `/projects/${P('P-2025-001')}/compliance`)
-    ok(await d.locator('[data-testid="compliance-phases"] [aria-checked="true"]').innerText().then((t) => t.startsWith('Handover')), 'a completed project opens on Handover')
+    ok(await d.locator('[data-testid="compliance-phases"]').innerText().then((t) => t.trim().startsWith('Handover')), 'a completed project opens on Handover')   // (the calm UI build 2026-10-27, a deliberate change — 3-08) the pill names the phase
 
     // ── 4 · Starter tasks ────────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('4 · Starter tasks')
@@ -227,8 +237,9 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
     await shot(d, '05-navigator-1440')
     /* (one-home N-07, a deliberate change of this rule) The studio's registrations are recorded once, on Company › Profile › Registrations &
        accreditations — the Navigator reads that record; its card's Mark done became the door to it. */
-    const rec = drc.locator('[data-testid="navigator-record"]')
-    ok(await drc.locator('[data-testid="navigator-done"]').count() === 0 && await rec.count() === 1, 'the Navigator records nothing itself: Record in Company › Profile instead of Mark done')
+    await drc.locator('[data-testid="navigator-menu"]').click(); await settle(d, 300)   // (the calm UI build 2026-10-27, a deliberate change) — 6-02: Record as done is the card's ⋮ row
+    const rec = d.locator('[data-testid="navigator-record"]')
+    ok(await drc.locator('[data-testid="navigator-done"]').count() === 0 && await rec.count() === 1, 'the Navigator records nothing itself: Record as done (in Company › Profile) instead of Mark done')
     await rec.click(); await settle(d, 1800)
     const at = new URL(d.url())
     ok(at.pathname === '/company/profile' && at.searchParams.get('from') === '/compliance' && at.hash === '#registrations', '…which opens Profile’s registrations, with the way back')

@@ -22,6 +22,8 @@ const SnackbarContext = createContext<(s: SnackInput) => void>(() => {})
 const DismissContext = createContext<(key: string) => void>(() => {})
 /** (REG-712) ⌘Z presses the newest snackbar's Undo — true when there was one. */
 const UndoContext = createContext<() => boolean>(() => false)
+/** (the calm UI build 2026-10-27 — the audit's 2-44) Esc dismisses the newest snackbar first — true when there was one. */
+const NewestContext = createContext<() => boolean>(() => false)
 
 export function useSnackbar() {
   return useContext(SnackbarContext)
@@ -34,6 +36,12 @@ export function useSnackbarDismiss() {
 /** (REG-712) The key layer's ⌘Z: presses the Undo of the newest snackbar that offers one, and says whether it did. */
 export function useRunUndo() {
   return useContext(UndoContext)
+}
+
+/** (the calm UI build 2026-10-27 — the audit's 2-44, additive) The key layer's Esc: dismisses the newest snackbar on screen, and says whether
+    it did — so the first Esc closes the message and only a second one goes Back. */
+export function useDismissNewest() {
+  return useContext(NewestContext)
 }
 
 /** Convenience for decision N2: every inert affordance answers with this. */
@@ -127,10 +135,16 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
     dismiss(s.id); s.onAction?.()
     return true
   }, [dismiss])
+  const dismissNewest = useCallback(() => {
+    const s = onScreen.current[onScreen.current.length - 1]
+    if (!s) return false
+    dismiss(s.id)
+    return true
+  }, [dismiss])
 
   return (
     <SnackbarContext.Provider value={show}>
-      <DismissContext.Provider value={dismissKey}><UndoContext.Provider value={runUndo}>{children}</UndoContext.Provider></DismissContext.Provider>
+      <DismissContext.Provider value={dismissKey}><UndoContext.Provider value={runUndo}><NewestContext.Provider value={dismissNewest}>{children}</NewestContext.Provider></UndoContext.Provider></DismissContext.Provider>
       <div className={styles.host} role="status" aria-live="polite" data-om-snackbar="">{/* (simplify round 2) an open menu or panel (the bell) treats a press here as its own: Undo keeps it open */}
         <AnimatePresence>
           {snacks.map((s) => <SnackBar key={s.id} s={s} onDismiss={dismiss} />)}

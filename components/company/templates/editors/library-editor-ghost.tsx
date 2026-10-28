@@ -14,7 +14,7 @@ import styles from './library-editor.module.css'
 const CARD = {
   tasks: { title: 'Steps', help: 'Use Template adds these to a lead as open tasks, in this order.' },
   terms: { title: 'Text', help: 'Tokens fill in from the quote when a studio adds this to one.' },
-  payments: { title: 'Milestones', help: 'Shares of the quote’s total. The first is due on approval; the rest are estimated across the renovation.' },
+  payments: { title: 'Payments', help: 'Shares of the quote’s total. The first is due on signing; the rest are estimated across the renovation.' },
 } as const
 
 export function LibraryEditorGhost({ kind }: { kind: keyof typeof CARD }) {
@@ -22,14 +22,14 @@ export function LibraryEditorGhost({ kind }: { kind: keyof typeof CARD }) {
   return (
     <GhostSheet label="Loading the template">
       <div className={page.page}>
-        <EditorHeadGhost crumb={170} title={kind === 'terms' ? 300 : 110} chips={kind === 'tasks' ? [44, 80] : kind === 'terms' ? [110, 90] : [44]} />
+        <EditorHeadGhost crumb={170} title={kind === 'terms' ? 300 : 110} chips={kind === 'terms' ? [110] : []} />   {/* (the calm UI build 2026-10-27, the UI audit's 4-11) the headers keep their standing mark only — the kind of a text */}
         <div className={page.meta}>
           <Line w={kind === 'terms' ? 260 : 90} lh={36} h={14} />
           {kind === 'tasks' ? (
             <div className={`${page.metaEnd} ${styles.switches}`}>
               {['Keep team members', 'Keep descriptions'].map((label) => <span key={label} className={styles.switchRow}><Words>{label}</Words><Slot kind="switch" /></span>)}
             </div>
-          ) : <div className={page.metaEnd}>{kind === 'terms' ? <Slot kind="chip" w={118} /> : <Line w={130} lh={20} h={10} />}</div>}
+          ) : kind === 'terms' ? <div className={page.metaEnd}><Slot kind="chip" w={118} /></div> : null}   {/* (4-17) the payment schedule's name row says its name alone */}
         </div>
         <div className={styles.body}>
           <div className={styles.card}>
@@ -62,7 +62,7 @@ export function LibraryEditorGhost({ kind }: { kind: keyof typeof CARD }) {
                 <>
                   <div className={styles.bar}><Bone w="100%" h={12} r={6} /></div>
                   <div className={styles.milestones}>
-                    <span />{['Milestone', 'Description', 'Share', 'Due'].map((h) => <Words key={h} className={styles.mHead}>{h}</Words>)}<span />
+                    <span />{['Payment', 'Description', 'Share', 'Due'].map((h) => <Words key={h} className={styles.mHead}>{h}</Words>)}<span />
                     {[0, 1, 2].map((i) => (
                       <div key={i} className={styles.mRow}>
                         <Bone w={8} h={12} /><GhostField size="s" /><GhostField size="s" /><GhostField size="s" /><Line w={cycle([80, 60, 60], i)} lh={20} h={12} /><Slot kind="icon" />

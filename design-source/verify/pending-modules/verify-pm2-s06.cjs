@@ -22,6 +22,7 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s06')
@@ -70,7 +71,7 @@ const ROOT_SOFTWARE = '864bccd2-fe15-4b0a-abf2-9a63cf3c67b0'   // R83's design s
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const dialog = (p, name) => p.locator(`[role="dialog"][aria-label="${name}"]`).last()
   const pick = async (p, field, option) => { await field.click(); await settle(p, 300); await p.getByRole('option', { name: option, exact: true }).last().click(); await settle(p, 300) }
-  const reach = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach')))
+  const reach = async (p, key) => { await openRoles(p); return p.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))) }   // (the calm UI build 2026-10-27, a deliberate change) the drawer first
   const menuItems = async (p) => (await p.getByRole('menuitem').allInnerTexts()).map((x) => x.split('\n')[0].trim())
 
   const ryan = sql(`select id from projects where number = 'P-2026-001'`)
@@ -239,7 +240,7 @@ const ROOT_SOFTWARE = '864bccd2-fe15-4b0a-abf2-9a63cf3c67b0'   // R83's design s
       ok(xero().connected === true, 'Xero is connected (simulated) for the run')
       await go(p, '/settings?section=finance')
       const card = p.getByTestId('expense-categories')
-      ok(await card.getByTestId('expense-category').count() === 11 && /Not set yet/.test(await card.innerText()), 'the card lists the eleven every studio starts with')
+      ok(await card.getByTestId('expense-category').count() === 11 && !/Not set yet/.test(await card.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-574: no "Not set yet" */, 'the card lists the eleven every studio starts with')
       await card.getByLabel('Add a category').fill('Rent')
       await card.getByTestId('expense-category-add').click(); await settle(p, 1400)
       ok(JSON.parse(sql(`select value from settings where key = 'expense_categories'`) || '[]').includes('Rent'), 'Add saves the studio’s list with Rent')
@@ -324,7 +325,7 @@ const ROOT_SOFTWARE = '864bccd2-fe15-4b0a-abf2-9a63cf3c67b0'   // R83's design s
       await go(p, '/settings?section=studio')
       ok(await p.locator('[role="tablist"]').count() === 0 && await p.getByTestId('settings-finance').count() === 1, 'Settings is Finance alone — no module strip, whatever the address asks')
       /* a link's text carries its icon's name (the icon font's ligature) — read the words at its end */
-      const links = (await p.getByTestId('settings-finance').getByTestId('module-links').getByRole('button').allInnerTexts()).map((x) => x.trim().split(/\s+/).pop()).filter(Boolean)
+      const links = (await p.getByTestId('module-related').getByTestId('module-links').getByRole('link').allInnerTexts())   /* (the calm UI build 2026-10-27, a deliberate change) B5 5-17: the Related line's links */.map((x) => x.trim().split(/\s+/).pop()).filter(Boolean)
       ok(links.includes('Vendors') && links.includes('Commission') && !links.includes('Profile') && !links.includes('schedules') && await p.getByTestId('invoice-approval-link').count() === 0, `only the links they open (Vendors · Commission), no door into another module (${links.join(' · ')})`)
       await shot(p, '07-accounting-settings-1440')
       /* raising POs */
@@ -335,7 +336,8 @@ const ROOT_SOFTWARE = '864bccd2-fe15-4b0a-abf2-9a63cf3c67b0'   // R83's design s
       await go(p, `/projects/${ben}/money`)
       await p.getByTestId('money-new').click(); await settle(p, 300)
       ok((await menuItems(p)).some((x) => /^Purchase order/.test(x)), 'a project’s Money offers one too')
-      await p.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(p, 900)
+      await p.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(p, 600)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+      if (await p.locator('[data-testid="money-new-level"]').count()) { await p.getByRole('menuitem', { name: /^New purchase order/ }).first().click(); await p.waitForTimeout(700) }
       ok(await p.locator('[role="dialog"]').filter({ hasText: /purchase order/i }).count() >= 1, 'the PO dialog opens for them')
       await p.keyboard.press('Escape'); await settle(p, 400)
       /* Files, read-only */

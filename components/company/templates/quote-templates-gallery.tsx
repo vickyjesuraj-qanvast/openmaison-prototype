@@ -78,7 +78,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
   }
   const statusLine = (t: TemplateSummary) => {
     const who = t.updatedBy ? ` by ${t.updatedBy.name}` : ''
-    if (t.submitted) return `Awaiting approval · ${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}`   /* REG-501 */
+    if (t.submitted) return `Waiting for approval · ${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}`   /* REG-501 */
     if (t.status === 'draft') return `Draft · edited ${ago(t.updatedAt, now)}${who}`
     /* (REG-577) With edits after the publish the line tells both in order. */
     if (t.hasDraft) return `Published v${t.version} · ${ago(t.publishedAt ?? t.updatedAt, now)} · edited ${ago(t.updatedAt, now)}${who}`
@@ -86,7 +86,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
   }
   const usage = (t: TemplateSummary) => (t.usedBy === 0 ? 'Not used yet' : `Used by ${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)
   const status = (t: TemplateSummary) => {
-    if (t.submitted) return { word: 'Awaiting approval', tone: 'await' as const, note: `${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}` }
+    if (t.submitted) return { word: 'Waiting for approval', tone: 'await' as const, note: `${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}` }
     if (t.status === 'draft') return { word: 'Draft', tone: 'draft' as const, note: null }
     return { word: `Published v${t.version}`, tone: 'published' as const, note: t.hasDraft ? `edited since v${t.version}` : null }   /* (REG-577) */
   }
@@ -103,7 +103,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
      or draft — so the choices add up to All (a submitted draft was counted twice). Awaiting approval is a to-do: its chip shows while
      something here waits. */
   const filters = [
-    ...(approval === 'required' || templates.some((t) => !!t.submitted) ? [{ key: 'awaiting', label: 'Awaiting approval', test: (r: Row) => !!r.t.submitted, attention: (n: number) => `${n} awaiting approval` }] : []),
+    ...(approval === 'required' || templates.some((t) => !!t.submitted) ? [{ key: 'awaiting', label: 'Waiting for approval', test: (r: Row) => !!r.t.submitted, attention: (n: number) => `${n} ${n === 1 ? 'approval' : 'approvals'}` }]   /* (the calm UI build 2026-10-27, T-01) the state reads Waiting for approval, the to-do chip counts Approvals */ : []),
     { key: 'published', label: 'Published', test: (r: Row) => r.t.status === 'published' && !r.t.submitted },
     { key: 'draft', label: 'Drafts', test: (r: Row) => r.t.status === 'draft' && !r.t.submitted },
   ]
@@ -123,14 +123,14 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
       thumb={(r) => (
         <>
           <span className={styles.page}><TemplateThumb design={r.t.design} brand={brand} data={sample} width={phone ? 150 : 200} /></span>
-          {r.t.submitted ? <span className={styles.ribbon} data-tone="await">Awaiting approval</span> : r.t.status === 'draft' ? <span className={styles.ribbon}>Draft</span> : r.t.hasDraft ? <span className={styles.ribbon} data-tone="edits">Edited since v{r.t.version}</span> : null}
+          {r.t.submitted ? <span className={styles.ribbon} data-tone="await">Waiting for approval</span> : r.t.status === 'draft' ? <span className={styles.ribbon}>Draft</span> : r.t.hasDraft ? <span className={styles.ribbon} data-tone="edits">Edited since v{r.t.version}</span> : null}
         </>
       )}
       glyph={(r) => <span className={styles.listPage}><TemplateThumb design={r.t.design} brand={brand} data={sample} width={36} /></span>}   /* (REG-820) the page fills the square, top first */
       meta={(r) => statusLine(r.t)}
       usage={(r) => usage(r.t)}
-      foot={(r) => <>{r.t.usedBy > 0 ? <Link href={`/quotes?template=${r.t.id}`} className={styles.usedLink} aria-label={`Quotes on ${r.t.name}`}>{usage(r.t)}</Link> : usage(r.t)} · {r.t.paper}{r.t.sourceFile ? ' · rebuilt from your quote' : ''}</>}
-      chips={(r) => (r.t.isDefault ? <MetaChip>Default</MetaChip> : null)}
+      foot={(r) => (r.t.usedBy > 0 || r.t.sourceFile ? <>{r.t.usedBy > 0 ? <Link href={`/quotes?template=${r.t.id}`} className={styles.usedLink} aria-label={`Quotes on ${r.t.name}`}>{usage(r.t)}</Link> : null}{r.t.usedBy > 0 && r.t.sourceFile ? ' · ' : ''}{r.t.sourceFile ? 'rebuilt from your quote' : ''}</> : '\u00a0')}   /* (the calm UI build 2026-10-27, the UI audit's 4-36 · W-049) the line only once used — the paper size is the list's Paper column */
+      chips={(r) => (r.t.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null)}
       columns={columns}
       onOpen={(r) => open(r.id)}
       openLabel="Edit"
@@ -142,9 +142,9 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
       onDuplicate={(r) => create(() => duplicateTemplate(r.id), 'duplicate the template')}
       onRename={(r, name) => renameTemplate(r.id, name)}
       mayChange={() => runner}
-      deleteBlock={(r) => (r.t.isDefault ? 'The default can’t be deleted' : r.t.submitted ? 'Awaiting approval — approve or request changes first' : null)}
+      deleteBlock={(r) => (r.t.isDefault ? 'The default can’t be deleted' : r.t.submitted ? 'Waiting for approval — approve or request changes first' : null)}
       onDelete={(r) => deleteTemplate(r.id)}
-      deleteMessage={(r) => (r.t.usedBy ? `${r.t.usedBy} quote${r.t.usedBy === 1 ? ' is' : 's are'} on this template. ${r.t.usedBy === 1 ? 'It keeps' : 'They keep'} printing as ${r.t.usedBy === 1 ? 'it is' : 'they are'}; no new quote can start on it. You can restore it from Deleted Templates.` : 'No quote is on it. You can restore it from Deleted Templates.')}
+      deleteMessage={(r) => (r.t.usedBy ? `${r.t.usedBy} quote${r.t.usedBy === 1 ? ' is' : 's are'} on this template. ${r.t.usedBy === 1 ? 'It keeps' : 'They keep'} printing as ${r.t.usedBy === 1 ? 'it is' : 'they are'}; no new quote can start on it. You can restore it from Deleted templates.` : 'No quote is on it. You can restore it from Deleted templates.')}
       onRestore={(ids) => restoreTemplates(ids)}
       onDeleteForever={(ids) => deleteTemplatesForever(ids)}
       onEmptyTrash={() => emptyTemplateTrash()}

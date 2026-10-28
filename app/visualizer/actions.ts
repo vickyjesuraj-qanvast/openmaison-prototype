@@ -453,7 +453,7 @@ export async function setRoomPhoto(roomId: string, o: { imageUrl: string; detect
   const { imageUrl, detection } = o
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const block = roomChangeBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }   // (wave E, E12) the Delete-room rule
-  if (await liveRenders(roomId)) return { error: 'This room has renders made of its photo — add a new room for another photo.' }
+  if (await liveRenders(roomId)) return { error: 'This room has versions made of its photo — add a new room for another photo.' }
   const image = cleanImage(imageUrl); if (!image) return { error: 'We can read JPG, PNG and WebP photos up to 10 MB.' }
   if (!isDetection(detection)) return { error: 'Couldn’t read that photo — please try another.' }
   const prior: PriorPhoto = { originalImageUrl: got.r.originalImageUrl, sampleKey: got.r.sampleKey, sourceFileId: got.r.sourceFileId, detectionJson: got.r.detectionJson, stateJson: got.r.stateJson }
@@ -468,7 +468,7 @@ export async function undoRoomPhoto(roomId: string): Promise<{ ok: true; imageUr
   const block = roomChangeBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }   // (wave E, E12) the Undo goes through the change's door
   const prior = parseJson<PriorPhoto | null>(got.r.priorPhotoJson, null)
   if (!prior || typeof prior !== 'object') return { error: 'There’s no earlier photo to put back.' }
-  if (await liveRenders(roomId)) return { error: 'This room has renders of the new photo now — add a new room for the old one.' }
+  if (await liveRenders(roomId)) return { error: 'This room has versions of the new photo now — add a new room for the old one.' }
   await db.update(projectRooms).set({ originalImageUrl: prior.originalImageUrl ?? null, sampleKey: prior.sampleKey ?? null, sourceFileId: prior.sourceFileId ?? null, detectionJson: prior.detectionJson ?? null, stateJson: prior.stateJson ?? null, priorPhotoJson: null, stateRev: sql`${projectRooms.stateRev} + 1`, updatedAt: now() }).where(eq(projectRooms.id, roomId))
   const [r] = await db.select().from(projectRooms).where(eq(projectRooms.id, roomId))
   if (!r) return { error: 'That room is gone.' }
@@ -545,7 +545,7 @@ export async function saveRender(roomId: string, input: NewRender): Promise<{ jo
 async function keepRender(roomId: string, input: NewRender): Promise<{ jobId: string; keys: string[]; ns: number[] } | Err> {
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const images = input.variants.slice(0, 3).map((v) => cleanImage(v.image))
-  if (!images.length || images.some((i) => !i)) return { error: 'Couldn’t keep this render — the picture didn’t come through.' }
+  if (!images.length || images.some((i) => !i)) return { error: 'Couldn’t keep this version — the picture didn’t come through.' }
   const id = input.jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(input.jobId) ? input.jobId : randomUUID(), at = now(), me = await actingMember()
   const pics = images.flatMap((img, i) => (isDataImage(img) ? [{ jobId: id, variantId: i + 1, data: img }] : []))
   const jobs = await db.select({ variantsJson: renderJobs.variantsJson }).from(renderJobs).where(eq(renderJobs.roomId, roomId))
@@ -696,7 +696,7 @@ async function fileVersion(leadId: string, designId: string, room: { id: string;
 export async function saveVersionToFiles(jobId: string, variantId: number): Promise<{ fileId: string; existed: boolean; leadId: string } | Err> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await versionOf(jobId, variantId); if (!got) return { error: 'That version is gone.' }
-  if (!got.d.leadId) return { error: 'A personal design has no lead to file it on.' }
+  if (!got.d.leadId) return { error: 'A design of the studio’s own has no lead to file it on.' }
   const gone = await deletedLead(got.d.leadId); if (gone) return { error: gone }   // (wave E, files-9)
   const res = await fileVersion(got.d.leadId, got.d.id, got.r, jobId, got.v, await actingMember())
   if (!res) return { error: 'Couldn’t save to Files — the picture didn’t come through.' }
@@ -718,7 +718,7 @@ export async function saveVersionToFiles(jobId: string, variantId: number): Prom
 export async function addVersionToQuote(jobId: string, variantId: number, quoteId: string | 'new', again = false): Promise<{ quoteId: string; lines: number; priced: number; quantityless: number } | Err> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await versionOf(jobId, variantId); if (!got) return { error: 'That version is gone.' }
-  if (!got.d.leadId) return { error: 'A personal design has no lead to quote.' }
+  if (!got.d.leadId) return { error: 'A design of the studio’s own has no lead to quote.' }
   const gone = await deletedLead(got.d.leadId); if (gone) return { error: gone }   // (wave E, files-9)
   const lines = quoteLines(got.v, parseDetection(got.r.detectionJson, got.r))
   const none = noQuoteReason(got.v, lines.length); if (none) return { error: `${none}.` }   // (wave E, tablet-15) never "yet": waiting won't add any

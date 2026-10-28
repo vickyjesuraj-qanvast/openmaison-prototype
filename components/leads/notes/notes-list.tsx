@@ -8,7 +8,7 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import emptyStyles from '@/components/leads/search-empty.module.css'
-import { displayDateTimeDot } from '@/lib/format'
+import { displayDateLong, displayTime } from '@/lib/format'
 import type { NoteFilter, NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-list.module.css'
 
@@ -18,6 +18,10 @@ export type NotesListItem = {
   title: string
   secondary: string
   createdAt: Date
+  /** (the calm UI build 2026-10-27 — 3-43) the moment the row shows: a log's own time, a note's creation */
+  at: Date
+  /** (3-42) which stage step a view-only log came from */
+  step?: 'Contacted' | 'Met' | null
   /** Unsaved new note / contact log — the last item while it is being written (frame 79 / 165). */
   draft?: boolean
   /** The Contacted stage's own log (REG-265): view-only — Edit and Delete render disabled. */
@@ -48,8 +52,11 @@ export type NotesListProps = {
 const FILTERS: { key: NoteFilter; label: string; icon?: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'note', label: 'Notes', icon: 'sticky_note_2' },
-  { key: 'contact', label: 'Contact Log', icon: 'call_log' },
+  { key: 'contact', label: 'Contact log', icon: 'call_log' },   // (the calm UI build 2026-10-27 — T-13) one spelling
 ]
+
+/** (the calm UI build 2026-10-27 — T-11 · 2-24) A row's moment in the house words: "Tue, 6 Oct ’26 · 4:42 PM" (the list's own katakana dot is gone). */
+export const noteWhen = (d: Date): string => `${displayDateLong(d)} · ${displayTime(d)}`
 
 /* (REG-293) Only the per-item kebab now — New ▾ moved to the tab's toolbar. */
 type OpenMenu = { kind: 'item'; id: string } | null
@@ -94,8 +101,16 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
           The unsaved draft is never filtered out, so this only ever answers a search / filter, never "no notes". */}
       {items.length === 0 ? (
         <div className={styles.empty}>
-          {searching || filter === 'all' ? (
+          {searching ? (
             <TabSearchEmpty noun="notes" searching={searching} onClearAll={onClearAll} />
+          ) : filter === 'all' ? (
+            /* (the calm UI build 2026-10-27 — the house empty rule ⑥, T-18) a list that is simply empty says so, never "No results found" — on a
+               phone, where the note being written is the composer and not a row, it read as a failed search */
+            <div className={emptyStyles.card} data-testid="notes-kind-empty">
+              <span className={emptyStyles.title}>No notes or logs yet</span>
+              <span className={emptyStyles.sub}>{`Write the first note for this ${noun}.`}</span>
+              <button type="button" className={emptyStyles.clear} onClick={() => onNew('note')}>New note</button>
+            </div>
           ) : (
             /* (REG-546, tester feedback 2026-09-15) A kind chip with nothing behind it used to answer "No results found ·
                Clear All" beside an empty pane, which read as a dead end. The same card now names what is missing and
@@ -123,7 +138,7 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
                       </span>
                       <span className={styles.secondary}>{it.secondary}</span>
                     </span>
-                    <span className={styles.date}>{displayDateTimeDot(it.createdAt)}</span>
+                    <span className={styles.date}>{noteWhen(it.at)}</span>
                   </span>
                 </button>
                 {/* Kebab sits in the title row (H g4: title · more_vert) — placed beside the select button, never inside it.
@@ -143,9 +158,9 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
       {/* 931:45488 — Edit · Delete, the notes family's mocked 140. A stage-logged record keeps its items visible but inert (REG-265);
           (REG-728) the reason prints in the row, under its words — a native title never shows on touch. */}
       <PortalMenu open={!!menuItem} anchor={kebab} onClose={close} align="right" width={140} role="menu" sheetTitle="Note">
-        <DropdownItem disabled={menuItem?.locked} title={menuItem?.locked ? 'Logged by the Contacted stage — edit it in the Move stage window' : undefined}
+        <DropdownItem disabled={menuItem?.locked} title={menuItem?.locked ? `Logged at the ${menuItem.step ?? 'Contacted'} step — edit it in the Move stage window` : undefined}
                       onSelect={() => { const it = menuItem; close(); if (it) onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>
-        <DropdownItem tone="danger" disabled={menuItem?.locked} title={menuItem?.locked ? 'Logged by the Contacted stage — it cannot be deleted here' : undefined}
+        <DropdownItem tone="danger" disabled={menuItem?.locked} title={menuItem?.locked ? `Logged at the ${menuItem.step ?? 'Contacted'} step — it can’t be deleted here` : undefined}
                       onSelect={() => { const it = menuItem; close(); if (it) onItemMenu(it.id, 'delete') }}>Delete</DropdownItem>
       </PortalMenu>
     </div>

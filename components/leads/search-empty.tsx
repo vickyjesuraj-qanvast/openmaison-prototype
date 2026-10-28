@@ -28,7 +28,7 @@ export function SearchEmpty({ onClearAll, searching = true, phone = null, onAddP
           </Button>
         </span>
       ) : null}
-      <button type="button" className={styles.clear} onClick={onClearAll}>Clear All</button>
+      <button type="button" className={styles.clear} onClick={onClearAll}>Clear all</button>
     </div>
   )
 }

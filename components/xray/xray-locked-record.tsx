@@ -2,7 +2,6 @@
 
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { MetaChip } from '@/components/om/meta-chip'
 import { ProLocked } from '@/components/credits/pro-tag'
 import { displayDate } from '@/lib/format'
 import { recordFrame } from './xray-result'
@@ -20,7 +19,7 @@ export function XrayLockedRecord({ record, from }: { record: { leadId: string | 
   return (
     <PageReveal skeleton={<XrayLockedRecordSkeleton />}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
-        <PageHeaderL2 backHref={from ?? scopedSetup} crumbs={crumbs} title={title} chips={<MetaChip>{displayDate(new Date(record.createdAt))}</MetaChip>} />
+        <PageHeaderL2 backHref={from ?? scopedSetup} crumbs={crumbs} title={title} chips={<span className={styles.headMeta}>{displayDate(new Date(record.createdAt))}</span>} />   {/* (the calm UI build, 6-08) the day as plain meta */}
         <div className={styles.column}>
           <div data-testid="xray-record-locked"><ProLocked feature="quote_xray" kept="This comparison is kept" testId="xray-locked" /></div>
         </div>

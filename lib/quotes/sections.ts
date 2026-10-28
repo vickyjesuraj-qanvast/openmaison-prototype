@@ -9,12 +9,12 @@ export type SectionKey = (typeof SECTION_KEYS)[number]
 export type QuoteSectionState = { key: SectionKey; collapsed: boolean }
 
 export const SECTION_LABELS: Record<SectionKey, string> = {
-  general: 'General Info',
+  general: 'General info',   // (the calm UI build 2026-10-27, W-200 · T-13) sentence case, as the phone's section list
   items: 'Items',
-  payment: 'Payment Schedule',
+  payment: 'Payment schedule',
   files: 'Files',
-  terms: 'Terms and Conditions',
-  notes: 'Additional Notes',
+  terms: 'Terms and conditions',
+  notes: 'Additional notes',
   signature: 'Signature',
   activity: 'Activity',
 }

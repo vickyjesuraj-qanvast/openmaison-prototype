@@ -3,6 +3,8 @@
 @media print {
   .noPrint { display: none !important; }
 }
+/* (the calm UI build 2026-10-27, 4-08 · T-06) the signed day and an upload's kind beside the status chip: secondary words, not tags */
+.barWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 /* (Contracts on the move, P-01 — the Preview's B-09 · B-10, 2026-10-22) The touch widths: a phone's stage holds the reflowed paper (the
    client's own view) and, under it, the signing record; a tablet's stage draws the paper at 1:1 (816) and scrolls its margins; inside the
    house viewer (components/quotes/confirm/paper-viewer.tsx) the paper is one page, drawn at its print size and scaled whole — the desk's

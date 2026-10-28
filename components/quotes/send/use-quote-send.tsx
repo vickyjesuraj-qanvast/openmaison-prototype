@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 import { useRouter } from 'next/navigation'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -54,6 +56,7 @@ export function useQuoteSend(o: {
   const contract = useContractFromQuote(o.contractFrom)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [followUp, setFollowUp] = useState(DEFAULT_FOLLOW_UP)
+  const [markAsk, setMarkAsk] = useState(false)   // (the calm UI build 2026-10-27, 4-22) Mark as sent asks first
 
   const steps = quoteStatuses(o.approval)
   const nextStep: QuoteStatus | null = status === 'Draft' ? (steps[1] ?? null) : status === 'Approved' ? 'Sent to Client' : null
@@ -83,26 +86,27 @@ export function useQuoteSend(o: {
     if (block) { snackbar({ message: `Before you send: ${block.label}`, ...(o.onShowIssue ? { actionLabel: 'Show me', onAction: () => o.onShowIssue?.(block) } : {}) }); return }
     if (mode === 'signature') { openContract(); return }
     if (mode === 'confirmation') { void flush(); setFollowUp(DEFAULT_FOLLOW_UP); setConfirmOpen(true); return }
-    if (mode === 'other') {
-      /* (Q2) "Sent it another way" — the old Mark as sent: the client has it, the record says so; nothing goes out. */
-      const box: { r?: Extract<Awaited<ReturnType<typeof markQuoteStatus>>, { undo: unknown }> } = {}
-      void run(`mark the ${noun} sent`, async () => { await flush(); const r = await markQuoteStatus(quote.id, 'Sent to Client'); if ('error' in r) return r; box.r = r; o.onChange({ status: r.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt ?? Date.now(), sentAt: r.undo.sentAt ?? Date.now() }) }, undefined, { guard: 'send' })
-        .then((ok) => {
-          const r = box.r
-          if (!ok || !r) return
-          snackbar(r.moveTo
-            ? { message: `${Noun} ${r.number} marked Sent to Client`, ...moveAction(r.moveTo) }
-            : { message: `${Noun} ${r.number} marked Sent to Client`, actionLabel: 'Undo', onAction: () => { void run('undo the mark', async () => { const u = await undoQuoteStatus(quote.id, r.undo); if ('error' in u) return u; o.onChange({ status: u.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt, sentAt: r.undo.sentAt }) }, `${Noun} ${r.number} is ${r.undo.status} again`) } })
-        })
-      return
-    }
+    if (mode === 'other') { setMarkAsk(true); return }   /* (4-22) the page checklist: a status set by hand that the client never saw asks first */
     if (!nextStep) return
     void run(`send the ${noun}`, async () => {
       await flush()
       const r = await orThrow(sendQuote(quote.id))   // (S44Z) a refusal into run()'s own failure line
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, ...(r.status === 'Sent for Approval' ? { submittedAt: r.updatedAt } : {}), ...(r.status === 'Sent to Client' ? { clientSentAt: r.updatedAt } : {}) })
-      snackbar(r.status === 'Sent for Approval' ? { message: `${Noun} ${quote.number} sent for approval — the approvers are told` } : { message: `${Noun} ${quote.number} marked ${r.status}`, ...moveAction(r.moveTo) })
+      snackbar(r.status === 'Sent for Approval' ? { message: `${Noun} ${quote.number} sent for approval — the approvers are told` } : { message: `${Noun} ${quote.number} marked “${quoteStatusLabel(r.status)}”`, ...moveAction(r.moveTo) })
     }, undefined, { guard: 'send' })
+  }
+  /* (Q2) "Mark as sent" — the old Mark as sent, then "Sent it another way": the client has it, the record says so; nothing goes out.
+     (The calm UI build 2026-10-27, 4-22) Asked first, and the snackbar always keeps Undo — the lead's next stage is the editor's sent banner's
+     "Move to Quote Sent" (and the lead's own stage pill), one press away; a slip no longer has only the status menu as its way back. */
+  const markSent = () => {
+    setMarkAsk(false)
+    const box: { r?: Extract<Awaited<ReturnType<typeof markQuoteStatus>>, { undo: unknown }> } = {}
+    void run(`mark the ${noun} sent`, async () => { await flush(); const r = await markQuoteStatus(quote.id, 'Sent to Client'); if ('error' in r) return r; box.r = r; o.onChange({ status: r.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt ?? Date.now(), sentAt: r.undo.sentAt ?? Date.now() }) }, undefined, { guard: 'send' })
+      .then((ok) => {
+        const r = box.r
+        if (!ok || !r) return
+        snackbar({ message: `${Noun} ${r.number} marked “${quoteStatusLabel('Sent to Client')}”`, actionLabel: 'Undo', onAction: () => { void run('undo the mark', async () => { const u = await undoQuoteStatus(quote.id, r.undo); if ('error' in u) return u; o.onChange({ status: u.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt, sentAt: r.undo.sentAt }) }, `${Noun} ${r.number} is “${quoteStatusLabel(r.undo.status)}” again`) } })
+      })
   }
 
   /* (REG-587) Send for confirmation: WhatsApp opens on the press (a popup blocker eats one opened after the round trip, REG-534). */
@@ -125,7 +129,7 @@ export function useQuoteSend(o: {
       if ('error' in r) return r   // (S44Q — row 334)
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, clientSentAt: r.updatedAt })
       const due = await setFollowUpDue()
-      snackbar({ message: `The ${noun} is Sent to Client — the link opens for your client now${due ? ` · follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })
+      snackbar({ message: `The ${noun} is with the client — the link opens for them now${due ? ` · follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })
     }, undefined, { guard: 'send' })
   }
 
@@ -140,7 +144,11 @@ export function useQuoteSend(o: {
                           extra={<FollowUpChip days={followUp} onChange={setFollowUp} noun={noun} />}
                           onSend={sendForConfirmation} onCopy={onCopy} />
       {contract.dialog}
+      {/* (the calm UI build 2026-10-27, 4-22) Mark as sent: one question, then the mark with Undo */}
+      <ConfirmDialog open={markAsk} tone="primary" title={`Mark ${quote.number} as sent?`}
+                     message={`Nothing goes to ${firstName(o.lead.name) || 'the client'} — it records that they have the ${noun}.`}
+                     confirmLabel="Mark as sent" cancelLabel="Cancel" onCancel={() => setMarkAsk(false)} onConfirm={markSent} />
     </>
   )
-  return { kind, canSend: kind !== 'done', hint: o.variation && status === 'Confirmed' ? 'Approved by the client — the contract value has moved' : `${Noun} is ${status}`, send, openContract, dialogs }
+  return { kind, canSend: kind !== 'done', hint: o.variation && status === 'Confirmed' ? 'Approved by the client — the contract value has moved' : `${Noun} is “${quoteStatusLabel(status)}”`, send, openContract, dialogs }
 }

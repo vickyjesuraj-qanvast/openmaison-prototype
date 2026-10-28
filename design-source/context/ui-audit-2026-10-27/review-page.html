@@ -1,0 +1,342 @@
+<title>Calm UI Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a review desk — a sticky bar with the marking count and filters, then the summary, the themes, every finding as a card with
+   its picture and its pick, and the words as one table. Accent = OpenMaison's own violet; severity colours are separate. */
+:root {
+  --bg: #f6f5f9; --surface: #ffffff; --ink: #1c1a24; --muted: #625e70; --faint: #8f8a9e; --line: #e4e1ec; --line-2: #d4d0de;
+  --accent: #5500ff; --accent-soft: #efe8ff; --accent-ink: #4100c4;
+  --high: #c62f22; --high-soft: #fdecea; --med: #a86400; --med-soft: #fff3df; --low: #5f6475; --low-soft: #eff0f4;
+  --build: #127a46; --build-soft: #e3f5eb; --later: #8a5a00; --later-soft: #fff1d6; --skip: #6a6577; --skip-soft: #efedf3;
+  --shadow: 0 1px 2px rgba(28, 26, 36, .06), 0 2px 10px rgba(28, 26, 36, .04);
+  --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121117; --surface: #1b1a22; --ink: #ecebf2; --muted: #a9a5b7; --faint: #7d7990; --line: #2c2a36; --line-2: #3a3846;
+  --accent: #9d7bff; --accent-soft: #261d45; --accent-ink: #c4b0ff;
+  --high: #ff7b6e; --high-soft: #3a1b18; --med: #f0b354; --med-soft: #35270f; --low: #a9adbd; --low-soft: #24242c;
+  --build: #5fd39a; --build-soft: #12301f; --later: #f0b354; --later-soft: #35270f; --skip: #a9a5b7; --skip-soft: #26252e;
+  --shadow: none; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121117; --surface: #1b1a22; --ink: #ecebf2; --muted: #a9a5b7; --faint: #7d7990; --line: #2c2a36; --line-2: #3a3846;
+  --accent: #9d7bff; --accent-soft: #261d45; --accent-ink: #c4b0ff;
+  --high: #ff7b6e; --high-soft: #3a1b18; --med: #f0b354; --med-soft: #35270f; --low: #a9adbd; --low-soft: #24242c;
+  --build: #5fd39a; --build-soft: #12301f; --later: #f0b354; --later-soft: #35270f; --skip: #a9a5b7; --skip-soft: #26252e;
+  --shadow: none; color-scheme: dark }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* the bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 10px; }
+.brand { font-weight: 700; letter-spacing: -.01em; }
+.progress { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; min-width: 0; }
+.meter { width: 120px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.meter > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.nav a { padding: 6px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 14px; }
+.nav a:hover { background: var(--bg); color: var(--ink); }
+
+/* the head */
+.head { padding-block: 36px 8px; display: grid; gap: 14px; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); }
+.head h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; letter-spacing: -.02em; }
+.lede { max-width: 72ch; color: var(--muted); margin: 0; }
+.ask { max-width: 72ch; margin: 0; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; color: var(--ink); font-size: 14px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.stat span { color: var(--muted); font-size: 13px; }
+.how { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+section.block { padding-block: 28px 8px; display: grid; gap: 14px; }
+.block > h2 { font-size: 22px; letter-spacing: -.01em; }
+.block > p.sub { margin: -6px 0 0; color: var(--muted); max-width: 75ch; }
+
+/* themes */
+.themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; }
+.theme { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; box-shadow: var(--shadow); }
+.theme h3 { font-size: 16px; }
+.theme p { margin: 0; color: var(--muted); font-size: 14px; }
+.theme .rule { color: var(--ink); }
+.theme .refs { display: flex; flex-wrap: wrap; gap: 4px; }
+.ref { font: 500 12px var(--mono); color: var(--accent-ink); background: var(--accent-soft); border-radius: 4px; padding: 1px 6px; text-decoration: none; }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow-x: auto; max-width: 100%; background: var(--surface); scrollbar-width: none; }
+section.block > *, .filters > * { min-width: 0; }
+.seg button { border: 0; background: none; padding: 6px 10px; font-size: 13px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.search { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); }
+select.lane { padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); font-size: 13px; max-width: 100%; }
+.count { color: var(--muted); font-size: 13px; }
+
+/* finding cards */
+.list { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); display: grid; grid-template-columns: minmax(0, 1fr) 280px; overflow: hidden; scroll-margin-top: 80px; }
+.card[data-pick="build"] { border-color: color-mix(in srgb, var(--build) 45%, var(--line)); }
+.card[data-pick="skip"] { opacity: .72; }
+.body { padding: 16px 18px; display: grid; gap: 10px; min-width: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.id { font: 500 12px var(--mono); color: var(--faint); }
+.sev { font-weight: 600; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+.sev.high { color: var(--high); background: var(--high-soft); }
+.sev.med { color: var(--med); background: var(--med-soft); }
+.sev.low { color: var(--low); background: var(--low-soft); }
+.kind { border: 1px solid var(--line-2); border-radius: 4px; padding: 0 6px; }
+.card h3 { font-size: 17px; line-height: 1.3; letter-spacing: -.005em; }
+.where { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.row { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
+.row dt { color: var(--faint); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; }
+.row dd { margin: 0; overflow-wrap: anywhere; }
+.row dd.fix { color: var(--ink); font-weight: 500; }
+.row dd.now { color: var(--muted); }
+details.code { font-size: 12px; color: var(--muted); }
+details.code summary { cursor: pointer; }
+details.code code { display: block; font: 12px var(--mono); overflow-wrap: anywhere; }
+.side { border-left: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr; background: var(--bg); min-width: 0; }
+.shot { display: block; width: 100%; border: 0; padding: 0; background: var(--line); cursor: zoom-in; aspect-ratio: 16 / 11; overflow: hidden; }
+.shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+.noshot { aspect-ratio: 16 / 11; display: grid; place-items: center; color: var(--faint); font-size: 12px; }
+.pickbox { padding: 12px; display: grid; gap: 8px; align-content: start; }
+.picks { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.picks button { border: 0; background: none; padding: 8px 4px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
+.picks button + button { border-left: 1px solid var(--line); }
+.picks button[data-v="build"][aria-pressed="true"] { background: var(--build-soft); color: var(--build); }
+.picks button[data-v="later"][aria-pressed="true"] { background: var(--later-soft); color: var(--later); }
+.picks button[data-v="skip"][aria-pressed="true"], .picks button[data-v="keep"][aria-pressed="true"] { background: var(--skip-soft); color: var(--skip); }
+.picks button[data-v="agree"][aria-pressed="true"] { background: var(--build-soft); color: var(--build); }
+.note { width: 100%; padding: 7px 9px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); font-size: 13px; }
+.saved { font-size: 12px; color: var(--faint); min-height: 16px; }
+.effort { font-size: 12px; color: var(--muted); }
+
+/* words */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table.words { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 14px; }
+.words th { text-align: left; font: 600 12px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+.words td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.words tr:last-child td { border-bottom: 0; }
+.words .w-now { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.words .w-new { font-weight: 600; }
+.words .w-alt { color: var(--muted); font-weight: 400; font-size: 13px; display: block; }
+.words .w-where { font: 12px var(--mono); color: var(--muted); max-width: 300px; overflow-wrap: anywhere; }
+.words .w-why { color: var(--muted); font-size: 13px; max-width: 320px; }
+.words .w-pick { width: 230px; }
+.words .w-pick .picks button { padding: 6px 2px; font-size: 12px; }
+.many { font: 500 11px var(--mono); color: var(--accent-ink); background: var(--accent-soft); border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap; }
+.more { margin: 8px 0 0; }
+.btn { border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 14px; }
+.btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+dialog.zoom { border: 0; padding: 0; background: transparent; max-width: min(96vw, 1500px); max-height: 94vh; }
+dialog.zoom::backdrop { background: rgba(10, 8, 18, .72); }
+dialog.zoom img { display: block; max-width: 100%; max-height: 90vh; border-radius: 8px; }
+dialog.zoom form { position: absolute; top: 8px; right: 8px; }
+dialog.zoom button { border: 0; background: rgba(0, 0, 0, .55); color: #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.offline { font-size: 13px; color: var(--med); background: var(--med-soft); border-radius: 8px; padding: 8px 12px; }
+footer { padding-block: 40px; color: var(--faint); font-size: 13px; }
+
+@media (max-width: 760px) {
+  .card { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .row dt { padding-top: 6px; }
+  .nav { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="bar"><div class="wrap">
+  <span class="brand">Calm UI Audit</span>
+  <span class="progress"><span class="meter"><i id="meter"></i></span><span id="marked">Loading…</span></span>
+  <nav class="nav" aria-label="Sections"><a href="#themes">Themes</a><a href="#findings">Findings</a><a href="#words">Words</a></nav>
+</div></div>
+
+<main class="wrap">
+  <header class="head">
+    <span class="eyebrow">OpenMaison 2.0 · audit of 27 Oct 2026</span>
+    <h1>What makes the app feel busy, inconsistent and hard to read — and what to do about each</h1>
+    <p class="ask">Your ask: “a lot of UI issues and inconsistency across the pages and modules … most of the UIs look too overwhelming and too much noise … make it absolutely simple and super intuitive … the copies across the modules are confusing … check and report to me all of this now.”</p>
+    <p class="lede" id="lede">Six lanes walked every module on the production build — about 220 screens and 750 pictures of pages, dialogs, menus and phone views — measured each screen’s first view (words, controls, purple text actions, capitals, cut-off text) and read the copy in the code. Nothing has been changed yet.</p>
+    <div class="stats" id="stats"></div>
+    <p class="how">Mark each theme, finding and word <b>Build</b>, <b>Later</b> or <b>Skip</b> (words: <b>Agree</b>, <b>Keep</b>, or type your own). A note saves when you leave the box. Your marks are kept with this page; I read them before building anything.</p>
+    <p class="offline" id="offline" hidden>Marks can’t be saved in this view — sign in to claude.ai to mark the page.</p>
+  </header>
+
+  <section class="block" id="themes" aria-labelledby="themes-h">
+    <h2 id="themes-h">The themes</h2>
+    <p class="sub">The same problems turn up in every module, so the fix is a rule, not a page at a time. Each theme is one rule to apply everywhere, ordered by how much calmer the app gets; marking a theme Build means its findings are built together. Every finding sits in exactly one theme.</p>
+    <div class="themes" id="theme-list"></div>
+  </section>
+
+  <section class="block" id="findings" aria-labelledby="findings-h">
+    <h2 id="findings-h">Every finding</h2>
+    <p class="sub">Most severe first. Filter by module, kind or severity; the picture opens full size.</p>
+    <div class="filters">
+      <select class="lane" id="f-lane" aria-label="Module"><option value="">All modules</option></select>
+      <span class="seg" role="group" aria-label="Kind" id="f-kind"></span>
+      <span class="seg" role="group" aria-label="Severity" id="f-sev"></span>
+      <span class="seg" role="group" aria-label="Marked" id="f-mark"></span>
+      <input class="search" id="f-q" type="search" placeholder="Search findings" aria-label="Search findings">
+      <span class="count" id="f-count"></span>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="more"><button class="btn" id="more" hidden>Show more</button></div>
+  </section>
+
+  <section class="block" id="words" aria-labelledby="words-h">
+    <h2 id="words-h">The words</h2>
+    <p class="sub">Every wording change the lanes proposed, one row per phrase (the same phrase found in several places is one row; <span class="many">×3</span> marks how many modules). Several proposals for one phrase are listed under the first.</p>
+    <div class="filters">
+      <span class="seg" role="group" aria-label="Kind of words" id="w-kind"></span>
+      <input class="search" id="w-q" type="search" placeholder="Search words" aria-label="Search words">
+      <span class="count" id="w-count"></span>
+    </div>
+    <div class="tablewrap"><table class="words"><thead><tr><th>Now</th><th>Proposed</th><th>Where</th><th>Why</th><th>Your call</th></tr></thead><tbody id="wbody"></tbody></table></div>
+    <div class="more"><button class="btn" id="wmore" hidden>Show more</button></div>
+  </section>
+  <footer>Source: six read-only lanes on a production build with the demo studio, 27 Oct 2026. Findings name the code they come from; nothing has been changed.</footer>
+</main>
+
+<dialog class="zoom" id="zoom"><form method="dialog"><button aria-label="Close">Close</button></form><img id="zoom-img" alt=""></dialog>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s)
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  let DATA = { findings: [], words: [], themes: [], lanes: {} }
+  let byId = {}, themeOf = {}
+  const picks = {}          // id -> { pick, note }
+  let db = null, store = null
+  const state = { lane: '', kind: '', sev: '', mark: '', q: '', shown: 40, wkind: '', wq: '', wshown: 60 }
+  const KINDS = [['', 'All'], ['noise', 'Noise'], ['inconsistency', 'Inconsistent'], ['copy', 'Copy'], ['defect', 'Defect']]
+  const SEVS = [['', 'All'], ['high', 'High'], ['med', 'Medium'], ['low', 'Low']]
+  const MARKS = [['', 'All'], ['none', 'Unmarked'], ['build', 'Build'], ['later', 'Later'], ['skip', 'Skip']]
+  const WKINDS = [['', 'All'], ['name', 'Names'], ['heading', 'Headings'], ['label', 'Labels'], ['helper', 'Helpers'], ['empty', 'Empty'], ['error', 'Errors'], ['status', 'Status']]
+
+  function seg(el, opts, key, after) {
+    el.innerHTML = opts.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${state[key] === v}">${l}</button>`).join('')
+    el.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state[key] = b.dataset.v; el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); after() })
+  }
+  function pickButtons(id, kind) {
+    const vals = kind === 'word' ? [['agree', 'Agree'], ['keep', 'Keep'], ['later', 'Later']] : [['build', 'Build'], ['later', 'Later'], ['skip', 'Skip']]
+    const cur = picks[id]?.pick
+    return `<div class="picks" role="group" aria-label="Your call on ${id}" data-id="${id}">${vals.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`
+  }
+  function noteBox(id, ph) { return `<input class="note" id="note-${id}" data-id="${id}" placeholder="${esc(ph)}" value="${esc(picks[id]?.note ?? '')}" aria-label="Note on ${id}"><div class="saved" id="saved-${id}"></div>` }
+
+  async function save(id, patch) {
+    picks[id] = { ...(picks[id] || {}), ...patch }
+    paintPick(id); paintProgress()
+    if (!store) return
+    try { await store.doc(id).set({ pick: picks[id].pick ?? null, note: picks[id].note ?? '', at: Date.now() }); const s = document.getElementById('saved-' + id); if (s) s.textContent = 'Saved' }
+    catch (e) { const s = document.getElementById('saved-' + id); if (s) s.textContent = 'Not saved — try again' }
+  }
+  function paintPick(id) {
+    document.querySelectorAll(`.picks[data-id="${CSS.escape(id)}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(picks[id]?.pick === b.dataset.v)))
+    const card = document.getElementById('f-' + id); if (card) card.dataset.pick = picks[id]?.pick || ''
+  }
+  function paintProgress() {
+    const ids = [...DATA.findings.map((f) => f.id), ...DATA.themes.map((t) => t.id), ...DATA.words.map((w) => w.id)]
+    const n = ids.filter((id) => picks[id]?.pick).length
+    $('#marked').textContent = `${n} of ${ids.length} marked`
+    $('#meter').style.width = ids.length ? `${Math.round((n / ids.length) * 100)}%` : '0'
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.picks button'); if (!b) return
+    const id = b.parentElement.dataset.id
+    save(id, { pick: picks[id]?.pick === b.dataset.v ? null : b.dataset.v })
+  })
+  document.addEventListener('change', (e) => { if (e.target.matches('.note')) save(e.target.dataset.id, { note: e.target.value.trim() }) })
+
+  function stats() {
+    const f = DATA.findings, c = (k, v) => f.filter((x) => x[k] === v).length
+    $('#stats').innerHTML = [
+      [f.length, 'findings'], [c('severity', 'high'), 'high'], [c('kind', 'noise'), 'noise'], [c('kind', 'inconsistency'), 'inconsistencies'], [c('kind', 'copy'), 'copy'], [DATA.words.length, 'words to change'],
+    ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('')
+  }
+  function themes() {
+    if (!DATA.themes.length) { $('#theme-list').innerHTML = '<p class="sub">The themes are written once every lane is in.</p>'; return }
+    $('#theme-list').innerHTML = DATA.themes.map((t) => `<article class="theme" id="t-${t.id}">
+      <span class="meta"><span class="id">${t.id}</span><span>${(t.findings || []).length} findings${(() => { const h = (t.findings || []).filter((r) => byId[r]?.severity === 'high').length; return h ? ` · ${h} high` : '' })()}</span></span><h3>${esc(t.title)}</h3><p>${esc(t.why)}</p><p class="rule"><b>The rule:</b> ${esc(t.rule)}</p>
+      <div class="refs">${(t.findings || []).map((r) => `<a class="ref" href="#f-${r}">${r}</a>`).join('')}</div>
+      ${pickButtons(t.id)}${noteBox(t.id, 'A note on this theme')}</article>`).join('')
+  }
+  function matches(f) {
+    if (state.lane && String(f.lane) !== state.lane) return false
+    if (state.kind && f.kind !== state.kind) return false
+    if (state.sev && f.severity !== state.sev) return false
+    const p = picks[f.id]?.pick
+    if (state.mark === 'none' && p) return false
+    if (state.mark && state.mark !== 'none' && p !== state.mark) return false
+    if (state.q) { const t = (f.title + ' ' + f.area + ' ' + f.route + ' ' + f.now + ' ' + f.proposal).toLowerCase(); if (!state.q.toLowerCase().split(/\s+/).every((w) => t.includes(w))) return false }
+    return true
+  }
+  function list() {
+    const all = DATA.findings.filter(matches)
+    $('#f-count').textContent = `${all.length} shown`
+    $('#list').innerHTML = all.slice(0, state.shown).map((f) => `<article class="card" id="f-${f.id}" data-pick="${picks[f.id]?.pick || ''}">
+      <div class="body">
+        <div class="meta"><span class="id">${f.id}</span>${themeOf[f.id] ? `<a class="ref" href="#t-${themeOf[f.id]}">${themeOf[f.id]}</a>` : ''}<span class="sev ${f.severity}">${f.severity === 'med' ? 'Medium' : f.severity[0].toUpperCase() + f.severity.slice(1)}</span><span class="kind">${esc(f.kind)}</span><span>${esc(f.area)}</span></div>
+        <h3>${esc(f.title)}</h3>
+        <div class="where">${esc(f.route)}</div>
+        <dl class="row"><dt>Now</dt><dd class="now">${esc(f.now)}</dd><dt>Why</dt><dd>${esc(f.why)}</dd><dt>Proposal</dt><dd class="fix">${esc(f.proposal)}</dd></dl>
+        ${(f.code || []).length ? `<details class="code"><summary>Code (${f.code.length})</summary>${f.code.map((c) => `<code>${esc(c)}</code>`).join('')}</details>` : ''}
+      </div>
+      <div class="side">
+        ${f.shot ? `<button class="shot" type="button" data-src="${f.shot}" aria-label="Open the picture of ${f.id}"><img src="${f.shot}" alt="${esc(f.area)}" loading="lazy"></button>` : '<div class="noshot">No picture</div>'}
+        <div class="pickbox">${pickButtons(f.id)}${noteBox(f.id, 'Your note')}<span class="effort">Effort: ${esc(f.effort || '?')}</span></div>
+      </div></article>`).join('')
+    $('#more').hidden = all.length <= state.shown
+  }
+  function wordsTable() {
+    const rows = DATA.words.filter((w) => (!state.wkind || w.kind === state.wkind) && (!state.wq || (w.now + ' ' + w.proposed.join(' ') + ' ' + w.where.join(' ')).toLowerCase().includes(state.wq.toLowerCase())))
+    $('#w-count').textContent = `${rows.length} shown`
+    $('#wbody').innerHTML = rows.slice(0, state.wshown).map((w) => `<tr>
+      <td class="w-now">${esc(w.now)}${w.lanes.length > 1 ? `<span class="many">×${w.lanes.length}</span>` : ''}</td>
+      <td class="w-new">${esc(w.proposed[0] || '')}${w.proposed.slice(1).map((p) => `<span class="w-alt">or ${esc(p)}</span>`).join('')}</td>
+      <td class="w-where">${w.where.slice(0, 3).map(esc).join('<br>')}${w.where.length > 3 ? `<br>+${w.where.length - 3} more` : ''}</td>
+      <td class="w-why">${esc(w.why[0] || '')}</td>
+      <td class="w-pick">${pickButtons(w.id, 'word')}${noteBox(w.id, 'Or your own words')}</td></tr>`).join('')
+    $('#wmore').hidden = rows.length <= state.wshown
+  }
+  document.addEventListener('click', (e) => { const s = e.target.closest('.shot'); if (!s) return; $('#zoom-img').src = s.dataset.src; $('#zoom').showModal() })
+  $('#more').addEventListener('click', () => { state.shown += 40; list() })
+  $('#wmore').addEventListener('click', () => { state.wshown += 60; wordsTable() })
+  $('#f-q').addEventListener('input', (e) => { state.q = e.target.value; state.shown = 40; list() })
+  $('#w-q').addEventListener('input', (e) => { state.wq = e.target.value; state.wshown = 60; wordsTable() })
+  $('#f-lane').addEventListener('change', (e) => { state.lane = e.target.value; state.shown = 40; list() })
+
+  async function boot() {
+    try { DATA = await (await fetch('data.json')).json() } catch { $('#lede').textContent = 'The audit’s data didn’t load — reload the page.'; return }
+    byId = Object.fromEntries(DATA.findings.map((f) => [f.id, f]))
+    for (const t of DATA.themes) for (const r of t.findings || []) themeOf[r] = t.id
+    $('#f-lane').innerHTML += Object.entries(DATA.lanes).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')
+    seg($('#f-kind'), KINDS, 'kind', () => { state.shown = 40; list() })
+    seg($('#f-sev'), SEVS, 'sev', () => { state.shown = 40; list() })
+    seg($('#f-mark'), MARKS, 'mark', () => { state.shown = 40; list() })
+    seg($('#w-kind'), WKINDS, 'wkind', () => { state.wshown = 60; wordsTable() })
+    stats(); themes(); list(); wordsTable(); paintProgress()
+    if (location.hash) { const el = document.querySelector(location.hash); if (el) el.scrollIntoView() }
+    try { db = await (window.claude?.use?.('db')) } catch { db = null }
+    if (!db) { $('#offline').hidden = false; return }
+    store = db.collection('picks')
+    store.limit(1000).onSnapshot((snap) => {
+      for (const d of snap.docs) { const v = d.data() || {}; picks[d.id] = { pick: v.pick || null, note: v.note || '' }
+        paintPick(d.id); const n = document.getElementById('note-' + d.id); if (n && document.activeElement !== n) n.value = v.note || '' }
+      paintProgress()
+    }, () => { $('#offline').hidden = false })
+  }
+  boot()
+})()
+</script>

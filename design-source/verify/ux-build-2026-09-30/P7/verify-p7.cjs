@@ -72,11 +72,17 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     const panel = page.getByTestId('notifications-panel')
     const due = page.getByTestId('notifications-due'), notices = page.getByTestId('notifications-notices')
     /* (REG-895, Dane UAT 11.06) while any Due row is late the Due group comes first; otherwise Updates lead — Dane was just given a late task */
-    const late = await due.locator('[data-late]').count()
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-20: the bell is for what happened) the notices lead with no group head;
+       what is due folds into one line at the end — "Due · n", its late count beside it ("· 2 late") and Show — the same two groups, the due rows
+       still apart and out of the count, one press away (was: two headed groups, Due first while a row was late) */
     const firstGroup = await panel.locator('section').first().getAttribute('data-testid')
-    /* (pending modules S18, a deliberate change of this rule — one-home N-14: the bell's notices are headed Notices, no longer Updates) */
-    check('the notices are headed Notices, and lead unless a Due row is late (then Due leads)', (await notices.locator('h3').innerText()).toLowerCase().startsWith('notices') && firstGroup === (late > 0 ? 'notifications-due' : 'notifications-notices'), `${firstGroup} · late ${late}`)
-    check('…due rows sit in their own group, headed Due', (await due.locator('h3').innerText()).toLowerCase().startsWith('due'))
+    const fold = page.getByTestId('notifications-due-fold')
+    const foldWords = (await fold.innerText().catch(() => '')).replace(/\s+/g, ' ')
+    const closed = await due.locator('[data-testid="notification-row"]').count()
+    await fold.click(); await page.waitForTimeout(500)
+    const dueRows = await due.locator('[data-testid="notification-row"]').count(), late = await due.locator('[data-testid="notification-row"] [data-late]').count()
+    check('the notices lead with no group head; what is due is one line at their end, “Due · n”, with its late count', firstGroup === 'notifications-notices' && await notices.locator('h3').count() === 0 && (await panel.locator('section').last().getAttribute('data-testid')) === 'notifications-due' && foldWords.startsWith(`Due · ${dueRows}`) && (late === 0 ? !/late/.test(foldWords) : foldWords.includes(` · ${late} late`)), `${firstGroup} · “${foldWords}” · ${dueRows} due, ${late} late`)
+    check('…due rows sit in their own group, behind it', closed === 0 && (await fold.getAttribute('aria-expanded')) === 'true' && dueRows > 0)
     const meta = await due.locator('[data-testid="notification-row"]').first().locator('[class*="meta"]').innerText()
     /* (REG-891, Dane UAT 5.13) a date people plan by wears its day: "Due Mon, 5 Oct ’26 · 15 h late" */
     check('a due row says when and how late', /^Due (today|(Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} [A-Z][a-z]{2} ’\d\d|in \d+ min)( · \d{1,2}:\d\d (AM|PM))?( · \d+ (day|days|h|min) late)?/.test(meta), meta)
@@ -86,6 +92,8 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await page.keyboard.press('Escape'); await page.goto(`${B}/leads`); await page.waitForTimeout(900)
     check('…and the badge clears', ((await page.locator('[data-notifications-tile]').getAttribute('aria-label')) ?? '') === 'Notifications')
     await page.locator('[data-notifications-tile]').click(); await page.waitForTimeout(1200)
+    /* (the calm UI build 2026-10-27, a deliberate change — 1-20) the due rows behind their fold: opened before they are counted */
+    { const f = page.getByTestId('notifications-due-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await page.waitForTimeout(500) } }
     check('…while the due rows stay listed', (await page.getByTestId('notifications-due').locator('[data-testid="notification-row"]').count()) > 0)
     await page.keyboard.press('Escape')
   })
@@ -105,13 +113,13 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await shot(page, 'v9-search-add-lead')
     await input.fill('new lead'); await page.waitForTimeout(900)
     await page.keyboard.press('Enter'); await page.waitForURL(/\/leads$/, { timeout: 10000 }); await page.waitForTimeout(2500)
-    check('New lead lands on Leads with the lead form open', await page.getByRole('dialog').filter({ hasText: /New Lead|Create New Lead|Add Lead/ }).first().isVisible().catch(() => false))
+    check('New lead lands on Leads with the lead form open', await page.getByRole('dialog').filter({ hasText: /New Lead|Create New Lead|Add Lead|New lead/ /* (the calm UI build 2026-10-27, a deliberate change) B2: "New lead" */ }).first().isVisible().catch(() => false))
     await shot(page, 'v9-new-lead')
     await page.keyboard.press('Escape'); await page.waitForTimeout(500)
     await page.keyboard.press('Meta+k'); await page.waitForTimeout(400)
     await input.fill('create quote'); await page.waitForTimeout(900)
     await page.keyboard.press('Enter'); await page.waitForURL(/\/quotes$/, { timeout: 10000 }); await page.waitForTimeout(2500)
-    check('Create quote lands on Tools › Quotes with Create Quote open', await page.getByRole('dialog').filter({ hasText: 'Start a quote' }).first().isVisible().catch(() => false))
+    check('Create quote lands on Tools › Quotes with Create Quote open', await page.getByRole('dialog').filter({ hasText: /* (the calm UI build 2026-10-27, a deliberate change) 4-32: the window's title is "New quote" */ 'New quote' }).first().isVisible().catch(() => false))
     await shot(page, 'v9-create-quote')
     await page.keyboard.press('Escape'); await page.waitForTimeout(500)
     await page.keyboard.press('Meta+k'); await page.waitForTimeout(400)
@@ -125,7 +133,7 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
   await step('S3 · every Settings and Company card is a page in search', async () => {
     const input = page.getByRole('combobox', { name: 'Search the studio' })
     const panel = page.getByRole('dialog', { name: 'Search' })
-    const cases = [['gst', 'GST', /\/settings\?section=quotes#gst/, 'gst'], ['paynow', 'Issuing entities & bank details', /\/company\/profile#entities/, 'entities'], ['lost reason', 'Lost and On Hold reasons', /section=leads#lead-reasons/, 'lead-reasons'],
+    const cases = [['gst', 'GST', /\/settings\?section=quotes#gst/, 'gst'], ['paynow', 'Issuing entities & bank details', /\/company\/profile\?tab=entities#entities/ /* (the calm UI build 2026-10-27, a deliberate change) B5 5-36: Profile is four tabs — #entities opens its tab, then lands on the card */, 'entities'], ['lost reason', 'Lost and On Hold reasons', /section=leads#lead-reasons/, 'lead-reasons'],
       ['who sees leads', 'Who sees leads', /section=studio#lead-visibility/, 'lead-visibility'],   // (pending modules S14, a deliberate change of this rule) its one home: Roles & access ['quote number', 'Quote numbers', /section=quotes#numbering/, 'numbering'], ['validity', 'Quote validity', /\/company\/templates\/quotes/, null],
       ['signature', 'Designers’ signatures', /\/company\/members#members/, 'members'], ['payment schedule', 'Payment schedule', /section=quotes#payment-lock/, 'payment-lock']]
     for (const [term, title, url, anchor] of cases) {
@@ -213,7 +221,7 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     const share = p.getByTestId('viz-share')
     check('≤1024 Share reads "Share"', /Share$/.test((await share.innerText()).trim()) && !/with client/.test(await share.innerText()), await share.innerText())
     const bg = await share.evaluate((el) => getComputedStyle(el).backgroundColor)
-    check('…filled in the primary', !/rgba\(0, 0, 0, 0\)|transparent/.test(bg), bg)
+    check('…outlined — Generate is the editor’s one filled button', bg !== 'rgb(85, 0, 255)', bg)   // (the calm UI build 2026-10-27, a deliberate change) — 6-04 · T-03: Share was filled
     const sw = (await share.boundingBox()).width
     await shot(p, 'v4-ipad-share')
 
@@ -260,8 +268,9 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await page.getByTestId('viz-generate').click(); await page.waitForTimeout(500)
     await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 30000 }); await page.waitForTimeout(1200)
     const ready = await snackText(page)
-    check('"V4 is ready" offers Compare', /V\d+ is ready/.test(ready) && /Compare/.test(ready), ready)
-    await page.locator('[role="status"][aria-live="polite"]').last().getByRole('button', { name: 'Compare' }).click(); await page.waitForTimeout(700)
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-18 · W-148: one name for it, "Before and after" (was Compare) */
+    check('"V4 is ready" offers Before and after', /V\d+ is ready/.test(ready) && /Before and after/.test(ready), ready)
+    await page.locator('[role="status"][aria-live="polite"]').last().getByRole('button', { name: 'Before and after' }).click(); await page.waitForTimeout(700)
     await page.getByTestId('viz-compare-toggle').click(); await page.waitForTimeout(700)
     const ask = await snackText(page)
     check('closing that Compare offers Share', /Share V\d+ with Kevin\?/.test(ask), ask)
@@ -271,8 +280,9 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await page.keyboard.press('Escape'); await page.waitForTimeout(500)
     const tiles = page.getByTestId('viz-version')
     await tiles.last().locator('xpath=ancestor::*[@role="listitem"]').getByRole('button', { name: /More options for V/ }).click(); await page.waitForTimeout(500)
-    const firstRow = await page.getByRole('menu').getByRole('menuitem').first().innerText()
-    check('the fresh version’s ⋯ leads with Share with the client…', firstRow.startsWith('Share with the client'), firstRow)
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-18 · W-367: the version on screen leaves Share (and Download) to the bars in view — the top bar's Share is its one door */
+    const rows = await page.getByRole('menu').getByRole('menuitem').allInnerTexts()
+    check('the fresh version’s ⋯ leaves Share to the top bar’s Share, in view', !rows.some((r) => /^Share with the client/.test(r)) && await page.getByTestId('viz-share').isVisible() && await page.getByTestId('viz-share').isEnabled(), rows.join(' | '))
     await shot(page, 'v4-fresh-menu')
     await page.keyboard.press('Escape')
   })

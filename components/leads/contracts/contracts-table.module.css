@@ -129,7 +129,6 @@
   .hActions { z-index: 3; padding: 0; }
   .actions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; display: flex; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .actionsInner { position: static; transform: none; }
-  .actionsInner > .float:first-child { display: none; }   /* View is dropped: the title opens */
   .float { box-shadow: none; background: transparent; }
   .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph in a column that always shows it — not a stack of outlined squares */
   .card[data-overflow]:not([data-at-end]) .hActions, .card[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
@@ -160,7 +159,6 @@
   .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
   .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; top: var(--om-spacing-2); right: var(--om-spacing-2); opacity: 1; pointer-events: auto; }
   .actionsInner { position: static; transform: none; }
-  .actionsInner > .float:first-child { display: none; }   /* View is the card's own press; the ⋮ opens with Open as its first row */
   .float { box-shadow: none; background: transparent; }
   .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph on a card that always shows it */
   .row {
@@ -233,3 +231,8 @@
 @media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
   .title, .leadLink { padding-block: 12px; margin-block: -12px; }
 }
+
+/* (the calm UI build 2026-10-27, 4-26) "for OM-10009" beside the title — the quote it signs, secondary words that never cut (the title gives
+   way first); on a phone the card's signs line says it */
+.forQuote { flex-shrink: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+@media (max-width: 767px) { .forQuote.forQuote { display: none; } }

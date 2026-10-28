@@ -130,7 +130,7 @@ export function NewProjectDialog({ open, onClose, splits, team, assignable, self
       <Dialog open={open} onClose={onClose} title="New project" width={600} size="form" closeOnScrim={false}
               footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { void create() }} isDisabled={busy}>{busy ? 'Creating…' : 'Create project'}</Button></>}>
         <div className={styles.form} data-testid="new-project-form" ref={formRef}>
-          <p className={styles.intro}>For a client who came straight to you. Their details stay with the project — they never join your leads.</p>
+          <p className={styles.intro}>For a client who came to you directly — they won’t appear in Leads.</p>   {/* (the calm UI build 2026-10-27, W-194) */}
           <span className={styles.group}>Client</span>
           <TextField label="Client name" required value={d.client} onChange={set('client')} error={errors.client} inputRef={nameRef} trailingIcon={null} />
           <div className={styles.row}>
@@ -149,8 +149,7 @@ export function NewProjectDialog({ open, onClose, splits, team, assignable, self
           <div className={styles.row}>
             <TextField label="Agreed value (S$)" required numeric="money" value={d.value} onChange={set('value')} error={errors.value} trailingIcon={null} helper="What the client agreed to pay, GST included" />
             <TextField label="Payment split" mode="select" value={splits.find((s) => s.id === d.splitId) ? splitLabel(splits.find((s) => s.id === d.splitId)!) : ''}
-                       options={splits.map(splitLabel)} onChange={(v) => set('splitId')(splits.find((s) => splitLabel(s) === v)?.id ?? null)}
-                       helper="From Company › Templates › Payment schedules — each stage bills its share of the value" />
+                       options={splits.map(splitLabel)} onChange={(v) => set('splitId')(splits.find((s) => splitLabel(s) === v)?.id ?? null)} />   {/* (the calm UI build 2026-10-27, W-524 · T-05) the split names itself */}
           </div>
           {selfId ? null : assignee}
           <span>

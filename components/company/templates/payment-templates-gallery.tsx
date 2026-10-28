@@ -14,9 +14,13 @@ import styles from './library-gallery.module.css'
 import { templateChangeBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { useHere } from '@/components/om/use-here'
+import { paymentScheduleName } from '@/lib/templates/payment-name'
 
 type Row = PaymentTemplateRow & LibraryItem
-const toRow = (t: PaymentTemplateRow): Row => ({ ...t, title: t.name })
+/* (the calm UI build 2026-10-27, W-509) the seeded default reads "10/30/30/30" with its Studio default chip — the split said once */
+const toRow = (t: PaymentTemplateRow): Row => ({ ...t, title: paymentScheduleName(t.id, t.name) })
+/** (the calm UI build 2026-10-27, the UI audit's 4-36 · W-049) the card's second line, only once it is used. */
+const usedLine = (t: PaymentTemplateRow) => `Default on ${t.usedBy} quote ${t.usedBy === 1 ? 'template' : 'templates'}`
 
 /**
  * Company › Templates › Payments (REG-538): the milestone splits as a library — the four presets seeded, the studio's own
@@ -41,7 +45,7 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
         <DropdownDivider />
         <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'copy', id: DEFAULT_SPLIT_ID }, folderId: place.folderId }), 'create the template') }}>Start from Default 10/30/30/30</DropdownItem>
       </>)}
-      filters={[{ key: 'preset', label: 'Studio presets', test: (t) => t.isPreset }, { key: 'own', label: 'Your own', test: (t) => !t.isPreset }]}
+      filters={[{ key: 'preset', label: 'Studio presets', test: (t) => t.isPreset }, { key: 'own', label: 'Your own', test: (t) => !t.isPreset }]} filterLabel="Kind"   /* (the calm UI build 2026-10-27, W-383) named by what it filters */
       searchText={(t) => t.rows.map((r) => r.name).join(' ')}
       thumb={(t) => (
         <span className={styles.split}>
@@ -50,27 +54,30 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
         </span>
       )}
       glyph={(t) => <span className={styles.glyphSplit}>{t.rows.map((r, i) => <span key={i} style={{ flex: `${Math.max(r.pct, 1)} 0 0` }} />)}</span>}
-      meta={(t) => `${t.rows.length} ${t.rows.length === 1 ? 'milestone' : 'milestones'} · ${splitWord(t.rows)}${balanced(t) ? '' : ` · adds up to ${sumPct(t.rows)}%`}`}
-      usage={(t) => (t.usedBy === 0 ? 'Not a default anywhere' : `Default on ${t.usedBy} quote ${t.usedBy === 1 ? 'template' : 'templates'}`)}
+      /* (the calm UI build 2026-10-27, the UI audit's 4-36 · W-262) the one fact that tells the cards apart — the split, or the count of payments
+         where the name already is the split */
+      meta={(t) => [t.title === splitWord(t.rows) ? `${t.rows.length} ${t.rows.length === 1 ? 'payment' : 'payments'}` : splitWord(t.rows), balanced(t) ? null : `adds up to ${sumPct(t.rows)}%`].filter(Boolean).join(' · ')}
+      usage={(t) => (t.usedBy === 0 ? 'Not a default anywhere' : usedLine(t))}
+      foot={(t) => (t.usedBy ? usedLine(t) : ' ')}   /* (4-36 · W-049) nothing until it is used; when it was edited and by whom are the list's Updated · Updated by */
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} quote template${t.usedBy === 1 ? '' : 's'}`)}
-      chips={(t) => <>{t.id === DEFAULT_SPLIT_ID ? <MetaChip>Studio default</MetaChip> : null}{!balanced(t) ? <MetaChip>Not 100%</MetaChip> : null}</>}
+      chips={(t) => <>{t.id === DEFAULT_SPLIT_ID ? <MetaChip kind="fact">Studio default</MetaChip> : null}{!balanced(t) ? <MetaChip>Not 100%</MetaChip> : null}</>}
       columns={[
         { key: 'split', label: 'Split', track: '200px', cell: (t) => <span className={styles.oneLine}>{splitWord(t.rows)}</span> },
-        { key: 'milestones', label: 'Milestones', track: '120px', sortable: (t) => t.rows.length, cell: (t) => <span>{t.rows.length}</span> },
+        { key: 'milestones', label: 'Payments', track: '120px', sortable: (t) => t.rows.length, cell: (t) => <span>{t.rows.length}</span> },
         { key: 'used', label: 'Default on', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote template{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>—</span>) },
       ]}
       onOpen={(t) => open(t.id)}
       onDuplicate={(t) => create(() => duplicatePaymentTemplate(t.id), 'duplicate the template')}
       onRename={(t, name) => renamePaymentTemplate(t.id, name)}
       onDelete={(t) => { if (t.id === DEFAULT_SPLIT_ID) throw new Error('default'); return deletePaymentTemplate(t.id) }}
-      deleteMessage={(t) => (t.id === DEFAULT_SPLIT_ID ? 'The studio default cannot be deleted — every quote that names no split falls back to it.' : t.usedBy ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default until you pick another. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted Templates.')}
+      deleteMessage={(t) => (t.id === DEFAULT_SPLIT_ID ? 'The studio default cannot be deleted — every quote that names no split falls back to it.' : t.usedBy ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default until you pick another. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted templates.')}
       onRestore={(ids) => restorePaymentTemplates(ids)} onDeleteForever={(ids) => deletePaymentTemplatesForever(ids)} onEmptyTrash={() => emptyPaymentTemplateTrash()}
       /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a split the viewer made (or any,
          for an Owner or an Admin), the rule said in the row with its author's name — a preset, which no one wrote, an Owner's or an Admin's */
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       keepReason={(t) => (t.usedBy > 0 ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — restore it instead` : null)}
       deletedMeta={{ label: 'Split', value: (t) => splitWord(t.rows) }}
-      empty={{ title: 'No payment templates yet', help: 'Save a quote’s schedule as a template from its Payment Schedule, or start a split here.',
+      empty={{ title: 'No payment templates yet', help: 'Save a quote’s schedule as a template from its Payment schedule, or start a split here.',
         /* (REG-735) the first run carries New ▾'s rows: the studio's default split first */
         start: () => ({ primary: { label: 'Start from Default 10/30/30/30', onPress: () => { void create(() => createPaymentTemplate({ source: { kind: 'copy', id: DEFAULT_SPLIT_ID } }), 'create the template') } },
           secondary: { label: 'Blank split', onPress: () => { void create(() => createPaymentTemplate({ source: { kind: 'blank' } }), 'create the template') } } }) }} />

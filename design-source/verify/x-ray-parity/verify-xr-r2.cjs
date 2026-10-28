@@ -38,7 +38,7 @@ const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinet
     ok('over 10 MB is refused by size', /huge scan\.pdf is over 10 MB\./.test(await setup().innerText()))
     await input().setInputFiles(file('Flo Design Sample Quotation.pdf')); await page.waitForTimeout(1200)
     const tile = setup().getByTestId('xray-file')
-    ok('a reference reads as its studio, lines and total', /28 lines\s*read from Flo Design’s quote · S\$31,140\.00/.test(await tile.innerText()), (await tile.innerText()).replace(/\n/g, ' '))
+    ok('a reference reads as its studio, lines and total', /28 items\s*read from Flo Design’s quote · S\$31,140\.00/.test(await tile.innerText()), (await tile.innerText()).replace(/\n/g, ' '))
     ok('the file row has no stock thumbnail', (await setup().locator('img').count()) === 0)
     await shot('01-read-on-pick')
   })
@@ -47,7 +47,7 @@ const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinet
     await setup().getByRole('button', { name: /^Remove Flo Design/ }).click()
     await setup().locator('input[type=file]').last().setInputFiles(file('acme-quote.csv', CSV)); await page.waitForTimeout(1200)
     const t = await setup().getByTestId('xray-file').innerText()
-    ok('five lines read, S$17,730.00', /5 lines\s*read · S\$17,730\.00/.test(t), t.replace(/\n/g, ' '))
+    ok('five lines read, S$17,730.00', /5 items\s*read · S\$17,730\.00/.test(t), t.replace(/\n/g, ' '))   // (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items
     await setup().getByRole('textbox', { name: /Their studio’s name/ }).fill('Acme Interiors')
     await setup().getByRole('combobox', { name: 'Lead' }).click()
     await page.keyboard.type('viv'); await page.waitForTimeout(200)
@@ -59,7 +59,8 @@ const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinet
     await setup().getByRole('button', { name: 'Compare' }).click()
     await page.waitForURL(/\/quote-x-ray\/[0-9a-f-]{36}/, { timeout: 20000 }); await ready(page)
     const id = page.url().match(/quote-x-ray\/([0-9a-f-]{36})/)[1]
-    ok('the record names the studio from the field', /Vivien Lee · vs Acme Interiors/.test(await page.locator('h1').first().innerText()) && sql(`select other_studio from quote_comparisons where id='${id}'`) === 'Acme Interiors')
+    /* (the calm UI build 2026-10-27, a deliberate change) — W-425: the heading is "Yours vs Acme Interiors" where the crumb names the lead */
+    ok('the record names the studio from the field', /^(Yours|Vivien Lee ·) vs Acme Interiors$/.test((await page.locator('h1').first().innerText()).trim()) && /Vivien Lee/.test(await page.locator('h1').first().locator('xpath=ancestor::header[1]').innerText()) && sql(`select other_studio from quote_comparisons where id='${id}'`) === 'Acme Interiors')
     const r = JSON.parse(sql(`select result_json from quote_comparisons where id='${id}'`))
     ok('the sheet’s lines are what the reading compared', r.theirsMinor === 1773000 && r.rows.some((x) => x.status === 'matched' && /Kitchen carpentry/.test(x.name) && /Kitchen top and bottom cabinets/.test(x.theirName)))
     await shot('02-sheet-record')
@@ -109,7 +110,7 @@ const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinet
     sql(`insert into quotes (id, lead_id, number, title, status, amount_minor, created_at, updated_at, visibility) values ('probe-empty-q', '${ARJUN}', 'OM-19999', 'Empty draft', 'Draft', 0, strftime('%s','now'), strftime('%s','now'), 'Private')`)
     await page.goto(`${BASE}/quote-x-ray?lead=${ARJUN}&quote=${Q8}`); await ready(page)
     ok('another lead’s quote from the address is not chosen', (await setup().getByRole('radio', { name: /OM-/, checked: true }).count()) === 0)
-    ok('the empty quote says why', /Arjun Mehta’s quotes have no lines to compare yet\./.test(await setup().innerText()))
+    ok('the empty quote says why', /Arjun Mehta’s quotes have no items to compare yet\./.test(await setup().innerText()))
     sql(`delete from quotes where id='probe-empty-q'`)
   })
 

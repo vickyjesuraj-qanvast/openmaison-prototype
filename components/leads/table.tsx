@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type React
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
-import { Button, Checkbox, Tag } from '@/components/ds'
+import { Checkbox, Tag } from '@/components/ds'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
@@ -15,6 +15,7 @@ import { displayDate, displayDateLong, displayDateTimeDot, displayDue, displayTi
 import type { LeadRow } from '@/lib/leads/queries'
 import { BLANK, daysInStage, stageAge, stageSinceText } from '@/lib/leads/row-text'
 import { canReturnLead, projectHoldsDelete } from '@/lib/leads/stage-policy'
+import { channelLabel } from '@/lib/leads/enums'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './table.module.css'
 
@@ -24,14 +25,14 @@ export type ColumnKey =
 export type ColumnConfig = { key: ColumnKey; label: string; visible: boolean; pinned: boolean }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { key: 'name', label: 'Lead Name', visible: true, pinned: true },
+  { key: 'name', label: 'Lead name', visible: true, pinned: true },   /* (the calm UI build 2026-10-27 — W-538) sentence case, as In stage · Last contact */
   { key: 'stage', label: 'Stage', visible: true, pinned: false },
   { key: 'inStage', label: 'In stage', visible: false, pinned: false },   /* (UX audit L3) how long in the stage — "5d in Met", off until switched on */
   { key: 'tasks', label: 'Tasks', visible: true, pinned: false },
   { key: 'assignees', label: 'Members', visible: true, pinned: false },   /* REG-290: the key stays `assignees` (data), the label is Members */
   { key: 'source', label: 'Source', visible: true, pinned: false },
   { key: 'budget', label: 'Budget (S$)', visible: true, pinned: false },
-  { key: 'propertyType', label: 'Property Type', visible: true, pinned: false },
+  { key: 'propertyType', label: 'Property type', visible: true, pinned: false },
   { key: 'created', label: 'Created', visible: true, pinned: false },
   { key: 'address', label: 'Address', visible: false, pinned: false },
   { key: 'lastContact', label: 'Last contact', visible: false, pinned: false },   /* (REG-600) off until switched on — the mock's table keeps its columns */
@@ -75,8 +76,9 @@ const EMPTY_SELECTION = new Set<string>()
 
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata — unless the
     user dragged the column (REG-427), which fixes it at that width. */
-/** (REG-733) The mouse's actions band: 16 inset + Edit 64 + 12 + kebab 36 + 12 clear − the last cell's own 24 padding. */
-const ACTIONS_BAND = 116
+/** (REG-733) The mouse's actions band: 16 inset + kebab 36 + 12 clear − the last cell's own 24 padding. (the calm UI build 2026-10-27 — audit
+    2-06) The hover Edit left the band for the row's ⋮ (a row press opens the lead), so the band is the ⋮'s alone: 116 → 40. */
+const ACTIONS_BAND = 40
 
 /** (Leads on the move, P-06) A touch tablet's floors — 12 inside each cell (table.module.css), so Name · Stage · Last contact stand on a 768 frame's
  *  first screen beside the frozen Edit and ⋮, and all five on a 1024 one. */
@@ -99,9 +101,11 @@ const nextDue = (row: LeadRow) => row.tasks.find((t) => t.dueAt) ?? null
 /** (REG-728) The row kebab opens through the body portal, as every row menu does (components/leads/quotes/quotes-table.tsx): the
  *  table's sideways scroller can no longer clip it, and PortalMenu flips on the viewport itself — the menu-side.ts measure retired
  *  here. Each row owns its anchor, so the menu hangs from its own kebab. Items, tones and the phone sheet are the inline menu's. */
-function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn, onOpenProject }: {
+function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn, onOpenProject, onEdit }: {
   row: LeadRow; open: boolean; canDelete: boolean
   onToggle: () => void; onClose: () => void; onDelete: (row: LeadRow) => void; onReturn: (row: LeadRow) => void
+  /** (the calm UI build 2026-10-27 — audit 2-06 · T-02) the row's Edit, which floated over the row's cells on hover */
+  onEdit: (row: LeadRow) => void
   /** (fix-E, A-09) A lead with a live project: Open project, and Delete refused in the row (Q-27). */
   onOpenProject?: (row: LeadRow) => void
 }) {
@@ -110,16 +114,17 @@ function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn, 
     <span className={styles.menuWrap} ref={anchor}>
       <span className={styles.float}>
         <Tooltip label="More actions" disabled={open}>
-          <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
-                      aria-haspopup="menu" aria-expanded={open} onClick={onToggle} />
+          <IconButton icon="more_vert" label={`More actions for ${row.name}`}
+                      aria-haspopup="menu" aria-expanded={open} onClick={onToggle} />   {/* (the calm UI build — 2-06) the grey house ⋮, not a primary one */}
         </Tooltip>
       </span>
       <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={row.name}>
+        <DropdownItem onSelect={() => { onClose(); onEdit(row) }} testId="lead-row-edit">Edit</DropdownItem>
         {row.project && onOpenProject ? <DropdownItem onSelect={() => { onClose(); onOpenProject(row) }} help={row.project.number}>Open project</DropdownItem> : null}
         {canDelete ? <DropdownItem tone="danger" disabled={!!row.project} title={row.project ? projectHoldsDelete(row.project.number) : undefined} onSelect={() => { onClose(); onDelete(row) }}>Delete</DropdownItem> : null}
         {canReturnLead(row) ? (
           /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
-          <DropdownItem onSelect={() => { onClose(); onReturn(row) }}>{row.returnStatus === 'rejected' ? 'Appeal the return' : 'Return Lead'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
+          <DropdownItem onSelect={() => { onClose(); onReturn(row) }}>{row.returnStatus === 'rejected' ? 'Appeal the return' : 'Return to Qanvast'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
         ) : null}
       </PortalMenu>
     </span>
@@ -234,7 +239,7 @@ export function LeadsTable({
   /* (REG-733, owner 2026-09-29: "the buttons are hovering over the cell data … i like the way you have done in the quote editor > items
      table total") With a mouse the row ends on a band as wide as the hover pair needs (Edit + kebab, 16 in, 12 clear of the data), so
      at rest and scrolled to the end the pair floats over that band, never over the last column's value; nothing moves on hover. */
-  const band = useMediaQuery(TOUCH_TABLET) ? 134 : ACTIONS_BAND
+  const band = useMediaQuery(TOUCH_TABLET) ? 68 : ACTIONS_BAND   /* (the calm UI build) a finger's frozen ⋮ alone: 8 + 44 + 16 (was Edit + ⋮, 134) */
   // Pinned columns stack from the left; only the LAST one carries the 2px divider + shadow (user rule 2026-08-27).
   const pinOffset: Partial<Record<ColumnKey, number>> = {}
   let pinAcc = 0
@@ -380,13 +385,14 @@ export function LeadsTable({
                 {extra > 0 ? <Tag appearance="outlined">{`+${extra}`}</Tag> : null}
               </button>
             ) : (
-              /* No mocked affordance for a task-less lead — a visible link in the
-                 Assign-link pattern opens the same popover (REG-44 → REG-90). */
-              <button type="button" className={styles.assignLink}
+              /* No mocked affordance for a task-less lead — a link opens the same popover (REG-44 → REG-90). (the calm UI build 2026-10-27 —
+                 audit 2-06 · T-02) At rest the cell says "No task" in grey; "Add task" shows on the row's hover or the button's focus — a column
+                 of purple links was what the eye landed on. A finger, which never hovers, keeps the link. */
+              <button type="button" className={`${styles.assignLink} ${styles.restLink}`}
                       aria-label={`Add a task for ${row.name}`}
                       onClick={(e) => onTaskClick(row, e.currentTarget)}>
-                <Icon name="add" size={20} />
-                Add task
+                <span className={styles.atRest}>No task</span>
+                <span className={styles.onHover}><Icon name="add" size={20} />Add task</span>
               </button>
             )}
           </div>
@@ -395,24 +401,28 @@ export function LeadsTable({
       case 'assignees':
         return (
           <div key={col.key} {...cellProps(col, styles.cell)} data-kb="assign">
+            {/* (the calm UI build 2026-10-27 — audit 2-06) One look for "assign": the grey person-plus, at rest on a lead with no member (its
+                only content), on the row's hover or focus beside a lead's avatars */}
             {row.assignees.length === 0 ? (
-              <button type="button" className={styles.assignLink} onClick={(e) => onAssignClick(row, e.currentTarget)}>
-                <Icon name="person_add" size={20} />
-                Assign
-              </button>
+              <Tooltip label="Assign members">
+                <IconButton icon="person_add" label={`Assign members to ${row.name}`} size={24}
+                            onClick={(e) => onAssignClick(row, e.currentTarget)} />
+              </Tooltip>
             ) : (
               <span className={styles.memberStack}>
                 {row.assignees.slice(0, 2).map((m) => (
                   <Avatar key={m.id} name={m.name} color={m.color} size={24} />
                 ))}
                 {row.assignees.length > 2 ? <span className={styles.plusBox}>+{row.assignees.length - 2}</span> : null}
-                <Tooltip label="Assign members">
-                  <IconButton
-                    icon="person_add" label={`Assign members to ${row.name}`}
-                    size={24} variant="primary"
-                    onClick={(e) => onAssignClick(row, e.currentTarget)}
-                  />
-                </Tooltip>
+                <span className={styles.onHoverTool}>
+                  <Tooltip label="Assign members">
+                    <IconButton
+                      icon="person_add" label={`Assign members to ${row.name}`}
+                      size={24}
+                      onClick={(e) => onAssignClick(row, e.currentTarget)}
+                    />
+                  </Tooltip>
+                </span>
               </span>
             )}
           </div>
@@ -460,7 +470,7 @@ export function LeadsTable({
             {row.lastContact ? (
               <span className={styles.twoLine}>
                 <span className={styles.plain}>{hit(displayDateTimeDot(row.lastContact.at))}</span>
-                <span className={styles.sub}>{[row.lastContact.channel, row.lastContact.outcome].filter(Boolean).join(' · ') || BLANK}</span>
+                <span className={styles.sub}>{[channelLabel(row.lastContact.channel), row.lastContact.outcome].filter(Boolean).join(' · ') || BLANK}</span>
               </span>
             ) : <span className={styles.muted}>No contact yet</span>}
           </div>
@@ -517,11 +527,8 @@ export function LeadsTable({
               ))}
               <span className={styles.rowActions} data-open={menuRow === row.id || undefined}>
                 <span className={styles.rowActionsInner}>
-                  {/* 606:75167 / REG-163: the DS primary outlined Button + om primary IconButton, as the Lead Details tables build them. */}
-                  <span className={styles.float}>
-                    <Button variant="primary" appearance="outlined" onPress={() => onEditRow(row)}>Edit</Button>
-                  </span>
-                  <RowMenu row={row} open={menuRow === row.id} canDelete={canDelete}
+                  {/* (the calm UI build 2026-10-27 — audit 2-06 · T-02) one tool in the row's band: the ⋮ (Edit is its first row) */}
+                  <RowMenu row={row} open={menuRow === row.id} canDelete={canDelete} onEdit={onEditRow}
                            onToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))} onClose={closeMenu}
                            onDelete={onDeleteRow} onReturn={onReturnRow} onOpenProject={onOpenProject} />
                 </span>

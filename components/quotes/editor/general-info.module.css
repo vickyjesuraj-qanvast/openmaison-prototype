@@ -7,6 +7,9 @@
 }
 /* A pair shares one cell (Client · Property Type, Prepared by · Quote Valid Until, NRIC · Customer ID), 24 apart. */
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-6); }
+/* (the calm UI build 2026-10-27, 4-31) The Client field with "Add a second client" under it, start-aligned, the field keeping its width. */
+.stack { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.stackAction { display: inline-flex; align-self: flex-start; }
 /* (REG-489) The Template row spans both columns: the field beside its two text actions. */
 .full { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
 .full > :first-child { flex: 0 1 611px; min-width: 240px; }

@@ -20,11 +20,18 @@ export const walkInAllowed = (data: HangoutView) => data.event.phase === 'today'
 export const breakShown = (data: HangoutView) => data.event.phase === 'today' && data.viewer.shiftsToday.length > 0
 
 export const chatMinutes = (r: HangoutMeetingRow, now: number) => (r.startedAt ? Math.max(0, Math.floor((now - r.startedAt) / 60_000)) : 0)
+/** The card's head. (the calm UI build 2026-10-27, 2-26 · W-124) a waiting chat's head is its shift — when it is — and only the exception says
+    how it was booked ("Walk-in"); "Booked on your page" stood on every card. */
 export const chatTitle = (r: HangoutMeetingRow, minutes: number) => r.status === 'in-progress' ? `On now · ${minutes} of ${MEETING_MINUTES} minutes`
-  : r.status === 'completed' && r.endedAt ? `Ended ${displayTime(new Date(r.endedAt))}` : r.via === 'desk' ? 'Booked at the table' : 'Booked on your page'
-export const chatFacts = (r: HangoutMeetingRow) => [r.memberName ? `With ${r.memberName}` : 'Nobody has it yet', r.shiftLine, r.tableNumber ? `Table ${r.tableNumber}` : null].filter(Boolean).join(' · ')
+  : r.status === 'completed' && r.endedAt ? `Ended ${displayTime(new Date(r.endedAt))}`
+  : [r.shiftLine || (r.via === 'desk' ? null : 'Booked'), r.via === 'desk' ? 'Walk-in' : null].filter(Boolean).join(' · ')
+/** who has it, its shift (unless the head says it) and its table */
+export const chatFacts = (r: HangoutMeetingRow) => [r.memberName ? `With ${r.memberName}` : 'Nobody has it yet', r.status === 'scheduled' ? null : r.shiftLine, r.tableNumber ? `Table ${r.tableNumber}` : null].filter(Boolean).join(' · ')
+/** (the calm UI build 2026-10-27, 2-26 · W-191) how well they fit who the studio would like to meet (1.0's match score), in words — the number
+    stays the rule's */
+export const matchWords = (score: number) => (score >= 70 ? 'Good match' : score >= 40 ? 'Fair match' : 'Weak match')
 /** what they told the studio, after how well it fits who the studio would like to meet (1.0's match score) */
-export const chatTold = (r: HangoutMeetingRow) => [r.matchScore !== null ? `Fits you ${r.matchScore}%` : null, r.prefsLine || null].filter(Boolean).join(' · ')
+export const chatTold = (r: HangoutMeetingRow) => [r.matchScore !== null ? matchWords(r.matchScore) : null, r.prefsLine || null].filter(Boolean).join(' · ')
 
 export type ChatPress = { kind: 'start' | 'end' | 'take' | 'notes'; label: string }
 export function chatPress(r: HangoutMeetingRow, data: HangoutView): ChatPress | null {

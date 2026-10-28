@@ -22,8 +22,8 @@ const folderOf = (name) => sql(`select id from lead_files where lead_id='${LEAD}
   await step('desktop', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     await page.goto(`${BASE}/leads/${LEAD}/files`); await ready(page)
-    // New Folder in the toolbar, with the name checked
-    await page.getByRole('button', { name: 'New Folder', exact: true }).click(); await page.waitForTimeout(400)
+    // New Folder in the toolbar, with the name checked — (the calm UI build 2026-10-27, a deliberate change) "New folder", "All files": sentence case
+    await page.getByRole('button', { name: 'New folder', exact: true }).click(); await page.waitForTimeout(400)
     const dlg = page.getByRole('dialog', { name: 'Create Folder' })
     ok('the toolbar makes a folder, even with files on the page', await dlg.isVisible())
     await dlg.getByRole('textbox').fill('kitchen'); await dlg.getByRole('button', { name: 'Save' }).click(); await page.waitForTimeout(300)
@@ -34,13 +34,13 @@ const folderOf = (name) => sql(`select id from lead_files where lead_id='${LEAD}
     ok('it lands at the top', !!folderOf('Bathroom') && sql(`select parent_id is null from lead_files where id='${folderOf('Bathroom')}'`) === '1', (await snack(page)).slice(0, 40))
     // a folder inside a folder
     await page.getByRole('button', { name: 'Open Kitchen' }).click(); await ready(page)
-    await page.getByRole('button', { name: 'New Folder', exact: true }).click(); await page.waitForTimeout(300)
+    await page.getByRole('button', { name: 'New folder', exact: true }).click(); await page.waitForTimeout(300)
     await page.getByRole('dialog', { name: 'Create Folder' }).getByRole('textbox').fill('Tiles'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)
     const TILES = folderOf('Tiles')
     ok('New Folder inside a folder makes it there', !!TILES && sql(`select parent_id from lead_files where id='${TILES}'`) === KITCHEN)
     await page.getByRole('button', { name: 'Open Tiles' }).click(); await ready(page)
     const crumbs = await page.getByTestId('folder-crumbs').innerText()
-    ok('the crumb spells the whole way', /All Files\s*\/\s*Kitchen\s*\/\s*Tiles/.test(crumbs.replace(/\n/g, ' ')), crumbs.replace(/\n/g, ' '))
+    ok('the crumb spells the whole way', /All files\s*\/\s*Kitchen\s*\/\s*Tiles/i.test(crumbs.replace(/\n/g, ' ')), crumbs.replace(/\n/g, ' '))
     ok('an empty folder says so', await page.getByTestId('folder-empty').isVisible())
     await shot(page, 'files-01-empty-nested-1440')
     await page.getByTestId('folder-crumbs').getByRole('button', { name: 'Kitchen', exact: true }).click(); await ready(page)
@@ -60,7 +60,7 @@ const folderOf = (name) => sql(`select id from lead_files where lead_id='${LEAD}
     if (!(await search.isVisible().catch(() => false))) await page.getByRole('button', { name: /Search files/ }).click()
     await page.getByRole('searchbox', { name: 'Search files' }).fill(KFILE); await page.waitForTimeout(400)
     const places = await page.getByTestId('file-tile').evaluateAll((ts) => ts.map((t) => t.querySelector('[class*="tilePlace"]')?.textContent ?? ''))
-    ok('a hit says where it lives — in Kitchen or at the top', places.some((p) => /Kitchen/.test(p)) && places.some((p) => /All Files/.test(p)), [...new Set(places)].join(' · '))
+    ok('a hit says where it lives — in Kitchen or at the top', places.some((p) => /Kitchen/.test(p)) && places.some((p) => /All files/i.test(p)), [...new Set(places)].join(' · '))
     await shot(page, 'files-03-search-place-1440')
     await page.getByRole('searchbox', { name: 'Search files' }).fill('')
     // a refused move says so: the destination goes while the dialog is open

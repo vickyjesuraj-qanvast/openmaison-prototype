@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
@@ -9,7 +9,11 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell } from '@/components/company/company-shell'
 import { LeaveGuard } from '@/components/company/leave-guard'
 import { useHashLanding } from '@/components/company/use-hash-landing'
-import { detailsHelp } from '@/lib/company/member-words'
+import { MetaChip } from '@/components/om/meta-chip'
+import { Tooltip } from '@/components/om/tooltip'
+import { InfoTip } from '@/components/om/info-tip'   // (calm-build regression fix F) the details card's where-you-show line, off the page
+import { detailsHelp } from '@/lib/company/member-words'   // (S42 audit A-15) each role's own words
+import { setMyAccepting } from '@/app/company/members-actions'   // (the calm UI build 2026-10-27 — the audit's 1-39) Take new leads, here
 import { MemberDetailsFields, detailsErrors, draftChanged, draftOf, hasErrors, type DetailsDraft } from '@/components/company/member-details-fields'
 import type { PhotoDraft } from '@/components/company/member-photo-field'
 import { SignatureBox, SignatureSettings, type SignatureDraft } from '@/components/quotes/editor/signature/signature-section'
@@ -23,7 +27,7 @@ import { companySectionOf } from '@/lib/company/sections'
 import { fromLabel, withFrom } from '@/lib/nav'
 import type { SignatureKind } from '@/lib/quotes/signature'
 import type { YourProfile } from '@/lib/company/your-profile'
-import { YourProfileGhost, MEMBERS_LINK_HELP, PAYNOW_HELP, PUBLIC_LINK_HELP } from './your-profile-ghost'
+import { YourProfileGhost, MEMBERS_LINK_HELP, PAYNOW_HELP, PUBLIC_LINK_HELP, SIGNATURE_HELP, TAKE_LEADS } from './your-profile-ghost'
 import { PayNowDialog } from '@/components/company/paynow-dialog'   // (pending modules S14)
 import { payNowShown } from '@/lib/finance/model'
 import { YourNotifications } from './your-notifications'   // (pending modules S18)
@@ -41,9 +45,29 @@ const asRole = (role: string) => (role === 'Accounting' || role === 'Marketing' 
  * house cards, the leave guard. The rail's studio block and the phone's avatar open it (View as's menu); ⌘K finds it. An Owner or an Admin
  * changes anyone else's details on Company › Members.
  */
-export function YourProfileView({ data, from }: { data: YourProfile; from?: string }) {
+export function YourProfileView({ data, from, accepting: acceptingIn }: { data: YourProfile; from?: string
+  /** (the calm UI build 2026-10-27 — the audit's 1-39, additive) whether you take new leads — the switch itself sits on this page now (it left the
+      studio block's menu and the phone's You sheet); omitted, the card isn't drawn */
+  accepting?: boolean }) {
   const router = useRouter()
   const snackbar = useSnackbar()
+  /* (1-39) your own Take new leads — the record Company › Members' switch writes (REG-612): at once on the press, put back if the save is
+     refused, with Undo (the studio block's menu's own behaviour, moved) */
+  const [, startTransition] = useTransition()
+  const [acceptSeen, setAcceptSeen] = useState(acceptingIn)
+  const [accepting, setAccepting] = useState(acceptingIn ?? true)
+  if (acceptingIn !== acceptSeen) { setAcceptSeen(acceptingIn); setAccepting(acceptingIn ?? true) }
+  const applyAccepting = (next: boolean, undoable: boolean) => {
+    setAccepting(next)
+    startTransition(async () => {
+      let r: Awaited<ReturnType<typeof setMyAccepting>>
+      try { r = await setMyAccepting(next) } catch (e) { setAccepting(!next); snackbar({ key: 'you-accepting', message: couldnt('change whether you take new leads', refusalOf(e)) }); return }
+      if ('error' in r) { setAccepting(!next); snackbar({ key: 'you-accepting', message: couldnt('change whether you take new leads', refusalOf(r.error)) }); return }
+      router.refresh()
+      const before = r.before
+      snackbar({ key: 'you-accepting', message: next ? 'You’re open to new leads' : 'You’re closed to new leads', ...(undoable ? { actionLabel: 'Undo', onAction: () => applyAccepting(before, false) } : {}) })
+    })
+  }
   useHashLanding()   // ⌘K's Your signature lands on #signature
   const me = data.me
   const [seed, setSeed] = useState(data)
@@ -159,19 +183,27 @@ export function YourProfileView({ data, from }: { data: YourProfile; from?: stri
       <div className={profile.layout} data-testid="your-profile">
         <div className={profile.form}>
           <section id="details" className={profile.card} aria-labelledby="you-details">
+            {/* (the calm UI build 2026-10-27 — the audit's 1-29, T-05 · W-065) the title and your role as a chip beside it — the card's two-line
+                help and the role's sentence went; who sets roles is the chip's tooltip */}
             <div className={profile.cardHead}>
-              <h2 id="you-details" className={profile.cardTitle}>Your details</h2>
-              <p className={profile.cardHelp}>{detailsHelp(data.signs, me.role === 'Marketing')}</p>   {/* (S42 audit A-15) Accounting's own words */}
+              <span className={styles.titleRow}>
+                <h2 id="you-details" className={profile.cardTitle}>Your details</h2>
+                <Tooltip label={`You’re ${asRole(me.role)} at ${data.studio}. ${data.opensMembers ? 'An Owner or an Admin sets roles on Company › Members.' : 'An Owner or an Admin sets roles.'}`}>
+                  <span tabIndex={0} className={styles.roleChip} data-testid="profile-role" aria-label={`You’re ${asRole(me.role)} at ${data.studio}`}><MetaChip kind="fact">{me.role}</MetaChip></span>
+                </Tooltip>
+                {/* (calm-build regression fix F — T-05: an explanation goes off the page, never away) where your name and photo show — clients
+                    included — was the card's help line (1-29 dropped it); it is said nowhere else on the page, so it is the house info tip's */}
+                <InfoTip text={detailsHelp(data.signs, me.role === 'Marketing')} label="Where your name and photo show" testId="profile-details-help" />
+              </span>
             </div>
             <MemberDetailsFields member={me} draft={shown} onChange={edit} tried={tried} own onLeads={data.signs} marketing={me.role === 'Marketing'} layout="page" />
-            <p className={styles.role} data-testid="profile-role">You’re {asRole(me.role)} at {data.studio}. {data.opensMembers ? 'An Owner or an Admin sets roles on Company › Members.' : 'An Owner or an Admin sets roles.'}</p>
           </section>
           {/* (pending modules S01 — 1.0's My Signature card; contracts Q-30 "later") a new designer sets it up here, before any quote */}
           {data.signs ? (
             <section id="signature" className={profile.card} aria-labelledby="you-signature" data-testid="profile-signature">
               <div className={profile.cardHead}>
                 <h2 id="you-signature" className={profile.cardTitle}>Your signature</h2>
-                <p className={profile.cardHelp}>It prints on the quotes and contracts you prepare, once you allow it. Draw it, type your name in the signature face, or upload a picture of it.</p>
+                <p className={profile.cardHelp}>{SIGNATURE_HELP}</p>   {/* (1-29, W-032) */}
               </div>
               <div className={styles.signature}><SignatureBox sig={sig} onChoose={openSigning} /></div>
               {sig ? (
@@ -211,11 +243,28 @@ export function YourProfileView({ data, from }: { data: YourProfile; from?: stri
               <Icon name="chevron_right" size={24} weight={300} />
             </Link>
           ) : null}
-          {/* Open to new leads and the lead preferences stay where an Owner or an Admin sets them too — the member's row on Members */}
-          {data.signs && data.opensMembers ? (
+          {/* (the calm UI build 2026-10-27 — the audit's 1-39) New leads: the switch itself — one home for your own Take new leads (it left the studio
+              block's menu and the phone's You sheet; an Owner or an Admin still sets it on your row in Members) — then the way to your lead
+              preferences, which stay on that row */}
+          {data.signs && acceptingIn !== undefined ? (
+            <section id="new-leads" className={profile.card} aria-labelledby="you-new-leads" data-testid="profile-new-leads">
+              <div className={profile.cardHead}><h2 id="you-new-leads" className={profile.cardTitle}>{TAKE_LEADS.title}</h2></div>
+              <label className={styles.consentRow} data-testid="you-accepting">
+                <span className={styles.consentText}><span className={styles.consentLabel}>{TAKE_LEADS.label}</span><span className={profile.cardHelp} id="you-accepting-help">{TAKE_LEADS.help}</span></span>
+                <Switch size="sm" isSelected={accepting} onChange={(v: boolean) => applyAccepting(v, true)} aria-label={TAKE_LEADS.label} aria-describedby="you-accepting-help" />
+              </label>
+              {data.opensMembers ? (
+                <Link href={withFrom('/company/members', '/profile')} className={profile.kitLink} data-testid="profile-members-link">
+                  <span className={profile.kitLinkIcon}><Icon name="group" size={24} weight={300} /></span>
+                  <span className={profile.kitLinkText}><span className={profile.kitLinkTitle}>Lead preferences</span><span className={profile.cardHelp}>{MEMBERS_LINK_HELP}</span></span>
+                  <Icon name="chevron_right" size={24} weight={300} />
+                </Link>
+              ) : null}
+            </section>
+          ) : data.signs && data.opensMembers ? (
             <Link href={withFrom('/company/members', '/profile')} className={profile.kitLink} data-testid="profile-members-link">
               <span className={profile.kitLinkIcon}><Icon name="group" size={24} weight={300} /></span>
-              <span className={profile.kitLinkText}><span className={profile.kitLinkTitle}>New leads and preferences</span><span className={profile.cardHelp}>{MEMBERS_LINK_HELP}</span></span>
+              <span className={profile.kitLinkText}><span className={profile.kitLinkTitle}>Lead preferences</span><span className={profile.cardHelp}>{MEMBERS_LINK_HELP}</span></span>
               <Icon name="chevron_right" size={24} weight={300} />
             </Link>
           ) : null}

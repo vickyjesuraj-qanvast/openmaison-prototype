@@ -230,8 +230,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           const ref = key === 'room' ? roomRef : key === 'category' ? catRef : secRef
           const value = item[key]
           const options = key === 'room' ? labels.rooms : key === 'category' ? labels.categories : labels.sections
-          const empty = key === 'room' ? 'Add Room' : key === 'category' ? 'Add Category' : 'Add label'   // (REG-574) the free label's column is "Section label"; the grid's sections took "Section"
-          const title = key === 'room' ? 'Room' : key === 'category' ? 'Category' : 'Section label'
+          /* (the calm UI build 2026-10-27 — 4-01 · W-104) the trade is "Trade" on screen, the free label "Print group"; sentence case */
+          const empty = key === 'room' ? 'Add room' : key === 'category' ? 'Add trade' : 'Add label'   // (REG-574) the free label; the grid's sections took "Section"
+          const title = key === 'room' ? 'Room' : key === 'category' ? 'Trade' : 'Print group'
           return (
             <>
               <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)} onKeyDown={clearKey(!!value, () => patch({ [key]: null } as ItemPatch))}>
@@ -362,7 +363,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
                         onEscape={chained ? (v) => h.onChainKey(item, 'escape', v) : undefined}
                         suggest={isGroup && labels.trades.length ? { title: 'Your trades', help: 'Its lines file under this trade', options: (typed) => tradesFor(labels.trades, typed, item.name), onPick: (t) => h.onTradePick(item, t) } : undefined} />
             )}
-            {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">{depth ? 'Sub-section' : 'Section'}</Tag></span> : null}   {/* (REG-567) the mock's "Group" reads "Section", as the templates say */}
+            {/* (the calm UI build 2026-10-27, 4-12) no "SECTION" tag on every section row — its band, its fold and its count say it (REG-567's word stays in the menus and the name's placeholder) */}
             {isGroup && item.pricedAfter ? <span className={styles.groupTag} data-testid="priced-after"><Tooltip label="Priced after the contract — out of the quote’s total and its payment split; printed after the items as an estimate"><span tabIndex={0}><Tag appearance="outlined" color="yellow">Priced after</Tag></span></Tooltip></span> : null}   {/* (S44T — call C1) */}
             {isGroup && item.printOneLine ? <span className={styles.groupTag}><Tooltip label="Prints for the client as one line — the section’s name and its total. The lines stay yours."><span><Tag appearance="outlined">One line</Tag></span></Tooltip></span> : null}   {/* (REG-585) */}
             {word ? <span className={styles.groupTag} data-testid={isGroup ? 'section-word' : undefined}><Tooltip label={item.printAs === 'behalf' ? 'Paid on the client’s behalf — counts, no GST' : isGroup ? `Prints “${word}” in place of its amount — its lines print no amounts and aren’t counted` : `Prints “${word}” in place of the amount — not counted`}><span><Tag appearance="outlined">{word}</Tag></span></Tooltip></span> : null}   {/* (REG-555) · (S44I — M17) a section's word */}
@@ -375,7 +376,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             {child || vis !== 'visible' ? (   /* (sweep S1) a top-level line that isn't fully shown keeps its eye too — its state and the way back */
               <>
                 <Tooltip label="Client visibility" disabled={menu === 'vis'}>
-                  <button ref={eyeRef} type="button" className={styles.eye} aria-haspopup="menu" aria-expanded={menu === 'vis'} aria-label={`Client visibility: ${vis}`} onClick={() => toggle('vis')}>
+                  <button ref={eyeRef} type="button" className={styles.eye} data-rest={vis === 'visible' ? '' : undefined} aria-haspopup="menu" aria-expanded={menu === 'vis'} aria-label={`Client visibility: ${vis}`} onClick={() => toggle('vis')}>
                     <Icon name={vis === 'hidden' ? 'visibility_off' : 'visibility'} size={20} weight={300} fill />
                   </button>
                 </Tooltip>

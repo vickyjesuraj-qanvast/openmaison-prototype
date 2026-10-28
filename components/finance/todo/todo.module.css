@@ -1,21 +1,68 @@
 /*
- * (simplify S-10) Finance › To do on the house pieces: Finance's page and toolbar (finance.module.css), the house tables (plan.module.css) and the
- * Money tab's cells (money.module.css) are composed, never copied. What is here is To do's own: the one red (a debt of ours past its day, S-05)
- * and the "what to know" line. Tokens only.
+ * (simplify S-10) Finance › To do on the house pieces: Finance's page and toolbar (finance.module.css), the house section heads (plan.module.css) and
+ * the house Row (components/projects/overview/row.tsx — project-overview.module.css, the project's and the Dashboard's Needs you) are composed,
+ * never copied. What is here is To do's own: the list's frame, the row's measure, the one red (a debt of ours past its day, S-05). Tokens only.
+ * (the calm UI build 2026-10-27 — 5-08 · 5-10 · 5-25) the five tables became one list of rows under their heads: a title in the page's ink, ONE
+ * line under it that wraps (never "…", T-12), the amount, ONE text verb and the ⋮. Every override of a house class is order-proof (the load-order
+ * lesson): a doubled class against a house class, one more step against the house `.row[data-two]`.
  */
 .page { composes: page from '../finance.module.css'; gap: var(--om-spacing-6); }
 .late { color: var(--om-color-tertiary-red-default); }
-.know { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* the phone's chips: one row that scrolls (the house chip rail) */
 .rail { width: 100%; min-width: 0; }
-/* (parity map, MO-084 · FB-009) Recently — the quiet list at To do's end: the kind's chip, what happened over its project and when, the amount */
+
+/* ── a group's list: the house table's frame (a 1px surface-variant border, r8, white), a rule between rows ── */
+.list {
+  margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; min-width: 0;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default);
+}
+.item { min-width: 0; }
+.item + .item { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* the house Row at a list's measure: 64 at least, 12/16 inside, the icon centred on the two lines (`.row[data-two]` is the house's class-and-attribute
+   rule — one more step outranks it in either load order) */
+.row.row.row[data-two] { min-height: 64px; height: auto; padding: var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); border-radius: 0; align-items: center; }
+.row.row.row[data-two]:hover { background: none; }
+/* the verbs' slot keeps one width for the short words, so the amounts before them stand in one column (the Dashboard's Needs you) */
+.row.row.row[data-two] [data-row-actions] { min-width: 104px; justify-content: flex-end; }
+/* the title: the record's name in the page's ink (the listing's rule, REG-450 — primary on hover), opening it */
+.title {
+  display: inline; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; text-align: left; text-decoration: none;
+  font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; border-radius: var(--om-radius-1);
+  transition: color var(--motion-hover);
+}
+.title:hover { color: var(--om-color-primary-default); }
+.title:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.titleText { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+/* the line under it: what · project · when · why — the reason the row is there, so it wraps and is never cut */
+.caption.caption { display: block; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; }
+.amount { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.more { display: inline-flex; flex: 0 0 auto; }
+.channel { display: block; }
+
+/* (parity map, MO-084 · FB-009) Recently — the quiet list at To do's end: what happened, its kind · project · when under it, the amount */
 .recent { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.recentRow { display: grid; grid-template-columns: 96px minmax(0, 1fr) max-content; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
-.recentKind { display: inline-flex; min-width: 0; }
+.recentRow { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .recentText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.recentText > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recentAmount { text-align: right; font: var(--om-type-body-m); }
+.recentSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+/* (the calm pass 2026-10-26 — lane C1, the load-order lesson REG-2883…) a doubled class keeps the row's amount right-aligned in either load order */
+.recentAmount.recentAmount { text-align: right; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.toggleRow { composes: toggleRow from '../../leads/detail/ai-brief.module.css'; }
+.toggle { composes: toggle from '../../leads/detail/ai-brief.module.css'; }
+
+/* ── on the move (≤1024: 16 body · 14 secondary · 44 targets — responsive.md § On the move) ── */
+@media (max-width: 1024px) {
+  .title, .titleText { font: var(--om-type-subtitle-l); }
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .title { padding-block: 10px; margin-block: -10px; }   /* 24 drawn, 44 under a finger, paid back so nothing moves (REG-273) */
+  .row.row.row[data-two] [data-row-actions] button { min-height: 44px; }
+}
+/* a phone: the Leads card model — the name and its amount on the first line (the line under them wraps), then the one verb and the ⋮ at the
+   left of the next (the Maison AI button floats over a phone's right edge — the Leads cards' A-02); the kind's icon steps aside for the words
+   (the line says the kind). The house Row draws icon · label · buttons · ⋮ in that order. */
 @media (max-width: 767px) {
-  .recentRow { grid-template-columns: minmax(0, 1fr) max-content; }
-  .recentKind { grid-column: 1 / -1; }
+  .row.row.row[data-two] { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+  .row.row.row[data-two] > :first-child { display: none; }
+  .row.row.row[data-two] > :nth-child(2) { flex: 1 1 100%; }
+  .row.row.row[data-two] [data-row-actions] { margin-left: 0; min-width: 0; justify-content: flex-start; }
 }

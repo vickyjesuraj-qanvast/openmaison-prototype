@@ -97,7 +97,7 @@ export function TasksFiltersModal({
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
   const needle = q.trim().toLowerCase()
-  const leadRows = [{ id: 'studio', name: 'Studio', stage: 'No lead' }, ...(leads ?? [])].filter((l) => !needle || l.name.toLowerCase().includes(needle) || l.stage.toLowerCase().includes(needle))
+  const leadRows = [{ id: 'studio', name: 'General', stage: 'No lead' }, ...(leads ?? [])]   /* (the calm UI build 2026-10-27, 1-16) the id stays `studio` */.filter((l) => !needle || l.name.toLowerCase().includes(needle) || l.stage.toLowerCase().includes(needle) || (l.id === 'studio' && 'studio'.includes(needle)))   /* its old word still finds it */
   // DateField only ever holds a picker-chosen date, so the only rule left is the range order.
   const fromD = parseInputDate(draft.from), toD = parseInputDate(draft.to)
   const rangeBad = !!fromD && !!toD && fromD.getTime() > toD.getTime()
@@ -257,7 +257,7 @@ export function TasksFiltersModal({
               </div>
             </div>
             <SurfaceFoot shadow={bodyScrolls}>
-              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_TASK_FILTERS)}>Clear All</Button>
+              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_TASK_FILTERS)}>Clear</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
             </SurfaceFoot>

@@ -94,7 +94,7 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
        its box (no autofocus); the framed editor whose toolbar ends in the "Insert Token ▾" trigger (200 menu). The panel is the
        mock's 663 and the editor's body scrolls inside it (REG-437: an edited template's long body grew the modal past the screen). */
     return (
-      <Dialog open={open} onClose={close} title={editing.id ? 'Edit Template' : 'New Template'} size="modal" width={800} height={663}
+      <Dialog open={open} onClose={close} title={editing.id ? 'Edit template' : 'New template'} size="modal" width={800} height={663}
               eyebrow={`${label} Templates /`}
               leading={<Tooltip label="Back"><IconButton icon="arrow_back" label="Back to templates" size={24} variant="bare" iconSize={24} onClick={() => setEditing(null)} /></Tooltip>}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => save(false)} isDisabled={!editing.title.trim()}>Save</Button><Button onPress={() => save(true)} isDisabled={!editing.title.trim()}>Save and Add</Button></>}>
@@ -118,17 +118,17 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   return (
     <>
       {/* The library (1238:33084 empty · 1238:33258 list): a 96 head with no rule, 600 tall, no footer — the close ✕ ends it. */}
-      <Dialog open={open} onClose={close} title={`${label} Templates`} size="modal" width={800} height={600}
+      <Dialog open={open} onClose={close} title={`${label} templates`} size="modal" width={800} height={600}
               subtitle={
                 <div className={styles.headRow}>
                   <SearchBar appearance="outlined" size="md" placeholder="Search" aria-label="Search templates" value={query} onChange={setQuery} className={styles.search} />
                   <span className={styles.spacer} />
                   {/* (REG-538) The library has a page now — Company › Templates › T&Cs & Notes — which comes back here. */}
-                  <Button variant="secondary" appearance="text" iconStart={<Icon name="style" size={18} weight={300} />} onPress={() => { close(); router.push(withFrom('/company/templates/terms', pathname)) }}>Manage Templates</Button>
-                  <Button onPress={() => setEditing({ id: null, title: '', body: '' })}>Create New</Button>
+                  <Button variant="secondary" appearance="text" iconStart={<Icon name="style" size={18} weight={300} />} onPress={() => { close(); router.push(withFrom('/company/templates/terms', pathname)) }}>Manage templates</Button>
+                  <Button variant="secondary" appearance="outlined" onPress={() => setEditing({ id: null, title: '', body: '' })}>New template</Button>   {/* (the calm UI build 2026-10-27, 4-39 · W-399) outlined — each card's Add is the job here */}
                 </div>
               }>
-        {!browse.finding && browse.openAt ? <FolderCrumbs root="My Templates" trail={browse.trail} onGo={browse.go} /> : null}
+        {!browse.finding && browse.openAt ? <FolderCrumbs root="Templates" trail={browse.trail} onGo={browse.go} /> : null}
         {shown.length === 0 && browse.hereFolders.length === 0 ? (
           <div className={styles.empty} role="status">
             <span className={styles.emptyTitle}>{templates.length ? 'No templates match' : 'No templates yet'}</span>

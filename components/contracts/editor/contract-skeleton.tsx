@@ -49,19 +49,24 @@ export function ContractSkeleton({ kind = 'editor', pdf = false, signed = false 
         {kind === 'sign' || kind === 'quote' ? (
           <div className={styles.signTop}><Bone w={177} h={28} />{kind === 'quote' ? <Bone w={180} h={20} /> : <Bone w={107} h={28} r={14} />}</div>
         ) : heads ? (
-          kind === 'editor' ? <EditorHeadGhost crumb={196} title={230} chips={[90]} status={89} primary={67} foldable={[86, 36, 36]} />
-            : <EditorHeadGhost crumb={170} title={262} chips={[62, 104]} primary={67} />
+          /* (the calm UI build 2026-10-27, 4-11 · 4-18) as the header now draws it: no tags (an upload's words only), Preview alone before the ⋮ */
+          kind === 'editor' ? <EditorHeadGhost crumb={196} title={230} chips={pdf ? [90] : []} status={89} primary={67} foldable={[86]} />
+            : <EditorHeadGhost crumb={170} title={262} chips={pdf ? [90] : []} primary={67} />
         ) : (
+          /* (the calm UI build 2026-10-27, 4-08) the one Preview bar: ← · crumb over "Preview" and its status · Copy link · Download PDF · Send */
           <div className={styles.header}>
-            <div className={styles.titleCol}><Bone w={250} h={12} /><div className={styles.titleRow}><Bone w={220} h={24} /><Bone w={44} h={20} r={4} /></div></div>
-            <div className={styles.actions}><Bone w={96} h={36} r={4} /><Bone w={36} h={36} r={4} /><Bone w={36} h={36} r={4} /><Bone w={67} h={36} r={4} /></div>
+            <Bone w={36} h={36} r={4} />
+            <div className={styles.titleCol}><Bone w={200} h={12} /><div className={styles.titleRow}><Bone w={84} h={24} /><Bone w={44} h={20} r={4} /></div></div>
+            <div className={styles.actions}><Bone w={112} h={36} r={4} /><Bone w={140} h={36} r={4} /><Bone w={67} h={36} r={4} /></div>
           </div>
         )}
         {heads ? (
           <>
-            <div className={styles.meta}><Line w={kind === 'editor' ? 180 : 230} lh={36} h={14} /><span className={styles.metaEnd}>{kind === 'editor' ? <><span className={styles.mRec}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span><span className={styles.mQuote}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span><span className={styles.mDate}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span></> : <Line w={100} lh={20} h={12} />}</span></div>
+            {/* (4-17 · 4-18) the meta row without the title — it renames from the header's ⋮ */}
+            <div className={styles.meta}><span className={styles.metaEnd}>{kind === 'editor' ? <><span className={styles.mRec}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span><span className={styles.mQuote}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span><span className={styles.mDate}><Bone w="100%" h={36} r={4} style={{ height: '100%' }} /></span></> : <Line w={130} lh={20} h={12} />}</span></div>
             {/* (pending modules S29) the bar's end: Write with AI, then Insert a field · eSignatures */}
-            {editing ? <div className={styles.bar}>{[56, 96, 120, 60, 88, 36].map((w, i) => <Bone key={i} w={w} h={24} r={4} />)}<span className={styles.barEnd}>{signed ? null : <Bone w={124} h={28} r={4} />}<Bone w={110} h={28} r={4} /></span></div> : null}
+            {/* (4-18) a signed copy's bar holds the Outline's toggle alone */}
+            {editing ? <div className={styles.bar}>{signed ? null : [56, 96, 120, 60, 88, 36].map((w, i) => <Bone key={i} w={w} h={24} r={4} />)}<span className={styles.barEnd}>{signed ? <Bone w={36} h={28} r={4} /> : <><Bone w={124} h={28} r={4} /><Bone w={110} h={28} r={4} /></>}</span></div> : null}
           </>
         ) : null}
         <div className={styles.stage} data-outline={editing || undefined}>
@@ -106,7 +111,7 @@ function ReadGhost({ pdf, signed }: { pdf: boolean; signed: boolean }) {
       <BarGhost />
       <div className={g.screenBody}>
         <div className={g.hero}>
-          <div className={g.heroTop}><Slot kind="btn" w={89} /><Line w={96} lh={20} h={12} /></div>
+          <div className={g.heroTop}><Slot kind="btn" w={89} />{pdf ? <Line w={96} lh={20} h={12} /> : null}</div>   {/* (4-11 · W-197) "From template" left the hero; an upload's words stay */}
           {signed ? <Line w={220} lh={20} h={12} /> : null}
           <div className={styles.heroRow}><Slot kind="icon" /><Line w={88} lh={20} h={12} /><Line w={72} lh={24} h={14} /></div>
           <div className={styles.heroRow}><Slot kind="icon" /><Line w={150} lh={24} h={14} /><Slot kind="chip" w={64} /></div>

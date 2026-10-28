@@ -23,7 +23,7 @@ import { pickable } from '@/lib/leads/assign-policy'
  */
 /** (pending modules S26) What the field lists — a member row, or a member as Messages knows them (New group's people): the picker reads these alone. */
 export type AssigneeOption = Pick<Member, 'id' | 'name' | 'role' | 'color'> & { isYou?: boolean | null; isActive?: boolean | null }
-export function AssigneeField<M extends AssigneeOption = Member>({ team, value, onChange, error, inputRef, locked, rowMeta, suggestion, label = 'Assign member' }: {
+export function AssigneeField<M extends AssigneeOption = Member>({ team, value, onChange, error, inputRef, locked, rowMeta, suggestion, label = 'Members' }: {
   /** (pending modules S23) the field's words where it picks someone other than a lead's members — a meeting's "Who’s going" */
   label?: string
   /** (gaps build, package A — 9) New project's picker: each member's specialty and load beside their role ("Condo specialist · 2 projects"). */

@@ -61,8 +61,10 @@ export type BellInvoice = {
   /** (gaps build F2 — F2-Q9) the credit notes issued on it */
   credits?: { id: string; number: string; amountMinor: number; at: number }[]
 }
-/** (gaps build D, item 3) A document the studio sent for the client to look at, confirm, sign or approve — `done` once they did. */
-export type BellDocument = { id: string; kind: 'quote' | 'variation' | 'agreement'; number: string; title: string; amountMinor: number; at: number; href: string; previewHref: string; done: boolean }
+/** (gaps build D, item 3) A document the studio sent for the client to look at, confirm, sign or approve — `done` once they did. (the calm UI
+    build 2026-10-27, 3-35) `outcome`: what was done, read from the record that made it done, so the row then says it instead of still asking. */
+export type BellDocument = { id: string; kind: 'quote' | 'variation' | 'agreement'; number: string; title: string; amountMinor: number; at: number; href: string; previewHref: string; done: boolean
+  outcome?: 'confirmed' | 'signed' | 'declined' | null }
 /** (gaps build D, item 3) A file newly shown on the portal (`opened` once they opened it), a set of designs newly shared (`opened` once viewed). */
 export type BellShown = { id: string; name: string; at: number; href: string; opened: boolean }
 export type BellDesign = { id: string; rooms: number; at: number; sender: string | null; opened: boolean }
@@ -105,12 +107,20 @@ export function dueIn(dueAt: number, now: number): string {
   return days <= 0 ? 'due today' : days === 1 ? 'due tomorrow' : `due in ${days} days`
 }
 
+/** (the calm UI build 2026-10-27, 3-35) A document's row once the client acted on it: a variation order approved (confirmed or signed) or
+    declined, a quote confirmed, signed or declined, an agreement signed. */
+function doneTitle(d: BellDocument, o: NonNullable<BellDocument['outcome']>): string {
+  if (d.kind === 'variation') return `${d.number} ${o === 'declined' ? 'declined' : 'approved'}`
+  if (d.kind === 'quote') return `Quote ${d.number} ${o}`
+  return o === 'signed' ? 'Agreement signed' : 'An agreement to sign'
+}
+
 export const BELL_PRODUCERS: BellProducer[] = [
   /* the schedule as shared — the first share, then each share of changes (round 2's Share changes) */
   (h, f) => h.shares.map((s) => ({
     key: `share:${s.id}`, kind: 'schedule_shared', section: 'schedule', icon: 'calendar_month',
     title: s.first ? 'Your schedule is ready' : 'Your schedule has changed',
-    body: s.note ? `“${s.note}”` : s.first ? 'The stages ahead and when each is planned' : s.changes ? `${plural(s.changes, 'change')} — see what moved` : 'See what moved',
+    body: s.note ? `“${s.note}”` : s.first ? 'The milestones ahead and when each is planned' : s.changes   /* (the calm UI build 2026-10-27, 3-04 · W-403) */ ? `${plural(s.changes, 'change')} — see what moved` : 'See what moved',
     href: portalPath(f.slug, 'schedule'), at: s.at,
   })),
   /* an update published (round 3's rule: published, never a draft or one in review) */
@@ -153,11 +163,13 @@ export const BELL_PRODUCERS: BellProducer[] = [
   }))),
   /* (gaps build D, item 3 — 1.0 I-110 · I-111 · I-106) a quote shared, an agreement to sign, a variation order to approve: each rings once, at
      the send, and reads as read once the client has acted on it (confirmed, signed, approved or declined) */
+  /* (the calm UI build 2026-10-27, 3-35 · W-093 · T-17) once acted on, the row says the outcome — "VO-1 approved · Study lighting · +S$3,455.30",
+     "VO-2 declined" — instead of still asking; it never says who (anyone in the household may have answered) */
   (h) => (h.documents ?? []).map((d): Draft => ({
     key: `doc:${d.kind}:${d.id}:${d.at}`, kind: d.kind === 'quote' ? 'quote_shared' : d.kind === 'variation' ? 'variation_to_approve' : 'agreement_to_sign', section: null,
     icon: d.kind === 'agreement' ? 'signature' : 'request_quote',
-    title: d.kind === 'quote' ? 'Your quote is ready to look through' : d.kind === 'variation' ? 'A change to your contract to approve' : 'An agreement to sign',
-    body: d.kind === 'agreement' ? d.title : `${d.kind === 'variation' ? `${d.number} · ` : ''}${d.title} · ${d.kind === 'variation' ? (d.amountMinor < 0 ? '−' : '+') : ''}${money2(Math.abs(d.amountMinor))}`,
+    title: d.done && d.outcome ? doneTitle(d, d.outcome) : d.kind === 'quote' ? 'Your quote is ready to look through' : d.kind === 'variation' ? 'A change to your contract to approve' : 'An agreement to sign',
+    body: d.kind === 'agreement' ? d.title : `${d.kind === 'variation' && !(d.done && d.outcome) ? `${d.number} · ` : ''}${d.title} · ${d.kind === 'variation' ? (d.amountMinor < 0 ? '−' : '+') : ''}${money2(Math.abs(d.amountMinor))}`,
     href: d.href, previewHref: d.previewHref, at: d.at, seen: d.done,
   })),
   /* (gaps build D, item 3) a file newly shown, a set of designs newly shared — read once opened */

@@ -21,7 +21,7 @@ const byLead = (name) => sql(`select c.id || '|' || l.id from contracts c join l
 const [RYAN, RYAN_LEAD] = byLead('Ryan D’Souza'), [OLIVIA, OLIVIA_LEAD] = byLead('Olivia Martinez'), [AISHA] = byLead('Aisha Rahman'), [BEN, BEN_LEAD] = byLead('Benjamin Han')
 const RYAN_TITLE = sql(`select title from contracts where id='${RYAN}'`)   // read up front: a CLI read during a server write locks it out (SQLITE_BUSY)
 const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id}`); await page.getByTestId('contract-editor').waitFor(); await ready(page) }
-const pill = (page) => page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Signed)$/ }).first()
+const pill = (page) => page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Waiting for signature|Signed)$/ }).first()   // (the calm UI build 2026-10-27, a deliberate change) W-363: the pill reads the display words
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -34,9 +34,9 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
   await step('a signed contract opens as its kept copy, locked', async () => {
     await openEditor(page, RYAN)
     ok('the kept copy shows where the paper was', await page.getByTestId('contract-signed-copy').isVisible() && (await page.getByTestId('contract-doc').count()) === 0)
-    ok('the title is read-only', (await page.getByLabel('Contract title').getAttribute('readonly')) !== null)
+    ok('the title is read-only', await (async () => { await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); const r = await page.getByRole('menuitem', { name: /^Rename…/ }).getAttribute('aria-disabled'); await page.keyboard.press('Escape'); await page.waitForTimeout(300); return r === 'true' })())   // (the calm UI build 2026-10-27, a deliberate change) 4-18: the title renames from the header's ⋮ — refused once signed
     ok('the contract date is disabled', await page.getByTestId('contract-meta').getByRole('button', { name: /Contract date/ }).isDisabled().catch(async () => (await page.getByTestId('contract-meta').locator('[data-disabled]').count()) > 0))
-    ok('the banner says it was marked signed', /Marked signed/.test(await page.getByTestId('contract-banner').innerText()))
+    ok('the banner says it was marked signed', /Signed( on [^—]*)? — this copy is locked\. An Owner or Admin can undo the signing/.test(await page.getByTestId('contract-banner').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) 4-51's words
     await shot('01-signed-copy')
   })
   await step('the kept copy does not follow today’s records', async () => {
@@ -69,7 +69,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     ok('Draft, with no signing stamp left', r === 'Draft|-|-|-|-', r.slice(0, 80))
     ok('the quote it signed stays Signed', sql(`select q.status from quotes q join contracts c on c.from_quote_id = q.id where c.id='${RYAN}'`) === 'Signed')
     await ready(page)
-    ok('the document edits again', (await page.getByTestId('contract-doc').count()) === 1 && (await page.getByLabel('Contract title').getAttribute('readonly')) === null)
+    ok('the document edits again', (await page.getByTestId('contract-doc').count()) === 1 && await (async () => { await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); const r = await page.getByRole('menuitem', { name: /^Rename…/ }).getAttribute('aria-disabled'); await page.keyboard.press('Escape'); await page.waitForTimeout(300); return r !== 'true' })())   // (the calm UI build 2026-10-27, a deliberate change) 4-18: ⋮ › Rename… opens again
   })
   await step('Mark as signed keeps a copy', async () => {
     await pill(page).click(); await page.getByRole('menuitemradio', { name: /^Signed/ }).click()
@@ -103,7 +103,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await page.getByRole('button', { name: 'More actions' }).first().click()
     await page.getByRole('menuitem', { name: 'Delete' }).click()
     const d = page.getByRole('dialog', { name: 'Delete Contract' })
-    ok('“You can restore it from Deleted Contracts.”', /You can restore it from Deleted Contracts/.test(await d.innerText()))
+    ok('“You can restore it from Deleted contracts.”', /You can restore it from Deleted contracts/i.test(await d.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) T-13
     await d.getByRole('button', { name: 'Cancel' }).click()   // (REG-725) the confirm answers with its verb
   })
   await step('a Draft’s link is not ready, and shows no document', async () => {
@@ -115,7 +115,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     sql(`update members set is_you = case id when 'germaine' then 1 else 0 end`)   // (S44Q — row 334, a deliberate change of this rule) an approver's send approves the Draft quote it names now; the hold is a non-approver's — Germaine, a Designer
     await openEditor(page, OLIVIA)
     // (REG-786, UX audit C8) on a Draft the copy icon says it sends: "Copy link — marks it Sent"
-    const copyBtn = page.getByRole('button', { name: 'Copy link — marks it Sent' })
+    const copyBtn = { click: async () => { await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.getByRole('menuitem', { name: 'Copy signing link' }).click() } }   // (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-156: the header's link icon is the ⋮'s Copy signing link
     // (REG-780, UX audit C2) the agreement names OM-10001, a Draft under required approval: copying (= sending) is refused and nothing moves
     await copyBtn.click()
     await snack(page, 'OM-10001 is still a Draft — approve and send it first'); await page.waitForTimeout(800)
@@ -124,7 +124,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${OLIVIA}')`)   // the studio stands behind its quote now
     await openEditor(page, OLIVIA)
     await copyBtn.click()
-    await snack(page, 'the contract is Sent to Client now'); await page.waitForTimeout(1000)
+    await snack(page, 'the contract is waiting for signature now')   // (the calm UI build 2026-10-27, a deliberate change) W-363; await page.waitForTimeout(1000)
     ok('Sent to Client, with a sent date', sql(`select status || '|' || (sent_at is not null) from contracts where id='${OLIVIA}'`) === 'Sent to Client|1')
     ok('the banner says it is out for signature', /for signature/.test(await page.getByTestId('contract-banner').innerText()))
   })

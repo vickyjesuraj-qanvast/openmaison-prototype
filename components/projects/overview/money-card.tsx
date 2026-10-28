@@ -35,9 +35,10 @@ export function MoneyCard({ d, onOpenMoney, stageHref, onChangeValue }: { d: Pro
   const graded = profit ? profitGrade(profit) === 'graded' : false
   return (
     <div data-card="money">
-      <Card title="Money" headGap={8} metaRight={m.source === 'quote' ? `From the signed quote${m.lines ? ` · ${linesWord(m.lines)}` : ''}` : m.source === 'agreed' ? 'Agreed value' : undefined} testId="money"
+      {/* (the calm UI build 2026-10-27, 3-02 · 3-03 · 3-04 · T-01) the tab's word, "To collect", "Payments · n" */}
+      <Card title="Payments" headGap={8} metaRight={m.source === 'quote' ? `From the signed quote${m.lines ? ` · ${linesWord(m.lines)}` : ''}` : m.source === 'agreed' ? 'Agreed value' : undefined} testId="money"
             link={onChangeValue && m.source !== 'quote' && d.mayChange && d.project.stage !== 'completed' ? { label: 'Change the value', onClick: onChangeValue } : undefined}
-            onOpen={onOpenMoney} openLabel="Open money">
+            onOpen={onOpenMoney} openLabel="Open payments">
         <div className={styles.body}>
           <div className={styles.value}>
             <span className={styles.valueLabel}>Contract value</span>
@@ -45,9 +46,9 @@ export function MoneyCard({ d, onOpenMoney, stageHref, onChangeValue }: { d: Pro
           </div>
           {ms.contractMinor ? (
             <div className={styles.group} data-testid="money-figures">
-              <Row icon="account_balance" name="Collected" caption={collectedPct !== null ? `${collectedPct}%${workPct !== null ? ` · work ${workPct}%` : ''}` : undefined}   /* (simplify S-01) short enough for the glance column */
+              <Row icon="account_balance" name="Collected" caption={collectedPct !== null ? `${collectedPct}%${workPct !== null ? ` · ${workPct}% of the work done` : ''}` : undefined}   /* (simplify S-01) short enough for the glance column */
                    meta={moneyCard(ms.collectedMinor)} onPress={onOpenMoney} testId="money-collected" />
-              {ms.outstandingMinor ? <Row icon="schedule" state={ms.overdueMinor ? 'alert' : undefined} name="Outstanding" caption={ms.overdueMinor ? (ms.overdueMinor >= ms.outstandingMinor ? 'overdue' : `${moneyCard(ms.overdueMinor)} overdue`) : undefined}   /* the figure once */
+              {ms.outstandingMinor ? <Row icon="schedule" state={ms.overdueMinor ? 'alert' : undefined} name="To collect" caption={ms.overdueMinor ? (ms.overdueMinor >= ms.outstandingMinor ? 'overdue' : `${moneyCard(ms.overdueMinor)} overdue`) : undefined}   /* the figure once */
                                           meta={moneyCard(ms.outstandingMinor)} onPress={onOpenMoney} testId="money-outstanding" /> : null}
               {/* (simplify S-09 · Q-08) graded, or "--" with the reason — Owners and Admins only (F2-Q1) */}
               {profit ? <Row icon="trending_up" name="Profit" caption={graded ? marginCell(profit).text : profitGrade(profit) === 'early' ? PROFIT_EARLY : PROFIT_NO_COSTS}
@@ -59,7 +60,7 @@ export function MoneyCard({ d, onOpenMoney, stageHref, onChangeValue }: { d: Pro
             <>
               <CardRule inset={0} />
               <div className={styles.group}>
-                <Row icon={open ? 'keyboard_arrow_up' : 'expand_more'} name={`Payment stages · ${ms.stages.length}`} onPress={() => setOpen((o) => !o)} testId="payment-stages-toggle" toggle />
+                <Row icon={open ? 'keyboard_arrow_up' : 'expand_more'} name={`Payments · ${ms.stages.length}`} onPress={() => setOpen((o) => !o)} testId="payment-stages-toggle" toggle />
               </div>
               {open ? (
                 <>

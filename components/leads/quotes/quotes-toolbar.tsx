@@ -31,6 +31,9 @@ export type QuotesToolbarProps = {
   /** (UX audit Q4 · Q5) The to-do chips — "Waiting for my approval · 2", "Waiting on client · 3", "Expiring this week · 1" — each shown only
       while something waits on it (REG-666's attention pill); a press narrows the list, a second press lets go. */
   todos?: { key: string; label: string; count: number; icon: string; selected: boolean; onClick: () => void }[]
+  /** (the calm UI build 2026-10-27, 1-11 · 1-30) Tools › Quotes: the page header carries "New quote" (its one filled button) and the list has no
+      second title — the toolbar keeps its create only on a phone, where the header has no room for it. The lead's tab keeps both (the mock's). */
+  createInHeader?: boolean
 }
 
 /**
@@ -40,7 +43,7 @@ export type QuotesToolbarProps = {
  * Copied from components/leads/tasks/tasks-toolbar.tsx — same geometry, the quotes' copy and menus.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu, bare = false, todos = [] }: QuotesToolbarProps) {
+export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu, bare = false, todos = [], createInHeader = false }: QuotesToolbarProps) {
   const [menu, setMenu] = useState<'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   /* (Quotes on the move, K4 — A-04 · P-11) A touch tablet folds Create Quote into its glyph as the phone does (the row is one line there, and the
@@ -64,7 +67,7 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
       const kids = Array.from(el.children) as HTMLElement[]
       const gap = 16 * Math.max(0, kids.length - 1)
       /* the title grows to fill (flex: 1), so its need is its words' own width; the chips and the tools are content-sized */
-      const needOf = (k: HTMLElement) => { if (k.tagName === 'H2') { const r = document.createRange(); r.selectNodeContents(k); return r.getBoundingClientRect().width } return Math.max(k.scrollWidth, k.getBoundingClientRect().width) }
+      const needOf = (k: HTMLElement) => { if (k.hasAttribute('data-spacer')) return 0; if (k.tagName === 'H2') { const r = document.createRange(); r.selectNodeContents(k); return r.getBoundingClientRect().width } return Math.max(k.scrollWidth, k.getBoundingClientRect().width) }
       const need = kids.reduce((n, k) => n + needOf(k), 0) + gap
       if (!compactRef.current) {
         if (need > el.clientWidth + 1) { needRef.current = need; compactRef.current = true; setCompact(true) }
@@ -77,7 +80,9 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
 
   return (
     <div className={styles.bar} ref={barRef}>
-      <h2 className={styles.title}>All Quotes</h2>
+      {/* (no title) the title's slot stays as an empty spacer, so the tools keep their place at the right — a phone's search folding back no
+          longer slides Filters out from under the finger */}
+      {createInHeader ? <span className={styles.title} aria-hidden="true" data-spacer /> : <h2 className={styles.title}>All quotes</h2>}   {/* (the calm UI build) sentence case; Tools › Quotes' page title already says Quotes (1-30) */}
       {/* (UX audit Q4 · Q5) What waits today, before the tools — REG-666's to-do pills, the libraries' way; on a phone their own line under the row. */}
       {!bare && todos.some((t) => t.count > 0) ? (
         <span className={styles.todos} data-testid="quote-todos" data-compact={compact || undefined}>
@@ -91,12 +96,13 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
       <div className={styles.actions}>
         {bare ? null : (<>
         {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon — (K4) and on a touch tablet. */}
-        {folded ? (
-          <Tooltip label="Create Quote" shortcut="create">
-            <IconButton icon="add" label="Create Quote" variant="primary" onClick={onCreate} data-kb="create" />
+        {/* (the calm UI build 2026-10-27, 1-11 · W-011) one create verb: New quote */}
+        {createInHeader && !sheet ? null : folded ? (
+          <Tooltip label="New quote" shortcut="create">
+            <IconButton icon="add" label="New quote" variant="primary" onClick={onCreate} data-kb="create" />
           </Tooltip>
         ) : (
-          <Button variant="primary" appearance="outlined" onPress={onCreate} data-kb="create">Create Quote</Button>
+          <Button variant="primary" appearance="outlined" onPress={onCreate} data-kb="create">New quote</Button>
         )}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder} label="Search quotes" />
         <span className={styles.filterWrap}>
@@ -120,11 +126,12 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Quotes">
-            <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('settings'))}>Quotes Settings</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Quotes</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Quotes</DropdownItem>
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All quotes">
+            {/* (the calm UI build 2026-10-27, W-250 · T-13) sentence case */}
+            <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage templates</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('settings'))}>Quote settings</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived quotes</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted quotes</DropdownItem>
           </Dropdown>
         </span>
       </div>

@@ -25,6 +25,8 @@
 .side { grid-column: 2; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-2); }
 .turn { font: var(--om-type-body-xs); color: var(--om-color-primary-default); white-space: nowrap; }
 .turn[data-turn='client'] { color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 1-22) who handles it — the avatar, named in its tooltip ("Handled by Germaine") */
+.handler { display: inline-flex; }
 
 /* The drawer's body: the report, then the thread */
 .report { display: flex; flex-direction: column; gap: var(--om-spacing-2); }

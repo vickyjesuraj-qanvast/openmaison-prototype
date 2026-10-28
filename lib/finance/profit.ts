@@ -215,8 +215,11 @@ export type ClosingNumbers = {
   word: string
   /** margin − expected, in points, one decimal — `null` when either is. */
   gapPts: number | null
-  /** The strip's sentence when the gap is more than 25 points (invented copy) — "Margin 12% — 31 points under the expected 43%"; else null. */
+  /** The strip's sentence when the gap is more than 25 points (invented copy) — "Margin 12% — the quote planned 43%"; else null. (the calm UI build
+      2026-10-27, 3-16 · W-251) said only when the quote planned a margin above 0 — "79 points over the expected 0%" said nothing. */
   warning: string | null
+  /** (the calm UI build, 3-16) the margin is under the plan — the strip wears the warning tone then only; null with no warning */
+  belowPlan: boolean | null
 }
 
 const pctText = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}%`
@@ -228,8 +231,7 @@ export function closingNumbersOf(profit: ProfitView, plan: { netMinor: number; c
   const cost = plan.reduce((s, x) => s + x.costMinor, 0)
   const expectedMarginPct = net > 0 && cost > 0 ? pct1(((net - cost) / net) * 100) : null
   const gapPts = marginPct !== null && expectedMarginPct !== null ? pct1(marginPct - expectedMarginPct) : null
-  const warning = gapPts !== null && Math.abs(gapPts) > MARGIN_GAP_PTS && marginPct !== null && expectedMarginPct !== null
-    ? `Margin ${pctText(marginPct)} — ${pctText(Math.abs(gapPts)).replace('%', '')} points ${gapPts < 0 ? 'under' : 'over'} the expected ${pctText(expectedMarginPct)}`
-    : null
-  return { costsMinor: profit.committedMinor, marginPct, expectedMarginPct, grade, word: profitShown(profit).word, gapPts, warning }
+  const raised = gapPts !== null && Math.abs(gapPts) > MARGIN_GAP_PTS && marginPct !== null && expectedMarginPct !== null && expectedMarginPct > 0
+  const warning = raised ? `Margin ${pctText(marginPct!)} — the quote planned ${pctText(expectedMarginPct!)}` : null
+  return { costsMinor: profit.committedMinor, marginPct, expectedMarginPct, grade, word: profitShown(profit).word, gapPts, warning, belowPlan: raised ? gapPts! < 0 : null }
 }

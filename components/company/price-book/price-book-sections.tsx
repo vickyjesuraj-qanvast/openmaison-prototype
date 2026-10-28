@@ -18,7 +18,7 @@ import gallery from '@/components/company/templates/library-gallery.module.css'
 import { SectionDialog } from './section-dialog'
 import styles from './price-book.module.css'
 import { LIBRARY_ROOT, folderBlock, type Folder } from '@/lib/company/folder-libraries'
-import { PriceBookGhost } from '@/components/company/company-ghosts'
+import { PriceBookSectionsGhost } from './price-book-ghost'
 
 type Row = PriceBookSectionRow & LibraryItem
 const toRow = (s: PriceBookSectionRow): Row => ({ ...s, title: s.name, updatedAt: s.updatedAt ?? s.createdAt })
@@ -27,7 +27,7 @@ const inUseReason = (t: PriceBookSectionRow) => (t.usedBy > 0 ? `On ${t.usedBy} 
 const lineTotal = (l: SavedLine) => Math.round(l.qty * (l.costMinor + l.markupMinor) * (1 - l.discountPct / 100))
 const total = (s: PriceBookSectionRow) => (s.body ? s.body.lines.reduce((n, l) => n + lineTotal(l), 0) + s.body.subs.reduce((n, g) => n + g.lines.reduce((x, l) => x + lineTotal(l), 0), 0) : 0)
 const names = (s: PriceBookSectionRow) => (s.body ? [...s.body.lines.map((l) => l.name), ...s.body.subs.flatMap((g) => g.lines.map((l) => l.name))] : [])
-const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookGhost sections /> }   /* (REG-708) the ghost its loading.tsx draws */
+const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookSectionsGhost /> }   /* (REG-708) the ghost its loading.tsx draws */
 
 /**
  * Company › Price book › My Sections (REG-594 on REG-566): the whole sections saved from quotes ("Save section to My Sections"),
@@ -65,7 +65,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
     setEdit({ open: false, section: null })
   }
   return (
-    <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.sections} shell={SHELL} noun={{ one: 'section', many: 'sections' }} nameLabel="Section" deletedLabel="Deleted Sections" openLabel={runsBook ? 'Edit' : 'Open'}
+    <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.sections} shell={SHELL} noun={{ one: 'section', many: 'sections' }} nameLabel="Section" deletedLabel="Deleted sections" openLabel={runsBook ? 'Edit' : 'Open'} defaultView="list"
       byColumn mayChange={block} duplicateBlock={block} restoreBlock={block} purgeBlock={block()}
       from={from} folders={{ library: 'book-sections', list: folders, block: folderBlock(data.viewer) }} items={sections.map(toRow)} deleted={deletedSections.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Sections" tableKey="price-book-sections"
       newMenu={(close, place) => (<DropdownItem onSelect={() => { close(); setEdit({ open: true, section: null, folderId: place.folderId }) }}>New section</DropdownItem>)} newBlock={runsBook ? null : block()}   /* (REG-653, Q-10 · E-70) written on Save — Cancel leaves nothing behind */
@@ -85,7 +85,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       columns={[
         { key: 'items', label: 'Items', track: '100px', sortable: (t) => t.lineCount, cell: (t) => <span>{t.lineCount}</span> },
         { key: 'property', label: 'Property type', track: '170px', cell: (t) => (t.propertyType ? <span>{t.propertyType}</span> : <span className={styles.muted}>Any</span>) },   // (REG-619)
-        { key: 'tags', label: 'Tags', track: '180px', cell: (t) => (t.tagList.length ? <span>{t.tagList.join(', ')}</span> : <span className={styles.muted}>--</span>) },
+        { key: 'tags', label: 'Tags', track: '180px', cell: (t) => (t.tagList.length ? <span>{t.tagList.join(', ')}</span> : null) },
         { key: 'total', label: 'Total', track: '140px', sortable: (t) => total(t), cell: (t) => <span className={styles.num}>{money2(total(t))}</span> },
         { key: 'used', label: 'Used by', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not on a quote yet</span>) },
       ]}
@@ -93,7 +93,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       onDuplicate={async (t) => { await settle(duplicatePriceBookSection(t.id)); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}   /* (wave E, E7) a refusal throws its rule for the gallery to say */
       onRename={(t, name) => renamePriceBookSection(t.id, name)}
       onDelete={(t) => deletePriceBookSections([t.id])}
-      deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the lines. You can restore the section from Deleted Sections.` : 'You can restore it from Deleted Sections.')}
+      deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the lines. You can restore the section from Deleted sections.` : 'You can restore it from Deleted sections.')}
       onRestore={(ids) => restorePriceBookSections(ids)} onDeleteForever={(ids) => deletePriceBookSectionsForever(ids)} onEmptyTrash={() => emptyPriceBookSectionTrash()}
       deletedMeta={{ label: 'Items', value: (t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'}` }}
       empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',

@@ -40,7 +40,8 @@ export type WorkloadLine<P extends WorkloadProject> = {
 export const stateOf = (count: number, capacity: number): WorkloadState => (count < capacity ? 'room' : count === capacity ? 'full' : 'over')
 export const stateWords = (count: number, capacity: number): string => {
   const s = stateOf(count, capacity)
-  return s === 'room' ? `Room for ${capacity - count} more` : s === 'full' ? 'Full' : `${count - capacity} over`
+  /* (the calm UI build 2026-10-27, 3-15 · W-526) a free slot, said as one */
+  return s === 'room' ? `${capacity - count} free slot${capacity - count === 1 ? '' : 's'}` : s === 'full' ? 'Full' : `${count - capacity} over`
 }
 export const capacityOf = (p: Pick<WorkloadPerson, 'projectCapacity'>, studioDefault: number) => clampCapacity(p.projectCapacity) ?? studioDefault
 

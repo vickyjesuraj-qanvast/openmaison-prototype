@@ -25,6 +25,25 @@ import lead from '@/components/leads/lead-cards.module.css'   // (parity P-23) t
 export function ProjectCards({ rows, query, now, onOpen, onMenu, onAssign, reason }: { rows: ProjectRow[]; query: string; now: number; onOpen: (r: ProjectRow) => void; onMenu: (r: ProjectRow, a: ProjectMenuAction) => void; /** (parity P-17) the foot's person_add / Assign */ onAssign?: (r: ProjectRow, anchor: HTMLElement) => void; /** (fix-E, E-21) a scope's own reason line */ reason?: (r: ProjectRow) => string | null }) {
   const q = query.trim()
   const hit = (t: string) => (q ? highlightMatch(t, q) : t)
+  /* (the calm UI build 2026-10-27, 3-11 · T-07) a card says its top reason in red and "+n more" in grey — pressed, every reason, in place */
+  const [whole, setWhole] = useState<Set<string>>(() => new Set())
+  const why = (r: ProjectRow) => {
+    if (reason) { const w = reason(r); return w ? <p className={styles.why} data-testid="card-attention">{w}</p> : null }
+    const all = r.attention
+    if (!all.length) return null
+    const open = whole.has(r.id) || all.length === 1
+    return (
+      <p className={styles.why} data-testid="card-attention">
+        {open ? all.join(' · ') : all[0]}
+        {all.length > 1 ? (
+          <button type="button" className={styles.whyMore} aria-expanded={open} data-testid="card-attention-more"
+                  onClick={() => setWhole((s) => { const n = new Set(s); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n })}>
+            {open ? 'Show less' : `+${all.length - 1} more`}
+          </button>
+        ) : null}
+      </p>
+    )
+  }
   return (
     <div className={styles.list} data-kb-list="project">
       {rows.map((r) => (
@@ -32,8 +51,8 @@ export function ProjectCards({ rows, query, now, onOpen, onMenu, onAssign, reaso
           <div className={styles.identity}>
             <button type="button" className={styles.head} onClick={() => onOpen(r)} data-kb-open>
               <span className={styles.name}>{hit(r.name)}</span>
-              {/* (parity P-23, Q-09) the corner is the record's age, as the lead card's */}
-              <span className={styles.meta}><span data-testid="card-age">{relativeTime(r.createdAt, new Date(now))}</span><Icon name="keyboard_arrow_right" size={20} weight={300} /></span>
+              {/* (parity P-23, Q-09) the corner is the record's age, as the lead card's — (the calm UI build 2026-10-27, 3-11) said as what it is */}
+              <span className={styles.meta}><span data-testid="card-age">{`Added ${relativeTime(r.createdAt, new Date(now))}`}</span><Icon name="keyboard_arrow_right" size={20} weight={300} /></span>
             </button>
             <p className={styles.info}>
               {/* (parity P-23) the client's number dials, as the lead card's first fact (UX audit L11) */}
@@ -48,7 +67,7 @@ export function ProjectCards({ rows, query, now, onOpen, onMenu, onAssign, reaso
             {r.targetEndDate ? <><span className={styles.dot} aria-hidden>·</span><span>Ends {displayDate(r.targetEndDate)}</span></> : null}
             {r.hold ? <><span className={styles.dot} aria-hidden>·</span><span data-testid="card-hold">{holdWords(r.hold)}</span></> : null}{/* (gaps build, package A — M-01) */}
           </p>
-          {((w) => (w ? <p className={styles.why} data-testid="card-attention">{w}</p> : null))(reason ? reason(r) : r.attention.join(' · ') || null)}
+          {why(r)}
           <hr className={styles.rule} />
           <div className={styles.foot}>
             <div className={styles.members}><MembersCell row={r} onAssign={onAssign ? (el) => onAssign(r, el) : undefined} card /></div>   {/* (parity P-17) the lead card's foot */}

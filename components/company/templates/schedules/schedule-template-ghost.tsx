@@ -14,14 +14,14 @@ export function ScheduleTemplateGhost() {
   return (
     <GhostSheet label="Loading the template">
       <div className={page.page}>
-        <EditorHeadGhost crumb={170} title={180} chips={[90]} />
+        <EditorHeadGhost crumb={170} title={180} chips={[]} />   {/* (the calm UI build 2026-10-27, the UI audit's 4-11) no tags in the header */}
         <div className={page.meta}>
           <Line w={180} lh={36} h={14} />
           <div className={page.metaEnd}><Line w={260} lh={20} h={10} /></div>
         </div>
         <div className={lib.body}>
           <div className={lib.card}>
-            <div className={lib.cardHead}><Words className={lib.cardTitle}>Milestones</Words><Words className={lib.cardHelp}>Each one starts its gap in days after the one before ends; a negative gap overlaps them.</Words></div>
+            <div className={lib.cardHead}><Words className={lib.cardTitle}>Milestones</Words><Words className={lib.cardHelp}>Gap = days between one milestone and the next. Use a minus number to overlap.</Words></div>
             <div className={lib.cardBody}>
               <div className={styles.items}>
                 <span />{['Milestone', 'Days', 'Gap (days)', 'Client confirms'].map((h) => <Words key={h} className={styles.head}>{h}</Words>)}<span />

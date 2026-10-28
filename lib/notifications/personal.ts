@@ -120,22 +120,24 @@ export function mayReach(kind: EventKey, v: NoticeViewer): boolean {
 }
 
 /* ── the words Your notifications says — the card and its ghost read the same ones (invented copy) ──────────────────────────────── */
+/* (the calm UI build 2026-10-27 — the audit's 1-41 · 1-29, T-01 · T-05 · W-008 · W-039) one word, "notification(s)" (was "notice(s)" here and
+   "Notifications" everywhere else), and one short line a card */
 
 export const NOTICES_CARD = {
   title: 'Your notifications',
-  help: 'What reaches you, and how. Which notices go out at all is the studio’s choice, in Settings › Notifications.',
+  help: 'What reaches you, and how — the studio chooses which go out, in Settings › Studio notifications.',   // (the calm UI build 2026-10-27, 1-41) the tab's own name
   /** Accounting opens Settings › Finance alone (S06) — the sentence without the page they can't open */
-  helpBooks: 'What reaches you, and how. Which notices go out at all is the studio’s choice — its Owners and Admins set it.',
+  helpBooks: 'What reaches you, and how — the studio’s Owners and Admins choose which go out.',
   emails: 'Emails',
   muted: 'Muted',
   choose: 'Choose what reaches you',
 } as const
 export const EMAIL_MODE_HELP: Record<EmailMode, string> = {
-  each: 'Each email goes out with its notice in the bell.',
+  each: 'Each email goes out with its notification in the bell.',
   daily: 'One email at 8 AM with what came in since the last one and what is due. The urgent ones — a client’s answer or signature, a task for you, an approval waiting — still come at once.',
 }
 export const NO_EMAIL_LINE = 'Add your email in Your details first — the summary goes there.'
-export const NOTHING_MUTED = 'Nothing muted — every notice the studio sends you reaches you.'
+export const NOTHING_MUTED = 'Nothing muted'
 /** "2 muted: A lead’s or project’s stage changes and Someone comments on a task." — past three, the first three "and 4 more". */
 export function mutedLine(labels: string[]): string {
   if (!labels.length) return NOTHING_MUTED
@@ -145,8 +147,8 @@ export function mutedLine(labels: string[]): string {
 }
 export const MUTE_DIALOG = {
   title: 'What reaches you',
-  subtitle: 'Switch a notice off and it stops for you alone — no bell, no email, no WhatsApp. Everyone else still hears it.',
-  studioOff: 'Off for the whole studio — Settings › Notifications',
+  subtitle: 'Switch a notification off and it stops for you alone — no bell, no email, no WhatsApp. Everyone else still hears it.',
+  studioOff: 'Off for the whole studio — Settings › Studio notifications',
 } as const
 /** When the next summary goes — "today at 8 AM" before 8, else "tomorrow at 8 AM" (today's went, or had nothing to say, or the choice was made
     after 8 — its first one waits for the next morning). */

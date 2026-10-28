@@ -16,6 +16,7 @@ import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters
 import type { LeadContractsData } from '@/lib/leads/contracts'
 import { withFrom } from '@/lib/nav'
 import { awaitingLine, bundleMessage, contractLink, firstName, reminderMessage } from '@/lib/contracts/model'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import { linkExpired } from '@/lib/contracts/link'
 import { moveStageHref } from '@/lib/leads/move-link'
 import { archiveContract, deleteContracts, listArchivedContracts, setContractStatus, unarchiveContracts } from '@/app/leads/contracts-actions'
@@ -79,7 +80,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const [headSort, setHeadSort] = useState<ContractHeadSort>(null)
   const onSort = (key: Parameters<typeof nextHeadSort>[1]) => { setHeadSort((h) => nextHeadSort(h, key)); setFilters((f) => (f.sort === 'newest' ? f : { ...f, sort: 'newest' })) }
   const applyFilters = (next: ContractFilters) => { if (next.sort !== filters.sort) setHeadSort(null); setFilters(next) }
-  const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query), headSort), [contracts, filters, query, now, headSort])
+  const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query, (c) => [c.fromQuoteId ? data.quotes[c.fromQuoteId]?.number : null, contractStatusLabel(c.status)].filter(Boolean).join(' ') || null)   /* (4-26 · W-612) the quote number it signs, and the status as it reads */, headSort), [contracts, filters, query, now, headSort, data.quotes])
   const nothingMatches = contracts.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
   /* (Contracts on the move, C4 — P-07) a phone's selection: a hold on a card selects it, the bulk bar deletes; what leaves the view leaves it */
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
@@ -157,7 +158,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
     }
     if (status === 'Signed') { setMarking(contract); return }
     if (status === 'Draft' && contract.status === 'Sent to Client') { stop(contract); return }   // (pending modules S03) the link ends — said, with Undo
-    void run('change the status', () => setContractStatus(contract.id, status), `Contract marked ${status}`)
+    void run('change the status', () => setContractStatus(contract.id, status), `Contract marked ${contractStatusLabel(status)}`)
   }
   /* (pending modules S03 — 1.0's cancel) Stop the signing link: back to Draft, the address dead; Undo puts the same link back */
   const stop = (c: Contract) => {
@@ -178,7 +179,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         const q = quoteBlockOf(contract); if (q) { sayQuoteBlock(contract, q); return }
       }
       const write = copyText(contractLink(contract))
-      if (contract.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(contract.id), 'Signing link copied — the contract is Sent to Client now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
+      if (contract.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(contract.id), 'Signing link copied — the contract is waiting for signature now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
       /* (pending modules S03) a copy is a send: a link past its window opens again for the studio's days */
       else if (contract.status === 'Sent to Client' && linkExpired(contract, Date.now())) void write.then(() => { void run('open the link again', () => renewSigningLink(contract.id, 'copy'), `Signing link copied — it opens for ${data.linkDays} days from now`) }, () => fail('copy the link'))
       else void write.then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
@@ -232,7 +233,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
                             return r }, undefined, { refresh: true }); if (ok) setMarking(null) }} />
       {/* (UX audit C5) Send a reminder: the Send dialog with the same link and a nudge — WhatsApp opens on the press */}
       <SendContractDialog open={!!remind?.open} onClose={closeRemind} title={reminding && awaitingLine(reminding, now)?.expired ? 'Send the link again' : 'Send a reminder'}
-                          subtitle={reminding ? `${reminding.title} is still waiting for a signature. Send via WhatsApp opens your chat with the client, the same link in the message — it opens for ${data.linkDays} days from now.` : ''}
+                          subtitle={reminding ? `${reminding.title} is still waiting for a signature. Send on WhatsApp opens your chat with the client, the same link in the message — it opens for ${data.linkDays} days from now.` : ''}
                           link={reminding ? contractLink(reminding) : ''} defaults={{ name: reminding?.recipientName || data.lead.name, phone: reminding?.recipientPhone || data.lead.phone }}
                           draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: data.studioName, title: reminding?.title ?? 'agreement', link: reminding ? contractLink(reminding) : '' })}
                           onMarkSigned={() => { const r = reminding; closeRemind(); if (r) setMarking(r) }}
@@ -244,7 +245,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
                             if (r) void run('renew the link', () => renewSigningLink(r.id, 'whatsapp'), `Reminder sent to ${name}`)
                           }} />
       <UnsignDialog to={unsign?.to ?? null} signedAt={unsign?.contract.signedAt ?? null} onCancel={() => setUnsign(null)}
-                    onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${u.to}`) }} />
+                    onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${contractStatusLabel(u.to)}`) }} />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <ContractsFiltersModal
         open={filtersOpen} value={filters} now={now}
@@ -266,7 +267,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       {/* (REG-633, E-118) addressed to the documents' recipient; Copy link records the bundle so the copied link opens */}
       <SendBundleDialog open={bundleOpen} onClose={() => { setBundleOpen(false); setBundleFirst(null) }} contracts={bundleable} quoteBlock={quoteBlockOf} defaults={{ name: bundleable[0]?.recipientName || data.lead.name, phone: bundleable[0]?.recipientPhone || data.lead.phone }}
                         first={bundleFirst} loadStandard={loadStandard}
-                        onShare={({ bundleId, contractIds, templateIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }, { templateIds }), 'Signing link copied — the documents are Sent to Client now') }}
+                        onShare={({ bundleId, contractIds, templateIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }, { templateIds }), 'Signing link copied — the documents are waiting for signature now') }}
                         draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
                         onSend={({ bundleId, contractIds, templateIds, name, phone, message }) => {
                           setBundleOpen(false); setBundleFirst(null)

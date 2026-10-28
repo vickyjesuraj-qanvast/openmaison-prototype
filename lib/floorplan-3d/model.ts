@@ -39,6 +39,10 @@ export const SAMPLE_PLANS: readonly SamplePlan[] = [
 ]
 /** The looks a sample has views for, in 1.0's order. */
 export const sampleLooks = (s: SamplePlan) => LOOK_CHOICES.filter((l) => s.renders[l.value].length > 0)
+/** (2026-10-27) Why a look can't be picked, or null when it can: both looks are always offered (1.0), and a sample without views of one says
+    so in its card — a studio's own plan is drawn in either by the image model. *(invented copy)* */
+export const lookNotReady = (s: SamplePlan | null, look: Look): string | null =>
+  s && !s.renders[look].length ? `This sample has no ${lookLabel(look).toLowerCase()} view yet` : null
 /** The samples the page offers — those with a view to show. */
 export const READY_SAMPLES: readonly SamplePlan[] = SAMPLE_PLANS.filter((s) => sampleLooks(s).length > 0)
 export const samplePlan = (key: string | null | undefined) => SAMPLE_PLANS.find((s) => s.key === key) ?? null
@@ -56,15 +60,25 @@ export const PLAN_MAX_BYTES = 10 * 1024 * 1024
 export const FP3D_WORDS = {
   title: 'Floorplan to 3D Isometric',
   hero: 'Turn any floor plan photo into a marketing-ready 3D view',
-  sub: 'Dollhouse or top-down — in under a minute.',
+  sub: 'Dollhouse or Top-down — in under a minute.',   // (the calm UI build, 6-22) the looks by the cards' own names
   steps: [
     ['Upload any photo of a floor plan', ' — we straighten and clean it automatically.'],
     ['We read the rooms', '; you confirm the counts with one glance.'],
-    ['Pick dollhouse or top-down', ' and get the 3D view in about 30 seconds.'],
+    ['Pick Dollhouse or Top-down', ' and get the 3D view in about 30 seconds.'],   // (the calm UI build, 6-22) the looks by the cards' own names
   ] as const,
   drop: 'Drop the floor plan here or browse',
   dropHelp: 'A photo is fine — any angle, even a picture of paper on a desk. JPG, PNG, WebP, HEIC or PDF.',
   get: 'What you’ll get',
   samples: 'Or try a sample plan',
   pipeline: ['Read the plan', 'Confirm the rooms', '3D render'] as const,
+  /** (2026-10-27) the prototype's two lines about a studio's own plan — before the upload, and after it *(invented copy)*; (the calm UI build
+      2026-10-27, 6-22 · W-293 — T-05: no prototype talk on a studio's screen) the first sits behind the header's info glyph, the held line stays */
+  prototypeHint: 'On the prototype, your own plan is straightened but not drawn in 3D — the sample plans go all the way.',
+  held: 'On the prototype, your own plan stops here — reading its rooms and drawing it in 3D need the image model the live app has.',
+  /** (the calm UI build, 6-22 · W-349) under a sample's view — a sample, its views ready-made (was the image model's story) */
+  sampleNote: 'Sample plan — ready-made views',
+  /** (the calm UI build, 6-22) the wait for a sample's view */
+  sampleWait: 'A sample plan’s views are ready-made — a moment.',
+  /** the info glyph's name (the prototype's note about a studio's own plan) */
+  prototypeLabel: 'What happens to your own plan here',
 }

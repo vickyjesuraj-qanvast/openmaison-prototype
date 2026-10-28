@@ -6,13 +6,12 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { spring } from '@/lib/motion'
 import { Button } from '@/components/ds'
-import { Tooltip } from '@/components/om/tooltip'
 import { Chips } from '@/components/om/chips'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadQuestionsData } from '@/lib/leads/questions'
-import { answerWords, summarise } from '@/lib/leads/question-model'
+import { answerWords, clientFirst, summarise } from '@/lib/leads/question-model'
 import { Dialog } from '@/components/om/dialog'
 import { displayDateTime } from '@/lib/format'
 import { answerQuestion, askClientQuestions } from '@/app/leads/questions-actions'
@@ -34,8 +33,11 @@ import styles from './lead-questionnaire.module.css'
  * Answers from this side are always "By Studio" (REG-189); Save → `answerQuestion` → "Answer saved";
  * "Send via WhatsApp" (REG-288) → "Notification sent to <lead>" (REG-188).
  */
-export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQuestionsData; /** (parity P-12) the host's record — a project passes "project" */ noun?: 'lead' | 'project'
-  /** (simplify S-03) on a project: the Client group's view switch in the title's place */ views?: ReactNode }) {
+export function LeadQuestionnaire({ data, noun = 'lead', views, setUpHref = null }: { data: LeadQuestionsData; /** (parity P-12) the host's record — a project passes "project" */ noun?: 'lead' | 'project'
+  /** (simplify S-03) on a project: the Client group's view switch in the title's place */ views?: ReactNode
+  /** (the calm UI build 2026-10-27 — 2-23) where the studio's questions are set up (Company › Questionnaire) — given for an Owner or an Admin,
+      who may; the empty state then links there. Others read where it lives, unlinked. */
+  setUpHref?: string | null }) {
   const { questions, leadName, now, askedAt, leadId, bankCount, askedOn, history = {} } = data
   const [historyOf, setHistoryOf] = useState<string | null>(null)   // (gaps build D, item 9) the question whose answer history is open
   const snackbar = useSnackbar()
@@ -106,25 +108,27 @@ export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQu
   }
 
   const noQuestions = questions.length === 0
+  const first = clientFirst(leadName)
   /* (REG-612, parity Q-21) The bank's enabled questions this lead lacks, added on a press. */
   const addBank = () => { void (async () => { try { const n = await addStudioQuestions(leadId); snackbar({ message: `${n} question${n === 1 ? '' : 's'} added` }); router.refresh() } catch { snackbar({ message: 'Couldn’t add the questions — please try again' }) } })() }
-  const askButton = (
+  /* (the calm UI build 2026-10-27 — 3-33 · 2-18 · W-008) "Ask {client}", named for the person; it shows once there is a question to ask — frame
+     201's disabled button with no reason is gone (the empty state's own way in is Add them) — the house empty rule ③, nothing that can't act. */
+  const askButton = noQuestions ? null : (
     <span className={styles.anchor}>
-      {/* Frame 201: State=Disabled while there are no questions; the tooltip explains the lock (REG-75). */}
-      <Button variant="primary" appearance="outlined" isDisabled={noQuestions} onPress={() => setAskOpen(true)}>Ask Client</Button>
+      <Button variant="primary" appearance="outlined" onPress={() => setAskOpen(true)} data-testid="ask-client">{first ? `Ask ${first}` : 'Ask the client'}</Button>
     </span>
   )
 
   return (
     <div className={styles.tab} data-testid="lead-questionnaire">
       <div className={styles.bar}>
-        {views ?? <h2 className={styles.title}>All Questions</h2>}
+        {views ?? <h2 className={styles.title}>All questions</h2>}
         {!noQuestions && bankCount > 0 ? <Button appearance="text" onPress={addBank}>{`Add the studio’s ${bankCount} new question${bankCount === 1 ? '' : 's'}`}</Button> : null}   {/* (REG-612) */}
-        {noQuestions ? <Tooltip label="No questions yet">{askButton}</Tooltip> : askButton}
+        {askButton}
       </div>
 
       {noQuestions ? (
-        <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} noun={noun} />
+        <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} noun={noun} setUpHref={setUpHref} />
       ) : (
         <div className={styles.layout}>
           {compact ? (
@@ -140,6 +144,7 @@ export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQu
                           layout={reduced ? false : 'position'} transition={spring.settle}>
               <QuestionCard
                 question={q}
+                client={first}
                 now={now}
                 mode={answering === q.id ? 'answer' : 'view'}
                 onAnswer={() => { setAnswering(q.id) }}
@@ -155,7 +160,7 @@ export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQu
           </div>
           {summary ? (
             <div className={styles.summary}>
-              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} askedAt={askedAt} requiredOpen={questions.filter((q) => q.required && !q.answeredBy).length} />
+              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} askedAt={askedAt} requiredOpen={questions.filter((q) => q.required && !q.answeredBy).length} client={first} />
             </div>
           ) : null}
         </div>

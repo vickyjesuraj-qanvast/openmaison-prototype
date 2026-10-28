@@ -33,7 +33,9 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     ok('a new member shows without a reload', await page.getByTestId('member-row').filter({ hasText: 'Probe Person' }).count() === 1)
     // #6 the confirm names the team and the backup seat; Undo gives them back
     const james = page.locator('[data-testid="member-row"][data-role="Manager"]')   // James is the one Manager; his Designers' rows name him too
-    await james.getByRole('button', { name: 'Deactivate' }).click()
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-01: Deactivate is the member row's ⋮ (`member-more`), a row of the house menu */
+    await james.getByTestId('member-more').click(); await page.waitForTimeout(300)
+    await page.getByRole('menuitem', { name: 'Deactivate', exact: true }).click()
     const conf = page.getByRole('dialog', { name: 'Deactivate James?' }); await conf.waitFor()
     const msg = await conf.innerText()
     ok('the confirm names the team it lets go', /Michelle and Sarah will report to nobody/.test(msg), msg.replace(/\n/g, ' ').slice(0, 160))
@@ -60,10 +62,11 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     ok('the bank says it is read-only for a Designer', await page.getByTestId('read-only-line').isVisible())
     await page.goto(`${BASE}/company/integrations`); await ready(page)
     ok('Integrations: the read-only line', await page.getByTestId('read-only-line').isVisible())
-    ok('a Designer is never sent the webhook token', !(await page.content()).includes(TOKEN) && await page.getByRole('button', { name: 'Copy URL' }).count() === 0)
+    ok('a Designer is never sent the webhook token', !(await page.content()).includes(TOKEN) && await page.getByRole('button', { name: /^Copy (URL|link)$/ }).count() === 0)   // (the calm UI build 2026-10-27, a deliberate change) 5-15: the press reads Copy link — neither name may show for a Designer
     as('dane')
     await page.goto(`${BASE}/company/questionnaire`); await ready(page)
-    const del = page.getByRole('button', { name: /^Delete “/ }).first()
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-30: a question's tools (Delete among them) are its row's one ⋮ — the ⋮ is what must sit in view */
+    const del = page.getByRole('button', { name: /^More options for “/ }).first()
     const out = await del.evaluate((b) => { const t = b.closest('[role="table"]').getBoundingClientRect(); const r = b.getBoundingClientRect(); return r.right - t.right }).catch(() => 99)
     ok('768: the bank’s Delete is fully in view', out <= 0, `${Math.round(out)}px`)
     await shot(page, '09-bank-768')
@@ -98,6 +101,7 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     await page.getByRole('option', { name: 'The nearest S$5' }).click(); await page.waitForTimeout(900)
     ok('the rounding line keeps S$', /round to the nearest S\$5/.test(await snack(page)), await snack(page))
     await page.goto(`${BASE}/settings?section=notifications`); await ready(page)
+    await page.getByTestId('wording-new_lead').click(); await page.waitForTimeout(400)   // (the calm UI build 2026-10-27, a deliberate change) B5 5-05: a message's wording opens from its event row's Edit wording
     await page.getByTestId('message-new_lead-whatsapp').getByRole('button', { name: 'Edit' }).click()
     const mdlg = page.getByRole('dialog').filter({ has: page.getByRole('textbox', { name: 'Message' }) }); await mdlg.waitFor()
     const ta = mdlg.getByRole('textbox', { name: 'Message' })
@@ -114,11 +118,11 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     const { ctx, page } = await desk()
     sql(`update settings set value = json_insert(value, '$.details.entities[#]', json('{\"id\":\"old-co\",\"name\":\"Old Co Pte Ltd\",\"uen\":\"201900001A\",\"gstRegistered\":false,\"bankName\":\"\",\"accountName\":\"\",\"accountNo\":\"\",\"swift\":\"\",\"payNow\":\"\",\"retired\":true}')) where key='brand'`)
     // (one-home N-06, a deliberate change of this rule) Settings › Studio no longer lists the entities — Company › Profile says Retired.
-    await page.goto(`${BASE}/company/profile`); await ready(page)
+    await page.goto(`${BASE}/company/profile?tab=entities`); await ready(page)   // (the calm UI build 2026-10-27, a deliberate change) 5-36: Profile's entities are its Bank & entities tab
     ok('a retired entity says so on Company › Profile', (await page.getByTestId('entity-retired').count()) >= 1)
     sql(`update settings set value = json_set(value, '$.meta.connected', json('true'), '$.meta.page', 'Demo Studio · Facebook page') where key='lead_capture'`)
     await page.goto(`${BASE}/company/integrations`); await ready(page)
-    ok('an Owner copies the webhook URL', await page.getByRole('button', { name: 'Copy URL' }).count() >= 1)
+    ok('an Owner copies the webhook URL', await page.getByRole('button', { name: 'Copy link' }).count() >= 1)   // (the calm UI build 2026-10-27, a deliberate change) 5-15: a webhook is "a link" — Copy link
     ok('the lead forms are the house switch table', await page.getByRole('table', { name: 'Lead forms' }).getByRole('columnheader', { name: 'Sends leads' }).count() === 1)
     ok('no “dupes”', !/\bdupes\b/.test(await page.getByTestId('integrations').innerText()))
     await shot(page, '05-integrations')
@@ -129,6 +133,10 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     const { ctx, page } = await desk()
     await page.goto(`${BASE}/leads`); await ready(page)
     await page.getByRole('button', { name: /^Notifications/ }).first().click(); await page.waitForTimeout(1200)
+    /* (the calm UI build 2026-10-27, a deliberate change) the due rows fold under "Due · n" while notices sit above them — open it, so the due
+       rows are counted and read as before */
+    const fold = page.getByTestId('notifications-due-fold')
+    if (await fold.count() && (await fold.getAttribute('aria-expanded')) !== 'true') { await fold.click(); await page.waitForTimeout(500) }
     const due = await page.locator('[data-testid="notification-row"][data-derived]').count()
     ok('a due follow-up wears Due, never the unread dot', await page.locator('[data-testid="notification-row"][data-derived] [aria-label="Unread"]').count() === 0, `${due} due`)
     const mark = page.getByRole('button', { name: 'Mark all as read' })

@@ -211,7 +211,7 @@ export function TasksPopover({
 
   const inner = lead ? (
     <div className={styles.body}>
-      <span className={styles.sectionLabel}>Open Tasks <span data-dot>·</span> <span>{openCount}</span></span>
+      <span className={styles.sectionLabel}>Open tasks <span data-dot>·</span> <span>{openCount}</span></span>
       <div className={styles.list}>
         <AnimatePresence initial={false}>
           {lead.tasks.map((t) => (
@@ -233,7 +233,7 @@ export function TasksPopover({
   if (sheet) {
     return (
       <Sheet open={open} onClose={onClose} title={lead?.name} subtitle={lead ? `${phoneLocal(lead.phone)} · Current stage: ${lead.stage}` : undefined}
-             footer={adding ? null : <Button onPress={() => setAdding(true)}>Add Task</Button>}>
+             footer={adding ? null : <Button onPress={() => setAdding(true)}>Add task</Button>}>
         {inner}
         {adding ? (
           <div className={styles.addArea}
@@ -278,7 +278,7 @@ export function TasksPopover({
             </div>
           ) : (
             <SurfaceFoot>
-              <FootStart><Button onPress={() => setAdding(true)}>Add Task</Button></FootStart>
+              <FootStart><Button onPress={() => setAdding(true)}>Add task</Button></FootStart>
             </SurfaceFoot>
           )}
         </motion.div>

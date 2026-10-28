@@ -7,7 +7,8 @@ import { Chips } from '@/components/om/chips'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { overlayFade, modalPanel } from '@/lib/motion'
-import { displayDate, relativeTime, phoneLocal } from '@/lib/format'
+import { displayDate, phoneLocal } from '@/lib/format'
+import { whenWords } from '@/lib/leads/row-text'
 import type { ReviewRow } from '@/lib/leads/queries'
 import { readAmount } from '@/lib/leads/import-values'
 import styles from './review-sheet.module.css'
@@ -31,7 +32,7 @@ const FIELDS: { label: string; key: string; leadKey: MergeKey; radio: boolean }[
   { label: 'Budget (S$)', key: 'Estimated Budget (S$)', leadKey: 'budgetMinor', radio: true },
   { label: 'Source', key: 'Lead Source', leadKey: 'source', radio: true },
   { label: 'Property type', key: 'Property Type', leadKey: 'propertyType', radio: true },
-  { label: 'Address', key: 'Property Address', leadKey: 'propertyAddress', radio: true },
+  { label: 'Property address', key: 'Property Address', leadKey: 'propertyAddress', radio: true },   /* (the calm UI build — 2-16) named apart from the lead's own address, as the form names them */
   { label: 'District', key: 'District', leadKey: 'area', radio: true },
   { label: 'Lead address', key: 'Lead Address', leadKey: 'leadAddress', radio: true },
   { label: 'Condition', key: 'Condition', leadKey: 'condition', radio: true },
@@ -147,22 +148,23 @@ export function ReviewSheet({
           <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads"
                       tabIndex={-1}>
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel; the close takes Esc's gate */}
-            <SurfaceHead title={`Review imported leads (${rows.length})`} onClose={close} closeLabel="Close review" closeDisabled={busy} className={styles.heading} />
+            <SurfaceHead title={`Review imported leads · ${rows.length}`} onClose={close} closeLabel="Close review" closeDisabled={busy} className={styles.heading} />
 
             <div className={styles.toolbar}>
               <ChipRail label="Filter by source">
                 {/* (REG-729) The house chips (components/om/chips.tsx): one pick, arrow keys between them; pressing the picked source
                     again lets go of it, back to All, as it always did. */}
                 <Chips label="Filter by source" value={activeSource ?? ALL_SOURCES}
-                       options={[{ value: ALL_SOURCES, label: 'All' }, ...sources.map(([s, n]) => ({ value: s, label: `${s} (${n})` }))]}
+                       options={[{ value: ALL_SOURCES, label: 'All' }, ...sources.map(([s, n]) => ({ value: s, label: `${s} · ${n}` }))]}
                        onChange={(v) => setSource(v === ALL_SOURCES || v === source ? null : v)} />
               </ChipRail>
               <span className={styles.vdivider} />
               <Switch size="sm" isSelected={effectiveDupOnly} onChange={setDupOnly} aria-label="Show only duplicates" />
-              <span className={styles.toggleLabel}>Show only duplicates ({duplicates.length})</span>
-              <Button className={styles.toneGreen} isDisabled={clean.length === 0 || busy}
+              <span className={styles.toggleLabel}>Show only duplicates · {duplicates.length}</span>
+              {/* (the calm UI build 2026-10-27 — audit 2-16, W-481) the house primary, in words: the green filled "Approve All Clean (13)" was off the palette */}
+              <Button isDisabled={clean.length === 0 || busy} data-testid="review-approve-clean"
                       onPress={() => { void run(() => onApprove(clean.map((r) => r.row.id))) }}>
-                Approve All Clean ({clean.length})
+                {`Approve ${clean.length} (no duplicates)`}
               </Button>
             </div>
 
@@ -182,29 +184,21 @@ export function ReviewSheet({
                       <div className={styles.cardData}>
                         <div className={styles.cardHead}>
                           <span className={styles.cardName}>{r.data['Lead Name']}</span>
-                          <span className={styles.cardAgo}>{relativeTime(r.receivedAt, new Date(now))}</span>
+                          <span className={styles.cardAgo}>{whenWords(r.receivedAt, now)}</span>   {/* (the calm UI build — 2-16 · T-11) one date format */}
                         </div>
                         <span className={styles.cardMeta}>
                           {[r.data['Lead Phone Number'] ? phoneLocal(r.data['Lead Phone Number']) : '', r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}   {/* (leads on the move, A-16 · REG-456) the number grouped, as everywhere */}
                         </span>
                       </div>
                       {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : r.twin ? `${r.twin.data['Lead Name'] || 'a row'} (${r.twin.sameFile ? 'in this file' : 'in the queue'})` : 'another lead in this file'}</span> : null}
-                      <div className={styles.cardFoot}>
-                        {/* (REG-729) the DS Tag, outlined: yellow for a duplicate, the default tone for one pending */}
-                        <Tag appearance="outlined" color={isDup ? 'yellow' : 'default'}>{isDup ? 'Duplicate' : 'Pending'}</Tag>
-                        <span className={styles.cardActions}>
-                          {canMerge ? (
-                            <button type="button" className={styles.link} data-tone="primary" onClick={(e) => { e.stopPropagation(); setSelectedId(r.row.id) }}>View &amp; Merge</button>
-                          ) : (
-                            <>
-                              <button type="button" className={styles.link} data-tone="red" disabled={busy}
-                                      onClick={(e) => { e.stopPropagation(); void run(() => onReject([r.row.id])) }}>Reject</button>
-                              <button type="button" className={styles.link} data-tone="green" disabled={busy}
-                                      onClick={(e) => { e.stopPropagation(); void run(() => onApprove([r.row.id])) }}>Approve</button>
-                            </>
-                          )}
-                        </span>
-                      </div>
+                      {/* (the calm UI build 2026-10-27 — audit 2-16, W-585 · W-639 · T-02) No tag for the default state (every card was PENDING) — only a
+                          duplicate says so; no verbs on the cards: a card press opens it, and its Approve / Reject / Merge live once, in the detail's foot */}
+                      {isDup ? (
+                        <div className={styles.cardFoot}>
+                          <Tag appearance="outlined" color="yellow">Duplicate</Tag>
+                          {canMerge ? <span className={styles.cardActions}><span className={styles.cardHint}>Compare to merge</span></span> : null}
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })}
@@ -225,7 +219,7 @@ export function ReviewSheet({
                         <div className={styles.tr} role="row">
                           <div className={`${styles.th} ${styles.cLabel}`} />
                           <div className={`${styles.th} ${styles.cCol}`}>Existing · {displayDate(selected.existing.createdAt)}</div>
-                          <div className={`${styles.th} ${styles.cCol}`}>New · {selected.data['Lead Source'] || 'Import'} · {relativeTime(selected.receivedAt, new Date(now))}</div>
+                          <div className={`${styles.th} ${styles.cCol}`}>New · {selected.data['Lead Source'] || 'Import'} · {whenWords(selected.receivedAt, now)}</div>
                           <div className={`${styles.th} ${styles.cMerged}`}>Merged result</div>
                         </div>
                         {/* (REG-397) The stacked table at ≤767 hides the head row, so each value cell repeats its
@@ -258,7 +252,7 @@ export function ReviewSheet({
                                 <span className={styles.cValue}>{ex || '—'}</span>
                               </div>
                               <div className={`${styles.td} ${styles.cCol}`}>
-                                <span className={styles.stackLabel}>New · {selected.data['Lead Source'] || 'Import'} · {relativeTime(selected.receivedAt, new Date(now))}</span>
+                                <span className={styles.stackLabel}>New · {selected.data['Lead Source'] || 'Import'} · {whenWords(selected.receivedAt, now)}</span>
                                 {matched ? (
                                   <span className={`${styles.cValue} ${styles.matchedNote}`}>identical - matched on this</span>
                                 ) : (
@@ -297,14 +291,14 @@ export function ReviewSheet({
                     {/* (REG-725) the house foot, kept in the detail pane: the note on its left, the three answers on its right */}
                     <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                       <FootStart><span className={styles.note}>Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.</span></FootStart>
-                      <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject New</Button>
-                      <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
+                      <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Discard new</Button>
+                      <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep both</Button>
                       <Button isDisabled={busy}
                               onPress={() => {
                                 const p: Record<string, Pick> = {}
                                 for (const f of FIELDS) if (f.radio) p[f.label] = newValue(selected, f) ? pickOf(f.label) : 'existing'
                                 void run(() => onMerge(selected.row.id, p))
-                              }}>Merge into Existing</Button>
+                              }}>Merge</Button>
                     </SurfaceFoot>
                   </>
                 ) : selected.row.status === 'duplicate' && selected.twin ? (
@@ -345,7 +339,7 @@ export function ReviewSheet({
                     </div>
                     <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
-                      <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
+                      <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep both</Button>
                     </SurfaceFoot>
                   </>
                 ) : (
@@ -368,7 +362,7 @@ export function ReviewSheet({
                     </div>
                     <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
-                      <Button className={styles.toneGreen} isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Approve</Button>
+                      <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Approve</Button>   {/* (2-16) the house primary, not green */}
                     </SurfaceFoot>
                   </>
                 )}

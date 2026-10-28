@@ -90,7 +90,9 @@ export function ChoiceBoard({ choice, mode, contact, clientName, onConfirm, onAn
       <div className={styles.head}>
         <div className={styles.titleRow}>
           <h3 className={styles.h3}>{choice.title}</h3>
-          {waiting ? <MetaChip color="yellow">Waiting for you</MetaChip> : declined ? <MetaChip color="blue">With your designer</MetaChip> : <MetaChip color="green">Chosen</MetaChip>}
+          {/* (the calm UI build 2026-10-27, 3-48 · W-646 · T-04) on the client's page each choice sits under a heading that says its state (Waiting for
+              you · With your designer · Chosen) — the tag said it again; the studio's own look at one choice, with no heading, keeps it */}
+          {mode !== 'studio' ? null : waiting ? <MetaChip color="yellow">Waiting for you</MetaChip> : declined ? <MetaChip color="blue">With your designer</MetaChip> : <MetaChip color="green">Chosen</MetaChip>}
         </div>
         {meta ? <p className={styles.line}>{meta}</p> : null}
         {choice.note ? <p className={styles.note}>{choice.note}</p> : null}

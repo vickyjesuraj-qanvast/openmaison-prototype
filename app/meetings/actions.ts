@@ -246,8 +246,8 @@ export async function startMeeting(id: string, o: { consent: boolean; aim?: stri
   const got = await meetingFor(id); if (isErr(got)) return got
   const { m, viewer } = got
   if (m.status === 'live') return { ok: true, free: m.freeBlocks > 0, charged: 0, n: m.blocks }
-  if (m.status !== 'planned') return { error: m.status === 'held' ? 'This meeting was held — open its brief' : 'This meeting is cancelled — plan it again first' }
-  if (!o?.consent) return { error: 'Tell the client about the co-pilot first' }
+  if (m.status !== 'planned') return { error: m.status === 'held' ? 'This meeting was held — open its summary' : 'This meeting is cancelled — plan it again first' }
+  if (!o?.consent) return { error: 'Tell the client about Meeting Copilot first' }
   const aim = isAim(o.aim) ? o.aim : m.aim
   const whereKind = isWhere(o.whereKind) ? o.whereKind : m.whereKind
   const fresh = { ...m, aim, whereKind }
@@ -497,7 +497,7 @@ export async function remakeBrief(id: string): Promise<{ brief: MeetingBrief } |
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await meetingFor(id); if (isErr(got)) return got
   const { m } = got
-  if (m.status !== 'held') return { error: 'The brief comes once the meeting is held' }
+  if (m.status !== 'held') return { error: 'The summary comes once the meeting is held' }
   const brief = await makeBrief(m, (m.source as MeetingBrief['madeFrom']) ?? 'notes')
   await db.update(meetings).set({ briefJson: JSON.stringify(brief), briefAt: now(), updatedAt: now() }).where(eq(meetings.id, m.id))
   revalidateMeeting(m.leadId, m.id)
@@ -510,7 +510,7 @@ export async function editBrief(id: string, o: { summary?: string; actions?: str
   const got = await meetingFor(id); if (isErr(got)) return got
   const { m } = got
   const b = parseBrief(m.briefJson)
-  if (!b) return { error: 'This meeting has no brief yet' }
+  if (!b) return { error: 'This meeting has no summary yet' }
   const next: MeetingBrief = { ...b, edited: [...b.edited] }
   if (typeof o?.summary === 'string') { next.summary = o.summary.trim().slice(0, 2000) || b.summary; if (!next.edited.includes('summary')) next.edited.push('summary') }
   if (Array.isArray(o?.actions)) { next.actions = o.actions.filter((a): a is string => typeof a === 'string').map((a) => a.trim().slice(0, 200)).filter(Boolean).slice(0, 8); if (!next.edited.includes('actions')) next.edited.push('actions') }
@@ -623,7 +623,7 @@ export async function shareMeeting(id: string, opts: ShareOptions): Promise<{ to
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await meetingFor(id); if (isErr(got)) return got
   const { m } = got
-  if (m.status !== 'held' || !m.briefJson) return { error: 'The notes can be shared once the meeting is held and its brief made' }
+  if (m.status !== 'held' || !m.briefJson) return { error: 'The notes can be shared once the meeting is held and its summary made' }
   const t = await ensureToken(m)
   const at = now()
   /* (S42 audit C-06) only what the meeting has is kept as shared — no boards ticked on a meeting that kept none, no estimate without works */

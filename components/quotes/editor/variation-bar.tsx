@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
@@ -22,10 +23,16 @@ export function VariationBar({ v, changeMinor, status }: { v: QuoteVariation; ch
     <div className={styles.banner} role="status" data-testid="variation-bar">
       <span className={styles.bannerIcon}><Icon name="request_quote" size={20} weight={300} /></span>
       <span className={styles.bannerText}>
+        {/* (the calm UI build 2026-10-27, the UI audit's 4-52) one line: what it changes and by how much; the sent banner under it says where it is */}
         {approved
-          ? <>Approved by the client — the contract of <b>{v.projectName}</b> is {money2(after)} with this change ({signedMoney(changeMinor)}).</>
-          : <>A change to the contract of <b>{v.projectName}</b> ({v.projectNumber}): {money2(v.contractMinor)} today, {money2(after)} once the client approves it. <span className={styles.bannerHint}>An omission is a line with a minus quantity.</span></>}
+          ? <>Approved — <b>{v.projectName}</b>’s contract is {money2(after)} with this change ({signedMoney(changeMinor)}).</>
+          : <>Changes <b>{v.projectName}</b>’s contract by {signedMoney(changeMinor)} — {money2(after)} once approved.</>}
       </span>
+      {approved ? null : (
+        <Tooltip label={`${v.projectNumber} · the contract is ${money2(v.contractMinor)} today. An omission is a line with a minus quantity.`}>
+          <span className={styles.bannerIcon} tabIndex={0} aria-label="How a variation order changes the contract" data-testid="variation-how"><Icon name="info" size={20} weight={300} /></span>
+        </Tooltip>
+      )}
     </div>
   )
 }

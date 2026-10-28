@@ -14,6 +14,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'r5')
@@ -78,7 +79,7 @@ const nextInvoiceNo = () => {
     console.log('Contract value (Dane, Owner)')
     as('dane')
     await go(`/projects/${ryan}/money`)
-    ok(await p.locator('[role="tab"], a').filter({ hasText: /^Money(\s*\d+)?$/ }).count() > 0, 'the project has a Money tab, after Updates')   // (gaps build, package A — REG-a.15) a tab may carry its count
+    ok(await p.locator('[role="tab"], a').filter({ hasText: /^(Payments|Money)(\s*\d+)?$/ }) /* (the calm UI build 2026-10-27, a deliberate change) 3-02 */.count() > 0, 'the project has a Money tab, after Updates')   // (gaps build, package A — REG-a.15) a tab may carry its count
     /* (simplify S-07, a deliberate change of this rule) the four tiles and the story sentence became To collect · To pay · Profit: the contract is
        the To collect tile's "collected of" line, its make-up and what was invoiced are the tile's hover */
     ok(/of S\$81,355\.42/.test(await p.locator('[data-testid="money-collected"]').innerText()), 'Ryan’s contract value (collected of S$81,355.42) = the signed quote + his approved VO-1')
@@ -94,7 +95,7 @@ const nextInvoiceNo = () => {
     /* (simplify S-01, a deliberate change of this rule) the Money glance says four figures — the VOs are inside the contract value (their rows live on Money) */
     ok(/S\$ 81,355(?!\.)/.test(await p.locator('[data-testid="contract-value"]').innerText()), 'the Overview’s Money card reads the module — contract after VOs')   // (parity Q-03, a deliberate change of this rule) a card's sums in whole dollars, "S$ 81,355"; the Money tab keeps the cents
     await go('/projects')
-    ok(/S\$81,355/.test(await p.locator('[data-kb-row]').filter({ hasText: 'Ryan' }).first().innerText()), 'the listing’s Contract value includes the approved VO')
+    ok(/S\$ ?81,355/.test(await p.locator('[data-kb-row]').filter({ hasText: 'Ryan' }).first().innerText()), 'the listing’s Contract value includes the approved VO')   /* (the calm UI build 2026-10-27, a deliberate change) T-01 words; the reports' door is the ⋮'s "Reports" row (1-30); rows say money as cards do, "S$ 81,355" (T-11) */
     const act = await (async () => { await go(`/projects/${ryan}/activity`); return p.locator('[data-testid="activity-feed"]').innerText() })()
     ok(/approved the variation order “VO-1” on its confirmation link — the contract went from S\$77,900\.12 to S\$81,355\.42/.test(act) && /re-sized to the S\$81,355\.42 contract/.test(act), 'Activity: the approval and the rebalance')
     ok(/sent the Deposit invoice “INV-2026-001”/.test(act) && /submitted the Deposit invoice/.test(act), 'Activity: a Designer’s invoice submitted, then sent by the Owner')
@@ -103,7 +104,7 @@ const nextInvoiceNo = () => {
     console.log('Who sees money (Sarah, a Designer not on Benjamin’s team)')
     as('sarah')
     await go(`/projects/${ben}`)
-    ok(await p.locator('a').filter({ hasText: /^Money$/ }).count() === 0 && await p.locator('[data-card="money"]').count() === 0, 'she sees the project, but no Money tab and no Money card')
+    ok(await p.locator('a').filter({ hasText: /^(Payments|Money)$/ }) /* (the calm UI build 2026-10-27, a deliberate change) 3-02 */.count() === 0 && await p.locator('[data-card="money"]').count() === 0, 'she sees the project, but no Money tab and no Money card')
     await go(`/projects/${ben}/money`)
     ok(await p.locator('[data-testid="money-hidden"]').isVisible() && await p.locator('[data-testid="money-tiles"]').count() === 0, 'the Money address answers with the rule, and no figures')
     await shot('money-hidden-1440')
@@ -114,13 +115,18 @@ const nextInvoiceNo = () => {
     await go(`/projects/${ben}/money`)
     /* (gaps build B, REG-b.18) New ▾ on Money: the variation order is its first row */
     await p.locator('[data-testid="money-new"]').click(); await p.waitForTimeout(300)
-    await Promise.all([p.waitForURL(/\/quotes\//, { timeout: 15000 }), p.getByRole('menuitem', { name: /^Variation order/ }).first().click()])
+    await p.getByRole('menuitem', { name: /^Variation order/ }).first().click(); await p.waitForTimeout(300)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+    await Promise.all([p.waitForURL(/\/quotes\//, { timeout: 15000 }), p.getByRole('menuitem', { name: /^New variation order/ }).first().click()])
     await p.waitForLoadState('networkidle'); await p.waitForTimeout(1200)
     const vo = sql(`select id from quotes where kind='variation' and project_id='${ben}' order by created_at desc limit 1`)
     ok(!!vo && sql(`select number from quotes where id='${vo}'`) === 'VO-1', 'VO-1 made on Benjamin’s project, numbered per project')
-    ok(/Projects/.test(await p.locator('header').first().innerText()) && /Money/.test(await p.locator('header').first().innerText()), 'the crumb is the project’s Money tab')
+    ok(/Projects/.test(await p.locator('header').first().innerText()) && /Payments|Money/.test(await p.locator('header').first().innerText()) /* (the calm UI build 2026-10-27, a deliberate change) the tab reads "Payments" — its slug stays money (3-02) */, 'the crumb is the project’s Money tab')
     ok(/Variation order/i.test(await p.locator('header').first().innerText()), 'the header says it is a variation order')
-    ok(await p.locator('[data-testid="variation-bar"]').isVisible() && /S\$69,283\.13 today/.test(await p.locator('[data-testid="variation-bar"]').innerText()), 'the bar: the contract today and with this change')
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-52: the bar is one line — the change and the contract once approved; the contract today
+       rides its info tooltip (variation-how) */
+    await p.getByTestId('variation-how').hover(); await p.waitForTimeout(500)
+    ok(await p.locator('[data-testid="variation-bar"]').isVisible() && /once approved/.test(await p.locator('[data-testid="variation-bar"]').innerText()) && /S\$69,283\.13 today/.test(await p.locator('[role="tooltip"]').last().innerText().catch(() => '')), 'the bar: the contract with this change, and (its tooltip) the contract today')
+    await p.mouse.move(0, 0); await p.waitForTimeout(200)
     ok(await p.getByRole('tab', { name: 'Payment Schedule' }).count() === 0 && await p.locator('#section-payment').count() === 0, 'no payment schedule of its own')
     /* two lines (the probe's setup), then the omission typed as a minus quantity through the grid */
     const now = Math.floor(Date.now() / 1000)
@@ -135,10 +141,11 @@ const nextInvoiceNo = () => {
     await p.locator('[data-testid="variation-bar"]').scrollIntoViewIfNeeded()
     await shot('vo-editor-1440')
     await p.locator('[data-testid="quote-send"]').click(); await p.waitForTimeout(400)
-    ok(await p.getByRole('menuitem', { name: /Send for confirmation/ }).count() === 1 && await p.getByRole('menuitem', { name: /Send for signature/ }).count() === 0, 'Send ▾: confirmation only — no agreement to sign')
-    await p.getByRole('menuitem', { name: /Send for confirmation/ }).click(); await p.waitForTimeout(700)
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-21: Send ▾'s rows say what the client does — a variation order's is "Ask to approve" */
+    ok(await p.getByRole('menuitem', { name: /Ask to approve/ }).count() === 1 && await p.getByRole('menuitem', { name: /Send to sign|Send for signature/ }).count() === 0, 'Send ▾: confirmation only — no agreement to sign')
+    await p.getByRole('menuitem', { name: /Ask to approve/ }).click(); await p.waitForTimeout(700)
     ok(/variation order VO-1/.test(await dialog().locator('textarea').inputValue()) && /changes your contract by \+S\$1,199\.00/.test(await dialog().locator('textarea').inputValue()), 'the WhatsApp draft names the variation order and its change')
-    const wa1 = await whatsapp(() => dialog().getByRole('button', { name: 'Send via WhatsApp' }).click())
+    const wa1 = await whatsapp(() => dialog().getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click())   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     await p.waitForTimeout(1500)
     ok(/wa\.me\/65/.test(wa1) && /confirm/.test(decodeURIComponent(wa1)), 'WhatsApp opens on the press, with the confirmation link')
     ok(sql(`select status from quotes where id='${vo}'`) === 'Sent to Client', 'VO-1 is with Benjamin')
@@ -196,7 +203,7 @@ const nextInvoiceNo = () => {
     // ── (REG-1066) The quote editor's status pill keeps the same rule: Confirmed is an Owner's or an Admin's, as Mark as approved ──
     console.log('The VO status pill (REG-1066)')
     /* (fix-D, D-24) a variation order's pill and its list read the Money tab's words: "With the client", "Approved by the client" */
-    const pill = () => p.locator('header button[aria-haspopup="menu"]').filter({ hasText: 'With the client' }).first()
+    const pill = () => p.locator('header button[aria-haspopup="menu"]').filter({ hasText: /With (the )?client/ }) /* (the calm UI build 2026-10-27, a deliberate change) W-441 */.first()
     as('michelle')
     await go(`/quotes/${aishaVo.id}`)
     await pill().click(); await p.waitForTimeout(400)
@@ -252,11 +259,12 @@ const nextInvoiceNo = () => {
     const aishaPortal = holdsPortal(aisha)
     ok(/Send the Commencement invoice/.test(await dialog().innerText()) && /\/my\/demo-studio/.test(await dialog().locator('textarea').inputValue()) === aishaPortal,
        aishaPortal ? 'the send dialog: the client’s message points at her portal' : 'the send dialog: she was never invited, so the message leaves the portal out (REG-1056)')
-    ok((await dialog().getByRole('button', { name: /Copy link|Copied/ }).count() === 1) === aishaPortal && (await dialog().locator('code').count() === 1) === aishaPortal,
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-20: the address shows once — in the message, or on the link row when the message lacks it */
+    ok((await dialog().getByRole('button', { name: /Copy link|Copied/ }).count() === 1) === aishaPortal && (await dialog().locator('code').count() === 1) === (aishaPortal && !/\/my\/demo-studio/.test(await dialog().locator('textarea').inputValue())),
        aishaPortal ? 'Copy link gives her portal address' : 'no Copy link and no portal address for a client without the portal (REG-1076)')
     await shot('send-invoice-1440')
     const expectNo = nextInvoiceNo()   // read before the send: the number it must take
-    const wa2 = await whatsapp(() => dialog().getByRole('button', { name: 'Send via WhatsApp' }).click())
+    const wa2 = await whatsapp(() => dialog().getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click())   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     await p.waitForTimeout(1800)
     ok(/wa\.me\/65/.test(wa2) && /commencement payment/.test(decodeURIComponent(wa2)), 'WhatsApp opens on the press with the invoice’s message')
     const num = sql(`select number from project_invoices where id='${com}'`)
@@ -369,6 +377,7 @@ const nextInvoiceNo = () => {
     await p.locator('[data-testid="invoice-approval-row"] label').first().click(); await p.waitForTimeout(1200)
     ok(JSON.parse(sql(`select value from settings where key='project_invoices'`) || '{}').approval === true, 'switched back on')
     await go('/settings?section=studio')
+    await openRoles(p)   // (the calm UI build 2026-10-27, a deliberate change)
     const rules = await p.locator('body').innerText()
     ok(/Send a project’s invoice/.test(rules) && /Void a sent invoice/.test(rules) && /variation order given outside its link/.test(rules), 'Who may do what: sending, voiding, recording a VO’s approval')
     await ctx.close()

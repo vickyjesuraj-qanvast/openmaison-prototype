@@ -23,6 +23,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s44o')
@@ -179,7 +180,7 @@ const FEE_SPLIT = '{"template":null,"rows":[{"name":"Design fee","pct":0,"fixedM
     sql(`update quotes set gst_rule = NULL, amount_minor = 343 where id = '${PROBE_Q}'`)
     await go(p, `/quotes/${PROBE_Q}`); await settle(p, 1500)
     await p.getByTestId('quote-send').click(); await settle(p, 300)
-    await p.getByRole('menuitem', { name: /Send for confirmation/ }).click(); await settle(p, 900)
+    await p.getByRole('menuitem', { name: /* (the calm UI build 2026-10-27, a deliberate change) 4-21 · W-358: Send ▾'s row reads "Ask to confirm"; its dialog keeps its title */ /Ask to confirm/ }).click(); await settle(p, 900)
     const dlg = p.getByRole('dialog', { name: 'Send for confirmation' })
     if (await dlg.count()) { await dlg.getByRole('button', { name: /Send|WhatsApp/ }).last().click(); await settle(p, 2000) }
     const stamped = sql(`select status || '|' || coalesce(gst_rule, '-') from quotes where id = '${PROBE_Q}'`)
@@ -193,8 +194,12 @@ const FEE_SPLIT = '{"template":null,"rows":[{"name":"Design fee","pct":0,"fixedM
     /* as Dane: the role named where roles are */
     await go(p, '/company/members')
     const nurul = p.locator('[data-member-id="nurul"]')
-    ok(/Nurul Huda/.test(await nurul.innerText()) && /Looks after the leads/.test(await nurul.innerText()), 'Company › Members: Nurul Huda in Marketing — "Looks after the leads"')
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-03: the row's role line ("Looks after the leads") went — the Role says it, and what the
+       role may do is one press away, "What can each role do?" under the list → Settings › Roles & access (read next: the Marketing column) */
+    ok(/Nurul Huda/.test(await nurul.innerText()) && /Marketing/.test(await nurul.getByTestId('member-role').innerText()) && await p.getByTestId('members-roles-link').count() === 1,
+      'Company › Members: Nurul Huda in Marketing — her Role says it, and what it may do is the list’s "What can each role do?"')
     await go(p, '/settings?section=studio')
+    await openRoles(p)   // (the calm UI build 2026-10-27, a deliberate change)
     const access = await text(p)
     ok(/^marketing/i.test(await text(p, '[role="columnheader"]:has-text("Marketing")')) && /Change Settings › Lead management and Company › Integrations’ lead capture/.test(access), 'Who may do what: a Marketing column and the lead set-up row')
     const costRow = p.getByTestId('cost-role-Marketing')
@@ -242,7 +247,7 @@ const FEE_SPLIT = '{"template":null,"rows":[{"name":"Design fee","pct":0,"fixedM
     await srcCard.getByRole('textbox', { name: 'Add a source' }).fill('Probe Source'); await srcCard.getByRole('button', { name: 'Add', exact: true }).click(); await settle(m, 1200)
     ok(/Probe Source/.test(sql(`select value from settings where key = 'lead_sources'`)), '…a lead source added by Marketing is saved')
     await go(m, '/company/integrations')
-    ok(await m.getByTestId('int-xero').count() === 0 && await m.getByRole('button', { name: /Simulate an enquiry arriving/ }).count() > 0, 'Company › Integrations: lead capture theirs to change, no Xero card')
+    ok(await m.getByTestId('int-xero').count() === 0 && await m.getByRole('button', { name: /Simulate an enquiry arriving|^Try it/ }).count() > 0 /* (the calm UI build 2026-10-27, a deliberate change) B5: "Try it" */, 'Company › Integrations: lead capture theirs to change, no Xero card')
     await go(m, '/leads')
     await m.keyboard.press('Meta+k'); await settle(m, 500)
     const chips = await text(m, '[role="dialog"] [role="radiogroup"]')

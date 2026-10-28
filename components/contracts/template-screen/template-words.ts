@@ -51,12 +51,13 @@ export function stateWords(t: Pick<TemplateFacts, 'isDefault' | 'useAtHandover'>
   return w.length ? w.join(' · ') : null
 }
 
-/** The gallery row's facts: "13 headings · used by 5 · edited 14 Aug ’26"; a standard PDF: "PDF · 1 KB · used by 2 · edited …". */
+/** The gallery row's facts: "13 clauses · used by 5 · edited 14 Aug ’26"; a standard PDF: "PDF · 1 KB · used by 2 · edited …".
+    (the calm UI build 2026-10-27, 4-36) "clauses", as the desk card says. */
 export function galleryFacts(t: Pick<TemplateFacts, 'kind' | 'usedBy' | 'body'> & { size?: string | null }, edited: string): string {
   const used = t.usedBy ? `used by ${t.usedBy}` : 'not used yet'
   if (t.kind === 'pdf') return ['PDF', t.size ?? null, 'added to signings', used, `edited ${edited}`].filter(Boolean).join(' · ')
   const n = outlineOf(t.body).length
-  return [`${n} ${n === 1 ? 'heading' : 'headings'}`, used, `edited ${edited}`].join(' · ')
+  return [`${n} ${n === 1 ? 'clause' : 'clauses'}`, used, `edited ${edited}`].join(' · ')
 }
 
 /** Whether a contract started from it can go out: a place for the client to sign (Send's own rule). */

@@ -112,14 +112,16 @@ export function TrialXray({ initial, open }: { initial: TrialWork; open: Partial
         {reading ? <TrialReading reading={reading} onAnother={() => setGate(XRAY_WORDS.gate)} /> : (
           <section className={x.block} aria-label="Compare two quotes" data-testid="trial-xray-setup">
             <div className={xw.grid}>
+              {/* (the calm UI build 2026-10-27, 6-14 · W-061 — the studio's X-Ray, mirrored) each field labelled once: the box's title carries it, no
+                  capitals caption over it; the caption stays over Your quote's two choices only, where it names the choice */}
               <div className={xw.side}>
-                <span className={xw.eyebrow}>{XRAY_WORDS.theirs}</span>
-                {tile('other', 'The other studio’s quote')}
+                {tile('other', XRAY_WORDS.theirs)}
               </div>
               <div className={xw.side}>
-                <span className={xw.eyebrow}>{XRAY_WORDS.yours}</span>
+                {work.read ? <span className={xw.eyebrow}>{XRAY_WORDS.yours}</span> : null}
+                {/* (the calm UI build, T-01) a quote's lines are items, in the read note below */}
                 {work.read ? <Chips label={XRAY_WORDS.yours} options={[{ value: READ, label: XRAY_WORDS.fromRead(work.read.count) }, { value: FILE, label: 'Upload a file' }]} value={useRead ? READ : FILE} onChange={(v: string) => setUseRead(v === READ)} testId="trial-xray-use-read" /> : null}
-                {useRead && work.read ? <p className={x.fine} data-testid="trial-xray-read-note">{work.read.file} · {work.read.count} {work.read.count === 1 ? 'line' : 'lines'}</p> : tile('yours', 'Your quote')}
+                {useRead && work.read ? <p className={x.fine} data-testid="trial-xray-read-note">{work.read.file} · {work.read.count} {work.read.count === 1 ? 'item' : 'items'}</p> : tile('yours', 'Your quote')}
               </div>
             </div>
             {work.leads.length ? (

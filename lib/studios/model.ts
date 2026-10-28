@@ -114,7 +114,9 @@ export type StudioChrome = {
   studios: { key: string; name: string; line: string; open: boolean }[]
 }
 /** The demo's block as the mock draws it (REG-667). */
-export const DEMO_CHROME: StudioChrome = { name: 'Demo Studio', owner: 'Dane Bruce Lee', baseId: 'dane', mark: '/figma-assets/avatar-studio.svg', solo: false, studios: [] }
+/* (the calm UI build 2026-10-27 — the audit's 1-38, W-025) the block's second line is the member signed in ("Dane · Owner"); this is its fallback
+   before the team is read — the member's own name and role (was the mock's "Dane Bruce Lee", a name the member is called nowhere else) */
+export const DEMO_CHROME: StudioChrome = { name: 'Demo Studio', owner: 'Dane · Owner', baseId: 'dane', mark: '/figma-assets/avatar-studio.svg', solo: false, studios: [] }
 
 /** Why signing up can't start here, as the first step's notice says it — sign-ups paused for the platform, or a server with no room for a
     studio of its own; null when it can. */

@@ -33,6 +33,8 @@ import { issuesAnswer, portalOpenedAnswer, portalSeesAnswer, portalSignInAnswer,
 import { listingAnswer, setupAnswer } from './answers/setup'
 import { qanvastCreditsAnswer, qanvastReviewsAnswer } from './answers/qanvast'   // (pending modules S41b-5)
 import { missedAnswer } from './answers/notices'   // (pending modules S18)
+import { cashAnswer, compareLeadAnswer, remindClientAnswer } from './answers/dock'   // (the Dashboard redesigned 2026-10-26, lane D4)
+import { ABOUT_WORDS, isDockCard } from '@/lib/dashboard/dock'
 import type { MoveStep } from '@/lib/leads/move-link'
 
 /*
@@ -45,7 +47,9 @@ import type { MoveStep } from '@/lib/leads/move-link'
  */
 
 type AskInput = { question: string; path?: string | null; projectId?: string | null; milestoneId?: string | null
-  /** (pending modules S10) false — a page's own words asked for it (a suggestion), not the member's question: not kept in Recent */ record?: boolean }
+  /** (pending modules S10) false — a page's own words asked for it (a suggestion), not the member's question: not kept in Recent */ record?: boolean
+  /** (the Dashboard redesigned 2026-10-26, lane D4) the Dashboard card the question is about (a card's Ask — `pipeline` · `team` …): words the
+      question doesn't read on its own are read in that card's words (lib/dashboard/dock.ts `ABOUT_WORDS`) */ about?: string | null }
 
 /* ── the schedule ───────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -187,8 +191,11 @@ async function owedAnswer(c: Ctx, p: AskParams): Promise<MaisonAnswer> {
     .sort((a, b) => (b.i.state === 'overdue' ? 1 : 0) - (a.i.state === 'overdue' ? 1 : 0) || b.i.balanceMinor - a.i.balanceMinor)
   if (!owed.length) return { title: 'Nothing is owed', text: list.length === 1 ? 'Every sent invoice on this project is paid.' : 'Every sent invoice on the projects you see is paid.' }
   const total = owed.reduce((s, y) => s + y.i.balanceMinor, 0)
-  return { title: `${money2(total)} owed`, text: `${plural(owed.length, 'invoice')} not paid in full${owed.some((y) => y.i.state === 'overdue') ? ' — the overdue first' : ''}.`,
-    rows: owed.slice(0, 10).map(({ x, i }) => row(c, i.id, `${x.client} · ${i.number ?? i.stageName}`, `${money2(i.balanceMinor)} owed${i.state === 'overdue' ? ' · overdue' : ''}`, `/projects/${x.p.id}/money?open=${encodeURIComponent(i.id)}`)) }
+  /* (the calm UI build 2026-10-27 — the audit's 1-05 · 3-03, T-01 · T-17) one word and one count with the Dashboard's Key numbers: "To collect", the
+     invoices not paid in full, then what of it is overdue */
+  const overdueMinor = owed.filter((y) => y.i.state === 'overdue').reduce((s, y) => s + y.i.balanceMinor, 0)
+  return { title: `${money2(total)} to collect`, text: `${plural(owed.length, 'invoice')}${overdueMinor ? ` · ${money2(overdueMinor)} overdue — the overdue first` : ''}.`,
+    rows: owed.slice(0, 10).map(({ x, i }) => row(c, i.id, `${x.client} · ${i.number ?? i.stageName}`, `${money2(i.balanceMinor)} to collect${i.state === 'overdue' ? ' · overdue' : ''}`, `/projects/${x.p.id}/money?open=${encodeURIComponent(i.id)}`)) }
 }
 
 /* ── start a project (PR-059) ─────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -311,12 +318,12 @@ async function editLeadAnswer(c: Ctx, question: string, p: AskParams): Promise<M
 
 /* ── the answer ───────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-const MONEY: IntentId[] = ['owed', 'gst', 'margin', 'vendors', 'commission', 'pnl', 'cashflow', 'expenses', 'repeats', 'stop_repeat', 'statement']
+const MONEY: IntentId[] = ['owed', 'gst', 'margin', 'vendors', 'commission', 'pnl', 'cashflow', 'expenses', 'repeats', 'stop_repeat', 'statement', 'cash']   // (the Dashboard redesigned, lane D4) cash this month is the books'
 /** (pending modules S10) The intents about the leads' and the projects' work — Accounting is on none of them (lib/settings/roles.ts `onLeads`). */
 /** (S44O — call C6) What a Marketing member asks of Maison AI — the leads' own: who needs attention, a client, a lead added, moved or changed, their
     tasks, a message to draft, the team, what they missed, the rules for a home; anything else is answered with the role's line. */
 const DESK_ASKS: IntentId[] = ['leads_attention', 'lead_about', 'add_lead', 'move_lead', 'edit_lead', 'my_tasks', 'task_done', 'remind', 'draft_message', 'team', 'member_role', 'missed', 'compliance_rules', 'writing', 'help']
-const LEAD_WORK: IntentId[] = ['late', 'next', 'milestone', 'compliance_project', 'leads_attention', 'lead_about', 'quotes', 'draft_message', 'site_update', 'renders_picked', 'designs_waiting', 'renders_by_lead', 'layouts_opened', 'portal_opened', 'issues', 'attach', 'start_project']
+const LEAD_WORK: IntentId[] = ['late', 'next', 'milestone', 'compliance_project', 'leads_attention', 'lead_about', 'quotes', 'draft_message', 'site_update', 'renders_picked', 'designs_waiting', 'renders_by_lead', 'layouts_opened', 'portal_opened', 'issues', 'attach', 'start_project', 'remind_client', 'compare_lead']   // (the Dashboard redesigned, lane D4) the client's reminder and a lead beside its like
 
 /**
  * (pending modules S10) **The seam where a model plugs in.** Today a question is read by rule — the intent table in ./intents.ts picks what is
@@ -346,6 +353,10 @@ export async function answerQuestion(input: AskInput): Promise<MaisonAnswer & { 
   let unanswered = false   // (S10) a question it couldn't read stays out of Recent — asking it again would only say so again
   try {
     let m = await readQuestion(question, { projectId: c.projectId, milestoneId: c.milestoneId })
+    /* (the Dashboard redesigned 2026-10-26, lane D4 — "show what the next turn will use", C §2.3) a question asked about a card that reads as
+       nothing on its own ("what's stuck?" about Pipeline) is read again in the card's words; a question that reads on its own keeps its reading */
+    const about = typeof input?.about === 'string' && isDockCard(input.about) ? input.about : null
+    if (about && (!m || m.id === 'lead_about')) { const again = await readQuestion(`${question} ${ABOUT_WORDS[about]}`, { projectId: c.projectId, milestoneId: c.milestoneId }); if (again && again.id !== 'lead_about') m = again }
     /* a milestone the question names, on this project — unless the words ask for money, compliance or a new project */
     if (!c.milestoneId && (!m || m.id === 'late' || m.id === 'next' || m.id === 'lead_about')) { const named = await milestoneNamed(c, question); if (named) { c.milestoneId = named; m = { id: 'milestone', params: {}, score: 9 } } }
     if (m && acct && LEAD_WORK.includes(m.id)) a = { title: 'Not for Accounting', text: ON_LEADS, chips }
@@ -399,7 +410,10 @@ export async function answerQuestion(input: AskInput): Promise<MaisonAnswer & { 
       : m.id === 'add_lead' ? await addLeadAnswer(c, { ...leadParams(question), ...m.params })   // (pending modules S05)
       : m.id === 'move_lead' ? await moveLeadAnswer(c, question, m.params)
       : m.id === 'edit_lead' ? await editLeadAnswer(c, question, m.params)
-      : m.id === 'next_meeting' ? await nextMeetingAnswer(c)   // (pending modules S23)
+      : m.id === 'next_meeting' ? await nextMeetingAnswer(c, question)   // (pending modules S23) · (the Dashboard redesigned, lane D4) the meeting the words name
+      : m.id === 'cash' ? await cashAnswer(c)   // (the Dashboard redesigned 2026-10-26, lane D4)
+      : m.id === 'remind_client' ? await remindClientAnswer(c, question)
+      : m.id === 'compare_lead' ? await compareLeadAnswer(c, question)
       : m.id === 'meetings' ? await meetingsAnswer(c, question)
       : m.id === 'my_tasks' ? await myTasksAnswer(c, question)
       : m.id === 'task_done' ? await taskDoneAnswer(c, question)

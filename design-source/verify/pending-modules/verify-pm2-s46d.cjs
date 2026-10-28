@@ -22,6 +22,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s46d')
@@ -125,9 +128,9 @@ const INPLACE = 'ffffd46d-0000-4000-8000-000000000002'   // one put straight int
       await shot(p, 'pm2-s46d-editor-1440')
       /* the existing Send for digital signature */
       await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 700)
-      const send = p.getByRole('dialog').filter({ hasText: 'Send for digital signature' })
-      ok(await send.count() === 1, 'Send opens Send for digital signature')
-      await send.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 1800)
+      const send = p.getByRole('dialog').filter({ hasText: 'Send for signature' })   // (the calm UI build 2026-10-27, a deliberate change) W-359
+      ok(await send.count() === 1, 'Send opens Send for signature')
+      await send.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 1800)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
       ok(sql(`select status from contracts where id = '${NEW}'`) === 'Sent to Client' && /Sent to Kevin Ng for signature/.test(await snackText(p)), 'the file goes out for signature — Sent to Client, “Sent to Kevin Ng for signature”')
       await p.getByRole('button', { name: 'Close', exact: true }).first().click()
       await p.waitForURL(/\/leads\/[0-9a-f-]+\/files/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
@@ -355,7 +358,7 @@ const INPLACE = 'ffffd46d-0000-4000-8000-000000000002'   // one put straight int
       if ((await d.getByTestId('studio-name').innerText().catch(() => '')) !== 'Demo Studio') {
         const w = d.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await w.count()) await w.getByRole('button', { name: 'Not now' }).click().catch(() => {})
         await d.getByTestId('studio-block').click(); await d.waitForTimeout(500)
-        await d.getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await d.waitForTimeout(2500)
+        await (await openDemo(d)).getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await d.waitForTimeout(2500)
       }
       await D.close()
     }
@@ -391,7 +394,7 @@ const INPLACE = 'ffffd46d-0000-4000-8000-000000000002'   // one put straight int
         if ((await c.getByTestId('studio-name').innerText().catch(() => '')) !== 'Demo Studio') {
           const dlg = c.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await dlg.count()) await dlg.getByRole('button', { name: 'Not now' }).click().catch(() => {})
           await c.getByTestId('studio-block').click(); await c.waitForTimeout(500)
-          await c.getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
+          await (await openDemo(c)).getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
         }
         await C.close()
       } catch (e) { console.log('  ! could not switch the server back to the demo — restart it:', String(e).slice(0, 120)) }

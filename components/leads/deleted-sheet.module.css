@@ -29,18 +29,8 @@
   overflow-y: auto; overscroll-behavior: contain; }
 /* Reserve the floating bar's band so the last row + note stay reachable while a selection exists. */
 .body[data-bulk] { padding-bottom: 96px; }
-.banner {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  width: 100%;
-  background: var(--om-color-tertiary-yellow-variant2);
-  border: var(--om-border-1) solid var(--om-color-tertiary-yellow-variant1);
-  border-radius: var(--om-radius-1);
-  padding: var(--om-spacing-2) var(--om-spacing-3);
-  color: var(--om-color-on-tertiary-yellow-variant);
-  font: var(--om-type-body-m);
-}
-.banner span { flex: 1; }
-.bannerClose { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+/* (the calm UI build 2026-10-27 — audit 2-31) The 30-day rule, once: one quiet line under the title (it was an orange band and a foot note). */
+.lead { margin: 0; width: 100%; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
 /* The table is its own scroller on both axes (height to content, capped by the panel) so the
    head row can stick to its top and the frozen columns to its left edge. */
@@ -150,8 +140,7 @@
          a third of their 24px gap — the two targets stay 8px apart.
      The head and row cells are `overflow: hidden`, so each of these is sized to stay inside its own cell:
      a target that spilled would simply be clipped, not enlarged. The select checkboxes are the DS's own. */
-  .bannerClose, .hSort, .link { position: relative; }
-  .bannerClose::after { content: ''; position: absolute; inset: -12px; }
+  .hSort, .link { position: relative; }
   .hSort::after { content: ''; position: absolute; inset: -14px -4px; }
   .link::after { content: ''; position: absolute; inset: -12px -8px; }
 }
@@ -180,7 +169,7 @@
 .dActs > button { min-height: 44px; }
 .dMenu { display: inline-flex; }
 @media (max-width: 767px) {
-  .note, .banner { font: var(--om-type-body-m); }
+  .note, .lead { font: var(--om-type-body-m); }
 }
 
 /* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below

@@ -186,6 +186,9 @@ function PanelForm({ m, list, payments, tasks, team, client, decider, mayChange,
   const [moreLinks, setMoreLinks] = useState((m.after ?? []).length > 0)
   const [description, setDescription] = useState(m.description ?? '')
   const [color, setColor] = useState<string | null>(m.color ?? null)
+  /* (the calm UI build 2026-10-27, 3-46 · W-489) the bar's colour is a rarely-used look — under "More options", open from the start when this
+     milestone already wears one */
+  const [moreOpts, setMoreOpts] = useState(!!m.color)
   const [clientNote, setClientNote] = useState(m.clientNote ?? '')
   /* (parity map, CP-064) a Blocked stage's expected restart — optional; the client reads "Resuming around …" */
   const [resume, setResume] = useState(m.resumeOn != null ? toInput(m.resumeOn) : '')
@@ -309,7 +312,8 @@ function PanelForm({ m, list, payments, tasks, team, client, decider, mayChange,
           <span className={styles.askText}>{`${doneMine ? 'You' : team.find((x) => x.id === m.doneAsked!.by)?.name.split(' ')[0] ?? 'A member'} marked it done on ${dayMonth(m.doneAsked.at)}${answers ? ' — approve it?' : ' — waiting for an Owner or an Admin to approve it.'}`}</span>
           {answers && asks ? (
             <span className={styles.askActions}>
-              <Button size="sm" onPress={() => { void run(() => asks.approveDone(m)) }} isDisabled={asking} data-testid="approve-done">Approve as done</Button>
+              {/* (the calm UI build 2026-10-27, 3-46 · T-03) outlined: Save is the panel's one filled button */}
+              <Button size="sm" variant="primary" appearance="outlined" onPress={() => { void run(() => asks.approveDone(m)) }} isDisabled={asking} data-testid="approve-done">Approve as done</Button>
               <Button size="sm" variant="secondary" appearance="outlined" onPress={() => setDialog('send-back')} isDisabled={asking} data-testid="send-back-done">Send back</Button>
             </span>
           ) : doneMine && asks ? <Button size="sm" appearance="text" onPress={() => { void run(() => asks.withdrawDone(m)) }} isDisabled={asking} data-testid="withdraw-done">Take it back</Button> : null}
@@ -322,7 +326,8 @@ function PanelForm({ m, list, payments, tasks, team, client, decider, mayChange,
           <span className={styles.askText}>{`${mineAsk ? 'You asked' : `${extension.byName.split(' ')[0]} asks`} to end it ${dayLabel(extension.toEnd)}, ${extensionWords(extension)}: “${extension.reason}”${answers ? '' : mineAsk ? ' — waiting for an Owner or an Admin.' : ''}`}</span>
           {answers && asks ? (
             <span className={styles.askActions}>
-              <Button size="sm" onPress={() => setDialog('approve-more')} isDisabled={asking} data-testid="approve-more">Approve</Button>
+              {/* (the calm UI build 2026-10-27, 3-46 · T-03) outlined: Save is the panel's one filled button */}
+              <Button size="sm" variant="primary" appearance="outlined" onPress={() => setDialog('approve-more')} isDisabled={asking} data-testid="approve-more">Approve</Button>
               <Button size="sm" variant="secondary" appearance="outlined" onPress={() => setDialog('decline-more')} isDisabled={asking} data-testid="decline-more">Decline</Button>
             </span>
           ) : mineAsk && asks ? <Button size="sm" appearance="text" onPress={() => { void run(() => asks.withdrawMore(extension)) }} isDisabled={asking} data-testid="withdraw-more">Take it back</Button> : null}
@@ -384,12 +389,14 @@ function PanelForm({ m, list, payments, tasks, team, client, decider, mayChange,
         ) : mayChange ? <span><Link variant="primary" onPress={() => setMoreLinks(true)} data-testid="panel-also-add">It waits for another milestone too</Link></span> : null) : null}
         {m.plan && late ? <p className={styles.note}>{spanWord(late)} {late > 0 ? 'later' : 'earlier'} than first shared ({dayLabel(m.plan.end)}).</p> : null}
         {decider === m.id ? <p className={styles.note} data-tone="decides">This one decides the handover date.</p> : null}
-        {/* (gaps build, package C — 12) the bar's colour: by its status, or one of the eight */}
-        <div className={styles.also}>
-          <span className={styles.caption}>Bar colour</span>
-          <Chips label="Bar colour" disabled={!mayChange} value={color ?? 'status'} onChange={(v) => setColor(v === 'status' ? null : v)} testId="panel-color"
-                 options={[{ value: 'status', label: 'By status' }, ...MILESTONE_COLORS.map((c) => ({ value: c.key, label: c.label, swatch: c.hex }))]} />
-        </div>
+        {/* (gaps build, package C — 12) the bar's colour: by its status, or one of the eight — (the calm UI build 2026-10-27, 3-46) under More options */}
+        {moreOpts ? (
+          <div className={styles.also}>
+            <span className={styles.caption}>Bar colour</span>
+            <Chips label="Bar colour" disabled={!mayChange} value={color ?? 'status'} onChange={(v) => setColor(v === 'status' ? null : v)} testId="panel-color"
+                   options={[{ value: 'status', label: 'By status' }, ...MILESTONE_COLORS.map((c) => ({ value: c.key, label: c.label, swatch: c.hex }))]} />
+          </div>
+        ) : <span><Link variant="primary" onPress={() => setMoreOpts(true)} data-testid="panel-more-options">More options</Link></span>}
       </section>
 
       <DrawerRule />

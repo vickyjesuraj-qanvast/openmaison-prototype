@@ -89,3 +89,10 @@
 /* (sweep S5 #6) The import's kept file, back from the mapping step. */
 .fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); color: var(--om-color-on-surface-secondary); }
 .fileName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* (the calm UI build 2026-10-27, the UI audit's 4-40) "How the Price book works": the dialogs' helpers behind one text link (how-it-works.tsx) —
+   the link's own padding lines its words up with the fields; the list reads as the helpers did, in secondary body text. */
+.how { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-3)); }
+.howChev { display: inline-flex; transition: transform var(--motion-toggle); }
+.how[data-open] .howChev { transform: rotate(180deg); }
+.howList { margin: 0; padding: 0 var(--om-spacing-3) 0 calc(var(--om-spacing-3) + var(--om-spacing-5)); display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (prefers-reduced-motion: reduce) { .howChev { transition: none; } }

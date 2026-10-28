@@ -63,8 +63,11 @@ export function ScheduleTemplatesGallery({ data, from, folders = [] }: { data: S
       searchText={(t) => t.items.map((i) => i.title).join(' ')}
       thumb={(t) => <ScheduleThumb items={t.items} />}
       glyph={() => <span className={styles.glyph}><span /><span /><span /></span>}
-      meta={(t) => `${t.presetKey ? 'Ready-made · ' : ''}${plural(t.items.length, 'milestone')} · ${weeks(t.span)}`}   /* (gaps build, package C — 3) a ready-made one says so */
+      /* (gaps build, package C — 3) a ready-made one says so — (the calm UI build 2026-10-27, the UI audit's 4-36) after the facts that tell the
+         cards apart, so the weeks are never the words cut off */
+      meta={(t) => `${plural(t.items.length, 'milestone')} · ${weeks(t.span)}${t.presetKey ? ' · ready-made' : ''}`}
       usage={(t) => (t.usedBy === 0 ? 'No schedule started from it yet' : `${plural(t.usedBy, 'schedule')} started from it`)}
+      foot={(t) => (t.usedBy ? `${plural(t.usedBy, 'schedule')} started from it` : ' ')}   /* (4-36 · W-049) nothing until it is used; edited and by whom are the list's Updated · Updated by */
       usageWord={(t) => (t.usedBy === 0 ? '--' : plural(t.usedBy, 'schedule'))}
       columns={[
         { key: 'milestones', label: 'Milestones', track: '160px', sortable: (t) => t.items.length, cell: (t) => <span>{t.items.length}</span> },
@@ -75,7 +78,7 @@ export function ScheduleTemplatesGallery({ data, from, folders = [] }: { data: S
       onDuplicate={(t) => create(() => duplicateScheduleTemplate(t.id), 'duplicate the template')}
       onRename={(t, name) => renameScheduleTemplate(t.id, name)}
       onDelete={(t) => deleteScheduleTemplate(t.id)}
-      deleteMessage={() => 'Schedules that started from it keep their milestones. You can restore it from Deleted Templates.'}
+      deleteMessage={() => 'Schedules that started from it keep their milestones. You can restore it from Deleted templates.'}
       onRestore={(ids) => restoreScheduleTemplates(ids)} onDeleteForever={(ids) => deleteScheduleTemplatesForever(ids)} onEmptyTrash={() => emptyScheduleTemplateTrash()}
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       deletedMeta={{ label: 'Milestones', value: (t) => plural(t.items.length, 'milestone') }}

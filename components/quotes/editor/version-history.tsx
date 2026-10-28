@@ -1,5 +1,6 @@
 'use client'
 
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -80,7 +81,7 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
     )
   }
   return (
-    <Drawer open={open} onClose={onClose} title="Version History" label="Version History"
+    <Drawer open={open} onClose={onClose} title="Version history" label="Version history"
             footer={<Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>}>
       <div className={styles.body} data-testid="version-history">
         <div className={styles.head}>
@@ -94,7 +95,7 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
             <span className={styles.dot} aria-hidden />
             <span className={styles.text}>
               <span className={styles.title}>Version {current.version} <span className={styles.tag}>current</span></span>
-              <span className={styles.meta}>{current.status} · {money2(current.amountMinor)} · saved {displayDate(new Date(current.updatedAt))}</span>
+              <span className={styles.meta}>{quoteStatusLabel(current.status)} · {money2(current.amountMinor)} · saved {displayDate(new Date(current.updatedAt))}</span>
               {changes && versions.length ? <span className={styles.meta}>Since version {current.version - 1}: {changes.added} added · {changes.removed} removed · {changes.changed} changed — the print shows them struck through and marked</span> : null}
             </span>
             {changed(current.version, true)}
@@ -106,7 +107,7 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
                 <span className={styles.dot} aria-hidden />
                 <span className={styles.text}>
                   <span className={styles.title}>Version {v.version}</span>
-                  <span className={styles.meta}>{snap.status} · {money2(snap.amountMinor)} · kept {displayDate(v.createdAt)} {displayTime(v.createdAt)} by {who(v.createdBy)}</span>
+                  <span className={styles.meta}>{quoteStatusLabel(snap.status)} · {money2(snap.amountMinor)} · kept {displayDate(v.createdAt)} {displayTime(v.createdAt)} by {who(v.createdBy)}</span>
                   {v.note ? <span className={styles.meta} data-testid="version-request">Client’s request: {v.note}</span> : null}   {/* (UX audit Q10) Revise's own field */}
                 </span>
                 <span className={styles.actions}>

@@ -5,7 +5,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/lib/db'
 import { leadAssignees, leadFiles, leadNotes, leadReturns, projects, questions, quotes, type LeadFile, type Member, type Quote } from '@/lib/db/schema'
-import { factsFrom } from '@/lib/leads/insights'
+import { factsFrom, heldMeetingsOf } from '@/lib/leads/insights'
 import { responseTime, type ResponseTime } from '@/lib/leads/tat'
 import { fetchCustomFields, fetchCustomValues } from '@/lib/company/custom-fields'
 import type { CustomFieldDef, CustomValues } from '@/lib/leads/custom-fields-model'
@@ -238,7 +238,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     ret,
     returnsCount: retIds.length,
     portal,
-    responseTime: responseTime(factsFrom(lead, assignRows, logs, contactNotes), now),   /* (REG-611) */
+    responseTime: responseTime(factsFrom(lead, assignRows, logs, contactNotes, await heldMeetingsOf([id])), now),   /* (REG-611) · (the Dashboard redesigned, P-13) a meeting held is contact, as Last contact counts it */
     customFields, customValues, memberStats,   /* (REG-612) */
     project: projectRow ? { id: projectRow.id, number: projectRow.number, stage: projectRow.stage, name: projectRow.name } : null,   /* (REG-911) · (fix-A, A-26) */
     deletedProject: projectAny?.deletedAt ? { id: projectAny.id, number: projectAny.number } : null,   /* (Projects round 7) */

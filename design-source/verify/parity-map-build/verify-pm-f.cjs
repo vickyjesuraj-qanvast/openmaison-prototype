@@ -177,13 +177,16 @@ const DAY = 86_400_000
       /* a moment's title alone — the row's innerText starts with its icon's ligature word */
       const railTitles = async () => (await p.locator('[data-testid="portal-rail-event"] [class*="momentName"]').allInnerTexts()).map((t) => t.trim())
       ok(stages > 5 ? await chips.count() === 5 : await chips.count() === 0, `chips only past five stages (${stages} stages, ${await chips.count()} chips)`)
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-39 · 3-52) counts read "Label · n" (none on an empty chip), and with the chips there an
+         invoice sent sits under Payments alone: All reads the milestones and Project started */
+      let payTitles = null
       if (await chips.count()) {
-        ok((await chips.allInnerTexts()).map((t) => t.replace(/\s*\(\d+\)$/, '')).join(' · ') === 'All · Payments · Under way · Paused · Coming up', 'All · Payments · Under way · Paused · Coming up')
+        ok((await chips.allInnerTexts()).map((t) => t.replace(/\s*·\s*\d+$/, '')).join(' · ') === 'All · Payments · Under way · Paused · Coming up', 'All · Payments · Under way · Paused · Coming up')
         for (let i = 1; i < 5; i++) {
-          const c = chips.nth(i); const n = Number(/\((\d+)\)/.exec(await c.innerText())?.[1] ?? -1)
+          const c = chips.nth(i); const n = Number(/·\s*(\d+)$/.exec((await c.innerText()).trim())?.[1] ?? 0)
           await c.click(); await settle(p, 300)
           ok(await p.locator('[data-testid="portal-stage"]').count() === n, `${(await c.innerText()).trim()}: the list shows what the chip counts`)
-          if (i === 1) ok((await railTitles()).every((t) => /^Invoice /.test(t)), 'Payments keeps the invoices sent on the rail, nothing else')
+          if (i === 1) { payTitles = await railTitles(); ok(payTitles.every((t) => /^Invoice /.test(t)), 'Payments keeps the invoices sent on the rail, nothing else') }
           if (i === 3) await shot(p, '07-schedule-paused-chip-1440')
         }
         await chips.nth(0).click(); await settle(p, 300)
@@ -191,7 +194,10 @@ const DAY = 86_400_000
       const events = await railTitles()
       const sent = Number(sql(`select count(*) from project_invoices where project_id='${ben}' and status='sent' and sent_at is not null`))
       ok(events.some((t) => /Project started/.test(t)), 'the rail shows Project started')
-      ok(events.filter((t) => /^Invoice .* sent$/.test(t)).length === sent, `…and each invoice sent (${sent})`)
+      if (payTitles) {
+        ok(payTitles.filter((t) => /^Invoice .* sent$/.test(t)).length === sent, `…each invoice sent under Payments (${sent})`)
+        ok(!events.some((t) => /^Invoice /.test(t)), '…and All reads the milestones without them')
+      } else ok(events.filter((t) => /^Invoice .* sent$/.test(t)).length === sent, `…and each invoice sent (${sent})`)
       const paused = await p.locator('[data-testid="portal-stage-paused"]').innerText()
       ok(/^Paused — Waiting for the cabinet doors from the factory · Resuming around \d{1,2} [A-Z][a-z]{2}/.test(paused), `a paused stage: the studio's words and the restart (${paused})`)
       await shot(p, '08-schedule-1440', true)
@@ -268,7 +274,7 @@ const DAY = 86_400_000
       sql(`update homeowner_lead_links set last_asked_at = NULL where lead_id='${olivia}'`)
       const wasInvited = sql(`select count(*) from homeowner_lead_links where lead_id='${olivia}' and invited_at is not null and withdrawn_at is null`) === '1'
       await go(s, `/leads/${olivia}/questionnaire`)
-      await s.getByRole('button', { name: /Ask Client/ }).first().click(); await settle(s, 1200)
+      await s.locator('[data-testid="ask-client"]').first().click(); await settle(s, 1200)   // (the calm UI build 2026-10-27, a deliberate change) B2: "Ask {client}" — pressed by its handle
       const link = (await s.locator('[data-testid="ask-link"]').innerText()).trim()
       ok(/\/my\/[a-z0-9-]+/.test(link) && !/portalexample/.test(link), `the dialog shows the studio's real address (${link})`)
       if (!wasInvited) ok(await s.locator('[data-testid="ask-invites"]').isVisible(), 'a client never invited: "This also invites … to your portal"')

@@ -224,7 +224,7 @@ async function measure(b, opts, url, blocks, max = 30) {
         const form = p.locator('[data-testid="new-webhook"]')
         await form.getByLabel('Source label (optional)').fill(label)
         await form.getByLabel('Notes (optional)').fill('Probe endpoint')
-        await form.getByRole('button', { name: 'Generate webhook URL' }).click()
+        await form.getByRole('button', { name: /^(Generate webhook URL|Make a link)$/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) B5: "Make a link"
         await p.locator('[data-testid="webhook-created"]').waitFor({ timeout: 8000 }).catch(() => {})
         ok(/\/api\/webhooks\/leads\/[0-9a-f]{48}$/.test(await text(p.locator('[data-testid="webhook-url"]'))), 'Generate webhook URL shows the endpoint’s address (the real route’s)')
         await c.close()
@@ -294,7 +294,7 @@ async function measure(b, opts, url, blocks, max = 30) {
         const c = await mk(); const p = await page(c, `integrations-${tag}`)
         await go(p, '/company/integrations', 1500)
         const lines = {}
-        for (const k of ['qanvast', 'email', 'meta', 'gmail', 'xero']) lines[k] = await text(p.locator(`[data-testid="int-simulated-${k}"]`))
+        for (const k of ['qanvast', 'email', 'meta', 'gmail', 'xero']) lines[k] = (await p.locator(`[data-testid="int-simulated-${k}"]`).first().getAttribute('aria-label')) ?? ''   // (the calm UI build 2026-10-27, a deliberate change) 5-16 · 2-09: each is the house Demo chip — its sentence is its name
         if (tag === '1440') {
           ok(Object.values(lines).every((t) => t.startsWith('Simulated on this prototype')), 'Integrations: Qanvast, the email intake, Meta, Email lead sources and Xero each say “Simulated on this prototype”', lines)
           ok(/Xero/.test(lines.xero) && /Simulate an enquiry/.test(lines.email) && /Sync now/.test(lines.gmail) && /returned lead/.test(lines.qanvast), '…each in its own words', lines)

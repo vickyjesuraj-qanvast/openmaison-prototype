@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Dialog, FootStart } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { Tooltip } from '@/components/om/tooltip'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
@@ -29,7 +33,7 @@ import { reminderMessage } from '@/lib/projects/payments-model'
 import { tellClientText, waLink } from '@/lib/projects/tell-client'
 import { Chips } from '@/components/om/chips'
 import { DEFAULT_DEFECTS_MONTHS, DEFECTS_MONTHS_MAX, letterLine, letterMessage, type IssuedLetterView } from '@/lib/projects/completion-letter-model'   // (S44R, C9)
-import { DEFER_REASON_MAX, closingLines, type ChecklistFix, type ChecklistItem } from '@/lib/projects/handover-model'
+import { DEFER_REASON_MAX, closingLines, marginAgainstPlan, type ChecklistFix, type ChecklistItem } from '@/lib/projects/handover-model'
 import s from './ending.module.css'
 import mo from '../schedule/moment.module.css'
 import { Line, Slot } from '@/components/shell/ghost-kit'
@@ -90,6 +94,9 @@ export function HandoverDialog({ projectId, mode, open, onClose, onSubmit, origi
   /* (gaps build, package A — 1.0 D-257) an open item deferred with its own reason: which rows show their field, and what they say */
   const [defer, setDefer] = useState<Record<string, string>>({})
   const [deferOpen, setDeferOpen] = useState<string[]>([])
+  /* (the calm UI build 2026-10-27, 3-17 · T-02) a row's ⋮ — the verbs past its one */
+  const [rowMenu, setRowMenu] = useState<string | null>(null)
+  const rowMenuAnchor = useRef<HTMLElement | null>(null)
   const [seeded, setSeeded] = useState<unknown>(null)
   if (open !== was) { setWas(open); if (open) { setData(null); setFailed(null); setNote(''); setReason(''); setTried(false); setBusy(false); setDefer({}); setDeferOpen([]); setSeeded(null); setFixing(null); setDoneFor(null); setTell(true); setLetter(true); setMonths(String(DEFAULT_DEFECTS_MONTHS)); setLetterRead(null) } }
   /* the asker's deferrals arrive with the request — the reviewer reads them, and may change them */
@@ -216,14 +223,16 @@ export function HandoverDialog({ projectId, mode, open, onClose, onSubmit, origi
     : pendingOther ? (runs ? { label: met || allDeferred ? 'Approve' : 'Approve anyway', run: () => { void press({ kind: 'approve', reason: reason.trim() }) } } : null)
     : askAnyway ? { label: 'Ask an Owner or an Admin', run: () => { void press({ kind: 'complete', note: note.trim(), reason: '' }) } }
     : atOnce ? (met || allDeferred ? { label: 'Complete handover', run: () => { void press({ kind: 'complete', note: note.trim(), reason: reason.trim() }) } }
-      : { label: 'Complete anyway', run: () => { void press({ kind: 'complete', note: note.trim(), reason: reason.trim() }) } })
+      /* (the calm UI build 2026-10-27, W-498) "Hand over anyway" (was Complete anyway) */
+      : { label: 'Hand over anyway', run: () => { void press({ kind: 'complete', note: note.trim(), reason: reason.trim() }) } })
     : { label: 'Ask for review', run: () => { void press({ kind: 'complete', note: note.trim(), reason: '' }) } }
 
   const name = data?.project.name ?? ''
   const intro = !data ? null
     : data.request ? <>{data.request.mine ? 'You' : <b>{data.request.by}</b>} asked to complete the handover {ago(data.request.at, now)}{data.request.note ? <> — <i>“{data.request.note.replace(/[.!?]+$/, '')}”</i></> : null}.{review || (pendingOther && runs) ? ' Approve it to mark the project Completed, or send it back with a note.' : finishMine ? ' The owner’s review is off now — complete it yourself, or take the request back.' : data.request.mine ? ' An Owner or an Admin approves it or sends it back.' : ' It waits for an Owner or an Admin.'}</>
     : askAnyway ? <>With checklist items still open, an Owner or an Admin completes {name} — ask them, and it waits for their review.</>
-    : atOnce ? <>Completing the handover marks {name} Completed. Its schedule, choices and money become read-only; an Owner or an Admin can reopen it.</>
+    /* (the calm UI build 2026-10-27, 3-17 · T-05) one line */
+    : atOnce ? <>Completing locks the schedule, choices and payments. An Owner or an Admin can reopen it.</>
     : <>An Owner or an Admin reviews the handover before {name} is Completed — Settings › Projects asks for an owner’s review.</>
 
   return (
@@ -246,21 +255,51 @@ export function HandoverDialog({ projectId, mode, open, onClose, onSubmit, origi
               {items.map((it) => {
                 const deferred = !it.met && !!(defer[it.key] ?? '').trim()
                 const showDefer = !it.met && deferOpen.includes(it.key)
+                /* (the calm UI build 2026-10-27, 3-17 · T-02) ONE verb on the row — the fix (Remind · Send the invoice · Approve · Mark done), or the tab's
+                   door when nothing can be fixed here; Compliance's door first, its marks one press away. Every other verb is in the row's ⋮. */
+                const fixes = !it.met ? (it.fixes ?? []).filter(usable) : []
+                const showGo = !!it.action && (!fixes.length || it.key === 'money' || it.key === 'compliance')
+                type Verb = { label: string; run: () => void; testId: string; busy?: boolean }
+                const fixVerbs: Verb[] = fixes.map((f, i) => ({ label: fixing === `${it.key}-${i}` ? 'Saving…' : f.label, run: () => { void fix(f, `${it.key}-${i}`) }, testId: `check-${it.key}-fix` }))
+                const goVerb: Verb | null = showGo && it.action ? { label: it.action.label, run: () => goTo(it), testId: `check-${it.key}-go` } : null
+                const verbs: Verb[] = it.key === 'compliance' && goVerb ? [goVerb, ...fixVerbs] : [...fixVerbs, ...(goVerb ? [goVerb] : [])]
+                const [first, ...rest] = verbs
                 return (
                   <div key={it.key} className={s.row} role="row" data-open={it.met ? undefined : ''} data-deferred={deferred ? '' : undefined} data-testid={`check-${it.key}`} data-met={it.met ? 'yes' : deferred ? 'deferred' : 'no'}>
                     <span role="cell" className={s.item}>
                       <Icon name={it.met ? 'check_circle' : deferred ? 'pending' : 'error'} size={20} weight={300} fill={it.met} className={s.mark} />
-                      <span><span>{it.label}</span>{it.why || remindedAt(it) ? <span className={s.why}>{[it.why, remindedAt(it) ? `reminded ${agoText(remindedAt(it)!, now)}` : null].filter(Boolean).join(' · ')}</span> : null}</span>
+                      <span>
+                        <span>{it.label}</span>
+                        {it.why || remindedAt(it) ? <span className={s.why}>{[it.why, remindedAt(it) ? `reminded ${agoText(remindedAt(it)!, now)}` : null].filter(Boolean).join(' · ')}</span> : null}
+                        {/* (gaps build, package A) Defer: this item waits past the handover, with its own reason (kept on the record) — (the calm UI
+                            build 2026-10-27, 3-17 · W-168) a quiet tick, "Leave for after handover", not a verb on every row */}
+                        {!it.met && mayDefer ? (
+                          <span className={s.deferTick}>
+                            <Checkbox isSelected={showDefer} onChange={(on) => { if (on) setDeferOpen((xs) => (xs.includes(it.key) ? xs : [...xs, it.key])); else { setDeferOpen((xs) => xs.filter((x) => x !== it.key)); setDefer((d) => { const n = { ...d }; delete n[it.key]; return n }) } }}
+                                      data-testid={`check-${it.key}-defer`}>Leave for after handover</Checkbox>
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
                     <span role="cell" className={s.actions}>
-                      {/* (gaps build, package A) Defer: this item waits past the handover, with its own reason (kept on the record) */}
-                      {!it.met && mayDefer && !showDefer ? <Button appearance="text" onPress={() => setDeferOpen((xs) => [...xs, it.key])} data-testid={`check-${it.key}-defer`}>Defer</Button> : null}
                       {/* (simplify S-19) fixed in place — Mark {last} done, Ask again · Remind, Send the invoice · Remind, Approve, Mark done,
                           Open T-… — the tab's door stays for what can't be done here (recording a payment, more than one milestone) */}
-                      {!it.met ? (it.fixes ?? []).filter(usable).map((f, i) => (
-                        <Button key={`${f.kind}-${i}`} appearance="text" onPress={() => { void fix(f, `${it.key}-${i}`) }} isDisabled={!!fixing || busy} data-testid={`check-${it.key}-fix`}>{fixing === `${it.key}-${i}` ? 'Saving…' : f.label}</Button>
-                      )) : null}
-                      {it.action && (!(it.fixes ?? []).some(usable) || it.key === 'money' || it.key === 'compliance') ? <Button appearance="text" onPress={() => goTo(it)} data-testid={`check-${it.key}-go`}>{it.action.label}</Button> : null}
+                      {first ? <Button appearance="text" onPress={first.run} isDisabled={(!!fixing || busy) && first.testId.endsWith('-fix')} data-testid={first.testId}>{first.label}</Button> : null}
+                      {rest.length ? (
+                        <span className={s.rowMenuWrap}>
+                          <Tooltip label="More for this item" disabled={rowMenu === it.key}>
+                            <IconButton icon="more_vert" label={`More for ${it.label}`} variant="bare" aria-haspopup="menu" aria-expanded={rowMenu === it.key}
+                                        onClick={(e) => { rowMenuAnchor.current = e.currentTarget; setRowMenu(rowMenu === it.key ? null : it.key) }} data-testid={`check-${it.key}-more`} />
+                          </Tooltip>
+                        </span>
+                      ) : null}
+                      <PortalMenu open={rowMenu === it.key} anchor={rowMenuAnchor} onClose={() => setRowMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={it.label}>
+                        {rest.map((v, i) => (
+                          <span key={`${v.testId}-${i}`} className={s.menuRow} data-testid={v.testId}>
+                            <DropdownItem disabled={v.testId.endsWith('-fix') && (!!fixing || busy)} onSelect={() => { setRowMenu(null); v.run() }}>{v.label}</DropdownItem>
+                          </span>
+                        ))}
+                      </PortalMenu>
                     </span>
                     {showDefer ? (
                       <span className={s.deferField}>
@@ -274,8 +313,9 @@ export function HandoverDialog({ projectId, mode, open, onClose, onSubmit, origi
             </div>
             {/* (gaps build, package A — 1.0 D-265 · D-266) how the project ends, in the records' own figures — before anyone completes it */}
             {/* (parity map, PR-122 — 1.0 D-306's yellow strip) a quiet strip when the margin is more than 25 points off the expected (Owners and Admins) */}
-            {data.summary?.closing?.warning ? (
-              <p className={s.strip} role="status" data-testid="handover-margin-warning"><Icon name="info" size={20} weight={300} /><span>{data.summary.closing.warning}</span></p>
+            {/* (the calm UI build 2026-10-27, 3-16) only when the margin fell short of the quote's plan — "Margin 18% — the quote planned 44%" */}
+            {data.summary?.closing && marginAgainstPlan(data.summary.closing)?.below ? (
+              <p className={s.strip} role="status" data-testid="handover-margin-warning"><Icon name="info" size={20} weight={300} /><span>{marginAgainstPlan(data.summary.closing)!.text}</span></p>
             ) : null}
             {data.summary ? (() => {
               const lines = closingLines(data.summary).filter((l) => !l.key.startsWith('deferred-'))

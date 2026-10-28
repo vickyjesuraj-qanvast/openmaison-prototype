@@ -147,7 +147,7 @@ export async function paymentOptionsOf(p: Project): Promise<PaymentOption[]> {
     ref: s.ref, name: s.name, pct: s.pct, onSigning: s.onSigning, fixedMinor: s.fixedMinor ?? null,   // (S44O — row 297) a fixed fee first keeps its amount
     amountMinor: s.invoice ? s.invoice.amountMinor : m.baseMinor !== null ? s.nominalMinor : null,
     invoice: s.invoice && s.invoice.state !== 'draft' && s.invoice.state !== 'ready' && s.invoice.state !== 'awaiting'
-      ? { state: s.invoice.state, dueDay: s.invoice.dueAt !== null ? dayOf(new Date(s.invoice.dueAt)) : null }
+      ? { state: s.invoice.state, dueDay: s.invoice.dueAt !== null ? dayOf(new Date(s.invoice.dueAt)) : null, toConfirmMinor: s.invoice.toConfirmMinor }   // (the calm UI build 2026-10-27, 3-23) the sum that waits — Money's own figure
       : null,
   }))
 }

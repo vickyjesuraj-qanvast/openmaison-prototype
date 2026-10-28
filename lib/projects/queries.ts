@@ -360,6 +360,10 @@ export type ProjectDetail = {
   /** (simplify S-01) The Overview's With {client} and Coming up cards. */
   withClient: WithClient
   comingUp: ComingUpItem[]
+  /** (the Dashboard redesigned, 2026-10-26 — P-14, lane D3) Every dated thing ahead on the project — the same milestones starting and ending,
+      outside people and client meetings as `comingUp`, soonest first, never cut: the Dashboard's Your day merges every project's whole list
+      (`comingUp` is the Overview card's — this week and next, six at most — and stays as it is). */
+  comingAll?: ComingUpItem[]
   /** (gaps build, package A — 4) A completed project's closing summary (money only for whoever sees it). */
   closing?: ClosingSummary | null
   /** (parity P-01 · P-04 · P-17) The lead's own record, read as the lead's Overview reads it (lib/leads/detail.ts): the info column on the
@@ -676,6 +680,7 @@ async function fetchProjectDetailUncached(projectId: string): Promise<ProjectDet
     contractFile: c ? null : contractFile,   // (gaps build, package A — 6)
     tabCounts,   // (simplify S-04) one rule — what waits on this viewer there, per view (lib/projects/needs-you.ts `tabCountsOf`)
     needs, withClient, comingUp,   // (simplify S-01 · S-02)
+    comingAll: events,   // (the Dashboard redesigned, P-14) the whole list, uncut — the Dashboard's Your day reads it; the card above keeps its six
     closing: stage === 'completed' ? await closingSummaryOf(p, { withMoney: seesMoney(viewer, teamIds), now }) : null,   // (gaps build, package A — 4)
     record,   // (parity P-01 · P-04 · P-17)
   }

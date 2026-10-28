@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button, Tag } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { NoteDialog } from '@/components/templates/editor/review-bar'
@@ -58,6 +59,9 @@ export function usePayments(data: ProjectMoneyData, focus: string | null = null)
   const [prefill, setPrefill] = useState<number | null>(null)   // (pending modules S10) Record a payment's amount, from Maison AI
   const [refusing, setRefusing] = useState<PaymentView | null>(null)
   const [reversing, setReversing] = useState<PaymentView | null>(null)
+  /* (the calm UI build 2026-10-27 — the approved confirm step) a client's payment counts as collected, and its receipt goes, only after a second
+     press: every Confirm (Needs your attention's, the Payments view's row, the invoice panel's) opens this ask first */
+  const [confirming, setConfirming] = useState<PaymentView | null>(null)
   const [origin] = useState(() => (typeof window === 'undefined' ? '' : window.location.origin))
   const [justMade, setJustMade] = useState<string | null>(null)
   const today = new Date(now)
@@ -102,7 +106,8 @@ export function usePayments(data: ProjectMoneyData, focus: string | null = null)
     const third = (i.remindedCount ?? 0) + 1 === CALL_AFTER_REMINDERS && i.overdueMinor > 0
     void act(i.id, 'record the reminder', () => remindInvoice(i.id), third ? `Third reminder drafted on WhatsApp for ${client.firstName} — next, a call; Owners and Admins are told` : `Reminder drafted on WhatsApp for ${client.firstName} — it’s on the project’s Activity`)   // (invented copy)
   }
-  const confirm = (p: PaymentView) => {
+  const confirm = (p: PaymentView) => setConfirming(p)
+  const confirmNow = (p: PaymentView) => {
     setBusy(p.id)
     void confirmPayment(p.id).then((r) => {
       setBusy(null)
@@ -173,6 +178,9 @@ export function usePayments(data: ProjectMoneyData, focus: string | null = null)
 
   const dialogs = (
     <>
+      <ConfirmDialog open={!!confirming} tone="primary" title={`Confirm ${client.firstName}’s payment?`} confirmLabel="Confirm payment"
+                     message={confirming ? `${money2(confirming.amountMinor)} for ${confirming.invoiceNumber ?? `the ${confirming.stageName} invoice`}${confirming.paidOn ? `, paid ${day(confirming.paidOn)}` : ''}. It counts as collected and ${client.firstName} gets the receipt.` : undefined}
+                     onCancel={() => setConfirming(null)} onConfirm={() => { const c = confirming; setConfirming(null); if (c) confirmNow(c) }} />
       {/* (pending modules S07) what is still owed is the invoice's balance — less its credit notes too, as the server reads it */}
       <RecordPaymentDialog open={!!recording} today={today} busy={!!recording && busy === `rec-${recording.id}`} methods={pay.methods ?? null} client={client.firstName} amountMinor={prefill}
                            invoice={recording ? { number: recording.number, stageName: recording.stageName, owedMinor: Math.max(0, recording.balanceMinor - recording.toConfirmMinor), sentAt: recording.sentAt } : null}

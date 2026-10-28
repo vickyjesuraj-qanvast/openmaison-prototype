@@ -224,7 +224,8 @@ const inRoom = (q, r) => q.x >= r.x && q.x <= r.x + r.w && q.z >= r.z && q.z <= 
     ok(await d.getByRole('menuitemradio', { name: /^Templates/ }).count() === 1, 'the gallery’s Kind has Templates')
     await d.keyboard.press('Escape'); await settle(d, 300)
     await d.getByRole('button', { name: /^New/ }).first().click(); await settle(d, 300)
-    await d.getByRole('menuitem', { name: /From a template or a flat/ }).click(); await settle(d, 700)
+    await d.getByRole('menuitem', { name: /From a ready-made flat/ }).click(); await settle(d, 700)   // (the calm UI build 2026-10-27, a deliberate change) — 6-30: one door, the picker's tabs
+    await d.getByTestId('planner-new-tabs').getByRole('radio', { name: 'My templates' }).click().catch(async () => d.getByTestId('planner-new-tabs').getByText('My templates').click()); await settle(d, 400)
     ok(await d.getByTestId('planner-my-templates').locator(`[data-key="tpl:${TPL}"]`).count() === 1, 'New layout lists it under My templates, above the flats')
     await shot(d, '08-my-templates')
     await d.locator(`[data-key="tpl:${TPL}"]`).click(); await d.getByTestId('planner-start').click()
@@ -238,7 +239,8 @@ const inRoom = (q, r) => q.x >= r.x && q.x <= r.x + r.w && q.z >= r.z && q.z <= 
     console.log('TD-073 · Start from an example')
     await go(d, '/planner', 1800)
     await d.getByRole('button', { name: /^New/ }).first().click(); await settle(d, 300)
-    await d.getByRole('menuitem', { name: /From an example/ }).click(); await settle(d, 900)
+    await d.getByRole('menuitem', { name: /From a ready-made flat/ }).click(); await settle(d, 700)   // (the calm UI build 2026-10-27, a deliberate change) — 6-30: the examples are the picker's tab
+    await d.getByTestId('planner-new-tabs').getByRole('radio', { name: 'Furnished examples' }).click().catch(async () => d.getByTestId('planner-new-tabs').getByText('Furnished examples').click()); await settle(d, 600)
     const exDlg = d.getByTestId('planner-new-dialog')
     ok(await d.getByRole('dialog', { name: /Start from an example/ }).count() === 1 && await exDlg.locator('[data-testid="planner-template"][data-key^="ex:"]').count() === 6, 'the six flats as furnished examples')
     await shot(d, '09-examples')

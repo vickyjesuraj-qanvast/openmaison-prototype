@@ -8,44 +8,48 @@
 .column { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); max-width: 960px; width: 100%; margin: 0 auto; box-sizing: border-box; }   /* (REG-639) clear of the FAB */
 .card { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); }
+/* (the calm UI build 2026-10-27, 6-23) the card head's tools: one "Say it as a question" for every point, then the card's own button */
+.headActions { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--om-spacing-2); }
+/* (the calm UI build 2026-10-27, 6-08 — T-06) the record's day and its send, as the header's plain meta line (no capitals chips) */
+.headMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .cardTitle { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .count { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-left: var(--om-spacing-1); }
-.eyebrow { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.eyebrow b { color: var(--om-color-on-surface-default); }
 .headline { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); text-wrap: balance; }
 .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+/* (the calm UI build 2026-10-27, 6-03) How we counted's info button sits in the difference tile's caption row without making it taller than its twins' */
+.tileInfo { margin-block: calc(-1 * var(--om-spacing-1)); margin-inline-end: calc(-1 * var(--om-spacing-1)); }
 .footnote { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .footnote > :first-child { flex-shrink: 0; margin-top: 1px; }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-/* Say this: numbered points — a 24 disc, the sentence to say, the evidence line, the question toggle. */
+/* What to tell the client (was Say this): numbered points — a 24 disc, the sentence to say with its Why after it; the evidence shows on Why's press
+   (the calm UI build 2026-10-27, 6-23); one question toggle in the card head. */
 .points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .point { display: flex; gap: var(--om-spacing-3); align-items: flex-start; }
 .pointN { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-caption-s); display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
-.pointBody { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; align-items: flex-start; }
-.say { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.pointBody { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; align-items: stretch; }
+.sayRow { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-2); }
+.say { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .evidence { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .evidence b { color: var(--om-color-on-surface-default); }
-/* Key points: one card per brand — an advantage (green), a risk with its impact (red / yellow), a shared note. */
+/* Brands worth a word (was Key points): one card per brand — an advantage (green), a risk (the strongest first, no Impact chip — the calm UI
+   build, W-214), a shared note; its sources on the info button's press. */
 .brands { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .brand { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }
 .brand[data-tone='advantage'] { background: var(--om-color-tertiary-green-variant2); border-color: var(--om-color-tertiary-green-variant1); }
 .brand[data-tone='risk'] { background: var(--om-color-surface-bg); }
 .brandHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.brandTools { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
 .brandName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .brandMeta { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: none; margin-left: var(--om-spacing-1); }
 .brandText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 /* (REG-638, Q-09) sources read as sources — the curated notes' domains, not links that open nothing */
 .sources { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .also { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); padding-top: var(--om-spacing-1); }
-/* Item by item: the table card — head row with the legend and Column settings, the table inside. */
+/* Item by item: the table card — head row with Column settings, the table inside. (the calm UI build 2026-10-27, 6-05) no legend — the Status
+   chip says which side has a line. */
 .tableCard { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .tableHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
 .tableTools { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.legend { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
-.swatch { width: 10px; height: 10px; border-radius: var(--om-radius-0-5); display: inline-block; }
-.swatch[data-status='yours-only'] { background: var(--om-color-tertiary-green-default); }
-.swatch[data-status='theirs-only'] { background: var(--om-color-tertiary-red-default); }
-.swatch[data-status='unpriced'] { background: var(--om-color-on-surface-border); }
 .foot { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
 /* (REG-729) the house text link (the DS Link look — primary, 600, no underline), in the line's 12px size (inline, a DS Link takes the
    copy's size) */
@@ -56,5 +60,5 @@
   .card { padding: var(--om-spacing-4); }
   .tiles { grid-template-columns: 1fr; }
   .cardHead { flex-wrap: wrap; }
-  .legend { display: none; }
+  .headActions { justify-content: flex-start; }
 }

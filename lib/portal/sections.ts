@@ -22,9 +22,9 @@ export type SectionKey = 'schedule' | 'updates' | 'money' | 'files' | 'designs' 
 /** Board 9's six, with its words — (fix-G, G-25) in the portal's own tab order (`PORTAL_TABS`), so the switches, the client's tabs and the
     Client access panel name them one way. */
 export const PORTAL_SECTIONS: readonly { key: SectionKey; name: string; line: string }[] = [
-  { key: 'schedule', name: 'Schedule', line: 'Stages and dates, once you share them' },
+  { key: 'schedule', name: 'Schedule', line: 'Milestones and dates, once you share them' },   // (the calm UI build 2026-10-27, 3-04) milestones, as the Schedule says
   { key: 'updates', name: 'Updates', line: 'Posts and photos, once published' },
-  { key: 'money', name: 'Money', line: 'Payments, how to pay, receipts' },
+  { key: 'money', name: 'Payments', line: 'What’s due, how to pay, receipts' },   // (the calm UI build 2026-10-27, 3-02) the client's tab reads Payments; the key stays `money`
   { key: 'choices', name: 'Choices', line: 'Options you ask the client to pick between' },
   { key: 'designs', name: 'Designs', line: 'Rooms you share from the Visualizer' },
   { key: 'files', name: 'Files', line: 'Only files marked Shown to client' },

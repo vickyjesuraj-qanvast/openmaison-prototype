@@ -54,7 +54,7 @@ export function PoPaperSettings({ paper, canManage }: { paper: PoPaperLayout; ca
         </div>
         {canManage ? <div className={s.settingActions}>
           <Button variant="secondary" appearance="outlined" onPress={() => setDraft(saved)} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="po-paper-save">{busy ? 'Saving…' : 'Save the paper'}</Button>
+          <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="po-paper-save">{busy ? 'Saving…' : 'Save'}</Button>
         </div> : null}
       </div>
     </>

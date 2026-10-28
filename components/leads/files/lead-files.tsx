@@ -144,7 +144,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
   const folderNodes = useMemo<FolderNode[]>(() => files.filter(isFolder).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null })), [files])
   const trail = useMemo(() => folderPath(files, currentId), [files, currentId])
   const searching = query.trim() !== '' || filterCount > 0   // (T9) a filter reaches past the open folder, as a search does
-  const hitPlace = searching ? (f: FileRow) => placeOf(folderNodes, f.parentId ?? null) || 'All Files' : undefined
+  const hitPlace = searching ? (f: FileRow) => placeOf(folderNodes, f.parentId ?? null) || 'All files' : undefined
   const folders = useMemo(() => visible.filter(isFolder), [visible])
   const groups = useMemo(() => groupByDay(visible.filter((f) => !isFolder(f))), [visible])
   // Selection follows the visible set (render-phase adjust).
@@ -186,7 +186,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
      open folder; the snackbar says where it went and offers the next one — a site visit is several photos in a row. */
   const camera = useRef<HTMLInputElement | null>(null)
   const takePhoto = () => camera.current?.click()
-  const onPhotos = (list: File[]) => { if (!readOnly && list.length) upload(list, currentId, { where: folder?.name ?? 'All Files', again: takePhoto }) }
+  const onPhotos = (list: File[]) => { if (!readOnly && list.length) upload(list, currentId, { where: folder?.name ?? 'All files', again: takePhoto }) }
   /* (T2) Files dragged onto the tab: the grid / list shows where they will land and a drop uploads them all. Only a drag that carries files
      counts — a tile or a column head being dragged inside the page does not. */
   const [dropping, setDropping] = useState(false)
@@ -270,7 +270,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
 
   return (
     <div className={styles.tab} {...dropHandlers}>
-      {dropping ? <div className={styles.drop} aria-hidden><span className={styles.dropLine}>{`Drop to upload to ${folder?.name ?? 'All Files'}`}</span></div> : null}
+      {dropping ? <div className={styles.drop} aria-hidden><span className={styles.dropLine}>{`Drop to upload to ${folder?.name ?? 'All files'}`}</span></div> : null}
       <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)} bare={files.length === 0} views={views}   /* (REG-735) the empty card carries Upload and Create Folder */
         trail={trail} onGo={goTo} onNewFolder={() => openName({ mode: 'create' })}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
@@ -288,15 +288,15 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
         <TabSearchEmpty noun="files" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_FILE_FILTERS) }} />
       ) : folder && !searching && visible.length === 0 ? (
         /* (REG-664) An empty folder says so (it showed nothing at all). */
-        readOnly ? <FolderEmpty help="The project’s team adds its files here." /> : (
+        readOnly ? <FolderEmpty help="The project’s members add its files here." /> : (
         phone ? (
           /* (Leads on the move, L4 — P-11) a phone's empty folder: the camera, its photos landing here *(invented copy: the help line)* */
           <FolderEmpty help="Take photos into this folder, or choose files from ⋮.">
             <Button variant="primary" appearance="outlined" iconStart={<Icon name="photo_camera" size={20} />} onPress={takePhoto} data-testid="folder-empty-photo">Take a photo</Button>
           </FolderEmpty>
         ) : (
-        <FolderEmpty help="Upload files here with New File, or move files in from their ⋯ menu.">
-          <Button variant="primary" appearance="outlined" onPress={pickFiles}>Upload Files</Button>
+        <FolderEmpty help="Upload files here with New file, or move files in from their ⋮ menu.">
+          <Button variant="primary" appearance="outlined" onPress={pickFiles}>Upload files</Button>
         </FolderEmpty>))
       ) : view === 'grid' ? (
         // An open folder with nothing inside shows the grid with no groups (no empty-folder mock).
@@ -327,7 +327,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
       <DetailBulkBar
         count={selected.size}
         actions={[
-          { label: 'Move to Folder', onClick: () => unlessPaper('move them', selectedIds, () => openMove(selectedIds)) },
+          { label: 'Move to folder', onClick: () => unlessPaper('move them', selectedIds, () => openMove(selectedIds)) },
           { label: 'Duplicate', onClick: () => unlessPaper('duplicate them', selectedIds, () => duplicate(selectedIds)) },
           { label: 'Delete', tone: 'danger', onClick: () => unlessPaper('move them to the Trash Folder', selectedIds, () => openTrash(selectedIds)) },
         ]}
@@ -338,7 +338,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <NameDialog
         open={!!nameDialog?.open}
-        title={nameDialog?.payload.mode === 'rename' ? (isFolder(nameDialog.payload.target) ? 'Rename Folder' : 'Rename File') : 'Create Folder'}
+        title={nameDialog?.payload.mode === 'rename' ? (isFolder(nameDialog.payload.target) ? 'Rename folder' : 'Rename file') : 'Create folder'}
         initial={nameDialog?.payload.mode === 'rename' ? nameDialog.payload.target.name : ''}
         validate={(name: string) => {
           const d = nameDialog?.payload
@@ -360,13 +360,13 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
       />
       <MoveDialog
         open={!!move?.open} title={moveRows.length === 1 && moveRows[0] ? `Move “${moveRows[0].name}”` : `Move ${moveRows.length} items`}
-        root="All Files" folders={folderNodes} moving={move?.payload ?? []} current={moveFolder?.id ?? null}
+        root="All files" folders={folderNodes} moving={move?.payload ?? []} current={moveFolder?.id ?? null}
         entries={files.filter((f) => !isFolder(f)).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, thumb: f.thumb }))}
         onMove={(parentId: string | null) => {
           const ids = move?.open ? move.payload : null; closeMove(); if (!ids?.length) return
           const dest = parentId ? nameOf(parentId) : ''
           clearSelection()
-          void run('move', () => moveFiles(ids, parentId), dest ? `Moved to ${dest}` : 'Moved to All Files')
+          void run('move', () => moveFiles(ids, parentId), dest ? `Moved to ${dest}` : 'Moved to All files')
         }}
         onCreateFolder={async (name: string, parentId: string | null) => {
           const id = await createFolder(leadId, name, parentId)

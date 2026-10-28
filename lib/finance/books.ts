@@ -209,7 +209,8 @@ export async function fetchBooks(): Promise<BooksData | null> {
 export type CommissionsData = {
   viewer: BooksViewer
   /** The projects in the list: every one for Owners and Admins; the ones a member works on (or was paid on) otherwise. */
-  projects: { id: string; number: string; name: string; stage: string; team: { id: string; name: string }[] }[]
+  projects: { id: string; number: string; name: string; stage: string; team: { id: string; name: string }[]
+    /** (the calm UI build 2026-10-27, 5-26) the client's name — the first line of Finance's one Project cell (display only) */ client: string }[]
   summary: CommissionSummary
   rules: CommissionRuleRecord[]
   shares: ShareRecord[]
@@ -233,7 +234,7 @@ export async function fetchCommissions(): Promise<CommissionsData> {
   const own = <T extends { memberId: string | null }>(xs: T[]) => (runs ? xs : xs.filter((x) => x.memberId === viewer.id))
   return {
     viewer: { id: viewer.id, role: viewer.role, name: me?.name ?? 'You', runs, sets: runsStudio(viewer.role) },
-    projects: list.map((p) => ({ id: p.id, number: p.number, name: p.name, stage: p.stage, team: runs ? p.team : p.team.filter((m) => m.id === viewer.id) })),
+    projects: list.map((p) => ({ id: p.id, number: p.number, name: p.name, stage: p.stage, team: runs ? p.team : p.team.filter((m) => m.id === viewer.id), client: p.client })),
     summary: runs ? facts.summary : (() => { const lines = facts.summary.lines.filter((l) => l.memberId === viewer.id); const s = (k: 'earnedMinor' | 'paidMinor' | 'owedMinor') => lines.reduce((x, l) => x + l[k], 0); return { lines, earnedMinor: s('earnedMinor'), paidMinor: s('paidMinor'), owedMinor: s('owedMinor'), byMember: facts.summary.byMember.filter((b) => b.memberId === viewer.id) } })(),
     /* a member reads the rules that touch them (the studio's, their own, their projects') — never another member's own rate */
     rules: runs ? facts.rules : facts.rules.filter((r) => r.memberId === null ? (r.projectId === null || mine.some((x) => x.p.id === r.projectId)) : r.memberId === viewer.id),

@@ -53,7 +53,7 @@ export const EVENTS: EventDef[] = [
   { key: 'new_lead', label: 'A new lead arrives', help: 'From the form, an import, the website or Meta.', who: 'Owners and Admins', icon: 'person_add' },
   /* (parity P-37 · P-17) one event for both records — a project's members are its lead's (Q-05: "Members" everywhere) */
   { key: 'assigned', label: 'A lead or project is assigned to you', help: 'To the member it was assigned to.', who: 'The assignee', icon: 'person' },
-  { key: 'untouched', label: 'A new lead is untouched', help: 'No contact logged within the delay set under Lead management › Untouched leads.', who: 'The assignee, else Owners and Admins', icon: 'schedule' },   // (REG-645, E-106) as queries.ts raises it — (pending modules S18) the delay moved to Lead management (UX audit S9); "the delay below" pointed at nothing
+  { key: 'untouched', label: 'A new lead is untouched', help: 'Nobody contacted it within the time set under Lead management › Untouched leads.',   /* (the calm UI build 2026-10-27, 5-32 — B5's request) */ who: 'The assignee, else Owners and Admins', icon: 'schedule' },   // (REG-645, E-106) as queries.ts raises it — (pending modules S18) the delay moved to Lead management (UX audit S9); "the delay below" pointed at nothing
   { key: 'quote_approval', label: 'A quote needs approval', help: 'Sent for Approval by a designer.', who: 'Approvers', icon: 'approval' },
   /* (REG-624, quote editor parity Q-22) The approver's answer goes back to whoever sent the quote. */
   { key: 'quote_approved', label: 'Your quote is approved', help: 'An approver approved a quote you sent for approval.', who: 'Whoever sent it', icon: 'verified' },
@@ -77,14 +77,14 @@ export const EVENTS: EventDef[] = [
   { key: 'price_book_proposed', label: 'An item is proposed for My Items', help: 'A Designer’s new item, waiting to be approved or sent back.', who: 'Owners and Admins', icon: 'list_alt' },
   { key: 'price_book_answered', label: 'Your proposed item is answered', help: 'Approved into My Items, or sent back with a note.', who: 'Whoever proposed it', icon: 'verified' },
   /* (REG-676, AI Visualizer Q-34) The client answers on a render link: a favourite, a note, a pin, a call back. */
-  { key: 'render_feedback', label: 'A client responds to shared renders', help: 'A favourite, a note, a pin or a call back on the renders link.', who: 'The lead’s or project’s members and whoever shared the link', icon: 'wand_shine' },
+  { key: 'render_feedback', label: 'A client responds to shared versions', help: 'A favourite, a note, a pin or a call back on the versions link.',   /* (the calm UI build 2026-10-27, 6-07) "version" — the app's word */ who: 'The lead’s or project’s members and whoever shared the link', icon: 'wand_shine' },
   /* (REG-703, AI credits Q-35 · Q-38) The heads-up and the asks: steps at 75% and 90% of the month and at 0, a member's ask and its answer,
      the month's credits, a failed payment and a receipt. None of them existed in 1.0 (B §6). */
   { key: 'credits_low', label: 'AI credits are running low', help: 'At 75% and 90% of the month’s AI credits, with the date they run out at this pace.', who: 'Owners and Admins', icon: 'hourglass_top' },
   { key: 'credits_out', label: 'The studio is out of AI credits', help: 'AI tools pause until you top up or the month refreshes.', who: 'Owners and Admins', icon: 'warning' },
-  { key: 'credit_request', label: 'A member asks for more AI credits', help: 'The studio is out, or their monthly amount is used.', who: 'The Owner', icon: 'person' },
-  { key: 'credit_request_answered', label: 'Your ask for AI credits is answered', help: 'Credits added, or your monthly amount raised.', who: 'Whoever asked', icon: 'verified' },
-  { key: 'credit_amount_reached', label: 'A member uses their monthly AI credits', help: 'Their monthly amount is reached; the studio’s credits are untouched.', who: 'The Owner', icon: 'hourglass_top' },
+  { key: 'credit_request', label: 'A member asks for more AI credits', help: 'The studio is out, or their monthly limit is used.', who: 'The Owner', icon: 'person' },
+  { key: 'credit_request_answered', label: 'Your ask for AI credits is answered', help: 'Credits added, or your monthly limit raised.', who: 'Whoever asked', icon: 'verified' },
+  { key: 'credit_amount_reached', label: 'A member uses their monthly AI credits', help: 'Their monthly limit is reached; the studio’s credits are untouched.',   /* (the calm UI build 2026-10-27, B5's request) one word for a member's cap: "monthly limit" */ who: 'The Owner', icon: 'hourglass_top' },
   { key: 'credits_renewed', label: 'This month’s AI credits are in', help: 'The plan’s credits refresh on its date each month.', who: 'Owners and Admins', icon: 'diamond' },
   { key: 'payment_failed', label: 'A payment for the plan doesn’t go through', help: 'The plan stays until the grace date; update the card before then.', who: 'The Owner', icon: 'credit_card' },
   { key: 'credit_receipt', label: 'A receipt for a purchase', help: 'A plan, a seat or a top-up — with its tax invoice.', who: 'Whoever bought it, and the Owner', icon: 'receipt_long' },
@@ -155,7 +155,7 @@ export const EVENTS: EventDef[] = [
   { key: 'expense_answered', label: 'Your expense is answered', help: 'Approved, or sent back with a note.', who: 'Whoever logged it', icon: 'verified' },
   { key: 'claim_paid', label: 'Your claim is paid back', help: 'An Owner or an Admin recorded the payment.', who: 'Whoever claimed it', icon: 'payments' },
   /* (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15) invented copy */
-  { key: 'bill_review', label: 'A supplier bill needs your OK', help: 'Over the PO approval limit with no PO, or more than its PO by over the tolerance in Settings › Finance › Money out — it waits before anyone pays it.', who: 'Owners and Admins', icon: 'approval' },
+  { key: 'bill_review', label: 'A supplier bill is waiting for your approval', help: 'Over the PO approval limit with no PO, or more than its PO by over the tolerance in Settings › Finance › Costs — it waits before anyone pays it.', who: 'Owners and Admins', icon: 'approval' },
   { key: 'bill_approved', label: 'A bill you recorded is approved', help: 'An Owner or an Admin approved a bill that waited — it can be paid now.', who: 'Whoever recorded it', icon: 'verified' },
   { key: 'bill_due', label: 'A supplier bill falls due', help: 'Three days before its due day, and once it is overdue and not paid.', who: 'Owners, Admins and Accounting', icon: 'receipt_long' },   // (parity map, MO-098)
   /* (gaps build G, G-Q14) the floor plan, from the client's side */
@@ -167,12 +167,13 @@ export const EVENTS: EventDef[] = [
   { key: 'commission_answered', label: 'Your commission ask is answered', help: 'Approved — perhaps at another rate — or declined with a note.', who: 'Whoever asked', icon: 'verified' },
   { key: 'commission_paid', label: 'Your commission is paid', help: 'An Owner or an Admin recorded the payment.', who: 'The member paid', icon: 'payments' },
   { key: 'credit_issued', label: 'A credit note is issued', help: 'Against one of the project’s invoices — the client sees it on their portal.', who: 'The project’s members', icon: 'receipt_long' },
-  { key: 'xero_failed', label: 'Xero needs you', help: 'A push to Xero failed — usually a mapping to set — and waits for Retry.', who: 'Owners, Admins and Accounting', icon: 'account_balance' },   // (parity map, FB-114)
-  /* (gaps build H, H-Q10 · H-Q15) tickets and the conversation, from the client's side (invented copy) */
-  { key: 'ticket_raised', label: 'A client reports an issue', help: 'A new ticket from their portal — its category and subject.', who: 'The project’s members, else Owners and Admins', icon: 'handyman' },
-  { key: 'ticket_client', label: 'A client answers on a ticket', help: 'They reply, reopen it with a reply, or close it.', who: 'Whoever looks after it, else the project’s members', icon: 'handyman' },
-  { key: 'ticket_assigned', label: 'A ticket is given to you', help: 'Someone made you the one who looks after it.', who: 'The member it is given to', icon: 'person' },
-  { key: 'ticket_escalated', label: 'A ticket is escalated', help: 'Marked Urgent with a note — it stays in Needs attention until resolved.', who: 'Owners and Admins', icon: 'flag' },
+  { key: 'xero_failed', label: 'Xero needs your attention', help: 'A push to Xero failed — usually a mapping to set — and waits for Retry.', who: 'Owners, Admins and Accounting', icon: 'account_balance' },   // (parity map, FB-114)
+  /* (gaps build H, H-Q10 · H-Q15) tickets and the conversation, from the client's side (invented copy) — (the calm UI build 2026-10-27, T-01 ·
+     1-10) "issue" on screen, as the client's portal says it; "Escalate" is "Flag to the Owner"; "your OK" is "your approval"; the keys stay */
+  { key: 'ticket_raised', label: 'A client reports an issue', help: 'A new issue from their portal — its category and subject.', who: 'The project’s members, else Owners and Admins', icon: 'handyman' },
+  { key: 'ticket_client', label: 'A client answers on an issue', help: 'They reply, reopen it with a reply, or close it.', who: 'Whoever looks after it, else the project’s members', icon: 'handyman' },
+  { key: 'ticket_assigned', label: 'An issue is given to you', help: 'Someone made you the one who looks after it.', who: 'The member it is given to', icon: 'person' },
+  { key: 'ticket_escalated', label: 'An issue is flagged to the Owner', help: 'Marked Urgent with a note — it stays in Needs your attention until resolved.', who: 'Owners and Admins', icon: 'flag' },
   /* (gaps build J, J-Q17) the 3D Space Planner (invented copy) */
   { key: 'layout_viewed', label: 'A client opens a shared 3D layout', help: 'The first time they open it — on its link or on their portal.', who: 'Whoever shared it and the project’s members', icon: 'view_in_ar' },
   /* (parity map 2026-10-10) (invented copy) */
@@ -182,7 +183,7 @@ export const EVENTS: EventDef[] = [
   { key: 'po_delivery_late', label: 'A purchase order’s delivery is late', help: 'Its expected delivery day has passed and it is not marked delivered.', who: 'Whoever made it, the project’s members and Accounting', icon: 'local_shipping' },   // (parity map, MO-098)
   { key: 'invite_requested', label: 'A member asks to add someone to the studio', help: 'From a task given to someone outside the studio.', who: 'Owners and Admins', icon: 'person_add' },
   { key: 'message_failed', label: 'A message could not be sent', help: 'An email or a WhatsApp to a client failed three times — or an invitation to a new member, which tells whoever sent it.', who: 'Owners and Admins', icon: 'error' },   // (pending modules S18) the invitation's last failure too
-  { key: 'send_held', label: 'A large send waits for your OK', help: 'One action would message many people at once — it is held until you send it.', who: 'The Owner', icon: 'approval' },
+  { key: 'send_held', label: 'A large send is waiting for your approval', help: 'One action would message many people at once — it is held until you send it.', who: 'The Owner', icon: 'approval' },
   /* (pending modules S26) a lead's Team conversation before Won rings it too — the words say both */
   { key: 'team_message', label: 'A teammate writes in a team chat', help: 'In a lead’s or a project’s Team conversation — the client never sees it.', who: 'The lead’s or the project’s members', icon: 'comment' },
   { key: 'chat_message', label: 'A client sends a message', help: 'In Messages — once in 15 minutes per conversation while it waits unread.', who: 'The project’s members', icon: 'comment' },
@@ -281,7 +282,7 @@ export const FIELDS: { key: string; label: string }[] = [
   { key: '{po}', label: 'The purchase order’s number' }, { key: '{vendor}', label: 'The vendor' }, { key: '{expense}', label: 'What the expense was for' },   /* (gaps build F1) */
   { key: '{plan}', label: 'The floor plan’s name' },   /* (gaps build G) */
   { key: '{rate}', label: 'The commission rate' }, { key: '{credit_note}', label: 'The credit note’s number' },   /* (gaps build F2) */
-  { key: '{ticket}', label: 'The ticket’s number and subject' },   /* (gaps build H) — a message's first words ride in {comment} */
+  { key: '{ticket}', label: 'The issue’s number and subject' },   /* (gaps build H) — a message's first words ride in {comment} */
 ]
 const T = (event: EventKey, channel: 'email' | 'whatsapp', subject: string, body: string): MessageTemplate => ({ event, channel, subject, body })
 export const DEFAULT_TEMPLATES: MessageTemplate[] = [
@@ -327,14 +328,14 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('price_book_proposed', 'whatsapp', '', '{actor} proposed “{item}” for My Items at {studio}: {link}'),
   T('price_book_answered', 'email', 'Your proposed item: {item}', 'Hi {member},\n\n{actor} answered your proposal “{item}”. Open My Items to see it: {link}\n\n{studio}'),
   T('price_book_answered', 'whatsapp', '', '{actor} answered your proposal “{item}”: {link}'),
-  T('render_feedback', 'whatsapp', '', '{lead_name} responded to the renders you shared from {studio}: {link}'),
-  T('render_feedback', 'email', '{lead_name} responded to your renders', 'Hi {member},\n\n{lead_name} responded to the renders you shared. Open the design to see what they said: {link}\n\n{studio}'),
+  T('render_feedback', 'whatsapp', '', '{lead_name} responded to the versions you shared from {studio}: {link}'),   // (the calm UI build 2026-10-27, 6-07)
+  T('render_feedback', 'email', '{lead_name} responded to your versions', 'Hi {member},\n\n{lead_name} responded to the versions you shared. Open the design to see what they said: {link}\n\n{studio}'),
   /* (REG-703) */
   T('credits_low', 'email', 'AI credits are running low at {studio}', 'Hi {member},\n\n{studio} has {credits} AI credits left this month. Top up or change the plan before they run out: {link}\n\n{studio}'),
   T('credits_low', 'whatsapp', '', '{studio} has {credits} AI credits left this month: {link}'),
   T('credits_out', 'email', '{studio} is out of AI credits', 'Hi {member},\n\nThe AI tools are paused until you top up or the month refreshes — nothing else stops. Add AI credits: {link}\n\n{studio}'),
   T('credits_out', 'whatsapp', '', '{studio} is out of AI credits. AI tools are paused — top up here: {link}'),
-  T('credit_request', 'email', '{actor} asks for more AI credits', 'Hi {member},\n\n{actor} asked for more AI credits. Raise their monthly amount or top up: {link}\n\n{studio}'),
+  T('credit_request', 'email', '{actor} asks for more AI credits', 'Hi {member},\n\n{actor} asked for more AI credits. Raise their monthly limit or top up: {link}\n\n{studio}'),
   T('credit_request', 'whatsapp', '', '{actor} asks for more AI credits at {studio}: {link}'),
   T('credit_request_answered', 'email', 'More AI credits', 'Hi {member},\n\n{actor} answered your ask for AI credits. Press Generate again when you’re ready: {link}\n\n{studio}'),
   T('credit_request_answered', 'whatsapp', '', '{actor} answered your ask for AI credits at {studio}.'),
@@ -446,11 +447,11 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('expense_answered', 'whatsapp', '', '{actor} answered your expense “{expense}”: {note} — {link}'),
   T('claim_paid', 'email', '{amount} is paid back to you', 'Hi {member},\n\n{actor} paid you back {amount} for “{expense}”. See it: {link}\n\n{studio}'),
   T('claim_paid', 'whatsapp', '', '{actor} paid you back {amount} for “{expense}”: {link}'),
-  T('bill_review', 'email', '{vendor}’s bill {bill} needs your OK', 'Hi {member},\n\n{actor} recorded {vendor}’s bill {bill} for {amount} — {note}. It waits for your OK before it is paid. Approve it from Finance › To do: {link}\n\n{studio}'),   // (S44R, C8) invented copy
-  T('bill_review', 'whatsapp', '', '{vendor}’s bill {bill} for {amount} needs your OK before it is paid — {note}: {link}'),
+  T('bill_review', 'email', 'Bill {bill} from {vendor} is waiting for your approval', 'Hi {member},\n\n{actor} recorded bill {bill} from {vendor} for {amount} — {note}. It waits for your approval before it is paid. Approve it from Finance › Needs your attention: {link}\n\n{studio}'),   // (S44R, C8) invented copy
+  T('bill_review', 'whatsapp', '', 'Bill {bill} from {vendor} for {amount} is waiting for your approval before it is paid — {note}: {link}'),
   T('bill_approved', 'email', '{vendor}’s bill {bill} is approved', 'Hi {member},\n\n{actor} approved {vendor}’s bill {bill} for {amount} — it can be paid now: {link}\n\n{studio}'),
   T('bill_approved', 'whatsapp', '', '{actor} approved {vendor}’s bill {bill} — it can be paid: {link}'),
-  T('bill_due', 'email', '{vendor}’s bill is due', 'Hi {member},\n\n{vendor}’s bill for {amount} is due and not paid yet. Pay it from Finance › To do: {link}\n\n{studio}'),
+  T('bill_due', 'email', 'The bill from {vendor} is due', 'Hi {member},\n\nThe bill from {vendor} for {amount} is due and not paid yet. Pay it from Finance › Needs your attention: {link}\n\n{studio}'),
   T('bill_due', 'whatsapp', '', '{vendor}’s bill for {amount} is due: {link}'),
   /* (gaps build G) */
   T('floor_plan_client', 'email', '{lead_name} marked up {plan}', 'Hi {member},\n\n{lead_name} added to the floor plan “{plan}” on their portal: {comment}. Open it to answer: {link}\n\n{studio}'),
@@ -466,17 +467,17 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('commission_paid', 'whatsapp', '', '{actor} paid you {amount} commission for {lead_name}’s project: {link}'),
   T('credit_issued', 'email', 'Credit note {credit_note} for {lead_name}', 'Hi {member},\n\n{actor} issued credit note {credit_note} ({amount}) on {lead_name}’s project: {note}. See it on Money: {link}\n\n{studio}'),
   T('credit_issued', 'whatsapp', '', '{actor} issued credit note {credit_note} ({amount}) on {lead_name}’s project: {link}'),
-  T('xero_failed', 'email', 'Xero needs you', 'Hi {member},\n\nA push to Xero failed: {note}. Fix it and press Retry: {link}\n\n{studio}'),
+  T('xero_failed', 'email', 'Xero needs your attention', 'Hi {member},\n\nA push to Xero failed: {note}. Fix it and press Retry: {link}\n\n{studio}'),
   T('xero_failed', 'whatsapp', '', 'A push to Xero failed: {note} — {link}'),
   /* (gaps build H) (invented copy) */
-  T('ticket_raised', 'email', '{lead_name} reported an issue', 'Hi {member},\n\n{lead_name} reported an issue on their portal: {ticket}.\n\n{comment}\n\nOpen the ticket to answer: {link}\n\n{studio}'),
+  T('ticket_raised', 'email', '{lead_name} reported an issue', 'Hi {member},\n\n{lead_name} reported an issue on their portal: {ticket}.\n\n{comment}\n\nOpen the issue to answer: {link}\n\n{studio}'),
   T('ticket_raised', 'whatsapp', '', '{lead_name} reported an issue: {ticket}. {link}'),
-  T('ticket_client', 'email', '{lead_name} answered on {ticket}', 'Hi {member},\n\n{lead_name} answered on {ticket}: {comment}\n\nOpen the ticket: {link}\n\n{studio}'),
+  T('ticket_client', 'email', '{lead_name} answered on {ticket}', 'Hi {member},\n\n{lead_name} answered on {ticket}: {comment}\n\nOpen the issue: {link}\n\n{studio}'),
   T('ticket_client', 'whatsapp', '', '{lead_name} answered on {ticket}: {link}'),
-  T('ticket_assigned', 'email', '{ticket} is yours', 'Hi {member},\n\n{actor} gave you the ticket {ticket} from {lead_name}. Open it: {link}\n\n{studio}'),
-  T('ticket_assigned', 'whatsapp', '', '{actor} gave you the ticket {ticket}: {link}'),
-  T('ticket_escalated', 'email', 'Escalated: {ticket}', 'Hi {member},\n\n{actor} escalated {lead_name}’s ticket {ticket} — {note}\n\nOpen it: {link}\n\n{studio}'),
-  T('ticket_escalated', 'whatsapp', '', 'Escalated — {lead_name}’s ticket {ticket}: {note} {link}'),
+  T('ticket_assigned', 'email', '{ticket} is yours', 'Hi {member},\n\n{actor} gave you the issue {ticket} from {lead_name}. Open it: {link}\n\n{studio}'),
+  T('ticket_assigned', 'whatsapp', '', '{actor} gave you the issue {ticket}: {link}'),
+  T('ticket_escalated', 'email', 'Flagged to the Owner: {ticket}', 'Hi {member},\n\n{actor} flagged {lead_name}’s issue {ticket} to the Owner — {note}\n\nOpen it: {link}\n\n{studio}'),
+  T('ticket_escalated', 'whatsapp', '', 'Flagged to the Owner — {lead_name}’s issue {ticket}: {note} {link}'),
   T('chat_message', 'email', 'A message from {lead_name}', 'Hi {member},\n\n{lead_name} sent a message: {comment}\n\nReply in Messages: {link}\n\n{studio}'),
   T('chat_message', 'whatsapp', '', '{lead_name} sent a message: {comment} {link}'),
   /* (gaps build J) (invented copy) */
@@ -495,8 +496,8 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('invite_requested', 'whatsapp', '', '{actor} asks to add {person} to the studio: {link}'),
   T('message_failed', 'email', 'A message to {lead_name} could not be sent', 'Hi {member},\n\nA message to {lead_name} could not be sent after three tries. See Sent messages: {link}\n\n{studio}'),
   T('message_failed', 'whatsapp', '', 'A message to {lead_name} could not be sent: {link}'),
-  T('send_held', 'email', 'A large send waits for your OK', 'Hi {member},\n\nOne action would message many people at once, so it is held until you send it: {link}\n\n{studio}'),
-  T('send_held', 'whatsapp', '', 'A large send waits for your OK: {link}'),
+  T('send_held', 'email', 'A large send is waiting for your approval', 'Hi {member},\n\nOne action would message many people at once, so it is held until you send it: {link}\n\n{studio}'),
+  T('send_held', 'whatsapp', '', 'A large send is waiting for your approval: {link}'),
   T('team_message', 'email', '{actor} in the team chat for {lead_name}', 'Hi {member},\n\n{actor} wrote in the team chat for {lead_name}: {link}\n\n{studio}'),
   T('team_message', 'whatsapp', '', '{actor} in the team chat for {lead_name}: {link}'),
   /* (pending modules S26) a teammate's message — the words stay in Messages; the email and the WhatsApp say who and open it (invented copy) */
@@ -525,6 +526,28 @@ export function parseTemplates(v: unknown): MessageTemplate[] {
   })
 }
 export const templateFor = (list: MessageTemplate[], event: EventKey, channel: 'email' | 'whatsapp') => list.find((t) => t.event === event && t.channel === channel) ?? DEFAULT_TEMPLATES.find((t) => t.event === event && t.channel === channel)!
+
+/**
+ * (the calm UI build 2026-10-27 — the audit's 5-47, T-18) A preview's sample fields with the link of the event's own place — the plan's, the Price
+ * book's, a task's, a quote's, a project's … (every preview linked to a lead before, even "The studio is out of AI credits"). The words stay the
+ * studio's template; only the sample's `{link}` follows the event.
+ */
+const SAMPLE_PLACE: [RegExp, string][] = [
+  [/^(credits_|credit_|payment_failed$|upgrade_offer$)/, '/company/plan'],
+  [/^price_book_/, '/company/price-book'],
+  [/^(task_|file_comment$)/, '/tasks'],
+  [/^(quote_|contract_)/, '/quotes'],
+  [/^(member_joined|invite_requested|member_message|team_message)$/, '/company/members'],
+  [/^(xero_failed|bill_|po_|expense_|claim_paid|commission_|credit_issued)/, '/company/finance'],
+  [/^(ticket_)/, '/tickets'],
+  [/^(chat_message|message_failed|send_held)$/, '/chat'],
+  [/^(hangout_|listing_answered)/, '/qanvast-ops'],
+  [/^(project_|update_|milestone_|choice_|stage_confirmed|stage_changes|handover_|invoice_|variation_|payment_|schedule_|floor_plan_|layout_viewed|portal_opened)/, '/projects/p-2026-002'],
+]
+export function sampleFieldsFor(event: EventKey | string, base: Record<string, string> = SAMPLE_FIELDS): Record<string, string> {
+  const place = SAMPLE_PLACE.find(([re]) => re.test(event))?.[1]
+  return place ? { ...base, '{link}': `https://app.openmaison.sg${place}` } : base
+}
 
 /** The message with its fields filled — the preview and the platform's send use the same function. */
 export function renderTemplate(text: string, fields: Record<string, string>): string {

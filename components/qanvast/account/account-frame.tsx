@@ -1,12 +1,10 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
 import leadsStyles from '@/components/qanvast/qanvast-leads.module.css'
-import { ChipRail } from '@/components/om/chip-rail'
-import { Chips } from '@/components/om/chips'
+import { DemoNote } from '@/components/om/demo-note'
 import { EmptyState } from '@/components/om/empty-state'
 import { Tabs } from '@/components/om/tabs'
 import { PageHeader } from '@/components/shell/page-header'
@@ -24,6 +22,8 @@ import styles from './account.module.css'
  * place — each view its own address (1.0's: …/credits/transactions · …/credits/contracts · …/reviews/feedback; Ranking was a tab inside
  * Reviews) — and the view's tools at the right. Who may not see the studio's Qanvast account (1.0: the Owner only) meets the tab's gate in the
  * body, the strip still there; a Qanvast that doesn't answer is said, with Try again; the stand-in says it is one under the view.
+ * (the calm UI build 2026-10-27, 2-10 · T-10) the views are the house Tabs at the second level (a Hangout's page's), chips only filter; (2-09 ·
+ * T-05) the stand-in's line sits behind the bar's "?", never on the studio's page.
  */
 export function AccountFrame({ tab, views, view, tools, actions, ghost, state, children, testId }: {
   tab: 'credits' | 'reviews'
@@ -40,10 +40,8 @@ export function AccountFrame({ tab, views, view, tools, actions, ghost, state, c
 }) {
   const router = useRouter()
   const path = usePathname()
-  /* the press shows at once; the address follows (and a view from the address wins once it lands) — the projects' view switch's rule */
-  const [picked, setPicked] = useState(view)
-  const [was, setWas] = useState(view)
-  if (was !== view) { setWas(view); setPicked(view) }
+  const viewHref = views.find((v) => v.value === view)?.href ?? views[0]?.href ?? ''
+  const standIn = !state.gate && state.standIn
   const tabHref = tab === 'credits' ? QANVAST_TAB_ITEMS[2]!.href : QANVAST_TAB_ITEMS[3]!.href
   const gate = state.gate ? GATE_WORDS[tab] : null
   const error = !state.gate ? state.error ?? null : null
@@ -69,18 +67,19 @@ export function AccountFrame({ tab, views, view, tools, actions, ghost, state, c
                         primary={{ label: 'Try again', onPress: () => router.refresh(), testId: 'qanvast-account-retry' }} />
           ) : (
             <>
-              <div className={styles.bar} data-testid="qanvast-account-bar">
-                <div className={styles.views}>
-                  <ChipRail label={`${tab === 'credits' ? 'Lead credits' : 'Reviews'} views`} className={styles.rail}>
-                    <Chips label={`${tab === 'credits' ? 'Lead credits' : 'Reviews'} views`} testId="qanvast-account-views" value={picked}
-                           options={views.map((v) => ({ value: v.value, label: v.label }))}
-                           onChange={(v) => { if (v === picked) return; setPicked(v); router.push(views.find((x) => x.value === v)!.href) }} />
-                  </ChipRail>
-                </div>
-                {tools ? <div className={styles.tools}>{tools}</div> : null}
+              <div className={styles.viewTabsWrap} data-testid="qanvast-account-views">
+                <Tabs items={views.map((v) => ({ label: v.label, href: v.href }))} activeHref={viewHref} aria-label={`${tab === 'credits' ? 'Lead credits' : 'Reviews'} views`} className={styles.viewTabs} />
               </div>
+              {tools || standIn ? (
+                <div className={styles.bar} data-testid="qanvast-account-bar">
+                  <div className={styles.views} />
+                  <div className={styles.tools}>
+                    {tools}
+                    {standIn ? <DemoNote text={SIMULATED_WORDS.qanvastAccount} testId="qanvast-account-sample" /> : null}   {/* (the calm UI build 2026-10-27 — B1's request, 2-09 · T-05) the house Demo chip, its sentence the tooltip, as Integrations' */}
+                  </div>
+                </div>
+              ) : null}
               {children}
-              {!state.gate && state.standIn ? <p className={styles.source} data-testid="qanvast-account-sample">{SIMULATED_WORDS.qanvastAccount}</p> : null}
             </>
           )}
         </div>

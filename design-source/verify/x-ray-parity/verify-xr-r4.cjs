@@ -49,7 +49,10 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     assigned(); as('sarah')
     await page.goto(`${BASE}/quote-x-ray?lead=${VIV}`); await ready(page)
     const danes = page.getByTestId('xray-recent').filter({ hasText: 'Vivien Lee' }).first()
-    ok('Dane’s reading: Delete out of her reach', await danes.getByRole('button', { name: /^Delete / }).isDisabled())
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-15: a Recent row's Delete is its ⋮'s row now; refused, it says why in the row */
+    await danes.getByRole('button', { name: /^More options for/ }).click(); await page.waitForTimeout(300)
+    ok('Dane’s reading: Delete out of her reach', (await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled')) === 'true')
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await page.goto(`${BASE}/quote-x-ray/${VIV_X}`); await ready(page)
     await page.getByRole('button', { name: 'More options', exact: true }).click(); await page.waitForTimeout(300)
     ok('and in the record’s kebab', (await page.getByRole('menuitem', { name: 'Delete' }).getAttribute('aria-disabled')) === 'true')
@@ -72,7 +75,9 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     ok('Activity says who deleted which reading', /Sarah deleted the Quote X-Ray comparison “OM-10008 · Whole-home renovation · vs Cove Interior”/.test(await page.locator('main').innerText()))
     await shot('02-activity-deleted')
     await page.goto(`${BASE}/quote-x-ray?lead=${VIV}`); await ready(page)
-    ok('an Owner may delete anyone’s', !(await page.getByTestId('xray-recent').first().getByRole('button', { name: /^Delete / }).isDisabled()))
+    await page.getByTestId('xray-recent').first().getByRole('button', { name: /^More options for/ }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) — 6-15
+    ok('an Owner may delete anyone’s', (await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled')) !== 'true')
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200)
   })
 
   await step('a deleted lead’s readings leave Recent and come back with it; Delete forever takes them', async () => {

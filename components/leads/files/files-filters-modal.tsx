@@ -125,7 +125,7 @@ export function FilesFiltersModal({ open, team, types, value, onApply, onClose, 
               </div>
             </div>
             <SurfaceFoot shadow={bodyScrolls}>
-              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILE_FILTERS)}>Clear All</Button>
+              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILE_FILTERS)}>Clear</Button>   {/* (the calm UI build 2026-10-27 — W-010) sentence case, the Filters modals' one word */}
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
             </SurfaceFoot>

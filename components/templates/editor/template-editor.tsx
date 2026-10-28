@@ -10,7 +10,6 @@ import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { useFlagPref } from '@/lib/prefs'
 import { BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type Block, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
 import { docTotals, EMPTY_DATA, lineCount, withNewQuoteDefaults, type DocData, type NewQuoteLibrary } from '@/lib/templates/data'
 import { fieldValues } from '@/lib/templates/fields'
@@ -18,6 +17,7 @@ import { presetByKey } from '@/lib/templates/presets'
 import { COVER_LOOKS, coverLook, type CoverLookKey } from '@/lib/templates/covers'
 import { applyReading, parseSourceFile, type Reading, type SourceFile } from '@/lib/templates/recreate'
 import { ago } from '@/lib/templates/ago'
+import { savedLabel as houseSaved } from '@/lib/format'   // (the calm UI build 2026-10-27, 4-43) one "Saved …" for every editor
 import type { TemplateEditorData } from '@/lib/templates/queries'
 import { discardTemplateDraft, duplicateTemplate, loadQuoteDocData, publishTemplate, requestTemplateChanges, restoreTemplate, rollbackTemplate, saveTemplateDraft, setTemplateSource, setQuoteTemplate, updateQuoteTemplateVersion, submitTemplate } from '@/app/company/templates-actions'
 import { ReviewBar, NoteDialog } from './review-bar'
@@ -84,7 +84,6 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
      overlay, portal or transient layout can push the panes off the top of the window (owner 2026-09-23: the editor "completely broken"
      — the panes' bottoms 150px into the viewport and grey below). */
   useEffect(() => { const h = document.documentElement; const prev = h.style.overflow; h.style.overflow = 'hidden'; return () => { h.style.overflow = prev } }, [])
-  const [hintSeen, setHintSeen] = useFlagPref('om.tpl.hint', false)
 
   /* ── autosave: the draft, 900ms after the last change ── */
   const json = useMemo(() => JSON.stringify({ design, defaults, name }), [design, defaults, name])
@@ -319,14 +318,14 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   const detachReference = async () => { setSourceFile(null); setUnderlay(false); setRightTab('inspector'); try { await setTemplateSource(template.id, { sourceFile: null }) } catch { /* the next save carries on */ } }
   const onAddBlock = (kind: BlockKind) => { const r = addBlock(design, kind, selection?.blockId ?? null); onDesign(() => r.design); setSelection({ blockId: r.id }) }   /* built outside the updater: StrictMode runs updaters twice and the ids drifted */
 
-  const savedLabel = save.error ? 'Not saved — retrying' : dirty ? 'Unsaved changes' : `Saved ${ago(save.at, now)}`
+  const savedLabel = save.error ? 'Not saved — retrying' : dirty ? 'Unsaved changes' : save.at ? houseSaved(save.at, Math.max(now, save.at)) : `Saved ${ago(save.at, now)}`   // (the calm UI build 2026-10-27, 4-43) the house "Saved …"
   /* (REG-542) With nothing to publish the button says so — "Published" — instead of a greyed "Publish changes" that invites a press. */
   const upToDate = !gated && !meta.submitted && meta.status !== 'draft' && !hasChanges
   /* (Dane UAT 10.14, Figma 1681:24) While a submission waits, the top bar's primary steps back to what the designer sees — a disabled
      "Awaiting approval" — and the review bar under it carries the decision (Request changes · Approve and publish), so the choice is made
      once, in one place. REG-501 otherwise as it was. */
   const reviewing = !!meta.submitted && data.canApprove
-  const publishLabel = gated || reviewing ? (meta.submitted ? 'Awaiting approval' : meta.status === 'draft' ? 'Submit for approval' : 'Submit changes') : meta.status === 'draft' ? 'Publish' : upToDate ? 'Published' : 'Publish changes'
+  const publishLabel = gated || reviewing ? (meta.submitted ? 'Waiting for approval' : meta.status === 'draft' ? 'Submit for approval' : 'Submit changes') : meta.status === 'draft' ? 'Publish' : upToDate ? 'Published' : 'Publish changes'
   const canPublish = !busy && !deleted && !reviewing && (gated ? !meta.submitted && (meta.status === 'draft' || hasChanges) : meta.status === 'draft' || hasChanges || !!meta.submitted)
   const onPublishPress = () => { if (gated) setSubmitOpen(true); else setPublishOpen(true) }
   const nextVersion = meta.status === 'draft' ? 1 : meta.version + 1
@@ -343,7 +342,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
     <div className={styles.pane} data-testid="left-pane">
       <div className={styles.tabs} role="tablist" aria-label="Template" onKeyDown={onTabKey}>
         {LEFT_TABS.map((t) => (
-          <button key={t} ref={(el) => { tabRefs.current[t] = el }} type="button" role="tab" aria-selected={leftTab === t} tabIndex={leftTab === t ? 0 : -1} className={styles.tab} data-on={leftTab === t || undefined} onClick={() => setLeftTab(t)}>{t === 'structure' ? 'Page' : t === 'brand' ? 'Brand' : 'New quotes'}</button>
+          <button key={t} ref={(el) => { tabRefs.current[t] = el }} type="button" role="tab" aria-selected={leftTab === t} tabIndex={leftTab === t ? 0 : -1} className={styles.tab} data-on={leftTab === t || undefined} onClick={() => setLeftTab(t)}>{t === 'structure' ? 'Page' : t === 'brand' ? 'Brand' : 'Quote settings'}{/* (the calm UI build 2026-10-27, W-274 — REG-569 named it New quotes) it read like a list of quotes */}</button>
         ))}
       </div>
       <div className={styles.paneBody} role="tabpanel">
@@ -387,7 +386,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
     { label: 'What does a new quote start with?', answer: () => {
       const split = paymentPresets.find((x) => x.key === defaults.paymentPreset)?.label ?? 'The studio default'
       const text = (id: string | null) => (id ? textTemplates.find((t) => t.id === id)?.title ?? 'A template no longer there' : 'None')
-      return Promise.resolve({ title: 'A new quote from it starts with', text: 'What the New quotes tab sets — once it is published.', rows: [
+      return Promise.resolve({ title: 'A new quote from it starts with', text: 'What the Quote settings tab sets — once it is published.', rows: [
         { id: 'valid', label: `Valid for ${defaults.validityDays} days` },
         { id: 'split', label: `Payment schedule · ${split}` },
         { id: 'terms', label: `Terms · ${text(defaults.termsTemplateId)}` },
@@ -395,7 +394,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
         { id: 'gst', label: defaults.gstEnabled ? 'GST on' : 'GST off' },
         { id: 'sign', label: defaults.signatureRequired ? 'The client signs online' : 'No client signature' },
         ...(defaults.starterGroups.length ? [{ id: 'groups', label: `Sections · ${defaults.starterGroups.join(', ')}` }] : []),
-        { id: 'open', label: 'Change them on New quotes', run: openDefaults },
+        { id: 'open', label: 'Change them on Quote settings', run: openDefaults },
       ] })
     } },
   ]
@@ -407,17 +406,11 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
                     canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} onHistory={() => setHistoryOpen(true)} preview={preview || readOnly} readOnly={readOnly} onPreview={setPreview}
                     onMenu={(a) => { void onMenu(a) }} publishLabel={publishLabel} canPublish={canPublish} onPublish={onPublishPress} onBack={() => { void back() }} hasReference={!!sourceFile} compact={compact}
                     originLabel={origin?.quote ? `Editing for ${origin.quote.number} · ${origin.quote.leadName}` : origin?.lead ? `For ${origin.lead.name}` : null} backLabel={origin?.quote ? `Back to ${origin.quote.number}` : origin?.lead ? `Back to ${origin.lead.name}` : 'Back to Quote templates'} canStart={meta.status === 'published'} />
-      {/* (REG-542) A one-line orientation for the first visits, dismissed for good with Got it. */}
-      {!readOnly && !preview && !deleted && !hintSeen ? (
-        <div className={styles.hint} role="note" data-testid="editor-hint">
-          <Icon name="info" size={20} weight={300} />
-          <span className={styles.hintText}>Click any part of the page to change it on the right. Everything is saved as you go — press <b>Publish</b> when it looks right.</span>
-          <Button appearance="text" onPress={() => setHintSeen(true)}>Got it</Button>
-        </div>
-      ) : null}
-      {readOnly ? <div className={styles.readOnlyNote}><Icon name="info" size={16} weight={300} /> {awaitingLock && !phone ? 'Awaiting approval — the design is locked until it is published or changes are requested.' : 'Templates are edited on a tablet or computer. This is a view.'}</div> : null}
+      {/* (REG-542 · the calm UI build 2026-10-27, the UI audit's 4-23) the first visits' one-line orientation is gone: the inspector's empty
+          state says the same three steps (pick a part · change its words · Publish), every time it is empty */}
+      {readOnly ? <div className={styles.readOnlyNote}><Icon name="info" size={16} weight={300} /> {awaitingLock && !phone ? 'Waiting for approval — the design is locked until it is published or changes are requested.' : 'Templates are edited on a tablet or computer. This is a view.'}</div> : null}
       {deleted ? (
-        <div className={styles.readOnlyNote} data-testid="deleted-bar"><Icon name="delete" size={16} weight={300} /> This template is deleted — the {meta.usedBy ? `${meta.usedBy} quote${meta.usedBy === 1 ? '' : 's'} on it keep` : 'quotes on it would keep'} printing v{meta.version}. <Button appearance="text" isDisabled={busy} onPress={() => { setBusy(true); void restoreTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('restore', refusalOf(r.error)) }); return } setDeleted(false); snackbar({ message: `${name} restored` }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t restore — please try again' })).finally(() => setBusy(false)) }}>Restore</Button></div>
+        <div className={styles.readOnlyNote} data-testid="deleted-bar"><Icon name="delete" size={16} weight={300} /> {/* (the calm UI build 2026-10-27, W-408) a never-published draft says so — it printed nothing, so no "v0" */}{meta.status === 'draft' || !meta.version ? 'This draft is deleted.' : <>This template is deleted — the {meta.usedBy ? `${meta.usedBy} quote${meta.usedBy === 1 ? '' : 's'} on it keep` : 'quotes on it would keep'} printing v{meta.version}.</>} <Button appearance="text" isDisabled={busy} onPress={() => { setBusy(true); void restoreTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('restore', refusalOf(r.error)) }); return } setDeleted(false); snackbar({ message: `${name} restored` }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t restore — please try again' })).finally(() => setBusy(false)) }}>Restore</Button></div>
       ) : null}
       {!readOnly && !deleted && (meta.submitted || meta.reviewNote) ? (
         <ReviewBar submitted={meta.submitted} reviewNote={meta.reviewNote} canApprove={data.canApprove} now={now} busy={busy} onApprove={() => setPublishOpen(true)} onRequestChanges={() => setChangesOpen(true)} onDismissNote={() => setMeta((m) => ({ ...m, reviewNote: null }))} />

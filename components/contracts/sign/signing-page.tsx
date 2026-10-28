@@ -5,7 +5,7 @@ import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every 
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
+import { PrivateLinkBadge } from '@/components/quotes/confirm/private-link-badge'
 import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
 import { SignaturePad } from '@/components/om/signature-pad'
@@ -191,7 +191,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
           {brand.logo ? <img className={styles.logo} src={brand.logo} alt="" /> : null}
           <span className={styles.studio}>{issuer}</span>
         </span>
-        <MetaChip color="green" icon="lock">Secure signing</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
+        <PrivateLinkBadge />   {/* (the calm UI build 2026-10-27, 4-09 · W-028) one badge on every client page — "Secure signing" was this page's own */}
       </header>
       <div ref={bodyRef} className={`${styles.body} ${ph.body}`}>
         {/* (C3 — P-05) the phone's hero: drawn there only (sign-phone.module.css) */}
@@ -233,7 +233,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
               <span className={styles.done}><Icon name="check_circle" size={40} /></span>
               <h2 className={styles.cardTitle}>Signed</h2>
               <p className={styles.cardText}>Signed by <strong>{signed.name}</strong> on {displayDateLong(signed.at)}. Both you and {issuer} keep a copy.</p>
-              {quote && !quote.gone ? <a className={styles.quoteLink} href={`/sign/${data.token}/quote`} target="_blank" rel="noopener" data-testid="view-quote"><Icon name="request_quote" size={20} />Quotation {quote.number}</a> : null}
+              {quote && !quote.gone ? <a className={styles.quoteLink} href={`/sign/${data.token}/quote`} target="_blank" rel="noopener" data-testid="view-quote"><Icon name="request_quote" size={20} />Quote {quote.number}</a> : null}
               {/* (pending modules S03) a PDF signed online: the very file, kept — the signing record stays on this page */}
               <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (uploaded && data.pdf) window.location.assign(`/sign/${data.token}/file?download=1`); else printPaper() }}>Download a copy</Button>
               {data.deposit ? <DepositPay d={data.deposit} /> : null}   {/* (S44R — UAT row 358, call C7) the page ends on the deposit */}
@@ -247,7 +247,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
                   <p className={styles.cardText}>Hi {recipient.split(' ')[0]}, please read the agreement. {codeDemo ? 'When you’re ready, a one-time code confirms it’s you.' : <>When you’re ready, we’ll send a one-time code to <strong>{masked}</strong> to confirm it’s you.</>}</p>
                   {data.deposit && !data.deposit.paid ? <p className={styles.fine} data-testid="deposit-ahead">{depositAhead(data.deposit)}</p> : null}   {/* (S44R, C7) what follows the signature, said before it */}
                   {/* (REG-633, parity Q-20) the quote it signs, read-only in a new tab */}
-                  {quote && !quote.gone ? <a className={styles.quoteLink} href={`/sign/${data.token}/quote`} target="_blank" rel="noopener" data-testid="view-quote"><Icon name="request_quote" size={20} />It signs quotation {quote.number} — view the quote</a> : null}
+                  {quote && !quote.gone ? <a className={styles.quoteLink} href={`/sign/${data.token}/quote`} target="_blank" rel="noopener" data-testid="view-quote"><Icon name="request_quote" size={20} />It signs quote {quote.number} — view the quote</a> : null}
                   {needsScroll ? (
                     <p className={styles.gate} data-done={readEnd || undefined} data-testid="gate-scroll"><Icon name={readEnd ? 'check_circle' : 'arrow_downward'} size={20} />{readEnd ? 'You’ve read to the end' : 'Read to the end of the agreement to continue'}</p>
                   ) : null}

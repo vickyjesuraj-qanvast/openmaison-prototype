@@ -5,7 +5,7 @@
  * page, WhatsApp or email — never a pretend checkout), and the message a press drafts. The records are Qanvast's feed (lib/marketplace/feed.ts);
  * the studio's own are its asks and the two links into its one home for each kind — Finance › Vendors for a brand, the Price book for a product.
  */
-import { displayDate, money } from '@/lib/format'
+import { displayDate, displayDayShortMonth, money } from '@/lib/format'
 
 /** 1.0's page size (`PER_PAGE`): Show more adds as many again. */
 export const PAGE_SIZE = 12
@@ -135,14 +135,19 @@ export function dealWhen(d: { startsAt: number | null; endsAt: number | null }, 
   if (n <= 7) return `Ends in ${n} days`
   return `Until ${displayDate(new Date(d.endsAt))}`
 }
-/** The deal's whole run, for its dialog: "1 Oct ’26 – 31 Dec ’26", "From 1 Oct ’26", "Until 31 Dec ’26". */
+/** The deal's whole run, for its dialog — one line (the calm UI build 2026-10-27, 6-24: the run was said twice, as a chip and a line): "Runs 7 Oct –
+    11 Dec ’26" (the year once when both days share it), "Runs from 1 Oct ’26", "Runs until 31 Dec ’26". */
 export function dealRun(d: { startsAt: number | null; endsAt: number | null }): string | null {
-  const a = d.startsAt != null ? displayDate(new Date(d.startsAt)) : null, b = d.endsAt != null ? displayDate(new Date(d.endsAt)) : null
-  if (a && b) return `${a} – ${b}`
-  if (a) return `From ${a}`
-  if (b) return `Until ${b}`
+  const s = d.startsAt != null ? new Date(d.startsAt) : null, e = d.endsAt != null ? new Date(d.endsAt) : null
+  if (s && e) return `Runs ${s.getFullYear() === e.getFullYear() ? displayDayShortMonth(s) : displayDate(s)} – ${displayDate(e)}`
+  if (s) return `Runs from ${displayDate(s)}`
+  if (e) return `Runs until ${displayDate(e)}`
   return null
 }
+/** (the calm UI build 2026-10-27, 6-24) The dialog's chip says only what the run line can't: the deal's last week (or that it ended) — a deal
+    further away, or not started, says its days once, in the run line. */
+export const dealChip = (d: { startsAt: number | null; endsAt: number | null }, now: number): string | null =>
+  d.endsAt != null && !dealUpcoming(d, now) && daysLeft(d.endsAt, now) <= 7 ? dealWhen(d, now) : null
 /** A deal that ends within three days is close (the card's words lead with it). */
 export const endsSoon = (d: { endsAt: number | null }, now: number) => d.endsAt != null && daysLeft(d.endsAt, now) >= 0 && daysLeft(d.endsAt, now) <= 3
 
@@ -206,6 +211,14 @@ export function askLabel(d: Pick<DealView, 'ctaUrl' | 'ctaText' | 'brandWhatsapp
   if (way === 'email') return 'Get deal by email'
   return 'Get deal'
 }
+/** (the calm UI build 2026-10-27, W-204) Once the studio asked, the button asks again — the same press, said so, and no longer the screen's
+    filled one (a second ask to the brand is a choice, not the next step). */
+export function askAgainLabel(d: Pick<DealView, 'ctaUrl' | 'brandWhatsapp' | 'brandEmail'>): string {
+  const way = askWay(d)
+  if (way === 'whatsapp') return 'Ask again on WhatsApp'
+  if (way === 'email') return 'Ask again by email'
+  return 'Ask again on their page'
+}
 /** The line an ask leaves on its deal. (invented copy) */
 export function askedLine(a: DealAsk, viewerId: string): string {
   const who = a.byId === viewerId ? 'You' : a.by
@@ -218,8 +231,13 @@ export const askedShort = (a: DealAsk, viewerId: string): string => `${a.byId ==
 /** (pending modules S24, at the lanes' merge) The demo catalogue's addresses sit on the reserved `.example` domain (lib/marketplace/demo.ts),
  *  so no press lands on a real business — and none opens a browser's error page either: such a row says it is a demo address instead. */
 export const isDemoAddress = (url: string | null | undefined): boolean => !!url && /(^|[@./])[a-z0-9-]*\.?example(\.[a-z]{2,3})?([/:?#]|$)/i.test(url.replace(/^mailto:/, '').replace(/^https?:\/\//, ''))
-/** (invented copy) what a demo address row says */
-export const DEMO_ADDRESS = 'A demo address — a real brand’s link opens here'
+/** (invented copy) what a demo address says — (the calm UI build 2026-10-27, 6-11 · W-094) ONCE under a card's demo links, never on each row
+    ("A demo address — a real brand’s link opens here" three times read as broken) */
+export const DEMO_ADDRESS = 'Links open on the live app'
+/** (the calm UI build 2026-10-27, 6-01) The demo catalogue's logos are drawn monograms ("O&L" on a colour), standing in for a brand's own
+ *  (lib/marketplace/demo.ts) — a card and a brand's page draw a logo only when it is the brand's, else nothing (the brand's name says it). */
+export const isStandInLogo = (url: string | null | undefined): boolean => !!url && url.startsWith('/marketplace/logos/')
+export const realLogo = (url: string | null | undefined): string | null => (url && !isStandInLogo(url) ? url : null)
 export const shortUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
 /** An address the app opens (a brand, a deal, a page of its own) — not a page on the brand's site. */
 export const inApp = (href: string) => href.startsWith('/') && !href.startsWith('//')

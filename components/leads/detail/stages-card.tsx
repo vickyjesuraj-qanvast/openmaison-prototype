@@ -5,6 +5,7 @@ import type { LastContact } from '@/lib/leads/queries'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { dayWords, displayDate, displayDateLong, displayDue } from '@/lib/format'
+import { channelLabel } from '@/lib/leads/enums'
 import { Card, CardRule } from './card'
 import styles from './stages-card.module.css'
 
@@ -19,7 +20,11 @@ const daysLabel = dayWords
  * at the lead's current position (REG-259, user 2026-09-01 — it navigated to the Activity tab before).
  * Spec: design-source/context/lead-overview/04-cards-stages-files-activity.txt.
  */
-export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOpenStage, onOpen, lastContact = null, onOpenContact, nextFollowUp = null, onOpenFollowUp, onSetFollowUp, responseTime = null, onOpenInsights }: {
+export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOpenStage, onOpen, lastContact = null, onOpenContact, nextFollowUp = null, onOpenFollowUp, onSetFollowUp, responseTime = null, onOpenInsights, now, leadName = null }: {
+  /** (the calm UI build 2026-10-27 — audit 2-39) the page's clock: a Won lead's row says the day it was won */
+  now?: number
+  /** (the calm UI build — 2-05) the lead's first name, for the one refusal line a touch screen reads under the stages */
+  leadName?: string | null
   /** (REG-608, parity Q-03) The earliest open task with a date; none → the line offers to set one. */
   nextFollowUp?: { id: string; title: string; dueAt: Date; overdue: boolean } | null
   onOpenFollowUp?: () => void
@@ -39,6 +44,15 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
   /** The head arrow — the Move stage window at the current position. */
   onOpen: () => void
 }) {
+  /* (the calm UI build 2026-10-27 — audit 2-05, W-483) A touch screen printed the same refusal under every locked row ("Assign a member first"
+     four times): when the locked stages share one reason it is said once, under the stages — "Assign a member to move Olivia on" — and the
+     rows keep their lock and their tooltip. */
+  const reasons = timeline.filter((st) => st.state === 'future').map((st) => blocked?.(st.stage) ?? null).filter((w): w is string => !!w)
+  const shared = reasons.length > 1 && reasons.every((w) => w === reasons[0]) ? reasons[0]! : null
+  const sharedLine = shared === 'Assign a member first' ? `Assign a member to move ${leadName || 'this lead'} on` : shared
+  const won = timeline.find((st) => st.stage === 'Won' && st.state === 'current')
+  /* (2-39) The day a Won lead was won — the stage's calendar days counted back from today (the timeline's own count, lib/leads/detail.ts). */
+  const wonOn = won && won.days !== null && now !== undefined ? (() => { const d = new Date(now); d.setDate(d.getDate() - won.days!); return d })() : null
   const rows = timeline.map((step) => {
     // A Lost lead's un-reached stages are not somewhere to go — the way back is the stage it stopped at (REG-225).
     const why = step.state === 'future' ? blocked?.(step.stage) ?? null : null
@@ -65,20 +79,18 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
           <span className={styles.name}>{step.stage}</span>
           {/* (REG-273) The refusal reason, visible at mobile only — the Tooltip below carries it for a mouse,
               and a tooltip never fires for a touch pointer, so the row had nothing to say on a phone. */}
-          {why ? <span className={styles.why}>{why}</span> : null}
+          {why && why !== shared ? <span className={styles.why}>{why}</span> : null}
         </span>
         <span className={styles.meta}>
-          {step.state === 'current' ? (
-            <>
-              <span className={styles.current}>current</span>
-              <span className={styles.dot}>·</span>
-              <span>{step.days === null ? '--' : daysLabel(step.days)}</span>
-            </>
-          ) : step.state === 'done' ? (
-            <span>{step.days === null ? '--' : daysLabel(step.days)}</span>
-          ) : (
-            <span>--</span>
-          )}
+          {/* (the calm UI build 2026-10-27 — audit 2-03 · 2-39 · T-08) a future stage says nothing (its empty circle says "not yet"); a Won lead's row
+              says the day it was won, not a clock still running on a closed sale; the current stage reads "current" — its days are the head's */}
+          {step.state === 'current' && step.stage === 'Won' ? (
+            wonOn ? <span>{displayDate(wonOn)}</span> : null
+          ) : step.state === 'current' ? (
+            <span className={styles.current}>current</span>
+          ) : step.state === 'done' && step.days !== null ? (
+            <span>{daysLabel(step.days)}</span>
+          ) : null}
         </span>
       </span>
       <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
@@ -87,19 +99,27 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
     return why ? <Tooltip key={step.stage} label={why}>{row}</Tooltip> : row
   })
 
-  const contactDetail = lastContact ? [lastContact.channel, lastContact.outcome].filter(Boolean).join(' · ') : 'None logged yet'
+  const contactDetail = lastContact ? [channelLabel(lastContact.channel), lastContact.outcome].filter(Boolean).join(' · ') : 'None logged yet'
+  /* (the calm UI build 2026-10-27 — audit 2-39 · W-467) The head says how long the lead has been where it is — "In New for 50 days" — where it
+     said "50 days in pipeline" beside "current · 50 days"; a Won lead reads how long it took ("Took 13 days to win"); a parked lead's own row
+     carries its days. */
+  const current = timeline.find((st) => st.state === 'current')
+  const headMeta = won ? (won.days !== null ? `Took ${daysLabel(Math.max(0, daysInPipeline - won.days))} to win` : undefined)
+    : parked ? undefined
+    : current && current.days !== null ? `In ${current.stage} for ${daysLabel(current.days)}` : undefined
 
   return (
     <Card
       title="Lead stages"
       headGap={8}
-      metaRight={`${daysLabel(daysInPipeline)} in pipeline`}
+      metaRight={headMeta}
       onOpen={onOpen}
       openLabel="Open lead stages"
       testId="lead-stages"
     >
       <div className={styles.body} data-parked={parked ? '' : undefined}>
         <div className={styles.group}>{rows}</div>
+        {sharedLine ? <p className={styles.whyAll} data-testid="stages-shared-why">{sharedLine}</p> : null}
         {parked ? (
           <>
             <CardRule inset={0} />
@@ -135,34 +155,34 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
             the parked row is. They were grey boxes with uppercase labels above the stages (the owner, 2026-09-24: "visually off"). */}
         <CardRule inset={0} />
         <div className={styles.group} data-testid="follow-up-lines">
-          <button type="button" className={styles.row} data-testid="last-contact" data-empty={lastContact ? undefined : ''} onClick={onOpenContact}>
+          <button type="button" className={styles.row} data-testid="last-contact" data-line="" data-empty={lastContact ? undefined : ''} onClick={onOpenContact}>
             <Icon name="chat" size={20} weight={300} className={styles.icon} />
             <span className={styles.label}>
               <span className={styles.nameGroup}>
                 <span className={styles.name}>Last contact</span>
                 {contactDetail ? <span className={styles.till}>{contactDetail}</span> : null}
               </span>
-              <span className={styles.meta}><span>{lastContact ? displayDate(lastContact.at) : '--'}</span></span>   {/* the date alone — the time is the Notes tab's; the caption keeps its room */}
+              {lastContact ? <span className={styles.meta}><span>{displayDate(lastContact.at)}</span></span> : null}   {/* the date alone — the time is the Notes tab's; (T-08) none, nothing */}
             </span>
             <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
           </button>
-          <button type="button" className={styles.row} data-testid="next-follow-up" data-empty={nextFollowUp ? undefined : ''} data-wrap="" onClick={nextFollowUp ? onOpenFollowUp : onSetFollowUp}>
+          <button type="button" className={styles.row} data-testid="next-follow-up" data-line="" data-empty={nextFollowUp ? undefined : ''} data-wrap="" onClick={nextFollowUp ? onOpenFollowUp : onSetFollowUp}>
             <Icon name="event" size={20} weight={300} className={styles.icon} />
             <span className={styles.label}>
               <span className={styles.nameGroup}>
                 <span className={styles.name}>Next follow-up</span>
-                <span className={styles.till}>{nextFollowUp ? nextFollowUp.title : 'None set'}</span>
+                <span className={styles.till}>{nextFollowUp ? nextFollowUp.title : 'None — add one'}</span>   {/* (the calm UI build — W-570) the row's press sets one */}
               </span>
               <span className={styles.meta}>
                 {nextFollowUp?.overdue ? <><span className={styles.overdue} data-overdue="">overdue</span><span className={styles.dot}>·</span></> : null}
-                <span>{nextFollowUp ? displayDue(nextFollowUp.dueAt) : '--'}</span>   {/* (Dane UAT 5.05 · 5.13) date · time, as REG-608 has it: "Sat, 3 Oct ’26 · 10:00 AM" */}
+                {nextFollowUp ? <span>{displayDue(nextFollowUp.dueAt)}</span> : null}   {/* (Dane UAT 5.05 · 5.13) date · time, as REG-608 has it: "Sat, 3 Oct ’26 · 10:00 AM" */}
               </span>
             </span>
             <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
           </button>
           {responseTime ? (
             onOpenInsights ? (
-              <button type="button" className={styles.row} data-testid="response-time" onClick={onOpenInsights}>
+              <button type="button" className={styles.row} data-testid="response-time" data-line="" onClick={onOpenInsights}>
                 <Icon name="hourglass_top" size={20} weight={300} className={styles.icon} />
                 <span className={styles.label}>
                   <span className={styles.nameGroup}>
@@ -173,7 +193,7 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
                 <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
               </button>
             ) : (
-              <div className={styles.row} data-testid="response-time" data-static="">
+              <div className={styles.row} data-testid="response-time" data-line="" data-static="">
                 <Icon name="hourglass_top" size={20} weight={300} className={styles.icon} />
                 <span className={styles.label}>
                   <span className={styles.nameGroup}>

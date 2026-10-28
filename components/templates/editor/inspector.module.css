@@ -98,3 +98,5 @@
 .lookText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .lookName { font: var(--om-type-body-m); }
 .lookLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, the UI audit's 4-23) a closed column card names its printed heading when it differs from the column's name */
+.cardAlt { flex: 0 1 auto; max-width: 45%; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

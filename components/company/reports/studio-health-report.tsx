@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ChipRail } from '@/components/om/chip-rail'
-import { Chips } from '@/components/om/chips'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
+import { FoldButton, HowCounted, PickPill } from './report-pill'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -21,9 +20,14 @@ import { setFlagPref } from '@/lib/prefs'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import { moneyInHref } from '@/lib/finance/sections'
 import {
-  CAPTION, DEFAULT_RANGE, FOOT_NOTE, MEMBERS_HELP, RANGES, SHAPE, TREND_EMPTY, healthReport, healthSheet, lastActiveWords, rangeLabel, rangeParam,
+  DEFAULT_RANGE, FOOT_NOTE, MEMBERS_HELP, RANGES, SHAPE, TREND_EMPTY, healthReport, healthSheet, lastActiveWords, rangeLabel, rangeParam,
   type HealthFacts, type HealthRange, type MemberHealth, type Tile, type TileKey,
 } from '@/lib/studio-health/model'
+
+/** (the calm UI build 2026-10-27 — 5-22, T-14) the four figures the page opens on; every other tile is one press away ("Show all figures") */
+export const HEADLINE_TILES: readonly TileKey[] = ['active', 'leads', 'quotes', 'portalSignIns']
+/** (5-19) what the period counts by — the old caption under the bar, now the Period pill's tooltip (invented copy) */
+export const HEALTH_PERIOD_TIP = 'Counts what was done in this period, by the day it was done'
 import { ReportTable } from './report-table'
 import styles from './studio-health-report.module.css'
 
@@ -45,7 +49,7 @@ const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'last', label: 'Last active', track: 'minmax(144px, 144fr)' },
   { key: 'days', label: 'Days active', track: 'minmax(136px, 136fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
   { key: 'signIns', label: 'Sign-ins', track: 'minmax(112px, 112fr)', hidden: true },   /* 1.0's Sessions — off until switched on: Days active says it better */
-  { key: 'ai', label: 'AI runs', track: 'minmax(104px, 104fr)' },
+  { key: 'ai', label: 'AI uses', track: 'minmax(104px, 104fr)' },   /* (the calm UI build 2026-10-27 — W-032) */
   { key: 'quotes', label: 'Quotes sent', track: 'minmax(136px, 136fr)' },
   { key: 'tasks', label: 'Tasks done', track: 'minmax(128px, 128fr)' },
   { key: 'updates', label: 'Site updates', track: 'minmax(144px, 144fr)' },
@@ -61,7 +65,7 @@ function doorOf(key: TileKey, range: HealthRange): { href: string; where: string
     case 'leads': return { href: `/company/reports/leads?${r}`, where: 'Reports › Leads' }
     case 'projects': return { href: `/company/reports/projects?${r}`, where: 'Reports › Projects' }
     case 'quotes': return { href: '/quotes', where: 'Tools › Quotes' }
-    case 'invoices': return { href: moneyInHref('invoices'), where: 'Finance › Money in' }
+    case 'invoices': return { href: moneyInHref('invoices'), where: 'Finance › Client payments' }   // (the calm UI build 2026-10-27 — T-01) the tab's new name; the address stays
     case 'tasks': return { href: '/tasks', where: 'Tasks' }
     case 'chats': return { href: '/qanvast-ops/hangouts', where: 'Qanvast Ops › Hangouts' }
     case 'portalSignIns': return { href: '/company/portal/clients', where: 'Client portal › Clients' }
@@ -76,6 +80,7 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
   const mobile = useMediaQuery(MOBILE)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [allFigures, setAllFigures] = useState(false)   // (5-22) the rest of the tiles, folded
   const snackbar = useSnackbar()
   const columns = useTableColumns(MEMBERS_TABLE, MEMBER_COLUMN_DEFS, mobile)
   /* the range rides in the address (the Leads listing's view does, P-18): a tile's door carries it as `from`, so Back lands on the same range */
@@ -91,12 +96,13 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
     const span = rangeLabel(range).toLowerCase()
     return [
       { label: 'Who hasn’t used OpenMaison lately?', answer: {
-        title: report.idle.length ? `${plural(report.idle.length, 'member')} did nothing ${span}` : `Everyone did something ${span}`,
+        /* (the calm UI build 2026-10-27 — W-075) said kindly of a person */
+        title: report.idle.length ? `${plural(report.idle.length, 'member')} not active ${span}` : `Everyone was active ${span}`,
         text: report.idle.length ? 'When each last did something in OpenMaison.' : undefined,
         rows: (report.idle.length ? report.idle : report.members).map((m) => ({ id: m.id, label: `${m.name} — ${m.role}`, meta: m.lastActive === null ? 'Nothing on record yet' : `Last active ${lastActiveWords(m.lastActive, data.now).toLowerCase()}` })) } },
       { label: 'Summarise the studio’s health', answer: {
         title: `Studio health · ${span}`,
-        text: `${report.active} of ${plural(report.total, 'member')} did something in OpenMaison.`,
+        text: `${report.active} of ${plural(report.total, 'member')} were active in OpenMaison.`,
         rows: report.groups.filter((g) => g.key !== 'clients').flatMap((g) => g.tiles).map((t) => ({ id: t.key, label: t.label, meta: [t.value, t.help].filter(Boolean).join(' · ') })) } },
       ...(report.groups.some((g) => g.key === 'clients') ? [{ label: 'How are clients using the portal?', answer: {
         title: `Clients on the portal · ${span}`,
@@ -137,21 +143,24 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
                 press={door ? { href: door.href.startsWith('/company/reports/') ? door.href : withFrom(door.href, here), label: `${t.value} ${t.label.toLowerCase()} — open ${door.where}` } : undefined} />
     )
   }
+  /* (the calm UI build 2026-10-27 — 5-22, T-14) four figures up front; every group's other tiles one press away, each tile drawn once */
+  const headline = HEADLINE_TILES.map((k) => report.groups.flatMap((g) => g.tiles).find((t) => t.key === k)).filter((t): t is Tile => !!t)
+  const rest = report.groups.map((g) => ({ ...g, tiles: g.tiles.filter((t) => !HEADLINE_TILES.includes(t.key)) })).filter((g) => g.tiles.length)
   return (
     <div data-testid="studio-health" data-range={rangeParam(range)}>
-      <div className={styles.bar}>
-        <ChipRail label="Range">
-          <Chips label="Range" testId="health-range" options={RANGES.map((r) => ({ value: rangeParam(r.key), label: r.label }))} value={rangeParam(range)}
-                 onChange={(v) => pick(v === 'all' ? null : (Number(v) as HealthRange))} />
-        </ChipRail>
-        <span className={styles.barEnd}>
-          <span className={styles.caption} data-testid="health-caption">{CAPTION}</span>
-          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="health-export">Export</Button>
+      {/* (the calm UI build 2026-10-27 — 5-19, T-10) the reports' one bar: the house Period pill (what it counts by is its tooltip), Export */}
+      <div className={styles.pickBar}>
+        <span className={styles.picks}>
+          <PickPill name="Period" testId="health-range" tip={{ testId: 'health-caption', text: HEALTH_PERIOD_TIP }} scoped={range !== DEFAULT_RANGE}
+                    options={RANGES.map((r) => ({ value: rangeParam(r.key), label: r.label }))} value={rangeParam(range)} onChange={(v) => pick(v === 'all' ? null : (Number(v) as HealthRange))} />
         </span>
+        <span className={styles.pickEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="health-export">Export</Button></span>
       </div>
 
-      {report.groups.map((g, i) => (
-        <section key={g.key} className={`${styles.section} ${i ? styles.block : ''}`} aria-labelledby={`health-${g.key}`} data-testid={`health-group-${g.key}`}>
+      <StatTiles testId="health-headline">{headline.map(tile)}</StatTiles>
+      {rest.length ? <div className={styles.more}><FoldButton open={allFigures} more="Show all figures" less="Show fewer figures" onToggle={() => setAllFigures((o) => !o)} testId="health-all" /></div> : null}
+      {allFigures ? rest.map((g) => (
+        <section key={g.key} className={`${styles.section} ${styles.block}`} aria-labelledby={`health-${g.key}`} data-testid={`health-group-${g.key}`}>
           <div className={styles.sectionHead}>
             <div>
               <h2 id={`health-${g.key}`} className={styles.sectionTitle}>{g.title}</h2>
@@ -160,7 +169,7 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
           </div>
           <StatTiles testId={`health-tiles-${g.key}`}>{g.tiles.map(tile)}</StatTiles>
         </section>
-      ))}
+      )) : null}
 
       {/* Over time — the house chart's own card (Market Insights' ArticleChart: its title, the legend, the crosshair, Show the numbers) */}
       {report.trend ? (
@@ -177,7 +186,7 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
       <section className={`${styles.section} ${styles.block}`} aria-labelledby="health-members">
         <div className={styles.sectionHead}>
           <div>
-            <h2 id="health-members" className={styles.sectionTitle}>By team member</h2>
+            <h2 id="health-members" className={styles.sectionTitle}>By member</h2>
             <span className={styles.sectionHelp}>{MEMBERS_HELP}</span>
           </div>
           {mobile ? null : (
@@ -186,11 +195,12 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
             </Tooltip>
           )}
         </div>
-        <ReportTable css={styles} table={MEMBERS_TABLE} label="By team member" testId="health-members" rowTestId="health-member-row" rows={report.members}
+        <ReportTable css={styles} table={MEMBERS_TABLE} label="By member" testId="health-members" rowTestId="health-member-row" rows={report.members}
                      columns={columns.columns} onReorder={columns.reorder} render={(m, key) => memberCell(m, key, data.now)} />
       </section>
 
-      <p className={styles.foot} data-testid="health-foot">{FOOT_NOTE}</p>
+      {/* (the calm UI build 2026-10-27 — T-05) the method, one press away */}
+      <HowCounted testId="health-foot">{FOOT_NOTE}</HowCounted>
 
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columns.all} onSave={columns.save} onReset={columns.reset} />
       <ExportDialog open={exporting} title="Export Studio health" onClose={() => setExporting(false)} download={(format) => download(format)}
@@ -199,7 +209,7 @@ export function StudioHealthReport({ data, initialRange = DEFAULT_RANGE }: { dat
   )
 }
 
-/** A By team member cell — the member, then their figures in the range (Last active is their last act, at any time). */
+/** A By member cell — the member, then their figures in the range (Last active is their last act, at any time). */
 function memberCell(m: MemberHealth, key: string, now: number): ReactNode {
   switch (key) {
     case 'member': return <span className={styles.memberCell}><Avatar name={m.name} color={m.color} size={36} tooltip={false} /><span className={styles.memberText}><span className={styles.memberName}>{m.name}</span><span className={styles.memberRole}>{m.active ? m.role : `${m.role} · deactivated`}</span></span></span>

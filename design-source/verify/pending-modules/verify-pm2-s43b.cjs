@@ -95,7 +95,10 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
   const valueOf = (l) => l.first().evaluate((el) => (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' ? el.value : el.textContent || '').trim())
   const autoFill = (p) => p.locator('[role="dialog"]').filter({ hasText: 'Drop in the conversation' }).last()
   const pickIn = async (p, scope, f) => { await scope.getByRole('button', { name: 'Auto Fill' }).first().click(); await settle(p, 500); await autoFill(p).getByTestId('auto-fill-input').setInputFiles(f); await settle(p, 2500) }
-  const checkedChannel = async (scope) => (await scope.getByRole('radiogroup', { name: 'Contacted via' }).getByRole('radio', { checked: true }).allInnerTexts()).join('|')
+  const checkedChannel = async (scope) => (await scope.getByRole('radiogroup', { name: 'How', exact: true }).getByRole('radio', { checked: true }).allInnerTexts()).join('|')   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
+  /* "How it went" is chips now (it was the Outcome select) */
+  const outcomeOf = async (scope) => (await scope.getByRole('radiogroup', { name: 'How it went', exact: true }).getByRole('radio', { checked: true }).allInnerTexts()).join('|').trim()
+  const pickOutcome = async (p, scope, name) => { await scope.getByRole('radiogroup', { name: 'How it went', exact: true }).getByRole('radio', { name, exact: true }).first().click(); await settle(p, 300) }
 
   /* every table, as it was — put back whole in `finally` (a probe never leaves a row behind) */
   { const C0 = await desk(); const p0 = await C0.newPage(); await go(p0, '/projects', 1500); await C0.close() }   // a first page's lazy writes land first
@@ -134,18 +137,21 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       ok(await autoFill(p).count() === 0 || !(await autoFill(p).isVisible()), 'a picked file closes the dialog')
       const note1 = await text(w.getByTestId('auto-fill-note'))
       ok(/chat-screenshot\.png is attached\. We can’t read pictures yet — type what was said\./.test(note1), 'a picture: attached, and the log says it can’t be read yet', note1)
-      ok(await checkedChannel(w) === '' && (await valueOf(w.getByLabel('Outcome'))) !== 'Callback requested', 'a picture fills nothing — no channel, no scripted “Callback requested”')
+      ok(await checkedChannel(w) === '' && (await outcomeOf(w)) !== 'Callback requested', 'a picture fills nothing — no channel, no scripted “Callback requested”')
       ok(await w.getByText('chat-screenshot.png').count() >= 1 && Number(sql(`select count(*) from lead_files where lead_id = '${MARCUS_CHEN}' and name = 'chat-screenshot.png' and deleted_at is null`)) === 1, '…the picture is the log’s attachment, uploaded to the lead’s Files')
       await shot(p, '02-autofill-picture-1440')
       /* what was entered stays: the outcome picked first, then the chat export */
-      await w.getByLabel('Outcome').first().click(); await settle(p, 300); await p.getByRole('option', { name: 'Connected', exact: true }).click(); await settle(p, 300)
+      await pickOutcome(p, w, 'Connected')
       await pickIn(p, w, CHAT)
       const note2 = await text(w.getByTestId('auto-fill-note'))
-      ok(/Filled from chat\.txt: Contacted via, Date & Time and the next call or meeting\./.test(note2) && /Kept what you entered for Outcome\./.test(note2), 'the chat export: what filled is said, the outcome entered first is kept and said so', note2)
-      ok(await checkedChannel(w) === 'WhatsApp', 'Contacted via: WhatsApp — the export’s own shape')
-      const whens = await w.getByLabel('Date & Time').evaluateAll((els) => els.map((el) => (el.tagName === 'INPUT' ? el.value : el.textContent || '').trim()))
-      ok(whens.includes('12/10/2026, 8:03 PM') && whens.includes('13/10/2026, 7:00 PM'), 'Date & Time is the last message’s; the next step is “tomorrow at 7pm” read against the client’s message', whens.join(' | '))
-      ok((await valueOf(w.getByLabel('Outcome'))) === 'Connected' && (await valueOf(w.getByLabel('Preferred mode'))) === 'Call', 'the outcome entered is kept; the next step’s mode is the client’s “call me back”')
+      ok(/Filled from chat\.txt: How, When and the call back\./.test(note2) && /Kept what you entered for How it went\./.test(note2), 'the chat export: what filled is said, the outcome entered first is kept and said so', note2)   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
+      ok(await checkedChannel(w) === 'WhatsApp', 'How: WhatsApp — the export’s own shape')
+      const at = (l) => l.evaluateAll((els) => els.map((el) => (el.tagName === 'INPUT' ? el.value : el.textContent || '').trim()))
+      const whens = [...await at(w.getByLabel(/^When\*?$/)), ...await at(w.getByLabel('Date and time', { exact: true }))]
+      /* (the calm UI build 2026-10-27, a deliberate change — the audit's 3-20 · 4-16) a date field shows the house date and time ("12 Oct 2026 · 8:03 PM")
+         for the d/m/yyyy, h:mm AM it still holds — the same moments */
+      ok(whens.includes('12 Oct 2026 · 8:03 PM') && whens.includes('13 Oct 2026 · 7:00 PM'), 'When is the last message’s; the call back is “tomorrow at 7pm” read against the client’s message', whens.join(' | '))
+      ok((await outcomeOf(w)) === 'Connected' && (await valueOf(w.getByLabel('Call back by'))) === 'Call', 'the outcome entered is kept; the call back’s way is the client’s “call me back”')
       await shot(p, '03-autofill-chat-1440')
 
       // ── F1-07 · the server checks the fields (a bypassed client) ──
@@ -163,7 +169,7 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       /* (leads on the move, a deliberate change of this rule — Leads L2, P-04 / REG-2675) the server's refusal stays in the window's foot, the
          window open and the log as typed — it used to close and say it in the snackbar */
       const said = (await text(w.getByTestId('move-refusal'))) || await snackText(p)
-      ok(bent === 1 && /The Contacted step isn’t complete — Log 1’s Contacted via: choose an option/.test(said) && await w.isVisible(), 'a move whose channel was taken out on the way is refused with the window’s own words, in its foot — the window stays', `${bent} · ${said}`)
+      ok(bent === 1 && /The Contacted step isn’t complete — Log 1’s How: choose an option/.test(said) && await w.isVisible(), 'a move whose channel was taken out on the way is refused with the window’s own words, in its foot — the window stays', `${bent} · ${said}`)
       ok(sql(`select stage from leads where id = '${MARCUS_CHEN}'`) === 'New' && Number(sql(`select count(*) from stage_logs where lead_id = '${MARCUS_CHEN}' and to_stage = 'Contacted'`)) === 0, '…nothing moved, no stage log')
       await shot(p, '04-server-refuses-1440')
       await p.unroute('**/*')
@@ -176,8 +182,9 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       const w = p.getByRole('dialog', { name: 'Move stage' })
       await pickIn(p, w, MEETING_NOTES)
       const note = await text(w.getByTestId('auto-fill-note'))
-      ok(/Filled from site-visit-notes\.txt: Where and Date & Time\./.test(note), 'Met: meeting notes fill Where and Date & Time', note)
-      ok((await valueOf(w.getByLabel('Where'))) === 'In person' && (await valueOf(w.getByLabel('Date & Time'))) === '14/10/2026, 2:00 PM', '…“Site visit at the unit” is In person; the labelled date is its moment')
+      ok(/Filled from site-visit-notes\.txt: Where and When\./.test(note), 'Met: meeting notes fill Where and When', note)   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
+      const metWhere = await valueOf(w.getByLabel('Where')), metWhen = await valueOf(w.getByLabel(/^When\*?$/))
+      ok(metWhere === 'In person' && metWhen === '14 Oct 2026 · 2:00 PM' /* (the calm UI build 2026-10-27, a deliberate change) the field's house date for 14/10/2026, 2:00 PM */, '…“Site visit at the unit” is In person; the labelled date is its moment', `${metWhere} | ${metWhen}`)
       await shot(p, '05-autofill-met-1440')
       await D.close()
     }
@@ -186,12 +193,12 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       const D = await desk(); const p = await page(D, 'notes-autofill')
       await go(p, `/leads/${GAVIN}/notes`, 1500)
       await p.getByRole('button', { name: /^New/ }).first().click(); await settle(p, 300)
-      await p.getByText('Contact Log', { exact: true }).last().click(); await settle(p, 800)
+      await p.getByRole('menuitem', { name: 'Contact log', exact: true }).last().click(); await settle(p, 800)   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
       const pane = p.getByTestId('contact-editor').first()
       await pickIn(p, p.locator('main'), EMAIL)
       const note = await text(pane.getByTestId('auto-fill-note'))
-      ok(/Filled from Re renovation\.pdf: Contacted via, Date & Time, Outcome and the next call or meeting\./.test(note), 'an email saved as a PDF: what filled is said', note)
-      ok(await checkedChannel(pane) === 'Email' && (await valueOf(pane.getByLabel('Outcome'))) === 'Callback requested', '…Email, and the client’s “call me back” is Callback requested')
+      ok(/Filled from Re renovation\.pdf: How, When, How it went and the call back\./.test(note), 'an email saved as a PDF: what filled is said', note)   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
+      ok(await checkedChannel(pane) === 'Email' && (await outcomeOf(pane)) === 'Callback requested', '…Email, and the client’s “call me back” is Callback requested')
       const tasks = p.locator('[role="dialog"]').filter({ hasText: 'Add tasks' }).last()
       ok(await tasks.isVisible() && /Follow up with the client via Call on 15\/10\/2026, 2:30 PM/.test(await text(tasks)), 'Add tasks offers the reminder for the next step the email named (Thursday 2:30pm after Tue 13 Oct)', await text(tasks))
       await shot(p, '06-notes-autofill-email-1440')
@@ -204,10 +211,10 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       const P = await phoneCtx(); const p = await page(P, 'notes-autofill-390')
       await go(p, `/leads/${GAVIN}/notes`, 1500)
       await p.getByRole('button', { name: /^New/ }).first().click(); await settle(p, 400)
-      await p.getByText('Contact Log', { exact: true }).last().click(); await settle(p, 1500)
+      await p.getByRole('menuitem', { name: 'Contact log', exact: true }).last().click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change — 2-08: the log sheet's words at every width)
       /* (leads on the move, a deliberate change of this rule — Leads L2, C-21) on a phone New › Contact Log is the log sheet; its head carries Auto Fill */
       const sheet = p.locator('[role="dialog"]').filter({ has: p.getByTestId('log-sheet') }).last()
-      await sheet.getByRole('button', { name: /Auto Fill/ }).first().click(); await settle(p, 600)
+      await sheet.getByRole('button', { name: /Auto fill/i }).first().click(); await settle(p, 600)   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
       ok(await sideways(p) <= 0, '390: the Auto Fill dialog — no sideways scroll')
       await shot(p, '07-autofill-dialog-390')
       await autoFill(p).getByTestId('auto-fill-input').setInputFiles(PICTURE); await settle(p, 2500)
@@ -295,7 +302,12 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       const D = await desk(); const p = await page(D, 'dashboard')
       await go(p, '/dashboard', 1500)
       const tile = await text(p.getByTestId('tile-profit'))
-      ok(/Profit this month/i.test(tile) && !/−S\$/.test(tile) && /Margin [\d.]+% on S\$[\d,.]+ invoiced/.test(tile), 'the front door: Profit this month is not a loss, its margin on what was invoiced', tile)
+      /* (Dashboard redesign 2026-10-26, a deliberate change) Pulse's Profit this month (his P-03) writes the sum short and the invoiced beside it
+         ("on S$ 50.8K invoiced"); its margin is the breakdown's and the report's — a month whose costs aren't in says Early instead of a margin */
+      /* (the calm pass 2026-10-26, a deliberate change — lane C1) the figure names its month: "Profit · October" */
+      /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-17, W-043) "Profit in October … on S$ 50.8K billed" (was "Profit · October …
+         invoiced") — the same figure, the same rule */
+      ok(/Profit in \w+/i.test(tile) && !/−S\$/.test(tile) && /on S\$ [\d.,]+K? billed/.test(tile), 'the front door: Profit this month is not a loss, on what was invoiced', tile)
       await shot(p, '12-dashboard-profit-1440')
       await go(p, `/projects/${AISHA_P}/money`, 1500)
       ok(/Bedroom flooring upgrade/.test(await text(p.locator('main'))) && /PAID/i.test(await text(p.locator('[data-testid="money-stages"] [data-kind="extra"]').filter({ hasText: 'Bedroom flooring upgrade' }))), 'Aisha’s Money: the upgrade sits outside the stages, Paid')
@@ -358,7 +370,7 @@ const PHOTO = path.join(REPO, 'public/uat-files/kitchen-moodboard.jpg')
       /* (leads on the move, a deliberate change of this rule — Leads L2, P-04 / REG-2675) a refused save stays in the window's foot, the window
          open as typed, at every width — it used to close and say it in the snackbar */
       const said = (await text(w.getByTestId('move-refusal'))) || await snackText(p)
-      ok(bent >= 1 && /The Contacted step isn’t complete — Log 1’s Outcome: this field is required/.test(said) && !/details updated/.test(said) && await w.isVisible(), 'a correction whose outcome was emptied on the way is refused in the window’s words, in its foot — never “details updated”', `${bent} · ${said}`)
+      ok(bent >= 1 && /The Contacted step isn’t complete — Log 1’s How it went: (this field is required|choose an option)/.test(said) && !/details updated/.test(said) && await w.isVisible(), 'a correction whose outcome was emptied on the way is refused in the window’s words, in its foot — never “details updated”', `${bent} · ${said}`)
       ok(sql(`select payload from stage_logs where lead_id = '${GAVIN}' and to_stage = 'Contacted' order by created_at desc limit 1`) === payload0, '…the stage’s details are as they were')
       await p.unroute('**/*')
       await D.close()

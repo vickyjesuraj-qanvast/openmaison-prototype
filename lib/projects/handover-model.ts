@@ -53,7 +53,7 @@ export const leadsHaveProjects = (n: number) => (n === 1 ? LEAD_HAS_PROJECT : `$
 export const leadHasProjectNamed = (name: string) => `${name} has a project. Delete the project first — nothing was deleted.`
 
 /** (fix-E, E-05) Make the project again, for anyone but an Owner or an Admin: the old one must be restored or removed for good first. */
-export const remakeRefusal = (number: string) => `${number} is in Deleted Projects — an Owner or an Admin can restore it or make it again`
+export const remakeRefusal = (number: string) => `${number} is in Deleted projects — an Owner or an Admin can restore it or make it again`
 /** (fix-E, E-26) Restore, from Deleted Projects. */
 export const RESTORE_RULE = 'Only Owners and Admins restore a project'
 
@@ -235,10 +235,10 @@ export function handoverChecklist(f: HandoverFacts, viewer?: FixViewer): Checkli
   }
   const t = f.tickets ?? []
   items.push({
-    key: 'tickets', label: 'No ticket waits on the studio', met: t.length === 0,
+    key: 'tickets', label: 'No issue waits on the studio', met: t.length === 0,   // (the calm UI build 2026-10-27, 3-37 · T-01) "Issues" on screen
     why: t.length ? `${t.length === 1 ? `${t[0]!.number} waits` : `${list(t.map((x) => x.number))} wait`} for your answer.` : null,
     action: null,
-    open: t.length ? `${plural(t.length, 'ticket')} waiting on the studio` : null,
+    open: t.length ? `${plural(t.length, 'issue')} waiting on the studio` : null,
     ...(viewer && t.length ? { fixes: t.slice(0, 3).map((x) => ({ kind: 'open-ticket' as const, ticketId: x.id, number: x.number, label: `Open ${x.number}` })) } : {}),
   })
   return items
@@ -251,7 +251,8 @@ export const openItemsOf = (items: ChecklistItem[]) => items.filter((i) => !i.me
 export function openPhrase(s: string): string {
   if (s === 'Every milestone is done') return 'Milestones not done'
   if (s === 'Compliance’s Handover items are done') return 'Compliance items to do'   // (simplify S-19)
-  if (s === 'No ticket waits on the studio') return 'A ticket waiting on the studio'
+  if (s === 'No ticket waits on the studio') return 'An issue waiting on the studio'   // (the calm UI build 2026-10-27) an older record's words, said as Issues
+  if (s === 'No issue waits on the studio') return 'An issue waiting on the studio'
   if (s === 'Nothing is outstanding on money') return 'Money still outstanding'
   if (s === 'Vendors are paid') return 'Vendors still owed'   // (parity map, PR-121)
   if (s === 'No update waits for review') return 'An update in review'
@@ -402,6 +403,15 @@ export function daysLine(d: ClosingSummary['days']): string | null {
 
 /** (gaps build, package A) The closing summary as lines — the Overview's card rows and the handover dialog's table read the same words. */
 export type ClosingLine = { key: string; label: string; value: string; caption?: string; tone?: 'alert' }
+/** (the calm UI build 2026-10-27, 3-16 · T-09) The margin against the quote's plan, in words — "Margin 18% — the quote planned 44%" — only when the
+    quote planned one above 0 and the finance rule raised its warning (more than 25 points off), and `below` (the warning tone) only when the
+    margin fell short of the plan: a margin above its plan is good news, said quietly in its row. */
+export function marginAgainstPlan(c: { marginPct: number | null; expectedMarginPct: number | null; warning: string | null }): { text: string; below: boolean } | null {
+  if (!c.warning || c.marginPct === null || c.expectedMarginPct === null || c.expectedMarginPct <= 0) return null
+  const pct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}%`
+  return { text: `Margin ${pct(c.marginPct)} — the quote planned ${pct(c.expectedMarginPct)}`, below: c.marginPct < c.expectedMarginPct }
+}
+
 /** `fmt` — (parity Q-03) the Overview's Closing summary CARD writes its sums as a record card does (`moneyCard`, "S$ 77,900"); the handover
     dialog's table keeps the cents. */
 export function closingLines(s: ClosingSummary, fmt: (minor: number) => string = money2): ClosingLine[] {
@@ -418,8 +428,11 @@ export function closingLines(s: ClosingSummary, fmt: (minor: number) => string =
     if (c) {
       const pct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}%`
       out.push({ key: 'costs', label: 'Costs', value: money2_(c.costsMinor), caption: 'Committed — POs, bills and expenses' })   // (invented copy)
+      /* (the calm UI build 2026-10-27, 3-16) the plan as the caption — "The quote planned 24%" — never "points over the expected 0%"; the late tone
+         only when the margin fell short of a plan (`marginAgainstPlan`) */
+      const vsPlan = marginAgainstPlan(c)
       out.push({ key: 'margin', label: 'Margin', value: c.marginPct !== null ? pct(c.marginPct) : '--',
-        caption: c.warning ?? (c.marginPct !== null && c.expectedMarginPct !== null ? `Expected ${pct(c.expectedMarginPct)}` : c.word), ...(c.warning ? { tone: 'alert' as const } : {}) })
+        caption: c.marginPct !== null && c.expectedMarginPct !== null && c.expectedMarginPct > 0 ? `The quote planned ${pct(c.expectedMarginPct)}` : c.word, ...(vsPlan?.below ? { tone: 'alert' as const } : {}) })
     }
     if (m.refundMinor) out.push({ key: 'refund', label: 'To refund', value: money2_(m.refundMinor), caption: 'Collected beyond the contract', tone: 'alert' })
     else if (m.toCreditMinor) out.push({ key: 'credit', label: 'To credit', value: money2_(m.toCreditMinor), caption: 'Invoiced beyond the contract', tone: 'alert' })

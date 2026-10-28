@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { quotes } from '@/lib/db/schema'
 import { revalidateLead } from '@/lib/leads/queries'
 import { syncPreparedSnapshot } from './prepared-server'
+import { closeQuoteFollowUps } from './follow-up'
 
 /**
  * (REG-626, quote editor parity Q-31) A contract raised from a quote carries the quote with it: when the contract is signed — online, in a
@@ -19,6 +20,7 @@ export async function signQuoteThrough(contract: { fromQuoteId: string | null; l
   /* (pending modules S03 — 1.0 froze the contract value at signing) the total as signed: the project's contract reads it from here on */
   await db.update(quotes).set({ status: 'Signed', signedAt, visibility: 'Shared', clientSentAt: q.clientSentAt ?? signedAt, signedAmountMinor: q.amountMinor, updatedAt: new Date() }).where(eq(quotes.id, q.id))
   await syncPreparedSnapshot(q.id)   // (pending modules S04) signed: the paper keeps its preparer, if it had not gone out before
+  await closeQuoteFollowUps(q.id)   // (the Dashboard redesigned, P-14) signed with its contract: the due date's follow-up is done
   revalidateLead(contract.leadId); revalidatePath(`/quotes/${q.id}`); revalidatePath('/quotes')
   return q.id
 }

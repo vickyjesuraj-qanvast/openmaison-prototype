@@ -105,11 +105,11 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     const D = await desk(); const d = await page(D, 'dane-1440')
     await go(d, '/leads', 1800)
     const DANE = [
-      ['escalations', 'Go to', 'Tickets'], ['quote digitizer', 'Create', 'Upload a quote'], ['usage & credits', 'Go to', 'Usage'], ['invoices', 'Go to', 'Money in'],
+      ['escalations', 'Go to', 'Issues'], ['quote digitizer', 'Create', 'Upload a quote'], ['usage & credits', 'Go to', 'Usage'], ['invoices', 'Go to', 'Client payments'],
       ['accounts setup', 'Go to', 'Roles & access'], ['operations', 'Go to', 'Finance'], ['homeowner portal', 'Go to', 'Client portal'], ['3-d space planner', 'Go to', '3D Space Planner'],
-      ['reviews & rankings', 'Go to', 'Reviews'], ['my settings', 'Go to', 'Your profile'], ['approvals', 'Go to', 'Dashboard'], ['ticket categories', 'Go to', 'Ticket categories'],
-      ['messages to clients', 'Go to', 'Messages to clients'], ['close project', 'Go to', 'Complete handover'], ['selections', 'Go to', 'Choices'], ['deleted projects', 'Go to', 'Deleted Projects'],
-      ['new ticket', 'Create', 'New ticket'], ['start a meeting', 'Create', 'Start a meeting'], ['xray', 'Go to', 'Quote X-Ray'], ['visualiser', 'Go to', 'AI Visualizer'],
+      ['reviews & rankings', 'Go to', 'Reviews'], ['my settings', 'Go to', 'Your profile'], ['approvals', 'Go to', 'Dashboard'], ['ticket categories', 'Go to', 'Issue categories'],
+      ['messages to clients', 'Go to', 'Messages to clients'], ['close project', 'Go to', 'Complete handover'], ['selections', 'Go to', 'Choices'], ['deleted projects', 'Go to', 'Deleted projects' /* (the calm UI build 2026-10-27, a deliberate change) T-13 */],
+      ['new ticket', 'Create', 'New issue'], ['start a meeting', 'Create', 'Start a meeting'], ['xray', 'Go to', 'Quote X-Ray'], ['visualiser', 'Go to', 'AI Visualizer'],
     ]
     for (const [q, g, t] of DANE) { await search(d, q); ok(await row(d, g, t).count() === 1, `Dane: “${q}” → ${g} › ${t}`) }
     await search(d, 'upload a quote')
@@ -123,26 +123,26 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
 
     as('germaine')
     await go(d, '/leads', 1800)
-    for (const [q, g, t] of [['escalations', 'Go to', 'Tickets'], ['settings', 'Go to', 'Your profile'], ['upload a quote', 'Create', 'Upload a quote'], ['new meeting', 'Create', 'Start a meeting'], ['log ticket', 'Create', 'New ticket'], ['lead preferences', 'Go to', 'Open to new leads']]) {
+    for (const [q, g, t] of [['escalations', 'Go to', 'Issues'], ['settings', 'Go to', 'Your profile'], ['upload a quote', 'Create', 'Upload a quote'], ['new meeting', 'Create', 'Start a meeting'], ['log ticket', 'Create', 'New issue'], ['lead preferences', 'Go to', 'Take new leads']]) {   // (the calm UI build 2026-10-27, a deliberate change) the switch's one home is Your profile › New leads (1-39); found by its old words
       await search(d, q); ok(await row(d, g, t).count() === 1, `Germaine (Designer): “${q}” → ${g} › ${t}`)
     }
     await closeSearch(d)
     as('priya')
     await go(d, '/company/finance', 1800)
-    for (const [q, g, t] of [['invoices', 'Go to', 'Money in'], ['receipts', 'Go to', 'Money in'], ['my settings', 'Go to', 'Your profile']]) { await search(d, q); ok(await row(d, g, t).count() === 1, `Priya (Accounting): “${q}” → ${g} › ${t}`) }
+    for (const [q, g, t] of [['invoices', 'Go to', 'Client payments'], ['receipts', 'Go to', 'Client payments'], ['my settings', 'Go to', 'Your profile']]) { await search(d, q); ok(await row(d, g, t).count() === 1, `Priya (Accounting): “${q}” → ${g} › ${t}`) }
     for (const q of ['escalations', 'upload a quote', 'start a meeting', 'close project']) {
       await search(d, q)
       const titles = await d.getByRole('dialog', { name: 'Search' }).locator('[role="option"] [class*="title"]').allInnerTexts().catch(() => [])
-      ok(!titles.some((t) => /^(Tickets|New ticket|Upload a quote|Start a meeting|Complete handover)$/.test(t.trim())), `Priya: “${q}” offers none of the studio’s project, quote or meeting rows (${titles.slice(0, 4).join(' · ') || 'nothing'})`)
+      ok(!titles.some((t) => /^(Tickets|Issues|New ticket|New issue|Upload a quote|Start a meeting|Complete handover)$/.test(t.trim())), `Priya: “${q}” offers none of the studio’s project, quote or meeting rows (${titles.slice(0, 4).join(' · ') || 'nothing'})`)
     }
     await closeSearch(d)
     as('nurul')
     await go(d, '/leads', 1800)
-    for (const [q, g, t] of [['archived leads', 'Go to', 'Lost leads'], ['approvals', 'Go to', 'Dashboard'], ['deleted leads', 'Go to', 'Deleted Leads']]) { await search(d, q); ok(await row(d, g, t).count() === 1, `Nurul (Marketing): “${q}” → ${g} › ${t}`) }
+    for (const [q, g, t] of [['archived leads', 'Go to', 'Lost leads'], ['approvals', 'Go to', 'Dashboard'], ['deleted leads', 'Go to', 'Deleted leads']]) {   /* (the calm UI build 2026-10-27, a deliberate change) T-13: the sheet's title, sentence case */ await search(d, q); ok(await row(d, g, t).count() === 1, `Nurul (Marketing): “${q}” → ${g} › ${t}`) }
     for (const q of ['escalations', 'quote digitizer', 'usage']) {
       await search(d, q)
       const titles = await d.getByRole('dialog', { name: 'Search' }).locator('[role="option"] [class*="title"]').allInnerTexts().catch(() => [])
-      ok(!titles.some((t) => /^(Tickets|New ticket|Upload a quote|Usage|Plan & AI credits)$/.test(t.trim())), `Nurul: “${q}” offers no page Marketing doesn’t open (${titles.slice(0, 4).join(' · ') || 'nothing'})`)
+      ok(!titles.some((t) => /^(Tickets|Issues|New ticket|New issue|Upload a quote|Usage|Plan & AI credits)$/.test(t.trim())), `Nurul: “${q}” offers no page Marketing doesn’t open (${titles.slice(0, 4).join(' · ') || 'nothing'})`)
     }
     await closeSearch(d)
     as('dane')
@@ -156,7 +156,8 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     ok(await cq.getAttribute('data-mode').catch(() => null) === 'choose', 'it lands on Tools › Quotes with Create Quote open on Upload a quote')
     ok(/Upload a quote/.test(await cq.getByRole('heading').first().innerText().catch(() => '') || await cq.innerText().catch(() => '')), '…titled Upload a quote')
     ok(!/[?&]upload=/.test(d.url()), 'the address drops the ask', d.url())
-    ok(await cq.getByRole('button', { name: 'Upload a quote' }).isVisible() && /XLSX · CSV · PDF · 5 AI credits/i.test(await cq.getByTestId('upload-quote-choose').innerText()), '…the drop box, saying what it reads and its 5 AI credits, as the row’s chip does')
+    /* (the calm UI build 2026-10-27, a deliberate change) B4: the box and the row's chip say "Spreadsheet or PDF · 5 credits" (was "XLSX · CSV · PDF · 5 AI credits") */
+    ok(await cq.getByRole('button', { name: 'Upload a quote' }).isVisible() && /Spreadsheet or PDF · 5 credits/.test(await cq.getByTestId('upload-quote-choose').innerText()), '…the drop box, saying what it reads and its 5 credits, as the row’s chip does')
     await shot(d, '04-create-quote-upload-1440')
     await cq.getByRole('button', { name: 'Upload a quote' }).click(); await settle(d, 600)
     ok(/Choose a client first/.test(await cq.innerText()), 'a press with no client asks for the client first (no file chooser, no credits)')
@@ -168,7 +169,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     ok(await d.getByTestId('create-quote').getAttribute('data-mode').catch(() => null) === 'choose', '…and a second ask on the same page opens it again')
     await d.keyboard.press('Escape'); await settle(d, 600)
 
-    await search(d, 'new ticket'); await row(d, 'Create', 'New ticket').click()
+    await search(d, 'new ticket'); await row(d, 'Create', 'New issue').click()   // (the calm UI build 2026-10-27, a deliberate change) New issue, found by its old words
     /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19) */
     await d.waitForURL((u) => new URL(String(u)).pathname === '/tickets', { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(new URL(d.url()).pathname === '/tickets' && await d.getByTestId('studio-tickets').isVisible(), `Create › New ticket lands on Tickets (its ?new=1 is S46B’s New ticket) — ${rel(d.url())}`)
@@ -179,7 +180,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     await shot(d, '05-start-meeting-1440')
     await d.keyboard.press('Escape'); await settle(d, 500)
     await go(d, '/leads', 1500)
-    await search(d, 'tickets'); await row(d, 'Go to', 'Tickets').click()
+    await search(d, 'tickets'); await row(d, 'Go to', 'Issues').click()   // (the calm UI build 2026-10-27, a deliberate change) Issues, found by "tickets"
     await d.waitForURL(/\/tickets/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(new URL(d.url()).pathname === '/tickets', 'Go to › Tickets opens Tickets')
 
@@ -189,7 +190,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       await go(d, `/leads/${NO_QUOTES.id}/quotes`, 2200)
       const empty = d.getByTestId('quotes-empty')
       const btns = await empty.getByRole('button').allInnerTexts()
-      ok(btns.map((t) => t.trim()).join(' · ') === 'From Scratch · From Template · Upload a quote', `three ways in: ${btns.join(' · ')}`)
+      ok(btns.map((t) => t.trim()).join(' · ') === 'From scratch · From a template · Upload a quote', `three ways in: ${btns.join(' · ')}`)   // (the calm UI build 2026-10-27, a deliberate change) T-13 sentence case: From scratch · From a template
       const filled = await empty.getByRole('button').evaluateAll((els) => els.filter((e) => getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(e).backgroundColor !== 'transparent' && !/outlined|text/i.test(e.className)).length)
       ok(filled <= 1, `one filled button on the card (${filled})`)
       await shot(d, '06-quotes-empty-1440')
@@ -224,7 +225,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     const hint = d.locator('[class*="chord"][role="status"]')
     const hintText = await hint.innerText().catch(() => '')
     /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): G then E is a listed key now; only G then I stays quiet */
-    ok(/Messages/.test(hintText) && /Tickets/.test(hintText) && !/Inbox/.test(hintText), 'the G hint lists 2.0’s places, Tickets among them — not the quiet alias')
+    ok(/Messages/.test(hintText) && /Issues/.test(hintText) && !/Inbox/.test(hintText), 'the G hint lists 2.0’s places, Issues (was Tickets) among them — not the quiet alias')   // (the calm UI build 2026-10-27, a deliberate change)
     await d.keyboard.press('i'); await d.waitForURL(/\/chat/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(new URL(d.url()).pathname === '/chat', 'G then I (1.0’s Inbox) → Messages')
     await d.locator('main').first().click({ position: { x: 5, y: 5 } }).catch(() => {})
@@ -232,7 +233,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     ok(new URL(d.url()).pathname === '/tickets', 'G then E (1.0’s Escalations) → Tickets')
     await d.keyboard.press('?'); await settle(d, 700)
     const panelText = await d.locator('[data-kb-panel]').first().innerText().catch(() => '')
-    ok(/Go to Messages/.test(panelText) && /Go to Tickets/.test(panelText), 'the ? panel lists G then M and G then E (Tickets)')
+    ok(/Go to Messages/.test(panelText) && /Go to Issues/.test(panelText), 'the ? panel lists G then M and G then E (Issues)')   // (the calm UI build 2026-10-27, a deliberate change)
     await d.keyboard.press('Escape'); await settle(d, 400)
 
     // ── 6 · old addresses (D1) ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -300,7 +301,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       await go(p, '/leads', 1800)
       await p.getByRole('button', { name: 'Search', exact: true }).first().tap(); await settle(p, 700)
       await box(p).fill('escalations'); await settle(p, 1300)
-      ok(await row(p, 'Go to', 'Tickets').count() === 1, `${w}: the sheet finds Tickets by “escalations”`)
+      ok(await row(p, 'Go to', 'Issues').count() === 1, `${w}: the sheet finds Issues by “escalations”`)   // (the calm UI build 2026-10-27, a deliberate change)
       if (w === 390) await shot(p, '11-search-escalations-390')
       await box(p).fill('quote digitizer'); await settle(p, 1300)
       ok(await row(p, 'Create', 'Upload a quote').count() === 1, `${w}: …and Create › Upload a quote by “quote digitizer”`)

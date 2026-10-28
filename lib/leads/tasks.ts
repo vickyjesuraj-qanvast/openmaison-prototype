@@ -215,8 +215,9 @@ async function countUnseenLeads(): Promise<number> {
  */
 export const countApprovalsWaiting = cache(async (): Promise<number> => {
   try {
-    const { fetchDashboard } = await import('@/lib/dashboard/queries')   // (a cycle otherwise: the Dashboard reads railBadges from here)
-    return (await fetchDashboard()).needs.filter((r) => r.ok).length
+    /* (a cycle otherwise: the Dashboard reads railBadges from here) — (the Dashboard redesigned, 2026-10-26) Needs you alone, not the whole page */
+    const [{ dashboardContext }, { fetchInbox }] = await Promise.all([import('@/lib/dashboard/context'), import('@/lib/dashboard/inbox-queries')])
+    return (await fetchInbox(await dashboardContext(), { okOnly: true })).rows.filter((r) => r.ok).length   // Needs you's own Your OK rows, set-aside ones out (lane D2)
   } catch (e) {
     unstable_rethrow(e)
     console.error('[tasks] the approvals waiting could not be read —', e instanceof Error ? e.message : e)
@@ -226,7 +227,9 @@ export const countApprovalsWaiting = cache(async (): Promise<number> => {
 
 /** (UX audit Q4) Quotes waiting at Sent for Approval on the leads this member sees — an approver's queue only (an Owner, an Admin or the
     backup approver, REG-590), and only while the studio asks for approval. The Tools item counts them; Tools › Quotes' chip lists them. */
-async function countQuotesToApprove(): Promise<number> {
+/** (UX audit Q4) The quotes waiting for this approver (Who sees leads applied) — the rail's Tools count. (the Dashboard redesigned, P-13)
+    exported: Maison AI's "quotes waiting for your approval" reads it, so the answer never counts quotes the rail doesn't. */
+export async function countQuotesToApprove(): Promise<number> {
   const { fetchQuoteApproval, isApprover } = await import('@/lib/settings/queries')
   const { quotes } = await import('@/lib/db/schema')
   const viewer = await fetchViewer()

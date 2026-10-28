@@ -20,6 +20,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s41b2')
@@ -280,7 +283,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       await go(p, `/escalations/${TICKET.number}`)
       await p.waitForFunction(() => { const e = document.querySelector('[data-testid="sign-in"]'); return !!e && !e.closest('[inert]') }, null, { timeout: 15000 }).catch(() => {})
       await settle(p, 300)
-      await p.getByLabel('Mobile number or email').fill('dane@demostudio.sg'); await p.getByTestId('sign-in-send').click(); await settle(p, 1000)
+      await p.getByLabel(/^Mobile number or (work )?email/).fill('dane@demostudio.sg'); await p.getByTestId('sign-in-send').click(); await settle(p, 1000)
       await p.getByTestId('sign-in-digit').first().click(); await p.keyboard.type('123456'); await settle(p, 200)
       await p.getByTestId('sign-in-go').click()
       await p.waitForURL((u) => !/\/sign-in/.test(String(u)), { timeout: 15000 }).catch(() => {}); await settle(p, 1800)

@@ -116,7 +116,7 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     await go(`/projects/${aisha}`)
     ok(/Resume/.test(await p.locator('[data-testid="project-primary"]').innerText()), 'the header’s one filled action is Resume')
     ok(/On hold/.test(await p.locator('[data-card="status"]').first().innerText()) && await p.locator('[data-testid="status-hold-row"]').count() === 1, 'the Status card says On hold, since when and when it resumes')
-    ok(/Aisha is away until mid-November/.test(await p.locator('[data-testid="status-hold-reason"]').innerText()), 'the reason reads in full under it, with who reads it')
+    ok(/Aisha is away until mid-November/.test(await p.locator('[data-testid="need-hold"]').innerText()) && /reads the reason/.test(await p.locator('[data-testid="status-hold-reason"]').innerText()), 'the reason reads in full on its row, Progress says who reads it')   /* (the calm UI build 2026-10-27, a deliberate change) the hold's reason is said once — on its Needs your attention row (3-31); "Last update to …" (W-537) */
     /* (simplify S-01 · Q-14, a deliberate change of this rule) Needs you leads with the hold row (Resume · Change); what the hold pauses rests
        under "Paused while on hold" */
     ok((await p.locator('section[data-card="needs"] [data-testid^="need-"]').first().getAttribute('data-testid')) === 'need-hold', 'Needs you leads with the hold row; what it pauses rests under “Paused while on hold”')
@@ -139,7 +139,8 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     await go(`/projects/${ryan}`)
     /* (parity P-08, a deliberate change of this rule) the hold is a stage row now: Stage ▾ › On hold — no ⋮ row */
     await p.locator('[data-testid="project-stage"] button').click(); await p.waitForTimeout(400)
-    ok(/current/.test(await menu(/^In progress/).innerText()), 'the stage menu: In progress current, On hold its Inactive row')
+    /* (the calm UI build 2026-10-27, a deliberate change) the running stage says "since <day>" (3-53) */
+    ok(/current|since /.test(await menu(/^In progress/).innerText()), 'the stage menu: In progress current, On hold its Inactive row')
     await menu(/^On hold/).click(); await p.waitForTimeout(600)
     await p.locator('[data-testid="hold-save"]').click(); await p.waitForTimeout(400)
     ok(/This field is required/.test(await dialog().innerText()), 'Put on hold asks why first')
@@ -182,7 +183,7 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     await go(`/projects/${ryan}`)
     const col = p.locator('aside[aria-label="Project info"]')
     ok(await col.isVisible() && await p.locator('[data-card="client"], [data-card="team"]').count() === 0, 'the info column on the left; no Client and property or Team card')
-    ok(/Collaborators/.test(await col.innerText()) && /Project info/.test(await col.innerText()) && /Property info/.test(await col.innerText()), 'its sections: Collaborators · Project info · Property info')
+    ok(/Collaborators|Members/.test(await col.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) B2: "Members" */ && /Project info/.test(await col.innerText()) && /Property info/.test(await col.innerText()), 'its sections: Collaborators · Project info · Property info')
     await col.getByRole('button', { name: 'Edit details' }).click(); await p.waitForTimeout(700)
     ok(await p.locator('[data-testid="project-details-section"]').isVisible() && /Rooms in the scope/.test(await dialog().innerText()), 'its pencil opens Edit details — the lead’s form with the project’s section (Q-04)')
     await dialog().getByRole('button', { name: 'Study', exact: true }).click(); await p.waitForTimeout(200)
@@ -197,13 +198,13 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     /* (parity P-09 · D-08, a deliberate change of this rule) the lead form's block word for word — Lead name, Lead phone number, NRIC / FIN,
        Customer ID — then the project's section; the client's line in Activity is the lead form's `field_edited` */
     { const dt = await dialog().innerText()
-      ok(/Edit details/.test(dt) && /Lead name/.test(dt) && /NRIC \/ FIN/.test(dt) && /Customer ID/.test(dt) && /Project name/.test(dt) && /Rooms in the scope/.test(dt), 'Edit details: the lead form’s block (NRIC / FIN, Customer ID …) and the project’s section') }
+      ok(/Edit details/.test(dt) && /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ /(^|\n)Name\*?(\n|$)/m.test(dt) && /NRIC \/ FIN/.test(dt) && /Customer ID/.test(dt) && /Project name/.test(dt) && /Rooms in the scope/.test(dt), 'Edit details: the lead form’s block (NRIC / FIN, Customer ID …) and the project’s section') }
     await shot('client-edit-1440')
-    await dialog().getByLabel('Lead phone number').fill('91')
+    await dialog().getByLabel('Mobile number*', { exact: true }).fill('91')   /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */
     await p.locator('[data-testid="details-save"]').click(); await p.waitForTimeout(500)
     ok(/Enter a valid 8-digit Singapore number/.test(await dialog().innerText()), 'the lead form’s phone rule')
     const editsBefore = Number(sql(`select count(*) from lead_events where lead_id='${marcusLead}' and kind='field_edited'`))
-    await dialog().getByLabel('Lead phone number').fill('96517777')
+    await dialog().getByLabel('Mobile number*', { exact: true }).fill('96517777')
     await p.locator('[data-testid="details-save"]').click(); await p.waitForTimeout(1500)
     ok(sql(`select phone from leads where id='${marcusLead}'`) === '96517777' && /Details saved/.test(await snack().innerText()), 'Save writes the client’s record')
     ok(Number(sql(`select count(*) from lead_events where lead_id='${marcusLead}' and kind='field_edited' and lower(detail) like '%phone%'`)) > 0 && Number(sql(`select count(*) from lead_events where lead_id='${marcusLead}' and kind='field_edited'`)) === editsBefore + 1, 'Activity: the lead form’s “edited … — Phone: …” line')
@@ -216,7 +217,7 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     // ── (M-02) Notes & Logs and Questionnaire on the project ─────────────────────────────────────────────────────────────────────────────
     console.log('Notes & Logs · Questionnaire')
     await go(`/projects/${marcus}/notes`)
-    ok(/Site visit/.test(await p.locator('main, body').first().innerText()) && /Contact log/.test(await p.locator('main, body').first().innerText()) && p.url().includes(`/projects/${marcus}/notes`), 'the direct project’s Notes & Logs, on the project’s address')
+    ok(/Site visit|Visit/.test(await p.locator('main, body').first().innerText()) /* (the calm UI build 2026-10-27, a deliberate change) B2: "Visit" */ && /Contact log/.test(await p.locator('main, body').first().innerText()) && p.url().includes(`/projects/${marcus}/notes`), 'the direct project’s Notes & Logs, on the project’s address')
     await shot('notes-1440')
     await go(`/leads/${marcusLead}/notes`)
     ok(p.url().includes(`/projects/${marcus}/notes`), 'the client’s old Notes address lands on the project’s tab')
@@ -261,7 +262,7 @@ const reOf = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     await go(`/projects/${tA.pid}`)
     await stageMenu(); await menu(/^Completed/).click()   /* (parity P-08, a deliberate change of this rule) the handover runs from Stage ▾ › Completed */; await p.waitForTimeout(1500)
     ok(await p.locator('[data-testid="handover-summary"]').isVisible() && /Milestones finished late/.test(await p.locator('[data-testid="handover-summary"]').innerText()), 'the dialog shows the closing summary under the checklist')
-    ok(/Complete anyway/.test(await p.locator('[data-testid="handover-primary"]').innerText()), 'an open milestone: Complete anyway')
+    ok(/Hand over anyway/.test(await p.locator('[data-testid="handover-primary"]').innerText()), 'an open milestone: Hand over anyway')   // (the calm UI build 2026-10-27, a deliberate change) was Complete anyway
     await p.locator('[data-testid="check-milestones-defer"]').click(); await p.waitForTimeout(300)
     await dialog().getByLabel('Why defer it?').fill('Waterproofing cures for a week; the client agreed to hand over now')
     await p.waitForTimeout(300)

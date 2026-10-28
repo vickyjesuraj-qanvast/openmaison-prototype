@@ -1,5 +1,6 @@
 'use client'
 
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ds'
@@ -83,7 +84,7 @@ export function QuoteScreen({
   const pick = (a: ScreenMenuAction) => () => { setMore(false); onMenu(a) }
   const digits = phoneDigits(client.phone)
   const initials = client.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
-  const meta = [`${lineCount} ${lineCount === 1 ? 'line' : 'lines'}`, validUntil ? `valid until ${displayDate(validUntil)}` : 'no valid-until date', gst.on ? `GST ${gst.pct}% included` : 'no GST'].join(' · ')
+  const meta = [`${lineCount} ${lineCount === 1 ? 'item' : 'items'}`, validUntil ? `valid until ${displayDate(validUntil)}` : 'no valid-until date', gst.on ? `GST ${gst.pct}% included` : 'no GST'].join(' · ')
   const primary = next.primary === 'send' || next.primary === 'signature'
     ? primarySlot
     : next.primary ? <Button variant="primary" size="lg" onPress={() => onPrimary(next.primary!)} data-testid="quote-primary">{next.label}</Button> : null
@@ -101,16 +102,16 @@ export function QuoteScreen({
                      <Dropdown open={more} onClose={() => setMore(false)} align="right" width={MENU_WIDTH.wide} sheetTitle={number}>
                        <DropdownLabel>Look</DropdownLabel>
                        <DropdownItem onSelect={pick('preview')}>Preview</DropdownItem>
-                       <DropdownItem onSelect={pick('history')}>Version History</DropdownItem>
+                       <DropdownItem onSelect={pick('history')}>Version history</DropdownItem>
                        <DropdownDivider />
                        <DropdownLabel>Change</DropdownLabel>
-                       <DropdownItem onSelect={pick('rename')}>{variation ? 'Rename' : 'Rename Quote'}</DropdownItem>
+                       <DropdownItem onSelect={pick('rename')}>{variation ? 'Rename' : 'Rename quote'}</DropdownItem>
                        <DropdownItem onSelect={pick('revise')}>Revise — new version</DropdownItem>
                        {menu.waitingApproval && menu.canApprove ? <DropdownItem onSelect={pick('requestChanges')}>Request changes</DropdownItem> : null}
-                       {variation ? null : <DropdownItem onSelect={pick('duplicate')}>Duplicate and Edit</DropdownItem>}
+                       {variation ? null : <DropdownItem onSelect={pick('duplicate')}>Duplicate and edit</DropdownItem>}
                        {variation ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('changeTemplate')}>{menu.hasTemplate ? 'Change template' : 'Choose a template'}</DropdownItem>}
                        {variation || !menu.hasTemplate || menu.templateDeleted ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('editTemplate')}>Edit template</DropdownItem>}
-                       {variation ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('template')}>Save as Template</DropdownItem>}
+                       {variation ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('template')}>Save as template</DropdownItem>}
                        <DropdownDivider />
                        <DropdownLabel>Share</DropdownLabel>
                        <DropdownItem onSelect={pick('confirmLink')}>Copy confirmation link</DropdownItem>
@@ -153,9 +154,9 @@ export function QuoteScreen({
           {/* (Contracts on the move, C4 — P-11 · C-21) the contract raised from this quote, as a 44 row under the client — "Contract · Sent to Client ›"
               opens it; it was a 10px chip with a 20px touch box in the hero's top line */}
           {contract ? (
-            <Link href={contract.href} className={styles.heroRow} data-testid="screen-contract-row" aria-label={`Open ${contract.title} — ${contract.status}`}>
+            <Link href={contract.href} className={styles.heroRow} data-testid="screen-contract-row" aria-label={`Open ${contract.title} — ${contractStatusLabel(contract.status)}`}>
               <span className={styles.heroRowIcon} aria-hidden><Icon name="contract" size={20} weight={300} /></span>
-              <span className={styles.heroRowText}><span className={styles.heroRowLabel}>Contract</span><span className={styles.heroRowValue}>{contract.status}</span></span>
+              <span className={styles.heroRowText}><span className={styles.heroRowLabel}>Contract</span><span className={styles.heroRowValue}>{contractStatusLabel(contract.status)}</span></span>
               <span className={styles.heroRowChev} aria-hidden><Icon name="chevron_right" size={24} /></span>
             </Link>
           ) : null}

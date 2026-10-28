@@ -142,11 +142,14 @@ async function measure(b, opts, url, blocks, max = 30) {
       await rail.locator('a[href="/marketplace"]').click(); await settle(p, 2000)
       ok(new URL(p.url()).pathname === '/marketplace' && await p.getByTestId('marketplace').isVisible(), '…it opens the Marketplace')
       ok((await rail.locator('a[href="/marketplace"]').getAttribute('aria-current')) === 'page', '…and lights while you are on it')
-      const views = await p.getByTestId('market-views').locator('[role="radio"]').allInnerTexts()
-      ok(views.join('|') === `Brands · ${brandsN}|Deals · ${dealsN}`, 'Brands · Deals carry their counts from the records', views.join(' | '))
+      /* (the calm UI build 2026-10-27, a deliberate change) — 6-01 · 6-27: Brands | Deals are the house Tabs, no counts; the categories one scope pill, its rows without counts */
+      const views = await p.getByTestId('market-views').locator('[role="tab"]').allInnerTexts()
+      ok(views.map((v) => v.trim()).join('|') === 'Brands|Deals', 'Brands | Deals as the house tabs, no counts', views.join(' | '))
       const cats = json(`select c.name, (select count(*) from marketplace_brands b where b.removed_at is null and exists (select 1 from json_each(b.categories) j where j.value = c.name)) as n from marketplace_categories c order by c.position`).filter((c) => c.n > 0)
-      const chips = await p.getByTestId('market-categories').locator('[role="radio"]').allInnerTexts()
-      ok(chips.join('|') === [`All · ${brandsN}`, ...cats.map((c) => `${c.name} · ${c.n}`)].join('|'), '1.0’s categories, in the feed’s order, each with its count (none empty)', chips.join(' | '))
+      await p.getByTestId('market-categories').getByRole('button', { name: /^Category: All/ }).click(); await settle(p, 400)
+      const chips = (await p.locator('[role="menu"] [role="menuitemradio"]').allInnerTexts()).map((c) => c.trim())
+      ok(chips.join('|') === ['All', ...cats.map((c) => c.name)].join('|'), '1.0’s categories, in the feed’s order (none empty) — the pill’s rows', chips.join(' | '))
+      await p.keyboard.press('Escape'); await settle(p, 300)
       ok(await cards(p).count() === 12, 'twelve brands at a time (1.0’s page size)')
       ok((await p.getByTestId('market-shown').innerText()) === `Showing 12 of ${brandsN} brands`, '…said under them: “Showing 12 of n brands”')
       /* Most popular: a featured brand first, by its rank (1.0's order), then the feed's popularity */
@@ -154,9 +157,10 @@ async function measure(b, opts, url, blocks, max = 30) {
       const byPop = json(`select name from marketplace_brands where removed_at is null and featured_rank is null order by popularity desc, name`).map((r) => r.name)
       const shown12 = await names(p)
       ok(shown12.join('|') === [...featured, ...byPop].slice(0, 12).join('|'), 'Most popular: the featured brands first by their rank, then the most popular', shown12.slice(0, 5).join(', '))
-      ok(await cards(p).first().getByTestId('brand-featured').isVisible(), '…a featured brand wears Featured')
+      ok(await cards(p).first().getByTestId('brand-featured').count() === 0, '…a featured brand sorts first; Featured is said on its page, not its card')   // (the calm UI build 2026-10-27, a deliberate change) — 6-01 · W-186
       const firstDeal = one(`select d.title from marketplace_deals d where d.brand_id = (select id from marketplace_brands where removed_at is null order by featured_rank is null, featured_rank, popularity desc limit 1) and d.removed_at is null order by d.position limit 1`)
-      ok(firstDeal && (await cards(p).first().getByTestId('brand-deal').innerText()) === firstDeal.title, '…and its first deal over its photo (a press of its own)')
+      const dealsOf = Number(sql(`select count(*) from marketplace_deals d where d.brand_id = (select id from marketplace_brands where removed_at is null order by featured_rank is null, featured_rank, popularity desc limit 1) and d.removed_at is null`))
+      ok(firstDeal && (await cards(p).first().getByTestId('brand-deal').innerText()).trim() === `${dealsOf} ${dealsOf === 1 ? 'deal' : 'deals'}`, '…and its deals’ count over its photo (a press of its own)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-01 · W-081: one badge, the count
       await shot(p, '01-home-1440')
       await p.getByTestId('market-more').click(); await settle(p, 600)
       ok(await cards(p).count() === brandsN && await p.getByTestId('market-more').count() === 0, 'Show more brings the rest; with nothing more to show the button goes')
@@ -174,11 +178,13 @@ async function measure(b, opts, url, blocks, max = 30) {
       const reviewed = json(`select name from marketplace_brands where removed_at is null order by reviews desc, name`).map((r) => r.name)
       ok((await names(p)).slice(0, 3).join('|') === reviewed.slice(0, 3).join('|'), 'Most reviews: the most reviewed first')
       /* a category */
-      await p.getByTestId('market-categories').locator('[role="radio"]', { hasText: /^Kitchen · / }).click(); await settle(p, 500)
+      await p.getByTestId('market-categories').getByRole('button', { name: /^Category: / }).click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) — the pill's row
+      await p.locator('[role="menu"] [role="menuitemradio"]', { hasText: /^Kitchen$/ }).click(); await settle(p, 500)
       const kitchen = json(`select name from marketplace_brands b where removed_at is null and exists (select 1 from json_each(b.categories) j where j.value = 'Kitchen') order by name`).map((r) => r.name)
       ok((await names(p)).sort().join('|') === kitchen.join('|') && /category=Kitchen/.test(p.url()), 'a category shows its brands only, and the address keeps it', (await names(p)).join(', '))
       /* the search — over each view's own words; in the open category, as a library searches where you are */
-      await p.getByTestId('market-categories').locator('[role="radio"]', { hasText: /^All · / }).click(); await settle(p, 400)
+      await p.getByTestId('market-categories').getByRole('button', { name: /^Category: / }).click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change)
+      await p.locator('[role="menu"] [role="menuitemradio"]', { hasText: /^All$/ }).click(); await settle(p, 400)
       await p.getByRole('searchbox', { name: 'Search brands' }).fill('teak'); await settle(p, 500)
       const found = await names(p)
       ok(found.includes('Kampong Teak Works') && found.length < brandsN, 'Search brands finds a brand by its words (name, line, categories, deals)', found.join(', '))
@@ -209,7 +215,7 @@ async function measure(b, opts, url, blocks, max = 30) {
     if (want(2)) {
       console.log('2 · Deals — the view, the deal’s dialog, Get deal (WhatsApp · email · the brand’s page), the ask on record')
       await go(p, '/marketplace', 1200)
-      await p.getByTestId('market-views').locator('[role="radio"]', { hasText: /^Deals/ }).click(); await settle(p, 600)
+      await p.getByTestId('market-views').locator('[role="tab"]', { hasText: /^Deals/ }).click(); await settle(p, 600)   // (the calm UI build 2026-10-27, a deliberate change) — the house Tabs
       ok(/view=deals/.test(p.url()) && await p.getByTestId('market-deal').count() === dealsN, 'Deals lists every live deal, and the address says Deals')
       const flash = Number(sql(`select count(*) from marketplace_deals where removed_at is null and flash = 1 and (ends_at is null or ends_at >= ${now})`))
       const first = await p.getByTestId('market-deal').evaluateAll((els) => els.map((e) => !!e.querySelector('[data-testid="deal-flash"]')))
@@ -226,7 +232,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       const body = await dlg.innerText()
       ok(body.includes(d.terms) && body.includes(d.redemption) && body.includes(d.description), '…its words, Terms and conditions and How to redeem, from the record')
       ok(/You asked for this deal on WhatsApp on /.test(await p.getByTestId('deal-asked').innerText()), '…who asked before, and how')
-      ok((await p.getByTestId('deal-get').innerText()).includes('Get deal on WhatsApp'), 'one filled button, saying how it reaches the brand: Get deal on WhatsApp')
+      ok((await p.getByTestId('deal-get').innerText()).includes('Ask again on WhatsApp'), 'asked before: the button says it asks again, how it reaches the brand (outlined — W-204)')   // (the calm UI build 2026-10-27, a deliberate change)
       await shot(p, '03-deal-dialog-1440')
       const asks0 = Number(sql(`select count(*) from marketplace_deal_asks where deal_id = '${SOFA_DEAL}'`))
       const n0 = popups.length
@@ -312,7 +318,9 @@ async function measure(b, opts, url, blocks, max = 30) {
       /* (pending modules, a deliberate change of this rule — at the lanes' merge) the demo catalogue's addresses sit on the reserved `.example`
          domain: such a row says it is a demo address instead of opening a browser's error page; a real address still opens in a new tab */
       const demoRows = await links.evaluateAll((els) => els.map((e) => ({ demo: e.hasAttribute('data-demo-address'), tag: e.tagName, target: e.getAttribute('target'), text: e.textContent || '' })))
-      ok(demoRows.length === linkN && demoRows.every((r) => r.demo ? r.tag !== 'A' && /A demo address/.test(r.text) : r.tag === 'A' && r.target === '_blank'), 'Web links: its sites and socials — a real address opens in a new tab, a demo address says so and opens nothing', `${demoRows.length} of ${linkN} · ${demoRows.filter((r) => r.demo).length} demo`)
+      /* (the calm UI build 2026-10-27, a deliberate change) — 6-11 · W-094: a demo address is said once, under the rows ("Links open on the live app") */
+      const demoSaid = !demoRows.some((r) => r.demo) || (await p.getByTestId('brand-links-demo').count()) === 1
+      ok(demoSaid && demoRows.length === linkN && demoRows.every((r) => r.demo ? r.tag !== 'A' : r.tag === 'A' && r.target === '_blank'), 'Web links: its sites and socials — a real address opens in a new tab, a demo address opens nothing and the card says so once', `${demoRows.length} of ${linkN} · ${demoRows.filter((r) => r.demo).length} demo`)
 
       ok((await p.locator('[data-card="brand-services"]').innerText()).includes(brand.services.slice(0, 60)), 'Services: what it does (1.0’s editor note)')
       const dealsHere = Number(sql(`select count(*) from marketplace_deals where brand_id = '${OAK}' and removed_at is null and (ends_at is null or ends_at >= ${now})`))
@@ -381,7 +389,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       const prod = one(`select * from marketplace_products where id = '${OSLO}'`)
       ok(await dlg.isVisible() && await dlg.locator('input').first().inputValue() === prod.name, 'Add to Price book opens its dialog with the product’s name')
       ok(await dlg.locator('input[inputmode="decimal"]').first().inputValue() === (prod.price_minor / 100).toFixed(2), '…its cost starts at the brand’s listed price', await dlg.locator('input[inputmode="decimal"]').first().inputValue())
-      ok(/Oak & Linen as its vendor/.test(await p.getByRole('dialog', { name: 'Add to Price book' }).innerText()), '…and says the brand is its vendor')
+      ok(/Oak & Linen becomes its vendor/.test(await p.getByRole('dialog', { name: 'Add to Price book' }).innerText()), '…and says the brand is its vendor')   // (the calm UI build 2026-10-27, a deliberate change) — 6-25 · W-220
       await shot(p, '05-add-product-1440')
       await p.getByTestId('product-save').click()
       await waitFor(() => Number(sql(`select count(*) from price_book_items where marketplace_product_id = '${OSLO}' and deleted_at is null`)) === 1)
@@ -401,7 +409,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       const em = p.getByTestId('brand-product').first()
       await em.getByTestId('product-add').click(); await settle(p, 600)
       const txt = await p.getByRole('dialog', { name: 'Add to Price book' }).innerText()
-      ok(/Kaya Paints joins your vendors too/.test(txt) && /An Owner or an Admin approves it/.test(txt) && (await p.getByTestId('product-save').innerText()).trim() === 'Propose it', 'a Designer’s dialog says the brand joins the vendors and that an Owner or an Admin approves it: Propose it')
+      ok(/Kaya Paints becomes its vendor and joins your vendors/.test(txt) &&   /* (the calm UI build 2026-10-27, a deliberate change) — 6-25 · W-220 */ /An Owner or an Admin approves it/.test(txt) && (await p.getByTestId('product-save').innerText()).trim() === 'Propose it', 'a Designer’s dialog says the brand joins the vendors and that an Owner or an Admin approves it: Propose it')
       await p.getByTestId('product-save').click()
       const pid = sql(`select id from marketplace_products where brand_id = '${KAYA}' and removed_at is null order by position limit 1`)
       await waitFor(() => Number(sql(`select count(*) from price_book_items where marketplace_product_id = '${pid}'`)) === 1)
@@ -502,8 +510,8 @@ async function measure(b, opts, url, blocks, max = 30) {
       const m = await page(mc, '390')
       await go(m, '/marketplace', 1600)
       ok(await sideways(m) <= 0, '390: no sideways scroll on the Marketplace')
-      const bar = await m.getByTestId('market-views').evaluate((e) => e.closest('[class*="__bar"]').getBoundingClientRect().height)
-      ok(bar <= 52, '390: the views, the search glyph and the sort on one row', `${bar}px`)
+      const bar = await m.getByTestId('market-categories').evaluate((e) => e.closest('[class*="__bar"]').getBoundingClientRect().height)   // (the calm UI build 2026-10-27, a deliberate change) — the views are the tabs above the bar now
+      ok(bar <= 52, '390: the category, the search glyph and the sort on one row', `${bar}px`)
       const xs = await m.getByTestId('market-brand').evaluateAll((els) => els.slice(0, 4).map((e) => Math.round(e.getBoundingClientRect().left)))
       ok(new Set(xs).size === 2, '390: two cards a row', xs.join(','))
       await m.getByTestId('market-brand').first().getByRole('button', { name: /More options/ }).tap(); await settle(m, 600)

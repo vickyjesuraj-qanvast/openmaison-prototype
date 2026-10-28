@@ -207,7 +207,7 @@ ATTENTION_REASONS.push({
 /* ── (gaps build H, H-Q25) The client's problems: a ticket escalated and not yet resolved; a live ticket the studio hasn't answered for more
    than two days. Both stay after handover — a defect reported once the work is done is what tickets are for. (invented copy) */
 const TICKET_REASONS: AttentionReason[] = [
-  { key: 'ticket_escalated', weight: 38, reason: (f) => (f.tickets?.escalated ? (f.tickets.escalated === 1 ? 'Escalated ticket' : `${f.tickets.escalated} escalated tickets`) : null) },
+  { key: 'ticket_escalated', weight: 38, reason: (f) => (f.tickets?.escalated ? (f.tickets.escalated === 1 ? 'Issue flagged to the Owner' : `${f.tickets.escalated} issues flagged to the Owner`)   /* (the calm UI build 2026-10-27, 3-37 · 1-10) */ : null) },
   { key: 'ticket_waiting', weight: 24, reason: (f) => (f.tickets?.waiting ? `${plural(f.tickets.waiting, 'ticket')} waiting on the studio` : null) },
 ]
 ATTENTION_REASONS.push(...TICKET_REASONS)

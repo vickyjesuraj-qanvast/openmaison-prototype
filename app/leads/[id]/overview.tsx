@@ -58,15 +58,16 @@ import { suggestMember } from '@/lib/leads/suggest'
 import { ReturnDetailsModal } from '@/components/leads/return/return-details-modal'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
 import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, markLeadSeen, moveStage, quickMoveStage, resolveMoveHandoff, restoreLeads, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
-import { createQuote } from '@/app/leads/quotes-actions'
 import { askClientQuestions } from '@/app/leads/questions-actions'
 import { fetchAppealDraft, returnLead, undoReturn, type AppealDraft, type ReturnInput } from '@/app/leads/return-actions'
 import type { LeadFile } from '@/lib/db/schema'
 import type { LeadDetail } from '@/lib/leads/detail'
+import type { LeadRow } from '@/lib/leads/queries'
+import { clientFirst } from '@/lib/leads/question-model'
 import { returnTags } from '@/lib/leads/return-tags'
 import { type Stage } from '@/lib/leads/enums'
 import { OPEN_PROJECT, briefsFor } from '@/lib/leads/briefs'
-import { displayDue, isOverdue, moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
+import { displayDue, isOverdue, moneyCard, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
 import { DETAIL_TABS, blockedReason, canReturnLead, convertBlock, detailHref, headHasPrimary, heldMeetingStep, isActiveStage, journeyIdx, leadTabItems, nextStageOf, projectHoldsDelete, resumeStageOf, roleStageBlock, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import { carriesLeadTab, projectTabHref } from '@/lib/projects/tabs'   // (one-home N-10)
 import { useRememberLeadShape } from '@/components/leads/detail/tab-ghost-for'
@@ -284,8 +285,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   /** Every stage change on this page — pill, stages card, quick links — comes through here.
       The branch set is `stageIntent` in lib/leads/stage-policy, the one copy the listing runs too (REG-286);
       this half only maps the intent onto this page's dialogs and snackbar. */
-  const requestStageChange = (stage: Stage): void => {
-    const intent = stageIntent(lead, stage, stageMovement, role)
+  const requestStageChange = (stage: Stage, as: LeadRow = lead): void => {
+    const intent = stageIntent(as, stage, stageMovement, role)
     switch (intent.kind) {
       case 'none': return
       /* (UX audit 2026-09-30, L10 — supersedes REG-607's pre-pick) Both dialogs open with no reason chosen: the required field asks for
@@ -318,21 +319,29 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   /* (fix-E, E-05) only an Owner or an Admin removes the old one to make it again: anyone else reads why on the locked button, no confirm */
   const remakeLocked = remake && !canDelete ? remakeRefusal(detail.deletedProject!.number) : null
   const [remakeOpen, setRemakeOpen] = useState(false)
-  const primaryLabel = primaryKind === 'won' ? (remake ? 'Make the project again' : 'Open project') : primaryKind === 'resume' ? `Resume at ${resumeStageOf(lead)}` : primaryKind === 'next' ? `Move to ${nextStage}` : 'Convert to Project'
+  /* (the calm UI build 2026-10-27 — audit 2-05, W-558 · W-504) The filled button never offers a move the page will refuse: a lead with no member
+     reads "Assign a member" — the Assign popover opens under it and, once someone is saved, the move it would have made follows (the phone's
+     Assign-then-move, REG-2687). The locked "Convert to Project" left the header: Won stays in Stage ▾, whose row says why. */
+  const needsOwner = primaryKind === 'next' && isActiveStage(lead.stage) && lead.assignees.length === 0
+  const primaryLabel = needsOwner ? 'Assign a member' : primaryKind === 'won' ? (remake ? 'Make the project again' : 'Open project') : primaryKind === 'resume' ? `Resume at ${resumeStageOf(lead)}` : primaryKind === 'next' ? `Move to ${nextStage}` : 'Convert to Project'
   const convertPrimary = primaryKind === 'won' || primaryKind === 'convert'
   /* (S44O — call C6) Marketing's header: the next move while it is theirs (Contacted, Met, a resume short of Quote Sent); past that the lead is the
      designer's — no Convert, no project to open, so no filled button (the stage menu says why on Quote Sent and Won) */
   const deskPrimary = headHasPrimary(lead, stageMovement, role)   // (S44Z) the one rule the loaders' seed reads too (lib/ghost-shapes.server.ts)
   /* (REG-708 · parity P-07) the loaders' ghost draws this page's shape next time: the strip (the short one once the lead is on its project) and the
      header's actions (the locked Convert between the pill and the primary, or the pair a Won lead shows) */
-  useRememberLeadShape(lead.id, { onProject: !!project, locked: !desk && !convertPrimary && !!wonBlock, noPrimary: !deskPrimary })   // (S44O — C6)
+  useRememberLeadShape(lead.id, { onProject: !!project, locked: false, noPrimary: !deskPrimary })   // (S44O — C6) · (the calm UI build) no locked Convert any more
   const projectRun = useRun()
   const openProject = (projectId?: string | null) => {
     const here = `${window.location.pathname}${window.location.search}`
     if (projectId) { router.push(withFrom(`/projects/${projectId}`, here)); return }
     void projectRun.run('open the project', async () => { const r = await openLeadProject(lead.id); if ('error' in r) return r; router.push(withFrom(`/projects/${r.id}`, here)); return null }, undefined, { guard: 'project' })
   }
+  const primaryRef = useRef<HTMLSpanElement>(null)
+  /** (2-05) the move "Assign a member" stands for, made once the popover saves a member */
+  const assignThenMove = useRef<Stage | null>(null)
   const pressPrimary = () => {
+    if (needsOwner && primaryRef.current) { assignThenMove.current = nextStage ?? null; openAssign(primaryRef.current); return }
     if (primaryKind === 'won' && remakeLocked) refuse(remakeLocked)
     else if (primaryKind === 'won' && remake) setRemakeOpen(true)
     else if (primaryKind === 'won') openProject(detail.project?.id)
@@ -504,8 +513,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
      keeps the Create Quote modal. */
   /* (Dane's UAT, b-doublequote) A double press made two quotes: the Quotes tab's own re-entrancy guard (`guard: 'create'`, RACE-05) — a
      press while the first is in flight is dropped. The failure line is the same "Couldn’t create the quote — please try again". */
-  const createRun = useRun()
-  const onBlankQuote = () => { void createRun.run('create the quote', async () => { const id = await createQuote(lead.id, null); router.push(withFrom(`/quotes/${id}`, `${window.location.pathname}${window.location.search}`)) }, undefined, { guard: 'create' }) }
+  /* (the calm UI build 2026-10-27 — audit 2-04) The QUOTES card's From Scratch (a blank quote at once) left with its two-button empty state: its
+     one outlined way in opens the Create Quote window, whose Blank Quote makes the same blank quote. */
   const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
@@ -527,11 +536,15 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   const briefLead = useMemo(
     /* (UX audit 2026-09-30, L2) `contacted`: a logged contact — the New brief stops saying "No contact yet" beside Last contact. */
     () => ({ ...lead, contacted: !!lead.lastContact, questionnaire: questionnaire ? { answered: questionnaire.clientAnswered + questionnaire.studioAnswered, total: questionnaire.total } : null, project: detail.project,
+      /* (the calm UI build 2026-10-27 — 2-01 · 2-38) what the brief says, from the record: the client's first name, the days where the lead is
+         (the stages card's own count), whether a member is on it, a Lost lead's recorded reason */
+      name: clientFirst(lead.name), daysInStage: parked ? parked.days : (timeline.find((st) => st.state === 'current')?.days ?? null),
+      owned: lead.assignees.length > 0, lostReason: parked?.stage === 'Lost' ? parked.reason : null,
       /* (S42E, E-11) a New lead already met (its last contact a held meeting): the brief says so and offers its next stage — and (S42G) a lead
          in Contacted whose meeting no Met log holds yet (a New lead moved on with its meeting as the first contact): Met follows, not "book the meet" */
       met: lead.stage === 'New' && lead.lastContact?.outcome === 'Meeting held' ? { at: lead.lastContact.at, where: lead.lastContact.channel, step: heldMeetingStep(lead, stageMovement) }
         : lead.stage === 'Contacted' && detail.heldMeeting ? { at: new Date(detail.heldMeeting.at), where: detail.heldMeeting.where, step: heldMeetingStep(lead, stageMovement) } : null }),   // (fix-A, A-26) the Won brief speaks of the project
-    [lead, questionnaire, detail.project, detail.heldMeeting, stageMovement],
+    [lead, questionnaire, detail.project, detail.heldMeeting, stageMovement, parked, timeline],
   )
   /* (parity P-33 · Q-02, the owner's pick 2026-10-08) Maison AI acts on the lead as it acts on a project: the brief's buttons and the FAB's
      suggestions resolve to `{ run | answer | propose }` (components/leads/detail/use-lead-maison.ts) — the page's own doors, answers from the
@@ -560,14 +573,16 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
     openTask: openTaskPanel,
   }
   const maison = useLeadMaison({ lead, quote, unanswered: detail.unansweredQuestions, parked, project: detail.project, team, doors: maisonDoors, desk })   // (S44O — C6)
-  const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, briefLead).flatMap((b) => b.actions).filter((a) => a !== OPEN_PROJECT))).slice(0, 3).map(maison), [lead.stage, briefLead, maison])
+  /* (the calm UI build 2026-10-27 — audit 2-01) The card keeps one brief and one action; every other brief's actions are the sheet's — all of
+     them, so none is lost (it took the first three) */
+  const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, briefLead).flatMap((b) => b.actions).filter((a) => a !== OPEN_PROJECT))).map(maison), [lead.stage, briefLead, maison])
   useMaisonAi(aiSuggestions)   /* (REG-507) the shell's FAB + sheet */
   /* (parity P-16, the owner's pick 2026-10-08 — the project's pattern, A-11 · D-14) Back names the place it returns to — "Back to Tasks",
      "Back to the project" — and the crumb never says "Leads" twice: a lead opened from the listing (`?from=/leads…`) reads "Leads /" once, that
      crumb keeping the listing's own address (its scope, search and filters). (lib/nav `backLabel` reads any `/leads/…` path as a lead — a Leads
      page that is not a lead keeps its section's name.) */
   const fromSection = fromLabel(origin)
-  const backText = fromSection === 'Insights' || fromSection === 'Import History' ? `Back to ${fromSection}`
+  const backText = fromSection && /^(insights|reports|import history)$/i.test(fromSection) ? `Back to ${fromSection}`   /* (the calm UI build) whichever case lib/nav names them in */
     : backLabel(origin, { leadName: origin?.startsWith(`/leads/${lead.id}`) ? lead.name : null, fallback: 'Back to Leads' })
   const crumbs = [
     ...(origin && fromSection && fromSection !== 'Leads' ? [{ label: fromSection, href: origin }] : []),
@@ -575,7 +590,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   ]
 
   return (
-    <PageReveal skeleton={<DetailSkeleton wide={wide} tab={tab} tabs={tabItems.map((t) => t.label)} shape={{ onProject: !!project, locked: !desk && !convertPrimary && !!wonBlock, noPrimary: !deskPrimary }} />}>   {/* (REG-708) the tab's own body — the ghost its [tab]/loading.tsx drew; (one-home N-10) the strip it shows */}
+    <PageReveal skeleton={<DetailSkeleton wide={wide} tab={tab} tabs={tabItems.map((t) => t.label)} shape={{ onProject: !!project, locked: false, noPrimary: !deskPrimary }} />}>   {/* (REG-708) the tab's own body — the ghost its [tab]/loading.tsx drew; (one-home N-10) the strip it shows */}
       <div className={`${styles.body} ${styles.leadPage}`}>   {/* (held calls 2026-10-24, K-10) the lead's own page: its header steps out of the sticky pair on a phone held sideways */}
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
@@ -583,12 +598,15 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
           backLabel={backText}   /* (parity P-16) */
           crumbs={crumbs}
           title={lead.name}
-          chips={
+          chips={tab === '' ? undefined : (
+            /* (the calm UI build 2026-10-27 — audit 2-02 · 2-38 · T-04 · T-06) The Overview's info column is the one home of the contact and
+               property facts, and its LEAD RETURNED card says the return's state — so the Overview's header carries no chips. The other tabs have
+               no column: there the facts are one line of plain secondary text (a phone, a sum, a type are not statuses), the Qanvast mark and
+               the return state stay chips. */
             <>
-              <MetaChip icon="call">{phoneLocal(lead.phone)}</MetaChip>
-              {/* (UX audit 2026-09-30, L8) An unknown budget is stored as 0; it reads "--" like every other blank, never "S$ 0". */}
-              <MetaChip icon="money_bag">{lead.budgetMinor > 0 ? moneyCompact(lead.budgetMinor) : '--'}</MetaChip>
-              <MetaChip icon="home">{lead.propertyType}</MetaChip>
+              <span className={styles.headFacts} data-testid="lead-head-facts">
+                {[phoneLocal(lead.phone), lead.budgetMinor > 0 ? moneyCard(lead.budgetMinor) : null, lead.propertyType, lead.source === 'Qanvast' ? null : lead.source].filter(Boolean).join(' · ')}
+              </span>
               {/* Green marks a Qanvast lead — the source that behaves differently (Return Lead, Qanvast Ops).
                   Every other source is a plain chip, so the colour means something (user 2026-08-30).
                   The leading glyph is a deviation: the mock draws this one chip WITHOUT an icon while its three
@@ -596,11 +614,11 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
                   Material Symbols ships no brand marks, so per-source icons would be honest for Referral and
                   Walk-in and invented for Instagram, Facebook and the rest (user 2026-08-31). `database` was the
                   owner's pick; it is not in the mocks' icon set, so the font subset was regenerated for it. */}
-              <MetaChip color={lead.source === 'Qanvast' ? 'green' : 'default'} icon="database">{lead.source}</MetaChip>
+              {lead.source === 'Qanvast' ? <MetaChip kind="fact" color="green" icon="database">{lead.source}</MetaChip> : null}   {/* (the calm UI build 2026-10-27 — B1's request, 1-44 · T-06) a source is a fact: the green mark kept, in sentence case */}
               {/* return + refund state chips (931:48553 · 931:49138): Return Processing yellow · Return Rejected red · Return Approved green + Refund Processing / Credited */}
               {returnTags(ret).map((t) => <MetaChip key={t.label} color={t.color}>{t.label}</MetaChip>)}
             </>
-          }
+          )}
           actions={
             <>
               <span className={`${styles.anchor} ${styles.stageAction}`} ref={stagePillRef} data-kb="move-stage">
@@ -618,21 +636,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
                   says why (blockedReason — "Complete Quote Sent first", "Assign a member first"). A Won lead's button converts (REG-204). */}
               {/* (UX audit 2026-09-30, L6 · Q1) While Won is out of reach Convert stays, outlined with its lock (≥1025; up to 1024 the row
                   keeps the pill and the primary), and its press names the whole path left with the way on as the snackbar's action. */}
-              {!desk && !convertPrimary && wonBlock ? (
-                <Tooltip label={wonBlock}>
-                  <span className={`${styles.anchor} ${styles.convertLocked}`} data-testid="convert-locked">
-                    <Button variant="secondary" appearance="outlined" iconStart={<Icon name="lock" size={20} />} onPress={() => refuse(wonBlock)}>
-                      Convert to Project
-                    </Button>
-                  </span>
-                </Tooltip>
-              ) : null}
+              {/* (the calm UI build 2026-10-27 — 2-05) the locked Convert to Project is no longer here: Won is the Stage ▾ menu's row, which
+                  says why it is out of reach (its `data-testid="convert-locked"` rides on that row) */}
 {deskPrimary ? (
-                            <Tooltip label={lead.stage === 'Won' ? (detail.project ? `Open ${detail.project.number}` : remakeLocked ? remakeLocked : detail.deletedProject ? `${detail.deletedProject.number} is in Deleted Projects` : 'Open the project') : convertPrimary ? 'Opens the Won step — it creates the project' : ''} disabled={!convertPrimary}>
-                <span className={`${styles.anchor} ${styles.convertAction}`} data-testid="header-primary">
+                            <Tooltip label={lead.stage === 'Won' ? (detail.project ? `Open ${detail.project.number}` : remakeLocked ? remakeLocked : detail.deletedProject ? `${detail.deletedProject.number} is in Deleted projects` : 'Open the project') : convertPrimary ? 'Opens the Won step — it creates the project' : needsOwner ? `Then it moves to ${nextStage}` : ''} disabled={(!convertPrimary && !needsOwner) || !!assign}>
+                <span className={`${styles.anchor} ${styles.convertAction}`} data-testid="header-primary" ref={primaryRef}>
                   {remakeLocked
                     ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="lock" size={20} />} onPress={pressPrimary}>{primaryLabel}</Button>   /* (fix-E, E-05) Convert's locked look */
-                    : <Button variant="primary" onPress={pressPrimary}>{primaryLabel}</Button>}
+                    : <Button variant="primary" onPress={pressPrimary} aria-haspopup={needsOwner ? 'dialog' : undefined}>{primaryLabel}</Button>}
                 </span>
               </Tooltip>
               ) : null}
@@ -652,11 +663,11 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
                 {phoneSheet ? <QuickLinkItems busy={openingDesign ? 'AI Visualizer' : null} set={desk ? 'desk' : undefined} onPicked={() => setKebabOpen(false)}
                                               onTask={onQuickTask} onQuote={onNewQuote} onCallLog={onNewContactLog} onNote={onNewNote} onOther={onQuickOther} /> : null}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }} shortcut="edit">Edit</DropdownItem>
-                {desk ? null : <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Invite to Portal</DropdownItem>}   {/* (S44O — C6) a client's access is whoever works on the lead (`worksOn`) — never Marketing */}
+                {desk ? null : <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Client portal</DropdownItem>}   {/* (S44O — C6) a client's access is whoever works on the lead (`worksOn`) — never Marketing */}
                 {canReturn ? (
-                  <DropdownItem onSelect={() => { setKebabOpen(false); openReturn() }}>{appealable ? 'Appeal the return' : 'Return Lead'}</DropdownItem>
+                  <DropdownItem onSelect={() => { setKebabOpen(false); openReturn() }}>{appealable ? 'Appeal the return' : 'Return to Qanvast'}</DropdownItem>
                 ) : null}
-                <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy Link</DropdownItem>
+                <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy link</DropdownItem>
                 {canDelete ? (
                   /* (REG-728) the house danger row, where a red span in a plain row stood. (fix-E, A-09 · E-10 · Q-27) A lead with a live project
                      is refused in the row before the press — never after a reason was typed into the dialog. */
@@ -681,6 +692,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
             lead={lead}
             team={team}
             onEdit={() => setLeadForm({ mode: 'edit', lead })}
+            onEditField={(focus) => setLeadForm({ mode: 'edit', lead, focus })}   /* (the calm UI build — 2-03) a section's "Add …" opens the form on that field */
             onAssign={openAssign}
             onAssigneeMenu={(anchor) => openAssign(anchor)}
             onCopy={async (what, value) => {
@@ -698,7 +710,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
             {tab === '' ? (
               <>
                 {/* (fix-A, A-26) · (parity P-33) the buttons act — `maison` answers each one's words */}
-                <AiBrief stage={lead.stage} lead={briefLead} actions={maison} onAction={() => comingSoon()} />
+                <AiBrief single stage={lead.stage} lead={briefLead} actions={maison} onAction={() => comingSoon()} />
                 <div className={styles.grid}>
                   {/* Right column first: the two stacks were swapped as-is (user 2026-08-31). */}
                   {/* (parity P-04, the owner's pick 2026-10-08 — "after Won it's all under projects", REG-1378) A lead with a live project keeps its
@@ -716,8 +728,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
                       />
                     </div>
                     )}
-                    {desk ? null : <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onBlankQuote} onFromTemplate={onNewQuote} />   {/* (UX audit Q12) From Scratch makes the blank quote; From Template opens the modal */}</div>}   {/* (S44O — C6) never Marketing's */}
-                    {project ? null : <div data-card="questionnaire"><QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} /></div>}
+                    {desk ? null : <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} client={clientFirst(lead.name)} onOpenTab={() => goTab('quotes')} onCreate={onNewQuote} />   {/* (the calm UI build — 2-04) one outlined way in: the Create Quote window (Blank Quote · a template · Upload) */}</div>}   {/* (S44O — C6) never Marketing's */}
+                    {project ? null : <div data-card="questionnaire"><QuestionnaireCard q={questionnaire} client={lead.name} setUpHref={canDelete ? withFrom('/company/questionnaire', `/leads/${lead.id}`) : null} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} /></div>}
                   </div>
                   <div className={styles.column}>
                     {ret ? (
@@ -729,7 +741,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
                     <LeadStagesCard
                       lastContact={lead.lastContact} onOpenContact={() => router.push(href('notes'))}
                       nextFollowUp={nextFollowUp} onOpenFollowUp={() => { if (nextFollowUp) openTaskPanel(nextFollowUp.id) }} onSetFollowUp={() => setFollowUpOpen(true)}
-                      responseTime={responseLine(responseTime)} onOpenInsights={canDelete ? () => router.push(withFrom('/company/reports/leads', `/leads/${lead.id}`)) : undefined}   /* (REG-611) */
+                      responseTime={responseLine(responseTime, lead.stage)} now={now} leadName={clientFirst(lead.name)} onOpenInsights={canDelete ? () => router.push(withFrom('/company/reports/leads', `/leads/${lead.id}`)) : undefined}   /* (REG-611) */
                       timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
                       blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement, role)}
                       onOpenStage={openStageStep}
@@ -782,6 +794,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
         current={lead.stage as Stage}
         subject={`${lead.name} · ${phoneLocal(lead.phone)}`}
         doneThrough={journeyIdx(lead)}
+        wonTestId="convert-locked"   /* (the calm UI build — 2-05) the locked Convert's handle, now on the Won row */
+        onLocked={(stage, why) => { setStageMenu(null); refuse(stage === 'Won' && wonBlock ? wonBlock : why) }}   /* …and its refusal: the path to Won, the way on as the action */
         onSelect={(stage) => { setStageMenu(null); requestStageChange(stage) }}
       />
       <ConfirmDialog
@@ -819,7 +833,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
              answered back to it as a sentence and said in its foot, the step as typed; only a landed save closes it */
           onUpdate={async ({ stage, data }) => {
             try {
-              if (stage === 'New') { await assignMembers(lead.id, data.assignees); closeWizard(); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+              if (stage === 'New') { await assignMembers(lead.id, data.assignees); closeWizard(); snackbar({ message: 'Members saved' }) }   // (REG-334) New's details are its members
               else {
                 const r = await updateStageDetails({ leadId: lead.id, stage, data })
                 if ('error' in r) return couldnt('save the stage details', refusalOf(r.error))   // (S43B · F1-07) the server's own check
@@ -900,8 +914,19 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
         anchor={assign?.el}
         assignable={assignHint(detail.viewer) ? [] : assignableIds(detail.viewer, team)} hint={assignHint(detail.viewer)}
         suggestion={lead.assignees.length ? null : suggestMember({ propertyType: lead.propertyType, budgetMinor: lead.budgetMinor, style: lead.style, area: lead.area }, team, memberStats)}   /* (REG-612) */
-        onClose={() => setAssign(null)}
-        onApply={(memberIds) => { setAssign(null); void run(async () => { await assignMembers(lead.id, memberIds); snackbar({ message: 'Members updated' }); refresh() }, 'Couldn’t update the members — please try again') }}
+        onClose={() => { setAssign(null); assignThenMove.current = null }}
+        onApply={(memberIds) => {
+          setAssign(null)
+          const then = assignThenMove.current
+          assignThenMove.current = null
+          void run(async () => {
+            await assignMembers(lead.id, memberIds)
+            refresh()
+            /* (the calm UI build — 2-05) "Assign a member" stood for the next move: it follows now the lead has its member, as the phone chains it */
+            if (then && memberIds.length > 0) requestStageChange(then, { ...lead, assignees: team.filter((m) => memberIds.includes(m.id)) })
+            else snackbar({ message: 'Members saved' })   // (the calm UI build — 2-34) the house's past tense
+          }, 'Couldn’t update the members — please try again')
+        }}
         requireOne={lead.stage !== 'New'}
         position={assign}
       />
@@ -946,7 +971,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
       />
       {/* (Projects round 7, Q-26) Make the project again — the deleted one is removed for good first (a lead has one project) */}
       <ConfirmDialog open={remakeOpen} title="Make the project again?" confirmLabel="Make it again"
-                     message={`${detail.deletedProject?.number ?? 'Its project'} is in Deleted Projects. Making the project again removes it for good and starts a new one from the Won step. To keep it, restore it from Projects › Deleted Projects instead.`}
+                     message={`${detail.deletedProject?.number ?? 'Its project'} is in Deleted projects. Making the project again removes it for good and starts a new one from the Won step. To keep it, restore it from Projects › Deleted projects instead.`}
                      onCancel={() => setRemakeOpen(false)}
                      onConfirm={() => {
                        setRemakeOpen(false)
@@ -1019,7 +1044,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
         onConfirm={(input: ReturnInput) => run(async () => {
           // 931:49009 → 931:48553: the return opens in processing; Undo lives as long as the snackbar (user 2026-08-30).
           const { returnId } = await returnLead(lead.id, input)
-          snackbar({ message: input.appealOf ? 'Appeal sent to Qanvast' : 'Lead returned successfully', actionLabel: 'Undo', onAction: () => { void undoReturn(returnId).then(refresh) } })   // (pending modules S05)
+          snackbar({ message: input.appealOf ? 'Appeal sent to Qanvast' : 'Returned to Qanvast', actionLabel: 'Undo', onAction: () => { void undoReturn(returnId).then(refresh) } })   // (pending modules S05)
           refresh()
         }, input.appealOf ? 'Couldn’t send the appeal — please try again' : 'Couldn’t return the lead — please try again')}
       />
@@ -1041,7 +1066,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
       {/* (pending modules S05) the FILES card's Upload Files and Create Folder, in place */}
       <input ref={filesPicker} type="file" hidden multiple data-testid="overview-files-picker" onChange={(e) => { const list = [...(e.target.files ?? [])]; e.target.value = ''; uploadFiles(list, null) }} />
       {uploadToast}
-      <NameDialog open={folderOpen} title="Create Folder" initial="" onClose={() => setFolderOpen(false)}
+      <NameDialog open={folderOpen} title="Create folder" initial="" onClose={() => setFolderOpen(false)}
                   validate={(name: string) => folderNameProblem(name, rootFolders, null)} onSave={(name: string) => { void makeFolder(name) }} />
       {/* (one-home N-04) the 3D Space Planner's ways in from the lead */}
       <ProjectLayoutsDialog project={planner === 'project' && project ? { id: project.id, name: project.name ?? lead.name } : null}

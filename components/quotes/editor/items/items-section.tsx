@@ -86,7 +86,7 @@ const oneCase = (list: string[]) => { const seen = new Set<string>(); return lis
 function readTabletColumns(): ColumnSettings { try { return parseColumns(typeof localStorage === 'undefined' ? null : localStorage.getItem(TABLET_COLUMNS_KEY), TABLET_COLUMNS) } catch { return parseColumns(null, TABLET_COLUMNS) } }
 function writeTabletColumns(c: ColumnSettings) { try { localStorage.setItem(TABLET_COLUMNS_KEY, JSON.stringify(c)) } catch { /* nothing to remember it in */ } }
 /** (Dane UAT 6.11) What a template's View by is called in the note: "prints lines by trade". */
-const PRINTS_BY: Record<Exclude<ItemsView, 'none'>, string> = { category: 'trade', room: 'room', section: 'section label' }
+const PRINTS_BY: Record<Exclude<ItemsView, 'none'>, string> = { category: 'trade', room: 'room', section: 'print group' }
 
 /** The Maison AI mark (1262:35630) in the button's leading-icon slot. */
 function AiMark() {
@@ -235,6 +235,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [view, setView] = useState<ItemsView>(ITEM_VIEWS.includes(seed.view as ItemsView) ? (seed.view as ItemsView) : 'none')
   const [density, setDensity] = useState<ItemsDensity>(DENSITIES.includes(seed.density as ItemsDensity) ? (seed.density as ItemsDensity) : DEFAULT_DENSITY)
   const [columns, setColumns] = useState<ColumnSettings>(() => parseColumns(seed.columnsJson))
+  /* (the calm UI build 2026-10-27, 4-02 · 4-12) whether anyone has set this quote's columns — until then a line that uses Discount or its own
+     GST rate brings that column back (below), so nothing about a line rests out of sight */
+  const [columnsChosen, setColumnsChosen] = useState(() => !!seed.columnsJson)
   const [labels, setLabels] = useState<ItemLabels>(() => parseLabels(seed.labelsJson))
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(() => new Set())
@@ -309,8 +312,6 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     else if (known.length) setGoTo({ ids: known, n: command.n })
   }
   const [query, setQuery] = useState('')
-  const viewRef = useRef<HTMLSpanElement>(null)
-  const densityRef = useRef<HTMLSpanElement>(null)
   const createRef = useRef<HTMLSpanElement>(null)
   const moreRef = useRef<HTMLSpanElement>(null)
   const addInputRef = useRef<HTMLInputElement>(null)
@@ -1016,6 +1017,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const pendingColumns = useRef<ColumnSettings | null>(null)
   const saveColumns = (c: ColumnSettings) => {
     setColumns(c)
+    setColumnsChosen(true)
     pendingColumns.current = c
     if (persistColumns.current) window.clearTimeout(persistColumns.current)
     persistColumns.current = window.setTimeout(() => { persistColumns.current = null; pendingColumns.current = null; savePrefs({ itemsColumns: c }) }, 400)
@@ -1098,7 +1100,17 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* (REG-596) The Rebate column exists for Owners alone: a designer never sees it, in the table or in Column settings.
      (pending modules S41b-1) Cost, Markup and Margin exist only for a member who sees costs — the member's own column choice is kept. */
   /* (P-07) the touch grid reads its own set; the cards read the quote's for the sheet's Cost · Markup boxes */
-  const colSet = grid ? tabletColumns : columns
+  /* (the calm UI build 2026-10-27, 4-02 · 4-12) Discount and GST (%) start off on a quote nobody has set columns for; a line with a discount, or
+     at its own GST rate (NB-07 (b)'s “Own rate”), turns its column on — Column settings reads it on, and a save there makes the choice the quote's. */
+  const autoColumns = useMemo<ColumnSettings>(() => {
+    if (columnsChosen) return columns
+    const lines = items.filter((it) => it.kind === 'item')
+    const want = new Set<string>()
+    if (lines.some((it) => it.discountPct > 0)) want.add('discount')
+    if (lines.some((it) => it.gstPct !== seed.studio.gstPct)) want.add('gst')
+    return want.size ? { ...columns, columns: columns.columns.map((c) => (want.has(c.key) && !c.on ? { ...c, on: true } : c)) } : columns
+  }, [columnsChosen, columns, items, seed.studio.gstPct])
+  const colSet = grid ? tabletColumns : autoColumns
   const visibleColumns = colSet.columns.filter((c) => c.on && (c.key !== 'gst' || pricing.gstEnabled) && (c.key !== 'rebate' || isOwner) && (costs || !COST_COLUMNS.includes(c.key))).map((c) => c.key) as ColumnKey[]
   const costOn = costs && columns.columns.some((c) => c.key === 'cost' && c.on), markupOn = costs && columns.columns.some((c) => c.key === 'markup' && c.on)
   const selectedList = [...selected]
@@ -1219,10 +1231,11 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
 
   /* The radio rows View by / density share one rendering between the wide toolbar's menus and the folded kebab's levels. */
   const densityRows = DENSITIES.map((d) => <DropdownItem key={d} role="menuitemradio" checked={d === density} onSelect={() => chooseDensity(d)}><span className={styles.menuIcon} data-on={d === density || undefined}><Icon name={d === density ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{DENSITY_LABEL[d]}</DropdownItem>)
-  const viewRows = ITEM_VIEWS.map((v) => <DropdownItem key={v} role="menuitemradio" checked={v === view} onSelect={() => chooseView(v)}><span className={styles.menuIcon} data-on={v === view || undefined}><Icon name={v === view ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{ITEM_VIEW_LABEL[v]}</DropdownItem>)
+  /* (the calm UI build 2026-10-27, 4-02) Print group (the free label) is a View by choice only once a line carries one — or while it is the view */
+  const viewRows = ITEM_VIEWS.filter((v) => v !== 'section' || view === 'section' || items.some((i) => !!i.section)).map((v) => <DropdownItem key={v} role="menuitemradio" checked={v === view} onSelect={() => chooseView(v)}><span className={styles.menuIcon} data-on={v === view || undefined}><Icon name={v === view ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{ITEM_VIEW_LABEL[v]}</DropdownItem>)
   const createMenu = (
     <PortalMenu open={menu === 'create'} anchor={createRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle="Create">
-      <DropdownItem onSelect={() => { closeMenus(); void create({}, true, { chain: true }) }}>New Item</DropdownItem>
+      <DropdownItem onSelect={() => { closeMenus(); void create({}, true, { chain: true }) }}>New item</DropdownItem>
       <DropdownItem onSelect={() => { closeMenus(); createGroup([]) }}>New section</DropdownItem>
       <DropdownDivider />
       <DropdownItem onSelect={fromPriceBook}>From Price book</DropdownItem>
@@ -1234,21 +1247,14 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* (Quotes on the move — P-03 · P-07, C-10 · C-11 · C-24) ≤1024 the row is the search glyph and a ⋮ — plus, on a tablet, Maison AI and Create ▾.
      On a phone the adds are the pinned foot's (Add section · + Add item); From Price book and Paste lines sit in the ⋮, and Column settings,
      Row density and Expand do not appear where there is no grid (Expand nowhere ≤1024). The key hints are not drawn on touch (REG-273). */
-  const toolbar = compact ? (
-    <div className={styles.tools} data-compact="">
-      {find}
-      {phone ? null : <Tooltip label="Maison AI"><IconButton icon="auto_awesome" glyph={<AiMark />} label="Maison AI" variant="primary" onClick={onOpenAi} /></Tooltip>}
-      {phone ? null : (
-        <span ref={createRef} className={styles.anchor}>
-          <Tooltip label="Create" disabled={menu === 'create'}>
-            <IconButton icon="add" label="Create" variant="primary" aria-haspopup="menu" aria-expanded={menu === 'create'} onClick={() => setMenu((m) => (m === 'create' ? null : 'create'))} />
-          </Tooltip>
-          {createMenu}
-        </span>
-      )}
+  /* (the calm UI build 2026-10-27, the UI audit's 4-03 · 4-41) ONE ⋮ for the Items card at every width: Undo · Redo, Column settings, Row density ›,
+     View by ›, Expand all / Collapse all, the full-screen table (desk), Round prices… (desk — it was the link beside Total, 4-29). At rest the
+     desk row is search · New section · Create ▾ · ⋮, so it no longer runs past a card narrowed by the Client view pane and the title stays.
+     Maison AI's door on the desk is the page's FAB — the toolbar's own button left (4-03); the touch row keeps its glyph. */
+  const moreMenu = (
       <span ref={moreRef} className={styles.anchor}>
         <Tooltip label="More options" disabled={menu === 'more'}>
-          <IconButton icon="more_vert" label="More options for Items" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} />
+          <IconButton icon="more_vert" label="More options for Items" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} data-testid="items-more" />
         </Tooltip>
         {/* (REG-728) 240: rows with a key hint (Undo · Redo) */}
         <PortalMenu open={menu === 'more'} anchor={moreRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Items">
@@ -1265,9 +1271,13 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
               </>
             ) : (
               <>
-                {view === 'category' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'category' }) }}>Add Category</DropdownItem> : null}
-                {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add Section label</DropdownItem> : null}
-                <DropdownItem onSelect={() => { closeMenus(); createGroup(selectedList) }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>New section</DropdownItem>
+                {compact ? (
+                  <>
+                    {view === 'category' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'category' }) }}>Add trade</DropdownItem> : null}
+                    {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add print group</DropdownItem> : null}
+                    <DropdownItem onSelect={() => { closeMenus(); createGroup(selectedList) }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>New section</DropdownItem>
+                  </>
+                ) : null}
                 {phone ? (
                   <>
                     <DropdownItem onSelect={fromPriceBook}>From Price book</DropdownItem>
@@ -1275,52 +1285,43 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                     {variation ? <DropdownItem onSelect={openOmit} help="Lines of the signed quote, each a credit on this order">Omit from the contract</DropdownItem> : null}
                   </>
                 ) : null}
-                {bookPlan.matches.length > 0 ? <DropdownItem onSelect={() => { closeMenus(); setMatchOpen(true) }} help="Lines that read like items in My Items take their cost">{`Match ${bookPlan.matches.length} ${bookPlan.matches.length === 1 ? 'line' : 'lines'} to the Price book`}</DropdownItem> : null}   {/* (pending modules S12) the link under the grid is gone with the Add Item row */}
-                <DropdownDivider />
+                {bookPlan.matches.length > 0 ? <DropdownItem onSelect={() => { closeMenus(); setMatchOpen(true) }} help="Items that read like items in the Price book take their cost">{`Match ${bookPlan.matches.length} ${bookPlan.matches.length === 1 ? 'item' : 'items'} to the Price book`}</DropdownItem> : null}   {/* (pending modules S12) the link under the grid is gone with the Add Item row */}
+                {compact || bookPlan.matches.length > 0 ? <DropdownDivider /> : null}
                 <DropdownItem disabled={history.past.length === 0} onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
                 <DropdownItem disabled={history.future.length === 0} onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
                 <DropdownDivider />
-                {grid ? <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem> : null}
-                {grid ? <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
-                <DropdownItem submenu onSelect={() => setMoreSub('view')}>View by: {ITEM_VIEW_LABEL[view]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-                {foldShown ? <DropdownItem onSelect={toggleFold}><span className={styles.menuIcon}><Icon name={foldExpand ? 'expand_all' : 'collapse_all'} size={20} /></span>{foldExpand ? 'Expand All' : 'Collapse All'}</DropdownItem> : null}
+                {grid || !compact ? <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem> : null}
+                {grid || !compact ? <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+                <DropdownItem submenu onSelect={() => setMoreSub('view')}><span className={styles.menuIcon}><Icon name="view_list" size={20} /></span>View by: {ITEM_VIEW_LABEL[view]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+                {foldShown ? <DropdownItem onSelect={toggleFold}><span className={styles.menuIcon}><Icon name={foldExpand ? 'expand_all' : 'collapse_all'} size={20} /></span><span data-testid="toolbar-fold">{foldExpand ? 'Expand all' : 'Collapse all'}</span></DropdownItem> : null}   {/* the handle rides the row's words (the house row takes no testid) */}
+                {compact ? null : <DropdownItem onSelect={() => { closeMenus(); setExpanded((x) => !x) }}><span className={styles.menuIcon}><Icon name={expanded ? 'collapse_content' : 'expand_content'} size={20} /></span><span data-testid="items-full-screen">{expanded ? 'Leave full screen' : 'Full screen'}</span></DropdownItem>}
+                {compact || variation ? null : <><DropdownDivider /><DropdownItem onSelect={() => { closeMenus(); setRoundOpen(true) }}><span data-testid="items-round">Round prices…</span></DropdownItem></>}
               </>
             )}
           </div>
         </PortalMenu>
       </span>
+  )
+  const toolbar = compact ? (
+    <div className={styles.tools} data-compact="">
+      {find}
+      {phone ? null : <Tooltip label="Maison AI"><IconButton icon="auto_awesome" glyph={<AiMark />} label="Maison AI" variant="primary" onClick={onOpenAi} /></Tooltip>}
+      {phone ? null : (
+        <span ref={createRef} className={styles.anchor}>
+          <Tooltip label="Create" disabled={menu === 'create'}>
+            <IconButton icon="add" label="Create" variant="primary" aria-haspopup="menu" aria-expanded={menu === 'create'} onClick={() => setMenu((m) => (m === 'create' ? null : 'create'))} />
+          </Tooltip>
+          {createMenu}
+        </span>
+      )}
+      {moreMenu}
     </div>
   ) : (
     <div className={styles.tools}>
       {find}
-      {view === 'category' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'category' })}>Add Category</Button> : null}
-      {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add Section label</Button> : null}
+      {view === 'category' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'category' })}>Add trade</Button> : null}
+      {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add print group</Button> : null}
       <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={() => createGroup(selectedList)}>New section</Button>   {/* (REG-567) the mock's "Create Group" */}
-      <span className={styles.seg}>
-        <Tooltip label="Undo" keys="mod+z"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
-        <Tooltip label="Redo" keys="mod+shift+z"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
-      </span>
-      <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setSettingsOpen(true)} /></Tooltip>
-      <span ref={densityRef} className={styles.anchor}>
-        <Tooltip label="Row density" disabled={menu === 'density'}>
-          <IconButton icon="format_line_spacing" label="Row density" aria-haspopup="menu" aria-expanded={menu === 'density'} onClick={() => setMenu((m) => (m === 'density' ? null : 'density'))} />
-        </Tooltip>
-        <PortalMenu open={menu === 'density'} anchor={densityRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right">
-          {densityRows}
-        </PortalMenu>
-      </span>
-      {foldShown ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name={foldExpand ? 'expand_all' : 'collapse_all'} size={20} />} onPress={toggleFold} data-testid="toolbar-fold">{foldExpand ? 'Expand All' : 'Collapse All'}</Button> : null}
-      <span ref={viewRef} className={styles.anchor}>
-        <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={menu === 'view'}
-                iconEnd={<span className={styles.chev} data-open={menu === 'view' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-                onPress={() => setMenu((m) => (m === 'view' ? null : 'view'))}>
-          View by: {ITEM_VIEW_LABEL[view]}
-        </Button>
-        <PortalMenu open={menu === 'view'} anchor={viewRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right">
-          {viewRows}
-        </PortalMenu>
-      </span>
-      <Button variant="primary" appearance="outlined" iconStart={<AiMark />} onPress={onOpenAi}>Maison AI</Button>
       <span ref={createRef} className={styles.anchor}>
         <Button variant="primary" appearance="outlined" aria-haspopup="menu" aria-expanded={menu === 'create'}
                 iconEnd={<span className={styles.chev} data-open={menu === 'create' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
@@ -1332,21 +1333,23 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       {/* (Dane UAT 6.15, g-expanded) The expanded card is a layer over the editor and its header's Preview: it carries its own (P too), and
           Back from Preview returns to it expanded. */}
       {expanded && onPreview ? <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={previewNow} data-kb="preview">Preview</Button></Tooltip> : null}
-      {/* (owner 2026-09-16, REG-458) Expand / Collapse is the row's last control, after Create — the mock (1271:41169) had it among the icon buttons. */}
-      <Tooltip label={expanded ? 'Collapse' : 'Expand'}><IconButton icon={expanded ? 'collapse_content' : 'expand_content'} label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpanded((x) => !x)} /></Tooltip>
+      {/* (the calm UI build) while the table is full screen its way back stays one press away beside the ⋮ (REG-458 — the row's last control) */}
+      {expanded ? <Tooltip label="Collapse"><IconButton icon="collapse_content" label="Collapse" onClick={() => setExpanded(false)} /></Tooltip> : null}
+      {moreMenu}
     </div>
   )
 
-  const title = `Items (${lineCount})`
+  const title = `Items · ${lineCount}`   // (the calm UI build 2026-10-27, 4-28 · T-07) "Label · n", one way to write a count
   const body = (
         <div ref={bodyRef} className={styles.body}>
           {/* (Dane UAT 6.11, g-sections-trade) The template decides how the lines print (REG-488 / REG-497): when it files them by a label,
-              the quote's own sections never reach the paper — said once, above the table, with the way to a template that prints them. */}
-          {printsBy && items.some((i) => i.kind === 'group') ? (
+              the quote's own sections never reach the paper. (The calm UI build 2026-10-27, 4-02 · W-167) Said once per screen: on the desk the
+              Template card above says it (template-bar.tsx); on the move the Items are their own screen, so the note stays here, in the card's words. */}
+          {printsBy && compact && items.some((i) => i.kind === 'group') ? (
             /* (C-22) on a phone one 44 row: the glyph, the sentence that ends in "…", the link */
             <p className={styles.printNote} role="note" data-testid="print-note" data-compact={phone || undefined}>
               <Icon name="info" size={20} weight={300} />
-              <span>{printsBy.template} prints lines by {PRINTS_BY[printsBy.view]}, so these sections don’t show on the printed {variation ? 'variation order' : 'quote'}.</span>
+              <span>Prints by {PRINTS_BY[printsBy.view]} — your sections are for you.</span>
               {onChangeTemplate ? <button type="button" className={styles.printNoteLink} onClick={onChangeTemplate}>Change template</button> : null}
             </p>
           ) : null}
@@ -1477,7 +1480,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <ConfirmDialog open={!!removing} title={removing && removing.length > 1 ? `Remove ${removing.length} items?` : removingSection ? 'Remove this section?' : 'Remove this item?'}
                      message={removing && removing.length > 1 ? `The ${removing.length} lines leave the quote and its totals.` : removingSection ? `The section and its ${removingSection} ${removingSection === 1 ? 'line leave' : 'lines leave'} the quote and its totals. To keep the lines, use Ungroup instead.` : 'The line leaves the quote and its totals.'} confirmLabel="Remove"
                      onConfirm={() => { const list = removing ?? []; setRemoving(null); setSelected(new Set()); void removeItems(list) }} onCancel={() => setRemoving(null)} />
-      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section label' : naming?.kind === 'vendor' ? 'Add vendor' : 'Add Category'} initial=""
+      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add room' : naming?.kind === 'section' ? 'Add print group' : naming?.kind === 'vendor' ? 'Add vendor' : 'Add trade'} initial=""
                   onSave={(name) => { if (naming?.kind === 'vendor') void addVendor(name, naming.itemId); else if (naming) { const took = addLabel(naming.kind, name.trim()); if (naming.itemId) patchItem(naming.itemId, { [naming.kind]: took } as ItemPatch) } setNaming(null) }} onClose={() => setNaming(null)} />   {/* (sweep S1 · U-04) the new label lands on the line that asked · (one-home N-16) a vendor goes to the directory */}
       {/* (REG-555, T-3) A word beside the section's sub-total — "Approximate", "Estimate" — through the house name dialog. */}
       <OmitDialog open={!!omit} contract={omit?.contract ?? null} lines={omit?.lines ?? []} loading={!!omit?.loading} busy={!!omit?.busy} onClose={() => setOmit(null)} onOmit={(ids) => { void addOmissions(ids) }} />

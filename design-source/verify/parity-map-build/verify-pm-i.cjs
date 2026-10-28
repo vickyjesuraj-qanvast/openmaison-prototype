@@ -18,6 +18,10 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm-i')
@@ -31,7 +35,7 @@ const P = (n) => sql(`select id from projects where number='${n}'`)
 const undo = []
 const later = (q) => undo.push(q)
 const T0 = Math.floor(Date.now() / 1000) - 2
-const reachOf = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))).then((x) => JSON.stringify(x))
+const reachOf = async (p, key) => { await openRoles(p); return p.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))).then((x) => JSON.stringify(x)) }   // (the calm UI build 2026-10-27, a deliberate change) the drawer first
 
 ;(async () => {
   const b = await chromium.launch()
@@ -72,7 +76,7 @@ const reachOf = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').
     const s = await page(S, 'priya')
     await go(s, '/leads')
     await s.getByRole('button', { name: /View as/ }).first().click(); await settle(s, 400)
-    await s.getByRole('menu', { name: 'View as' }).getByRole('menuitemradio').filter({ hasText: 'Priya Tan' }).click()
+    await (await openDemo(s)).getByRole('menuitemradio').filter({ hasText: 'Priya Tan' }).click()
     await s.waitForURL(/\/company\/finance/, { timeout: 15000 }).catch(() => {}); await settle(s, 1200)
     ok(/\/company\/finance(\/todo)?(\?|$)/.test(new URL(s.url()).pathname + new URL(s.url()).search), `View as Priya Tan lands on Company › Finance › To do (${new URL(s.url()).pathname})`)
     ok(/Viewing as Priya Tan · Accounting/.test(await snack(s).innerText().catch(() => '')), 'the snackbar names her role')
@@ -94,7 +98,7 @@ const reachOf = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').
     // ── MO-098 — To do: what waits for an Owner or an Admin says so ────────────────────────────────────────────────────────────
     console.log('Finance › To do')
     const ftabs = await tabsOf(s)
-    ok(['To do', 'Money in', 'Money out', 'Vendors', 'Commission', 'Xero'].every((t, i) => ftabs[i] === t), `every Finance tab, Xero included (${ftabs.join(' · ')})`)
+    ok(['Needs your attention', 'Client payments', 'Costs', 'Vendors', 'Commission', 'Xero'].every((t, i) => ftabs[i] === t) /* (the calm UI build 2026-10-27, a deliberate change) T-01 · §2 */, `every Finance tab, Xero included (${ftabs.join(' · ')})`)
     ok(await s.getByTestId('todo-approve').count() === 0, 'no To approve — Accounting approves nothing')
     const waiting = s.getByTestId('todo-waiting')
     ok(await waiting.count() === 1, 'Waiting for approval is listed')
@@ -124,7 +128,7 @@ const reachOf = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').
     await toMoney.click(); await s.waitForURL(/\/projects\/[^/]+\/money/).catch(() => {}); await settle(s, 1200)
     ok(/\/projects\/[^/]+\/money/.test(s.url()), 'a row opens the project’s Money')
     const ptabs = await tabsOf(s, 'Project sections')
-    ok(ptabs.length === 2 && ptabs[0] === 'Money' && ptabs[1] === 'Files', `the project’s strip is Money · Files (${ptabs.join(' · ')})`)
+    ok(ptabs.length === 2 && /^(Payments|Money)$/.test(ptabs[0]) && ptabs[1] === 'Files', /* (the calm UI build 2026-10-27, a deliberate change) the tab reads "Payments" — its slug stays money (3-02) */ `the project’s strip is Money · Files (${ptabs.join(' · ')})`)
     ok(await s.getByTestId('project-primary').count() === 0, 'no team’s filled button in the header')
     await go(s, `/projects/${ben}`)
     ok(new URL(s.url()).pathname === `/projects/${ben}/money`, 'a project’s own address opens on its Money')
@@ -194,9 +198,10 @@ const reachOf = (p, key) => p.getByTestId(`may-${key}`).locator('[data-reach]').
     await go(s, '/company/finance/todo')
     const drail = await railNames(s)
     ok(['Leads', 'Projects', 'Tools', 'Messages'].every((l) => drail.some((r) => r.startsWith(l))), 'Dane’s rail is as it was')
-    ok((await tabsOf(s)).join(' · ').startsWith('To do · Money in · Money out · Vendors · Commission · Xero'), 'Dane’s Finance tabs are as they were')
+    ok((await tabsOf(s)).join(' · ').startsWith('Needs your attention · Client payments · Costs · Vendors · Commission · Xero') /* (the calm UI build 2026-10-27, a deliberate change) T-01 · §2 */, 'Dane’s Finance tabs are as they were')
     ok(await s.getByTestId('todo-approve').count() === 1 && await s.getByTestId('todo-waiting').count() === 0, 'Dane’s To do keeps To approve and has no Waiting for approval')
     await go(s, '/settings?section=studio')
+    await openRoles(s)   // (the calm UI build 2026-10-27, a deliberate change)
     const head = await s.getByRole('table', { name: 'Who may do what' }).getByRole('row').first().innerText()
     ok(/Accounting · 1/i.test(head), 'Who may do what has the Accounting column, counting one member')
     /* (S44O — call C6, a deliberate change of these rows: a sixth column, Marketing, before Accounting's) */

@@ -1,6 +1,8 @@
 /* The AI Visualizer's panels (REG-674): rows are the card rows' grammar (a glyph, a name, a caption, a meta, a chevron — REG-614);
    swatches sit in a four-up grid; section heads are the house caption. Every value is a token. */
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+/* (the calm UI build 2026-10-27, 6-31) the material categories' scope pill, on its own row above the catalogue it narrows */
+.catRow { display: flex; align-items: center; min-width: 0; }
 .head { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
 .headCount { text-transform: none; }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding: var(--om-spacing-2) 0; }

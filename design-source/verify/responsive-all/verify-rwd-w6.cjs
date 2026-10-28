@@ -157,8 +157,9 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
     console.log('2 · a phone held sideways')
     {
       const { c, p } = await page(844, '/leads')
-      await tap(p, await seen(p, 'button', /Add Lead/))
-      const create = await seen(p, '[role="menuitem"]', /Create New Lead/)
+      /* (the calm UI build 2026-10-27, a deliberate change) B2 2-13 · 2-33: Add Lead ▾ › Create New Lead is New lead ▾ › Type in a lead (the form "New lead") */
+      await tap(p, await seen(p, 'button', /New lead/))
+      const create = await seen(p, '[role="menuitem"]', /Type in a lead/)
       if (create) await tap(p, create)
       const m = await p.evaluate(() => { const d = [...document.querySelectorAll('[role="dialog"]')].find((e) => /lead-form-module/.test(e.className) || e.querySelector('[class*="lead-form-module"]')); const panel = d && (/__panel/.test(d.className) ? d : d.querySelector('[class*="__panel"]') || d); if (!panel) return null; const r = panel.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height } })
       /* (held calls 2026-10-24, a deliberate change of this rule) K-9: a phone held sideways is a phone — Create New Lead rises as the phone's bottom
@@ -187,7 +188,9 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
     console.log('3 · 44 under a finger, the drawn mark unchanged')
     for (const [w, url] of [[390, '/company/finance/money-out'], [768, '/company/finance/vendors'], [390, `/projects/${PROJECT}/money`]]) {
       const { c, p } = await page(w, url)
-      const n = p.locator('[class*="money-module__"][class*="__nameLink"]')
+      /* (the calm UI build 2026-10-27, a deliberate change) B5 5-10 · T-15: on a phone Finance's Costs lists are cards (finance-cards.tsx) — a row's
+         name is the card's name (the same record, the same press, its desk testid); the rule is read on it there */
+      const n = /finance\/money-out/.test(url) && w < 768 ? await exact(p, 'finance-cards', 'name') : p.locator('[class*="money-module__"][class*="__nameLink"]')
       if (await n.count()) { const m = await reach(n); ok(m.up && m.down && m.h <= 48, `${w} · W4-18 ${url.split('/').pop()}: a row's name takes a press 21 above and below its 20 line`, JSON.stringify(m)) }
       else ok(false, `${w} · W4-18 a name link on ${url}`)
       await c.close()
@@ -307,7 +310,8 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
     }
     {
       const { c, p } = await page(320, '/settings?section=notifications')
-      await tap(p, await seen(p, 'main button', /\bEdit\b/))
+      await tap(p, p.getByTestId('wording-new_lead')); await p.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) B5 5-05: the event row's Edit wording first, then the message's Edit
+      await tap(p, p.getByTestId('message-new_lead-whatsapp').getByRole('button', { name: 'Edit' }))
       const m = await p.evaluate(() => { const f = document.querySelector('[role="dialog"] [data-surface-foot]'); if (!f) return null; const bs = [...f.querySelectorAll('button')].filter((x) => /^(Cancel|Save)/.test(x.innerText.trim())).map((x) => x.getBoundingClientRect().top); return bs })
       ok(!!m && m.length === 2 && Math.abs(m[0] - m[1]) < 2, '320 · a dialog foot with a start action keeps Cancel · Save on one line (W4)', JSON.stringify(m))
       await shot(p, '4-message-foot-320'); await c.close()
@@ -320,7 +324,12 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
       const unsafe = (p, sel) => p.evaluate((s) => [...document.querySelectorAll(s)].filter((e) => e.offsetParent || getComputedStyle(e).position === 'fixed').map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0).map((r) => ({ l: Math.round(r.left), r: Math.round(innerWidth - r.right), b: Math.round(innerHeight - r.bottom) })), sel)
       const safe = (rs) => rs.length > 0 && rs.every((x) => x.l >= 46 && x.r >= 46 && x.b >= 20)
       let p = await notched('/leads')
-      let rs = await unsafe(p, '[class*="review-banner-module__"][class*="__banner"]')
+      /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the docked "Review imported leads" bar is gone — the queue's way in is the scope
+         pill's "Needs your attention › To review · n" row (`leads-review-open`), in the bottom sheet a phone held sideways takes; the same rule read
+         there: the queue's door rests off the home indicator */
+      await tap(p, await seen(p, 'button[aria-haspopup]', /All leads/))
+      await p.locator('[data-testid="leads-review-open"]').first().scrollIntoViewIfNeeded().catch(() => {}); await settle(p, 300)
+      let rs = await unsafe(p, '[data-testid="leads-review-open"]')
       ok(rs.length > 0 && rs.every((x) => x.b >= 20), `the review banner rests off the home indicator (${JSON.stringify(rs)})`)
       await p.close()
       p = await notched(`/leads/${LEAD}/tasks`)
@@ -447,7 +456,9 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
       /* this round's own override, which lost on one build: W3-18's Money row words keep a reading width at an upright tablet */
       const RYAN = sql(`select p.id from projects p join leads l on l.id = p.lead_id where l.name like 'Ryan%' and p.deleted_at is null limit 1`)
       const { c, p } = await page(768, `/projects/${RYAN}/money`)
-      const words = await p.evaluate(() => [...document.querySelectorAll('[data-testid="money-needs"] [role="status"]')].map((e) => Math.round(e.querySelector('[class*="__bannerText"]').getBoundingClientRect().width)))
+      /* (the calm UI build 2026-10-27, a deliberate change) B3 3-05 · 3-07: Money's rows are the Overview's house Row (two lines: the title, its
+         caption) — the words are the row's two-line block; the rule (a reading width at an upright tablet, whatever the CSS order) read on it */
+      const words = await p.evaluate(() => [...document.querySelectorAll('[data-testid="money-needs"] [data-need]')].map((e) => { const t = e.querySelector('[class*="project-overview-module__"][class*="__two"]'); return t ? Math.round(t.getBoundingClientRect().width) : 0 }))
       ok(words.length > 0 && words.every((w) => w >= 240), `768 · a Money Needs-you row's words hold their 260 basis whatever the order (W3-18) ${JSON.stringify(words)}`)
       await c.close()
     }

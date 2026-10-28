@@ -72,7 +72,13 @@ const W = 1600, H = 1150
   const noOverflow = async (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
   const stage = (p) => p.locator('[data-testid$="plan-canvas"] [role="img"]').first()
   const at = async (p, x, y) => { const bx = await stage(p).boundingBox(); return { x: bx.x + (x / W) * bx.width, y: bx.y + (y / H) * bx.height } }
-  const tool = (p, name) => p.locator('[data-testid="plan-tool-chips"]').getByRole('radio', { name, exact: true }).click()
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-28) Select · Pin · Pen · Text stay on the row; every other tool is under More tools */
+  const tool = async (p, name) => {
+    const chip = p.locator('[data-testid="plan-tool-chips"]').getByRole('radio', { name, exact: true })
+    if (await chip.count()) return chip.click()
+    await p.locator('[data-testid="plan-more-tools"] button').first().click(); await p.waitForTimeout(250)
+    return p.getByRole('menuitemradio', { name: new RegExp(`^${name}\\b`) }).first().click()
+  }
   const signIn = async (p, num) => {
     await go(p, '/my/demo-studio/login')
     await p.locator('input[type="tel"]').fill(num)
@@ -219,11 +225,29 @@ const W = 1600, H = 1150
     // ── 7 · The portal ───────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('7 · The client’s Floor plan')
     const C = await desk(); const c = await C.newPage(); watch(c, 'ben')
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-36) at a desk the bar is the phone's five: Home · Schedule · Updates · Payments and More ▾,
+     the rest in its menu — a section is "in the bar" when it is either */
+  const deskSections = async (pg) => {
+    const bar = await pg.locator('[data-testid="portal-nav"]').innerText()
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return bar
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const rows = await pg.locator('[data-testid="portal-nav-more-row"]').allInnerTexts()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return `${bar}\n${rows.join('\n')}`
+  }
+  const deskHas = async (pg, key) => {
+    if (await pg.locator(`[data-testid="portal-nav"] a[data-key="${key}"]`).isVisible()) return true
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return false
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const there = await pg.locator(`[data-testid="portal-nav-more-row"][data-key="${key}"] [role="menuitem"]`).isVisible()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return there
+  }
     await signIn(c, PHONE.ben)
     await c.locator('[data-testid="portal-bell"]').click(); await settle(c, 1200)
     ok(await c.locator('[data-testid="portal-bell-row"][data-kind="floor_plan_reply"][data-unread]').count() >= 1, 'the studio’s answer on his pin rings Benjamin’s bell')
     await c.keyboard.press('Escape'); await settle(c, 300)
-    ok(await c.locator('[data-testid="portal-nav"]').getByText('Floor plan').count() >= 1, 'the portal lists Floor plan')
+    ok(/Floor plan/.test(await deskSections(c)), 'the portal lists Floor plan')
     const html = await (await c.request.get(`${BASE}/my/demo-studio/floor-plan`)).text()
     ok(!/beam depth/i.test(html) && !html.includes(BEAM), 'Studio only never reaches the client — not in the page it is sent')
     await go(c, '/my/demo-studio/floor-plan')
@@ -250,7 +274,7 @@ const W = 1600, H = 1150
     sql(`insert or replace into settings (key, value, updated_at) values ('portal_sections', '{"floor-plan":false}', strftime('%s','now'))`)
     await go(c, '/my/demo-studio/floor-plan')
     ok(!/floor-plan/.test(c.url()), 'the page leads home while the section is off')
-    ok(await c.locator('[data-testid="portal-nav"]').getByText('Floor plan').count() === 0, 'the tab is gone')
+    ok(!/Floor plan/.test(await deskSections(c)), 'the tab is gone')
     ok((await c.request.get(`${BASE}/my/demo-studio/floor-plan/picture/${PROPOSED}`)).status() === 404, 'the plan’s picture is refused')
     ok((await c.request.get(`${BASE}/my/demo-studio/file/${PHOTO}`)).status() !== 200, 'and its photos')
     sql(`delete from settings where key='portal_sections'`)

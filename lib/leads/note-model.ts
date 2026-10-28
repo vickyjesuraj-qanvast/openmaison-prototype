@@ -2,6 +2,7 @@ import type { LeadNote } from '@/lib/db/schema'
 import { MSG } from '@/lib/forms'
 import { formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import { sanitizeRichHtml } from '@/lib/rich-html'
+import { channelLabel } from './enums'
 
 /* Lead Details › Notes (931-44865) — pure model shared by the list, the editors and the actions. */
 
@@ -51,15 +52,21 @@ export function validateDraft(d: NoteDraft): Record<string, string> {
   return e
 }
 
-/** What the list item shows (931:44895 / 931:45526): title "New" for a blank note, "Contact log" for logs; secondary = first body line / outcome / "No notes yet". */
-export function listTitle(n: Pick<LeadNote, 'kind' | 'title'>): string {
-  if (n.kind === 'contact') return 'Contact log'
+/** What the list item shows (931:44895 / 931:45526): title "New" for a blank note; secondary = first body line / "No notes yet".
+    (the calm UI build 2026-10-27 — 2-46, a deliberate change of the mock's "Contact log" title on every log) A log is titled by what tells it
+    apart — how and how it went, "Call — callback requested" — the kind is its icon; "Contact log" only while neither is chosen yet. Its
+    outcome lives in the title, so the second line never repeats it. */
+export function listTitle(n: Pick<LeadNote, 'kind' | 'title'> & { channel?: string | null; outcome?: string | null }): string {
+  if (n.kind === 'contact') {
+    const how = channelLabel(n.channel)
+    const went = (n.outcome ?? '').trim()
+    return how && went ? `${how} — ${went.toLowerCase()}` : how || went || 'Contact log'
+  }
   return n.title.trim() || 'New'
 }
 export function listSecondary(n: Pick<LeadNote, 'kind' | 'body' | 'outcome'>): string {
   const first = bodyText(n.body).split('\n').map((l) => l.trim()).find(Boolean)
   if (first) return first
-  if (n.kind === 'contact' && n.outcome) return n.outcome
   return 'No notes yet'
 }
 

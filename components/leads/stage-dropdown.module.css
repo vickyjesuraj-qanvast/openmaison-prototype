@@ -13,3 +13,6 @@
 .next > button { min-height: 48px; justify-content: center; }
 .nextWhy { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .nextWhy b { font: var(--om-type-subheading-m); }
+
+/* (the calm UI build 2026-10-27 — audit 2-05, W-150) The locked stages' one shared reason, once, under them (a finger's sheet / menu only). */
+.sharedWhy { margin: 0; padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

@@ -36,10 +36,10 @@ export function SignedCard({ name, at, issuer, what, onSave, deposit, record, ca
       <h2 className={ph.signedHead}><span aria-hidden><Icon name="check_circle" size={28} /></span>Signed</h2>
       <p className={ph.signedText}>Signed by <strong>{name}</strong> on {displayDateLong(at)}. Both you and {issuer} keep {what}.</p>
       <div className={ph.rows}>
-        {row({ icon: 'share', text: 'Save a copy', sub: 'This signed page, with its signing record', onPress: onSave, testId: 'save-copy' })}
+        {row({ icon: 'share', text: 'Download a copy', sub: 'This signed page, with its signing record', onPress: onSave, testId: 'save-copy' })}
         {deposit ? (deposit.paid
           ? row({ icon: 'check_circle', text: 'Deposit received — thank you', done: true, testId: 'deposit-row' })
-          : row({ icon: 'payments', text: 'Pay the deposit', sub: `${deposit.stage} of quotation ${deposit.quoteNumber}`, onPress: () => setOpen('deposit'), testId: 'deposit-row' })) : null}
+          : row({ icon: 'payments', text: 'Pay the deposit', sub: `${deposit.stage} of quote ${deposit.quoteNumber}`, onPress: () => setOpen('deposit'), testId: 'deposit-row' })) : null}
         {record ? row({ icon: 'receipt_long', text: 'Signing record', sub: 'Who signed, how, and the text’s fingerprint', onPress: () => setOpen('record'), testId: 'signing-record-row' }) : null}
       </div>
       {deposit && !deposit.paid ? (

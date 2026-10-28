@@ -50,7 +50,7 @@ const ASK_COLS: Col[] = [
   { basis: 170, grow: 170, head: 64, cell: { slot: 'btn', w: 128 } },
 ]
 const Asks = ({ runs }: { runs: boolean }) => (
-  <Table testId="ghost-commission-asks" title={runs ? 'Asks for another rate' : 'Your asks'} heads={[]} rows={1} columns={ASK_COLS} phone={{ card: 210, lines: 5 }}
+  <Table testId="ghost-commission-asks" title={runs ? 'Rate requests' : 'Your asks'} heads={[]} rows={1} columns={ASK_COLS} phone={{ card: 210, lines: 5 }}
          help={runs ? 'A member asks for a different rate on a project they work on. Approved, it applies to them on that project from today.' : 'What you asked for — the answer shows on the project’s rate.'} />
 )
 const Head = ({ title, help }: { title: string; help: string }) => (
@@ -68,15 +68,16 @@ export function BooksGhost({ tab, runs = true, asks: told }: { tab: string; runs
     <>
       <Tiles n={3} />
       {asks ? <Asks runs /> : null}
-      <Table title="By member" help="Each member, then their projects — the share, the rate that applies (a member’s on the project, the project’s, the member’s, then the studio’s), earned before GST from the payments that count. The rules are in Settings › Finance." heads={[96, 40, 36, 48, 32, 36, 60]} rows={6} first={250} />
-      <Table title="Payments" help="A reversed payment stays on the record and counts for nothing." heads={[52, 52, 48, 52, 32]} rows={3} first={170} />
+      {/* (the calm UI build 2026-10-27, 5-39) the page's own words: one sentence of help, "Commission paid" with none */}
+      <Table title="By member" help="Each member’s commission, project by project, before GST. How this works · The rules are in Settings › Finance." heads={[96, 40, 36, 48, 32, 36, 60]} rows={6} first={250} />
+      <Table title="Commission paid" heads={[52, 52, 48, 52, 32]} rows={3} first={170} />
     </>
   ) : (
     <>
       <Tiles n={3} />
       {asks ? <Asks runs={false} /> : null}
       <Table title="Your projects" help="Your share of each project and the rate that applies to you." heads={[52, 40, 36, 48, 32, 36, 60]} rows={3} />
-      <Table title="Paid to you" help="A reversed payment stays on the record and counts for nothing." heads={[52, 48, 52, 32]} rows={2} first={200} />
+      <Table title="Paid to you" heads={[52, 48, 52, 32]} rows={2} first={200} />
     </>
   )
   if (tab === 'reports') return (
@@ -100,7 +101,7 @@ export function BooksGhost({ tab, runs = true, asks: told }: { tab: string; runs
         </>
       ) : (
         <>
-          <Head title="Owed to you" help={`${REPORTS.find((r) => r.key === 'ar')!.help}.`} />
+          <Head title={REPORTS.find((r) => r.key === 'ar')!.label} help={`${REPORTS.find((r) => r.key === 'ar')!.help}.`} />   {/* (the calm UI build 2026-10-27 — a bug fix) the report's own name, "To collect" (§2), as its page says it — the ghost had kept "Owed to you" */}
           <Tiles n={3} />
           <Table title="By how late" heads={[48, 56, 52]} rows={6} first={240} />
         </>

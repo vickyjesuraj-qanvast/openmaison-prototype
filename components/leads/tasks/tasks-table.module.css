@@ -139,16 +139,7 @@
 .chip[data-action]:hover { background: var(--om-color-surface-variant); }
 .chip[data-action]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
-/* Member cell, unassigned: the leads listing's "Assign" link verbatim (table.module.css .assignLink, REG-240) —
-   no placeholder avatar; the mock's grey silhouette (Avatar Generic 24) is dropped for consistency (user 2026-09-01). */
-.assignLink {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  border: 0; background: none; padding: 0; cursor: pointer;
-  color: var(--om-color-primary-default);
-  font: var(--om-type-subheading-m);
-  transition: color var(--motion-hover);
-}
-.assignLink:hover { color: var(--om-color-on-primary-variant); }
+/* Member cell, unassigned: (the calm UI build 2026-10-27, 1-07) the members' grey person_add alone — the purple "Assign" link (REG-240) went. */
 .memberStack { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
 /* More than two assignees: the listing's "+n" box (components/leads/table.module.css .plusBox) — the mock shows at most two. */
 .plusBox {
@@ -160,13 +151,15 @@
   color: var(--om-color-on-surface-secondary);
 }
 
-/* Due cell: "17 Jul ’26" 14/Regular, underlined (Link text style in the render); #db382a when overdue. */
+/* Due cell: "17 Jul ’26" 14/Regular; #db382a when overdue. (the calm UI build 2026-10-27, 1-07 · 2-19) Plain text at rest — every date
+   underlined like a link read as a column of links; the underline comes back on hover, where the press is (it opens the due picker). */
 .dueBtn {
   border: 0; background: none; padding: 0; cursor: pointer;
   font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
-  text-decoration: underline; white-space: nowrap;
+  text-decoration: none; text-underline-offset: 2px; white-space: nowrap;
   border-radius: var(--om-radius-1);
 }
+.dueBtn:hover { text-decoration: underline; }
 .dueBtn[data-overdue] { color: var(--om-color-tertiary-red-default); }
 .dueBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
@@ -179,20 +172,21 @@
   border-radius: var(--om-radius-1);
 }
 .tagsBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
-/* A name chip may shrink (the DS Tag's own min-width would keep it at full width) and its name ellipsises inside it. */
-.tagChip { min-width: 0; }
+/* (the calm UI build 2026-10-27, 1-07 · 2-19 · T-06) The tags as the studio typed them — one secondary line, the names ellipsised, "+n" kept. */
+.tagWords { display: inline-flex; align-items: baseline; gap: var(--om-spacing-1); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .tagName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* "Link text Primary leading icon add" (add 20 + 14/Semi Bold #5500ff) rendered as a span inside the cell button —
-   the DS Link can't nest in a button; geometry copied from the DS link (gap 4, subheading-m). */
-.link {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  height: 20px; white-space: nowrap;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-primary-default);
-  transition: color var(--motion-hover);
+.tagMore { flex-shrink: 0; }
+/* An untagged row: nothing at rest; "Add tags" in the row's secondary ink while a mouse points at the row or the cell has focus. */
+.hint { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; opacity: 0; transition: opacity var(--motion-hover); }
+.row:hover .hint, .tagsBtn:focus-visible .hint { opacity: 1; }
+@media (hover: none) { .hint { display: none; } }   /* a finger has the ⋮'s Add tags and the panel's */
+/* (the calm UI build 2026-10-27, 1-07 · 2-19) A row's second tools — the person_add beside the faces, an undated task's calendar — on a mouse only
+   while the row is pointed at or holds focus; a finger keeps them (no hover to find them by). */
+.onHover { display: inline-flex; }
+@media (hover: hover) {
+  .onHover { opacity: 0; transition: opacity var(--motion-hover); }
+  .row:hover .onHover, .row:focus-within .onHover { opacity: 1; }
 }
-.tagsBtn:hover .link { color: var(--om-color-on-primary-variant); }   /* link hover = the token every other link uses (UI-18) */
-.link[data-inert] { pointer-events: none; }
 
 /* (Dane UAT 11.02) The task the add row just created pulses once — the quote editor's attention after an add (items-table.module.css
    `.row[data-fresh]`, REG-573): a primary wash over the whole row, frozen cells included, that fades out. */
@@ -231,8 +225,9 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
 /* (REG-733) The actions band: an empty end to every row and to the head (ACTIONS_TRAIL.pair in components/om/table-columns.ts), so Edit
    + kebab float over it at rest, never over the last column's value — the Items table's Total (REG-446). The row's fill is the row's. */
 @media (hover: hover) {
-  .head::after { content: ''; order: 99; flex: 0 0 128px; }
-  .row::after { content: ''; order: 99; flex: 0 0 128px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  /* (the calm UI build 2026-10-27, 1-07) the kebab alone now (ACTIONS_TRAIL.kebab, components/om/table-columns.ts): its 48 band, not the pair's 128 */
+  .head::after { content: ''; order: 99; flex: 0 0 48px; }
+  .row::after { content: ''; order: 99; flex: 0 0 48px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 }
 .float { composes: float from '../../om/table-core.module.css'; }   /* white fill + level-1 shadow on a wrapper, so the DS button / om icon button keep their own hover states */
 .menuWrap { position: relative; display: inline-flex; }
@@ -296,11 +291,8 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
   .chip[data-action] { position: relative; }
   .chip[data-action]::after { content: ''; position: absolute; inset: -10px -8px; }
 
-  /* Due date: 20px of underlined text → a 44 tall, 16 wider target; the underline and the date do not move. */
+  /* Due date: 20px of text → a 44 tall, 16 wider target; the date does not move. */
   .dueBtn { padding: 12px var(--om-spacing-2); margin: -12px calc(-1 * var(--om-spacing-2)); }
-
-  /* "Assign" — the member cell's inline link, 20 tall like every other link on the tab. */
-  .assignLink { padding-block: 12px; margin-block: -12px; }
 
   /* Tags cell button: it filled the cell's 24 of content height — 44 now (the cell is 48, so its
      `overflow: hidden` still clips nothing). */

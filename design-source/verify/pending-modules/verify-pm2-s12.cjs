@@ -180,6 +180,7 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       console.log('5 · Order from the quote and Add from the quote order the waste on top')
       await go(p, `/projects/${BEN}/money`)
       await p.getByTestId('money-new').click(); await settle(p, 400)
+      await p.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(p, 400)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
       await p.getByRole('menuitem', { name: /^Order from the quote/ }).click(); await settle(p, 1200)
       const od = p.getByRole('dialog', { name: 'Order from the quote' })
       const line = od.getByTestId('order-line').filter({ hasText: 'Vinyl flooring' })
@@ -194,7 +195,8 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       ok(await until(() => sql(`select count(*) from purchase_order_lines l join purchase_orders o on o.id = l.po_id where l.quote_item_id = '${BEN_VINYL}' and o.deleted_at is null`) === '0'), 'Undo takes the Draft back')
       await go(p, `/projects/${BEN}/money`)
       await p.getByTestId('money-new').click(); await settle(p, 400)
-      await p.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(p, 900)
+      await p.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(p, 600)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+      if (await p.locator('[data-testid="money-new-level"]').count()) { await p.getByRole('menuitem', { name: /^New purchase order/ }).first().click(); await p.waitForTimeout(700) }
       const po = p.locator('[role="dialog"][aria-label="New purchase order"]')
       await po.getByTestId('po-from-quote').click(); await settle(p, 700)
       const ql = p.getByTestId('po-quote-lines').getByTestId('po-quote-line').filter({ hasText: 'Vinyl flooring' })
@@ -325,6 +327,7 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
         await q.keyboard.press('Escape'); await settle(q, 400)
         await go(q, `/projects/${BEN}/money`)
         await q.getByTestId('money-new').click(); await settle(q, 500)
+        await q.getByRole('menuitem', { name: /^Purchase order/ }).click(); await settle(q, 400)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
         await q.getByRole('menuitem', { name: /^Order from the quote/ }).click(); await settle(q, 1400)
         const od = q.getByRole('dialog', { name: 'Order from the quote' })
         const vl = od.getByTestId('order-line').filter({ hasText: 'Vinyl flooring' })

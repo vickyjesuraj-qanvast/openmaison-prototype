@@ -124,7 +124,8 @@ const putBrand = () => { if (hadBrand) execSync(`sqlite3 -cmd ".timeout 30000" "
     ok(await p.getByTestId('report-entity').count() === 0, 'one entity — no Issued by scope (FB-105)')
     await shot(p, 'c-04-gst')
     await go(p, '/company/reports/finance?report=pl&period=this_year')
-    await p.getByTestId('report-chips').getByRole('radio', { name: 'GST' }).click(); await settle(p, 600)
+    await p.getByTestId('report-chips').getByRole('button').first().click(); await settle(p, 400)   // (the calm UI build 2026-10-27, a deliberate change) B5 5-19: the report is the house pill — its menu's row
+    await p.getByRole('menuitemradio', { name: /^GST/ }).first().click(); await settle(p, 600)
     ok(/period=this_quarter/.test(p.url()), 'picking GST on a year lands on This quarter (FB-065)')
     await p.getByTestId('report-export').click(); await settle(p, 500)
     const wait = p.waitForEvent('download', { timeout: 8000 }).catch(() => null)

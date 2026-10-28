@@ -32,7 +32,8 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
   /* ── S2 · unsaved edits ask before a move inside the app ── */
   await step('S2 Profile', async () => {
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
-    const bank = page.getByTestId('entity').first().getByLabel('Bank')
+    /* (the calm UI build 2026-10-27, a deliberate change) Profile's tabs (5-36): the Brand kit's door is on Details, so the unsaved company detail is one of Details' own (the Tagline) */
+    const bank = page.getByLabel('Tagline')
     await bank.fill('OCBC Probe Bank')
     await page.getByTestId('brand-kit-link').click()
     await leave().waitFor(); await page.waitForTimeout(400)
@@ -55,7 +56,7 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await page.waitForURL(/\/leads(\?|$)/)
     ok('S2 Discard goes on without saving', !sql(`select value from settings where key='brand'`).includes('OCBC Probe Bank'))
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
-    await page.getByTestId('entity').first().getByLabel('Bank').fill('UOB Probe Bank')
+    await page.getByLabel('Tagline').fill('UOB Probe Bank')   // (the calm UI build 2026-10-27, a deliberate change) 5-36
     await page.getByTestId('brand-kit-link').click(); await leave().waitFor()
     await leave().getByRole('button', { name: 'Save', exact: true }).click()
     await page.waitForURL(/\/company\/templates\/brand/); await snack(page, 'Company details saved')
@@ -111,8 +112,8 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     ok('S4 the lock card reads "Who may change the payment schedule"', /Who may change the payment schedule/.test(await page.getByTestId('payment-lock').innerText()))
     await card.scrollIntoViewIfNeeded(); await shot('s4-01-new-quotes-start-with')
     await page.getByTestId('new-quote-defaults-change').click(); await page.waitForURL(/\/templates\/.+\?tab=new-quotes&from=/)
-    await page.getByRole('tab', { name: 'New quotes' }).waitFor(); await page.waitForTimeout(1200)
-    ok('S4 "Change in … › New quotes" opens the template on its New quotes tab', (await page.getByRole('tab', { name: 'New quotes' }).getAttribute('aria-selected')) === 'true')
+    await page.getByRole('tab', { name: 'Quote settings' }).waitFor(); await page.waitForTimeout(1200)   // (the calm UI build 2026-10-27, a deliberate change) W-274: the tab reads Quote settings
+    ok('S4 "Change in … › New quotes" opens the template on its New quotes tab', (await page.getByRole('tab', { name: 'Quote settings' }).getAttribute('aria-selected')) === 'true')   // (the calm UI build 2026-10-27, a deliberate change) W-274: the tab reads Quote settings
     await shot('s4-02-template-new-quotes-tab')
   })
 
@@ -122,7 +123,7 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     const y = async (id) => (await page.getByTestId(id).boundingBox()).y
     ok('S9 Untouched leads sits under Stage movement, before Lead sources', (await y('untouched-leads')) < (await y('lead-sources')))
     await pick(page, page.getByTestId('untouched-leads').getByRole('combobox'), '1 hour')
-    await snack(page, 'Untouched leads raised after 1 hour')
+    await snack(page, 'New leads nobody has contacted are flagged after 1 hour')   // (the calm UI build 2026-10-27, a deliberate change) W-097 · W-335
     ok('S9 the delay writes the notification rule', sql(`select value from settings where key='notification_rules'`).includes('"untouchedMinutes":60'))
     await shot('s9-01-untouched-under-lead-management')
     await page.goto(`${BASE}/settings?section=notifications`); await page.getByTestId('untouched-pointer').waitFor(); await ready(page)
@@ -137,6 +138,9 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await page.goto(`${BASE}/company/plan`); await page.getByTestId('tile-pace').waitFor(); await ready(page)
     ok('S5 a healthy month: no buy in the pace tile', await page.getByTestId('pace-buy').count() === 0)
     await page.getByRole('button', { name: /View as$/ }).first().click()
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; the studio's plan
+       (demo only) sits under its Demo fold — opened before the plan's row is pressed (the fold is remembered per browser once open) */
+    { const fold = page.getByTestId('demo-fold'); await fold.waitFor({ timeout: 8000 }).catch(() => {}); if (await fold.count() && (await fold.getAttribute('aria-expanded')) !== 'true') { await fold.click(); await page.waitForTimeout(300) } }
     await page.getByRole('menuitemradio', { name: /Almost out/ }).click(); await snack(page, 'almost out')
     await page.goto(`${BASE}/company/plan`); await page.getByTestId('tile-pace').waitFor(); await ready(page)
     const buy = page.getByTestId('pace-buy')
@@ -172,10 +176,15 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await row.waitFor(); await page.waitForTimeout(500)
     ok('S6 the new row is brought into view and pulses', (await inView(row)) && (await row.getAttribute('data-fresh')) !== null)
     await shot('s6-02-new-row-pulse')
-    await s.getByRole('button', { name: 'Set who they report to' }).click(); await page.waitForTimeout(400)
+    await s.getByRole('button', { name: 'Set who they report to' }).click(); await page.waitForTimeout(900)   // (the calm UI build 2026-10-27, a deliberate change) Reports to is in the member's drawer (5-01): the step opens it, then the list
     await page.getByRole('option', { name: 'James', exact: true }).first().click()
     await snack(page, 'Priya Nair now reports to James')
     ok('S6 …and Reports to is one press away', sql(`select manager_id from members where id='${id}'`) === 'james')
+    /* (the calm UI build 2026-10-27, a deliberate change) the member's drawer closes before the header's Add member — Esc, else its Close (a loaded
+       run once kept it open after one Esc; on the lane's server one Esc closes it every time) */
+    await page.keyboard.press('Escape'); await page.waitForTimeout(500)
+    if (await page.getByTestId('member-drawer').isVisible().catch(() => false)) await page.locator('[role="dialog"]').filter({ has: page.getByTestId('member-drawer') }).getByRole('button', { name: 'Close' }).first().click()
+    await page.getByTestId('member-drawer').waitFor({ state: 'hidden' })
     await page.getByRole('button', { name: 'Add member' }).click()
     const dlg2 = page.getByRole('dialog', { name: 'Add member' })
     await dlg2.getByLabel('Name').fill('Ravi Kumar'); await pick(page, dlg2.getByRole('combobox', { name: 'Reports to' }), 'James')
@@ -189,11 +198,14 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     sql(`update members set signature_kind = null, signature_name = null where id = 'dane'`)
     await page.goto(`${BASE}/company/members`); await page.getByTestId('members').waitFor(); await ready(page)
     const rowOf = (name) => page.getByTestId('member-row').filter({ has: page.locator('span[class*="__name"]').filter({ hasText: new RegExp(`^${name}`) }) })
-    ok('S11 a member without a signature says so', /Signature: not set/.test(await rowOf('James').innerText()))
+    /* (the calm UI build 2026-10-27, a deliberate change) a member's signature state is in their drawer (5-01); your own row offers Add your signature (W-374) */
+    await rowOf('James').getByTestId('member-open').click(); await page.getByTestId('member-drawer').waitFor()
+    ok('S11 a member without a signature says so', /Signature not set/.test(await page.getByTestId('member-drawer-signature').innerText()))
+    await page.keyboard.press('Escape'); await page.getByTestId('member-drawer').waitFor({ state: 'hidden' })
     const mine = rowOf('Dane').getByTestId('member-signature')
-    ok('S11 your own row offers the way to set it', await mine.getByRole('button', { name: 'Set it up' }).count() === 1)
+    ok('S11 your own row offers the way to set it', await mine.getByRole('button', { name: 'Add your signature' }).count() === 1)
     await mine.scrollIntoViewIfNeeded(); await shot('s11-01-signature-not-set')
-    await mine.getByRole('button', { name: 'Set it up' }).click()
+    await mine.getByRole('button', { name: 'Add your signature' }).click()
     const sig = page.getByRole('dialog', { name: 'Signature Settings' }); await sig.waitFor()
     await sig.getByRole('button', { name: 'Save' }).click(); await snack(page, 'Signature saved')
     ok('S11 set here, as in a quote', sql(`select signature_kind from members where id='dane'`) === 'type')
@@ -253,7 +265,7 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     const q = page.getByTestId('library-card').filter({ hasText: 'DEFAULT' }).first().locator(NAME).first()
     ok('S10 "Default Quote PDF" reads whole', !(await q.evaluate((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)))
     ok('S12 New ▾ stays outlined with its menu in a full library (REG-541)', (await page.getByTestId('new-template').getAttribute('aria-haspopup')) === 'menu')
-    ok('S12 the to-do chip stays', await page.getByRole('button', { name: /awaiting approval/ }).count() >= 1)
+    ok('S12 the to-do chip stays', await page.getByRole('button', { name: /^\d+ approvals?$/ }).count() >= 1)   // (the calm UI build 2026-10-27, a deliberate change) T-01: the chip counts Approvals ("1 approval"; was "1 awaiting approval")
     await shot('s12-01-quotes-library')
   })
 
@@ -291,7 +303,7 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
   await step('S2 phone', async () => {
     const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const p3 = await c3.newPage()
     await p3.goto(`${BASE}/company/profile`); await p3.getByTestId('profile').waitFor(); await ready(p3)
-    await p3.getByTestId('entity').first().getByLabel('Bank').fill('Phone Probe')
+    await p3.getByLabel('Tagline').fill('Phone Probe')   // (the calm UI build 2026-10-27, a deliberate change) 5-36
     await p3.getByTestId('brand-kit-link').click(); await leave(p3).waitFor(); await p3.waitForTimeout(400)
     const box = await leave(p3).boundingBox()
     const fits = await leave(p3).getByRole('button').evaluateAll((bs) => bs.every((b) => { const r = b.getBoundingClientRect(); return r.right <= window.innerWidth && r.left >= 0 }))

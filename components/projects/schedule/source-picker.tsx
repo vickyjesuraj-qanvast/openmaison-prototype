@@ -10,7 +10,6 @@ import { UPLOAD_ACCEPT, unreadHelp } from '@/lib/quotes/upload'
 import { readQuoteUpload } from '@/lib/quotes/read-upload'   // (S42 B·4 · D·2) the one reader
 import { plural } from '@/lib/projects/schedule-model'
 import { draftsFromQuote, draftsFromTemplate, type Draft } from '@/lib/projects/schedule-phases'
-import { presetByKey } from '@/lib/projects/schedule-presets'
 import { draftTimeline, type AiInput } from '@/lib/projects/schedule-ai'   // (gaps build I)
 import type { AiContext } from './ai-draft'
 import type { QuoteSource, ScheduleTemplateOption } from '@/lib/projects/schedule'
@@ -60,7 +59,7 @@ const templateLabel = (t: ScheduleTemplateOption, all: ScheduleTemplateOption[])
  * a schedule template (the ready-made ones marked), an uploaded quote (read here by Upload a quote's reader — a spreadsheet for real, (S42 D·2) a PDF from its own words; formerly a PDF or a
  * photo the reference quotes' way; a quote read, 5 AI credits — pending modules S19), and — on the Start card — nothing yet. A way that can't be used says why.
  */
-export function SourcePicker({ value, onChange, quotes, templates, disabled = false, blank = false, templateHelp, testId, ai, blankLabel, compact = false }: {
+export function SourcePicker({ value, onChange, quotes, templates, disabled = false, blank = false, testId, ai, blankLabel, compact = false, templateHelp }: {
   value: SourceState
   onChange: (s: SourceState) => void
   quotes: QuoteSource[]
@@ -68,7 +67,8 @@ export function SourcePicker({ value, onChange, quotes, templates, disabled = fa
   disabled?: boolean
   /** Offer "Nothing yet" (the Start card). */
   blank?: boolean
-  /** Why the template was picked first, under its select. */
+  /** Why the template was picked first, under its select — (the calm UI build 2026-10-27, 3-34) only when a Settings rule picked it (where to
+      change it is a fact a studio needs); a ready-made pick for the kind of home says nothing — the select names it and the preview shows it. */
   templateHelp?: string | null
   testId?: string
   /** (gaps build I, I-Q13) Offer Drafted by Maison AI — the scope, the kind of home and the project type it reads besides the quote. */
@@ -117,7 +117,7 @@ export function SourcePicker({ value, onChange, quotes, templates, disabled = fa
     const ways: { pick: SourcePick; title: string; help: string }[] = [
       ...(quotes.length ? [{ pick: 'quote' as const, title: 'A quote', help: `One milestone for each stage of work in ${(q ?? quotes[0]!).number}, in the order it runs on site.` }] : []),
       ...(ai && quotes.some((x) => x.lines > 0) ? [{ pick: 'ai' as const, title: 'Drafted by Maison AI', help: 'From the quote and the scope — reviewed before anything changes. It costs no AI credits.' }] : []),
-      ...(templates.length ? [{ pick: 'template' as const, title: 'A schedule template', help: 'From Company › Templates › Schedules.' }] : []),
+      ...(templates.length ? [{ pick: 'template' as const, title: 'A schedule template', help: 'From Company › Templates › Project schedules.' }] : []),
       { pick: 'upload' as const, title: 'An uploaded quote', help: value.upload ? `${value.upload.name} — ${plural(value.upload.lines, 'line')} read.` : `A spreadsheet of its lines (XLSX or CSV) or a PDF · reading it uses ${READ} AI credits.` },
       ...(blank ? [{ pick: 'blank' as const, title: blankLabel?.title ?? 'Nothing yet', help: blankLabel?.help ?? 'Start blank and add milestones one at a time.' }] : []),
     ]
@@ -132,7 +132,8 @@ export function SourcePicker({ value, onChange, quotes, templates, disabled = fa
     }
     return (
       <div className={styles.sources} data-testid={testId}>
-        <TextField label="Milestones come from" mode="select" value={now.title} options={ways.map((w) => w.title)} disabled={disabled} onChange={choose} helper={now.help} />
+        {/* (the calm UI build 2026-10-27, 3-34 · W-552) "Build the schedule from" (was Milestones come from) */}
+        <TextField label="Build the schedule from" mode="select" value={now.title} options={ways.map((w) => w.title)} disabled={disabled} onChange={choose} helper={now.help} />
         {(value.pick === 'quote' || value.pick === 'ai') && quotes.length > 1 ? (
           <TextField label="Quote" mode="select" value={q ? quoteLabel(q) : ''} options={quotes.map(quoteLabel)} disabled={disabled} onChange={(v) => set({ quoteId: quotes.find((x) => quoteLabel(x) === v)?.id ?? '', aiSkip: [] })} />
         ) : null}
@@ -150,29 +151,37 @@ export function SourcePicker({ value, onChange, quotes, templates, disabled = fa
       </div>
     )
   }
+  /* (the calm UI build 2026-10-27, 3-34 · T-03 · T-05) only the ways that work today, each a title and one short line; a way that can't be used yet
+     is not a disabled card with a paragraph but one grey line under the rest, saying what opens it */
+  const hasQuote = quotes.length > 0, aiReady = !!ai && quotes.some((x) => x.lines > 0)
+  const notYet = !hasQuote ? 'Make a quote first to build from it.' : ai && !aiReady ? 'Maison AI drafts from a quote’s lines — add lines to a quote first.' : null
   return (
-    <div className={styles.sources} role="radiogroup" aria-label="Milestones come from" data-testid={testId}>
-      <span className={styles.legendLabel}>Milestones come from</span>
-      <ChoiceCard title="A quote" selected={value.pick === 'quote'} onSelect={() => set({ pick: 'quote', quoteId: value.quoteId || quotes[0]?.id || '' })} disabled={disabled || !quotes.length}
-                  help={quotes.length ? `One milestone for each stage of work in ${(q ?? quotes[0]!).number}, in the order it runs on site — or its sections, when no line names a trade.` : 'No quote on this project yet — make one, or upload a contractor’s quote below.'} />
-      {value.pick === 'quote' && quotes.length ? (
+    <div className={styles.sources} role="radiogroup" aria-label="Build the schedule from" data-testid={testId}>
+      <span className={styles.legendLabel}>Build the schedule from</span>
+      {hasQuote ? (
+        <ChoiceCard title="A quote" selected={value.pick === 'quote'} onSelect={() => set({ pick: 'quote', quoteId: value.quoteId || quotes[0]?.id || '' })} disabled={disabled}
+                    help={`One milestone for each stage of work in ${(q ?? quotes[0]!).number}.`} />
+      ) : null}
+      {value.pick === 'quote' && hasQuote ? (
         <TextField label="Quote" mode="select" value={q ? quoteLabel(q) : ''} options={quotes.map(quoteLabel)} disabled={disabled} onChange={(v) => set({ quoteId: quotes.find((x) => quoteLabel(x) === v)?.id ?? '' })} />
       ) : null}
-      {ai ? (   /* (gaps build I, I-Q13) curated and free (Q-30) — reviewed in "What you will get" before it lands */
-        <ChoiceCard title="Drafted by Maison AI" selected={value.pick === 'ai'} onSelect={() => set({ pick: 'ai', quoteId: value.quoteId || quotes[0]?.id || '', aiSkip: [] })} disabled={disabled || !quotes.some((x) => x.lines > 0)}
-                    help={quotes.some((x) => x.lines > 0) ? `From ${(q ?? quotes[0]!).number} and the scope: the permits ${ai.propertyType ? 'this home' : 'the home'} needs first, each stage sized by its lines, and what to watch — you review it before anything changes. It costs no AI credits.` : 'Maison AI drafts from a quote’s lines — make a quote for this project first.'} />
+      {aiReady ? (   /* (gaps build I, I-Q13) curated and free (Q-30) — reviewed in "What you will get" before it lands */
+        <ChoiceCard title="Drafted by Maison AI" selected={value.pick === 'ai'} onSelect={() => set({ pick: 'ai', quoteId: value.quoteId || quotes[0]?.id || '', aiSkip: [] })} disabled={disabled}
+                    help={`From ${(q ?? quotes[0]!).number} and the scope — you review it first. No AI credits.`} />
       ) : null}
       {value.pick === 'ai' && quotes.length > 1 ? (
         <TextField label="Quote" mode="select" value={q ? quoteLabel(q) : ''} options={quotes.map(quoteLabel)} disabled={disabled} onChange={(v) => set({ quoteId: quotes.find((x) => quoteLabel(x) === v)?.id ?? '', aiSkip: [] })} />
       ) : null}
-      <ChoiceCard title="A schedule template" help={templates.length ? 'From Company › Templates › Schedules — the ready-made ones for each kind of home are there too.' : 'None yet — make one in Company › Templates › Schedules.'}
-                  selected={value.pick === 'template'} onSelect={() => set({ pick: 'template', templateId: value.templateId || templates[0]?.id || '' })} disabled={disabled || !templates.length} />
+      {templates.length ? (
+        <ChoiceCard title="A schedule template" help="From Company › Templates › Project schedules."
+                    selected={value.pick === 'template'} onSelect={() => set({ pick: 'template', templateId: value.templateId || templates[0]?.id || '' })} disabled={disabled} />
+      ) : null}
       {value.pick === 'template' && templates.length ? (
         <TextField label="Template" mode="select" value={t ? templateLabel(t, templates) : ''} options={templates.map((x) => templateLabel(x, templates))} disabled={disabled}
-                   onChange={(v) => set({ templateId: templates.find((x) => templateLabel(x, templates) === v)?.id ?? '' })} helper={templateHelp ?? (t?.presetKey ? `${presetByKey(t.presetKey)?.name ?? t.name}: a ready-made schedule, as such a job usually runs.` : undefined)} />
+                   onChange={(v) => set({ templateId: templates.find((x) => templateLabel(x, templates) === v)?.id ?? '' })} helper={templateHelp ?? undefined} />
       ) : null}
       <ChoiceCard title="An uploaded quote" selected={value.pick === 'upload'} onSelect={() => { set({ pick: 'upload' }); if (!value.upload) file.current?.click() }} disabled={disabled}
-                  help={value.upload ? `${value.upload.name} — ${plural(value.upload.lines, 'line')} read${value.upload.sections.length ? `, ${plural(value.upload.sections.length, 'section')}` : ''}.` : `A contractor’s quote or your own from before — a spreadsheet of its lines (XLSX or CSV) or a PDF of it. Reading it uses ${READ} AI credits, given back if it can’t be read.`} />
+                  help={value.upload ? `${value.upload.name} — ${plural(value.upload.lines, 'line')} read${value.upload.sections.length ? `, ${plural(value.upload.sections.length, 'section')}` : ''}.` : `A spreadsheet or PDF of a quote · ${READ} AI credits, back if it can’t be read.`} />
       {value.pick === 'upload' ? (
         <span className={styles.uploadRow}>
           <Button variant="secondary" appearance="outlined" size="sm" iconStart={<Icon name="upload_file" size={20} />} onPress={() => file.current?.click()} isDisabled={disabled || reading} data-testid="source-upload">{reading ? 'Reading…' : value.upload ? 'Choose another file' : 'Choose a file'}</Button>
@@ -181,6 +190,7 @@ export function SourcePicker({ value, onChange, quotes, templates, disabled = fa
       ) : null}
       <input ref={file} type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void read(f) }} data-testid="source-file" />
       {blank ? <ChoiceCard title={blankLabel?.title ?? 'Nothing yet'} help={blankLabel?.help ?? 'Start blank and add milestones one at a time.'} selected={value.pick === 'blank'} onSelect={() => set({ pick: 'blank' })} disabled={disabled} /> : null}
+      {notYet ? <p className={styles.sourceNotYet} data-testid="source-not-yet">{notYet}</p> : null}
     </div>
   )
 }

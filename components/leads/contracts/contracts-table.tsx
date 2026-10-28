@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { Button } from '@/components/ds'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
@@ -21,6 +20,7 @@ import { displayDate, displayDateTime, money } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
 import { CLIENT_SIGNED_RULE, UNSIGN_ROLE_RULE } from '@/lib/contracts/policy'
 import { awaitingLine } from '@/lib/contracts/model'
+import { contractStatusLabel } from '@/lib/contracts/status-words'   // (the calm UI build 2026-10-27, W-363)
 import { isContractSortKey, type ContractHeadSort, type ContractSortKey } from '@/lib/leads/contract-filters'
 import { contractCardChip, contractSignsLine, contractSinceWords } from './contract-card-words'
 import { useLongPress } from '@/components/leads/quotes/use-long-press'
@@ -71,17 +71,17 @@ export type ContractsTableProps = {
     beside them — and keeps Created · Signed Copy · Updated in Column settings, remembered for the tablet (components/om/table-columns.ts). */
 export const CONTRACT_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: 'minmax(555px, 1fr)', locked: true },
-  { key: 'lead', label: 'Lead', track: '180px' },   /* (REG-534) Tools › Contracts only — the quotes list's Client column */
+  { key: 'lead', label: 'Client', track: '180px' },   /* (REG-534) Tools › Contracts only — (the calm UI build 2026-10-27, 4-26 · W-230) named as the quotes list's Client column; the key stays `lead` */
   { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
   { key: 'created', label: 'Created', track: '120px', tabletHidden: true },
-  { key: 'signedCopy', label: 'Signed Copy', track: '142px', tabletHidden: true },
+  { key: 'signedCopy', label: 'Signed copy', track: '142px', hidden: true, tabletHidden: true },   /* (4-26 · W-375) off by default — the same cut file name on every signed row; Column settings brings it back, the row's ⋮ › Signed copy opens it */
   { key: 'sent', label: 'Sent', track: '140px' },
   { key: 'updated', label: 'Updated', track: '157px', tabletHidden: true },
 ]
 /** (P-08 · A-04) A touch tablet's tracks: Title from 160, the names and dates at their own widths — Title · Lead · Status · Sent stand on a
     768 frame's first screen with the ⋮ frozen beside them (the Quotes table's rule: every track but the Title a fixed width, so a grid wider
     than its frame never lets a `max-content` Status run under the next column). Status holds "Sent to Client" and its since line. */
-const TABLET_TRACKS: Record<string, string> = { title: 'minmax(160px, 1fr)', lead: '124px', status: '168px', created: '100px', signedCopy: '128px', sent: '128px', updated: '100px' }
+const TABLET_TRACKS: Record<string, string> = { title: 'minmax(160px, 1fr)', lead: '124px', status: '196px',   /* (the calm UI build 2026-10-27, W-363 · T-12) "Waiting for signature" and its chevron whole — 168 held "Sent to Client" */ created: '100px', signedCopy: '128px', sent: '128px', updated: '100px' }
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
 const SORTABLE: Record<string, boolean> = { title: false, signedCopy: false, lead: false }
 /** The tab's columns (no Lead) or the studio list's (with it) — the quotes table's `quoteColumnDefs` (REG-422). */
@@ -108,7 +108,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
   const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
   /* (P-08 · A-04) the tracks tighten on a touch tablet — the mock's 555 Title floor alone took most of a 768 frame; a dragged width still wins (REG-427) */
   const tabletColumns = useMemo(() => (touchTablet ? columns.map((c) => ({ ...c, track: TABLET_TRACKS[c.key] ?? c.track })) : columns), [columns, touchTablet])
-  const tracks = gridTemplateFor(tabletColumns, colWidths, undefined, touchTablet ? ACTIONS_TRAIL.kebab : ACTIONS_TRAIL.pair)
+  const tracks = gridTemplateFor(tabletColumns, colWidths, undefined, ACTIONS_TRAIL.kebab)   // (the calm UI build, 4-46) the ⋮ alone at every width
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
@@ -232,6 +232,8 @@ function ContractRowView({
           {/* (P-07 · A-01) The card's first line: the client's name leads (the title where the list is one lead's) — a press that opens; drawn ≤767 only */}
           <button type="button" className={styles.cardName} onClick={namePress} data-testid="contract-card-name">{lead ? lead.name : contract.title}</button>
           <button type="button" className={styles.title} onClick={() => onView(contract)} data-kb-open>{contract.title}</button>
+          {/* (the calm UI build 2026-10-27, 4-26) the quote it signs, beside the title — the quotes list's number; ≤767 the card's signs line says it */}
+          {quote ? <span className={styles.forQuote} data-testid="contract-for-quote">for {quote.number}</span> : null}
           {/* (P-07) the card's second line: what it signs, and the title where the client leads — ≤767 only */}
           <span className={styles.cardSigns} data-testid="contract-card-signs">{contractSignsLine(contract, quote?.number ?? null, !!lead)}</span>
         </div>
@@ -266,10 +268,10 @@ function ContractRowView({
           <button
             type="button" className={styles.statusBtn}
             aria-haspopup="menu" aria-expanded={statusOpen}
-            aria-label={`Status ${contract.status} — change status`}
+            aria-label={`Status ${contractStatusLabel(contract.status)} — change status`}
             onClick={onStatusToggle}
           >
-            {contract.status}
+            {contractStatusLabel(contract.status)}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
           <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Change status">
@@ -281,7 +283,7 @@ function ContractRowView({
               const block = isCurrent ? null : statusBlock?.(contract, s) ?? null
               const why = block === CLIENT_SIGNED_RULE ? 'signed by the client' : block === UNSIGN_ROLE_RULE ? 'Owner or Admin' : block
               return (
-                <DropdownItem key={s} disabled={!!block} title={why ?? undefined} meta={isCurrent ? 'current' : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
+                <DropdownItem key={s} disabled={!!block} title={why ?? undefined} meta={isCurrent ? 'current' : undefined} onSelect={pickStatus(s)}>{contractStatusLabel(s)}</DropdownItem>
               )
             })}
           </PortalMenu>
@@ -313,13 +315,10 @@ function ContractRowView({
       </div>
       <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}><DateTip at={contract.updatedAt ?? contract.createdAt} /></div>
 
-      {/* Row hover actions — not mocked for Contracts; the Quotes "Hover button" (910:36644 / 910:36709) copied:
-          View + kebab, level-1 shadow, right 24, vertically centred in the 68 row. */}
+      {/* Row hover actions — not mocked for Contracts; the Quotes "Hover button" (910:36644 / 910:36709) copied. (The calm UI build 2026-10-27,
+          4-46 · T-02, as Quotes) the ⋮ alone: the title opens, so the hover View — which parked over the Sent / Signed cells — left. */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
         <span className={styles.actionsInner}>
-        <span className={styles.float}>
-          <Button variant="primary" appearance="outlined" onPress={() => onView(contract)}>View</Button>
-        </span>
         <span className={styles.menuWrap} ref={kebab}>
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
@@ -336,10 +335,11 @@ function ContractRowView({
               <>
                 <DropdownItem onSelect={() => { onMenuClose(); onView(contract) }}>Open</DropdownItem>
                 {canRemind ? <DropdownItem onSelect={pick('remind')} help={waiting?.expired ? 'Opens the link again' : 'A WhatsApp nudge, the same link'}>{remindLabel}</DropdownItem> : null}
-                <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy link</DropdownItem>
+                <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Copying it sends the contract' : undefined}>Copy link</DropdownItem>
                 {contract.status !== 'Signed' ? <DropdownItem onSelect={pick('signed')}>Mark as signed…</DropdownItem> : null}
+                {contract.status === 'Signed' && contract.signedCopy ? <DropdownItem onSelect={pick('signedCopy')}>Signed copy</DropdownItem> : null}
                 {contract.status === 'Sent to Client' ? <DropdownItem onSelect={pick('stop')} help={contract.bundleId ? 'Every document on its link goes back to Draft' : 'Back to Draft — the link stops opening'}>Stop the signing link</DropdownItem> : null}
-                <DropdownItem submenu onSelect={() => { onMenuClose(); onStatusToggle() }} meta={contract.status}>Change status</DropdownItem>
+                <DropdownItem submenu onSelect={() => { onMenuClose(); onStatusToggle() }} meta={contractStatusLabel(contract.status)}>Change status</DropdownItem>
                 <DropdownItem onSelect={pick('pdf')} help="Through WhatsApp, mail or AirDrop">Share PDF</DropdownItem>
                 <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
                 <DropdownItem tone="danger" disabled={!!noDelete} title={noDelete ? 'creator, Owner or Admin' : undefined} onSelect={pick('delete')}>Delete</DropdownItem>
@@ -349,15 +349,17 @@ function ContractRowView({
                 {/* (P-08 · A-05) a touch tablet dropped the row's View: the title opens, and so does the menu's first row */}
                 {touch ? <DropdownItem onSelect={() => { onMenuClose(); onView(contract) }}>Open</DropdownItem> : null}
                 {/* Quotes row kebab 910:36723 — verbatim order (REG-177). */}
-                <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
+                <DropdownItem onSelect={pick('share')}>Preview and share</DropdownItem>
                 {/* (UX audit C8) on a Draft the copy sends it — said in the row before the press */}
-                <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy Link</DropdownItem>
+                <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Copying it sends the contract' : undefined}>Copy link</DropdownItem>
                 {/* (UX audit C5) a nudge on WhatsApp with the same link, through the Send dialog */}
                 {canRemind ? <DropdownItem onSelect={pick('remind')} help={waiting?.expired ? 'Opens the link again' : undefined}>{remindLabel}</DropdownItem> : null}
                 {/* (pending modules S03 — 1.0's cancel) back to Draft, the client's address dead; Undo puts it back */}
                 {contract.status === 'Sent to Client' ? <DropdownItem onSelect={pick('stop')} help={contract.bundleId ? 'Every document on its link goes back to Draft' : 'Back to Draft — the link stops opening'}>Stop the signing link</DropdownItem> : null}
                 {/* (UX audit C9) a paper signature, or one made elsewhere — the status pill was the only way in */}
                 {contract.status !== 'Signed' ? <DropdownItem onSelect={pick('signed')}>Mark as signed…</DropdownItem> : null}
+                {/* (the calm UI build 2026-10-27, 4-26 · W-375) the Signed copy column is off by default: its file opens from here */}
+                {contract.status === 'Signed' && contract.signedCopy ? <DropdownItem onSelect={pick('signedCopy')} help={contract.signedCopy}>Signed copy</DropdownItem> : null}
                 {/* (A-13) on touch one Share PDF — the print sheet stand-in (it shares on iOS, saves on Android); a mouse keeps Download and Print */}
                 {touch ? <DropdownItem onSelect={pick('pdf')} help="Through WhatsApp, mail or AirDrop">Share PDF</DropdownItem> : <>
                   <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>

@@ -52,7 +52,10 @@ export function SchedulePhone({ list, today, was, payments, waitingWho, client, 
             <span className={styles.glyph} data-s={m.status} data-late={late || undefined}><Icon name={late ? 'warning' : STATUS_ICON[m.status]} size={24} weight={300} fill={m.status === 'done'} /><span className="visually-hidden">{late ? 'Late' : STATUS_LABEL[m.status]}</span></span>
             <span className={styles.phoneText}>
               <span className={styles.name}>{m.title}</span>
-              <span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}{pay && !line.alert ? ` · ${payShareWord(pay)} due ${dayMonth(paymentDay(m))}` : ''}</span>
+              {/* (the calm UI build 2026-10-27, 3-01) an asking row is where its ask is said — the band above the rows is gone */}
+              {m.status !== 'done' && (!!m.doneAsked || (moreTo?.(m) ?? null) !== null)
+                ? <span className={styles.askLine} data-testid="schedule-asks"><span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}{pay && !line.alert ? ` · ${payShareWord(pay)} due ${dayMonth(paymentDay(m))}` : ''}</span></span>
+                : <span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}{pay && !line.alert ? ` · ${payShareWord(pay)} due ${dayMonth(paymentDay(m))}` : ''}</span>}
               <span className={styles.mini} aria-hidden>
                 <span className={styles.miniBar} data-s={m.status} data-color={col?.key} style={{ left: pct(m.start), width: `${Math.max(2, ((m.end - m.start + 1) / n) * 100)}%`, ...(col ? { '--bar-c': col.hex } : {}) } as CSSProperties} />
                 {today >= lo && today <= hi ? <span className={styles.miniToday} style={{ left: pct(today) }} /> : null}
@@ -61,10 +64,14 @@ export function SchedulePhone({ list, today, was, payments, waitingWho, client, 
             <Icon name="keyboard_arrow_right" size={20} className={styles.chev} />
           </button>
           {/* (simplify S-25 (4)) a phone row marks its milestone done in two presses — Done, then the sheet's Mark done; a Done waiting for
-              approval says so instead */}
+              approval says so instead. (the calm UI build 2026-10-27, 3-19 · W-253) one look for Mark done in every list — the desk's outlined
+              "Mark done", on a running row only (in progress or blocked, as the desk); a milestone not started yet is marked done from its panel's
+              Status, as before */}
           {onDone && m.status !== 'done' ? (m.doneAsked
             ? <span className={styles.phoneDone} data-testid="phone-done-asked">Done asked</span>
-            : <span className={styles.phoneDone}><Button variant="primary" appearance="outlined" size="sm" onPress={() => onDone(m)} aria-label={`Mark ${m.title} done`} data-testid="phone-done">Done</Button></span>) : null}
+            : m.status === 'in_progress' || m.status === 'blocked'
+              ? <span className={styles.phoneDone}><Button variant="primary" appearance="outlined" size="sm" onPress={() => onDone(m)} aria-label={`Mark ${m.title} done`} data-testid="phone-done">Mark done</Button></span>
+              : null) : null}
           </div>
         )
       })}

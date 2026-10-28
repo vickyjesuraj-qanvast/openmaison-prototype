@@ -32,7 +32,7 @@ const file = (name, body = '%PDF-1.4 probe') => { const p = `${FILES}/${name}`; 
     const qty = await page.locator('[class*="qty"]').first().evaluate((e) => getComputedStyle(e).fontSize).catch(() => 'none')
     ok('the quantity line is the caption size', qty === '12px', qty)
     ok('the foot says it went to the client', /Sent to the client on/.test(await page.getByTestId('xray-foot').innerText()))
-    ok('one name for a line with no price', !/FOC \/ Inclusive/.test(await page.getByTestId('xray-items').innerText()) && /no price given/.test(await page.getByTestId('xray-items').innerText()))
+    ok('one name for a line with no price', !/FOC \/ Inclusive/.test(await page.getByTestId('xray-items').innerText()) && /No price\b/.test(await page.getByTestId('xray-items').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) — 6-05 · W-256
     ok('the drafted words take the house apostrophe', !/n't|it's|I've/.test(await page.getByTestId('xray-points').innerText()))
     await kebab.click(); await page.getByRole('menuitem', { name: 'Same item as…' }).click()
     const dlg = page.getByRole('dialog', { name: 'Same item as…' }); await dlg.waitFor(); await page.waitForTimeout(300)

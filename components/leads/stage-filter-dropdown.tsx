@@ -22,8 +22,11 @@ const TO_DO_PHONE: AttentionScope[] = ['today', 'overdue', 'unassigned', 'unseen
  *  name for the group, "To do" (the Projects menu's; its item keeps "Needs attention"); the phone sheet names the dimension, "Lead status"
  *  ("Project status" there). The pill counts the rows the list shows (workspace.tsx). */
 export function StageFilterDropdown({
-  open, onClose, counts, value, onSelect, onManage, attention, phone = false,
+  open, onClose, counts, value, onSelect, onManage, attention, phone = false, review,
 }: {
+  /** (the calm UI build 2026-10-27 — audit 2-16, W-600) the import queue, as a row of the group that needs the member — where the docked
+   *  "Review imported leads (14)" bar sat on every visit; it opens the review sheet (not a scope) */
+  review?: { count: number; onOpen: () => void }
   /** (Leads on the move, P-05) the phone's sheet: To call today first in the To do group */
   phone?: boolean
   open: boolean
@@ -50,13 +53,17 @@ export function StageFilterDropdown({
   ) : null
   return (
     <Dropdown open={open} onClose={onClose} align="left" width={attention ? MENU_WIDTH.wide : MENU_WIDTH.standard} sheetTitle="Lead status">
-      {item('All Leads', counts.all, null)}
+      {item('All leads', counts.all, null)}
       {scopeItem('mine')}
       {attention ? (
         <>
           <DropdownDivider />
-          <DropdownLabel>To do</DropdownLabel>
+          {/* (the calm UI build 2026-10-27 — T-01) what needs the member: "Needs your attention" (it read "To do") */}
+          <DropdownLabel>Needs your attention</DropdownLabel>
           {(phone ? TO_DO_PHONE : TO_DO).map(scopeItem)}
+          {review ? (
+            <DropdownItem key="review" meta={String(review.count)} testId="leads-review-open" onSelect={() => { onClose(); review.onOpen() }}>To review</DropdownItem>
+          ) : null}
         </>
       ) : null}
       <DropdownDivider />
@@ -67,7 +74,7 @@ export function StageFilterDropdown({
       {INACTIVE_STAGES.map((s) => item(s, counts[s] ?? 0, s))}
       <DropdownDivider />
       <button type="button" role="menuitem" className={`${styles.item} ${styles.link}`} onClick={() => { onClose(); onManage() }}>
-        Manage Stages
+        Manage stages
         <Icon name="keyboard_arrow_right" size={20} />
       </button>
     </Dropdown>

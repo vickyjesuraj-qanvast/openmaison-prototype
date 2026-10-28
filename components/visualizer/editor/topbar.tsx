@@ -6,7 +6,6 @@ import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { useMediaQuery } from '@/lib/breakpoint'
 import styles from './topbar.module.css'
@@ -20,10 +19,15 @@ const SNUG = '(max-width: 1280px)'
  * with client · the design's ⋯. (audit 2026-09-26) The room on screen is always scrolled into view (F004 · F149); a long name reads in
  * full on its tooltip (F013); ≤1280 Add room is its icon (F004) and Share a filled "Share" (UX audit V4); compact, the title takes the free
  * width (F148).
+ * (the calm UI build 2026-10-27, 6-04 · 6-08 · 6-19) Generate is the screen's one filled button, so Share is the house's outlined secondary at
+ * every width (a link to send is the next step, never a state); the "LEAD · MET" chip beside the name goes — a chip is for a status, and
+ * whose design it is the name (a lead's design is named after the lead) and Back ("Back to Kevin Ng") already say.
  */
-export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, onRoom, onRoomMenu, roomMenuOpen, onAddRoom, saving, savedLabel, savedTone = 'ok', canUndo, canRedo, onUndo, onRedo, onShare, shareDisabled, onMenu, menuOpen, compact, short = false, credits = null }: {
+export function EditorTopbar({ backLabel, onBack, title, chip = null, rooms, roomId, onRoom, onRoomMenu, roomMenuOpen, onAddRoom, saving, savedLabel, savedTone = 'ok', canUndo, canRedo, onUndo, onRedo, onShare, shareDisabled, onMenu, menuOpen, compact, short = false, credits = null }: {
   backLabel: string; onBack: () => void
-  title: string; chip: string | null
+  /** What the design is ("Lead · Met", "Project · P-2026-001", "Studio’s own"). (6-08) No longer a chip beside the name — it rides the name's
+      tooltip, so the project's number is still one hover away in the editor. */
+  title: string; chip?: string | null
   rooms: { id: string; name: string }[]; roomId: string | null; onRoom: (id: string) => void
   /** (REG-719) a room's ⋯, inside its chip — the menu is that room's */
   onRoomMenu: (id: string, el: HTMLElement) => void; roomMenuOpen: boolean
@@ -50,8 +54,7 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
       <Tooltip label={backLabel}><IconButton icon="arrow_back" label={backLabel} size={36} variant="bare" iconSize={24} iconWeight={300} onClick={onBack} data-testid="viz-back" /></Tooltip>
       <div className={styles.titles}>
         {/* (phone-5) a name made unique by its number ("Design · 26 Sep (2)") keeps the number when the bar cuts it — the stem gives way */}
-        <Tooltip label={title}><h1 className={styles.title} data-split={suffix ? '' : undefined}>{suffix ? <><span className={styles.titleStem}>{title.slice(0, -suffix.length)}</span><span className={styles.titleTail}>{suffix}</span></> : title}</h1></Tooltip>
-        {chip ? <span className={styles.whose}><MetaChip>{chip}</MetaChip></span> : null}
+        <Tooltip label={chip ? `${title} · ${chip}` : title}><h1 className={styles.title} data-split={suffix ? '' : undefined}>{suffix ? <><span className={styles.titleStem}>{title.slice(0, -suffix.length)}</span><span className={styles.titleTail}>{suffix}</span></> : title}</h1></Tooltip>
       </div>
       {!compact ? (
         <div className={styles.rooms}>
@@ -77,11 +80,12 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
           </>
         ) : null}
         {credits}
-        {/* (UX audit V4, supersedes F004's icon) the step that ends the meeting stays a labelled, filled button — "Share" where the bar is
-            tight (≤1280, the tablet and the phone), never a grey glyph that reads as disabled */}
-        <Tooltip label={shareDisabled ?? 'Send the client a link to these renders'}>
-          <span>{compact || snug ? <Button onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} aria-label="Share with client" className={styles.share} data-testid="viz-share">Share</Button>
-            : <Button onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} data-testid="viz-share">Share with client</Button>}</span>
+        {/* (UX audit V4, supersedes F004's icon) the step that ends the meeting stays a labelled button — "Share" where the bar is tight
+            (≤1280, the tablet and the phone), never a grey glyph that reads as disabled. (the calm UI build 2026-10-27, 6-04) outlined: Generate
+            is the one filled button on the screen */}
+        <Tooltip label={shareDisabled ?? 'Send the client a link to these versions'}>
+          <span>{compact || snug ? <Button variant="secondary" appearance="outlined" onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} aria-label="Share with client" className={styles.share} data-testid="viz-share">Share</Button>
+            : <Button variant="secondary" appearance="outlined" onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} data-testid="viz-share">Share with client</Button>}</span>
         </Tooltip>
         <Tooltip label="More options" disabled={menuOpen}><IconButton icon="more_vert" label="Design options" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenu(e.currentTarget)} data-testid="viz-design-menu" /></Tooltip>
       </div>

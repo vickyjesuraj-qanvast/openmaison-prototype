@@ -9,9 +9,11 @@
 
 /* the page under the L1 header: 24 in, the bar · the note · the featured article · the cards 24 apart */
 .content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+/* (the calm UI build 2026-10-27, 6-27) the bar: the Category scope pill at the left (one choice — a pill, as the Marketplace's), the search at
+   the right */
 .bar { composes: bar from '../om/tab-toolbar.module.css'; }
 .views { flex: 1; min-width: 0; display: flex; align-items: center; }
-.rail { min-width: 0; max-width: 100%; }
+.pillAnchor { position: relative; display: inline-flex; }
 .tools { composes: actions from '../om/tab-toolbar.module.css'; }
 .note { composes: note from '../company/read-only-note.module.css'; }
 
@@ -21,7 +23,8 @@
 .cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .coverEmpty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
 .cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); min-width: 0; flex: 1; }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the category over a title: in its own case (the calm UI build 2026-10-27, T-06 — capitals are for a status) */
+.eyebrow { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cardTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-height: 40px; }
 .cardExcerpt { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-height: 32px; }
 .cardMeta { margin-top: auto; padding-top: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -40,15 +43,20 @@
 .featuredPic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .featuredPic > .coverEmpty { position: absolute; inset: 0; }
 .flag { composes: ribbon from '../company/templates/quote-templates-gallery.module.css'; }
-.featuredText { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-8); min-width: 0; }
+/* (the calm UI build 2026-10-27, 6-34) the words as one block, centred on the photo's height: the first lines straight under the title (they
+   were pushed to the card's foot — a ~90 hole under the title read as missing words) */
+.featuredText { display: flex; flex-direction: column; justify-content: center; gap: var(--om-spacing-3); padding: var(--om-spacing-8); min-width: 0; }
 .featuredTitle { margin: 0; font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-/* the title at the top; the first lines, the tags and the byline at the card's foot (an editorial card: whatever the title's length, the
-   foot holds its place) */
-.featuredExcerpt { margin: auto 0 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; min-height: 72px; }
+.featuredExcerpt { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 /* the ghost's lines in the featured card: the page's line heights at every width */
 .ghostFeatTitle { height: 32px; }
 .ghostFeatText { height: 24px; }
 .tags { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+/* (6-08) a tag as the article's own page draws it — the house chip, in its own case — here words inside the card's link (a chip-shaped link
+   can't sit inside a link); its own hover stays off, the card answers the pointer */
+.tag { composes: chip from '../om/chips.module.css'; }
+.featured .tag.tag { cursor: inherit; }
+@media (hover: hover) { .featured .tag.tag:hover { background: var(--om-color-surface-default); } }
 .byline { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; padding-top: var(--om-spacing-2); }
 .bylineText { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .author { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
@@ -58,10 +66,10 @@
 /* ── Show more, the source line ───────────────────────────────────────────────────────────────────────────────────────────────── */
 .more { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
 .moreCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.source { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
 
 /* (REG-375) the open search takes the row's room on a narrow bar; the categories step aside for it, as a section title does */
 @media (max-width: 1024px) {
+  .ghostCat.ghostCat { width: 72px; }   /* the ghost's Category pill at its short "All ▾" */
   .bar:has([data-om-search-open]) .views { display: none; }
   .bar { flex-wrap: nowrap; }
   .featuredText { padding: var(--om-spacing-6); }
@@ -93,3 +101,10 @@
 }
 /* a ghost's lines inside a clamped block: one column of bars (the block keeps its own clamp and its phone rules) */
 .ghostLines { display: flex; flex-direction: column; }
+
+/* (the calm UI build 2026-10-27, 6-34) the featured card's ghost: its title one line at a desk, two at ≤1024 (the page's title wraps there — the
+   excerpt now sits right under it, so the line count moves everything below); its tags as tall as the page's chips (44 under a finger) */
+.ghostFeatTitle2 { display: none; }
+.ghostTag { height: 32px; }
+@media (max-width: 1024px) { .ghostFeatTitle2.ghostFeatTitle2 { display: block; } }
+@media (hover: none) and (max-width: 1024px) { .ghostTag.ghostTag { height: 44px; } }

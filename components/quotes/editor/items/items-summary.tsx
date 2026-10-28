@@ -37,7 +37,7 @@ export type SummaryProps = {
 }
 
 /**
- * Below the table (1260:31541): the Issuing Entity field with its "GST-Registered" helper and the totals card (1271:36761):
+ * Below the table (1260:31541): the Issued by field (was Issuing Entity) with its "GST registered" helper and the totals card (1271:36761):
  * Subtotal · n items, Discount, Additional Discount (% | S$ + amount), GST 9% switch, Total + Round Prices, and — for the
  * studio's owner only — the margin strip. Every figure is derived from the lines (lib/quotes/math.ts). The desktop's block;
  * ≤1024 the same pieces stand in the pinned strip's Adjust and Breakdown (items-touch-foot.tsx, Quotes on the move P-03).
@@ -64,9 +64,9 @@ export function EntityField({ pricing, studio, entities, billsProject = null, on
   const registered = pricing.issuingEntity ? (entities.find((e) => e.name === pricing.issuingEntity)?.gstRegistered ?? true) : studio.gstRegistered
   return (
     <div className={styles.entity}>
-      <TextField label="Issuing Entity" value={entity} mode="select" size="s" options={entityOptions} disabled={!!billsProject}
+      <TextField label="Issued by" value={entity} mode="select" size="s" options={entityOptions} disabled={!!billsProject}
                  onChange={(v) => { const e = entities.find((x) => x.name === v); const reg = v === studio.name ? studio.gstRegistered : (e?.gstRegistered ?? true); onPricing({ issuingEntity: v === studio.name ? null : v, gstEnabled: reg }) }} />   {/* (REG-593) the entity brings its GST with it */}
-      <span className={styles.entityHelper} data-testid="entity-helper">{billsProject ? `It bills ${billsProject.number}’s invoices — they are issued from ${billsProject.from}` : registered ? 'GST-Registered' : 'Not GST-registered — no GST on this quote'}</span>
+      <span className={styles.entityHelper} data-testid="entity-helper">{billsProject ? `It bills ${billsProject.number}’s invoices — they are issued from ${billsProject.from}` : registered ? 'GST registered' : 'Not GST registered — no GST on this quote'}</span>
     </div>
   )
 }
@@ -103,12 +103,17 @@ export function TotalsCard({ totals, pricing, owner, gstLabel = 'GST 9%', onPric
         <span className={`${styles.tlabel} ${styles.tlabelTight}`}>Subtotal <span className={styles.dot}>·</span> <span className={styles.count}>{totals.itemCount} {totals.itemCount === 1 ? 'item' : 'items'}</span></span>
         <span className={styles.tvalue}>{money2(totals.subtotalMinor)}</span>
       </div>
-      <div className={styles.trow}>
-        <span className={styles.tlabel}>Discount</span>
-        <span className={styles.tvalue}>{money2(totals.discountMinor)}</span>
-      </div>
+      {/* (the calm UI build 2026-10-27, the UI audit's 4-29 · W-107) no discount row until there is a discount: the lines' own discounts show
+          once one is set; the quote's additional discount once it holds a value; "+ Add a discount" is the one way in (a named discount, % or S$) */}
+      {totals.discountMinor ? (
+        <div className={styles.trow}>
+          <span className={styles.tlabel}>Discount</span>
+          <span className={styles.tvalue}>{money2(totals.discountMinor)}</span>
+        </div>
+      ) : null}
+      {pricing.additionalDiscountValue > 0 || draft !== null ? (
       <div className={`${styles.trow} ${styles.trowStack}`}>   {/* (wave E, phone-4) on a phone the label takes its line, the % | S$ and the amount the next */}
-        <span className={styles.tlabel}>Additional Discount</span>
+        <span className={styles.tlabel}>Additional discount</span>
         <span className={styles.tcontrols}>
           <button ref={modeRef} type="button" className={`${styles.mini} ${styles.miniSelect}`} aria-haspopup="menu" aria-expanded={modeOpen} aria-label="Additional discount unit" onClick={() => setModeOpen((o) => !o)}>
             {pricing.additionalDiscountMode === 'amount' ? 'S$' : '%'}<Icon name="expand_more" size={16} />
@@ -130,6 +135,7 @@ export function TotalsCard({ totals, pricing, owner, gstLabel = 'GST 9%', onPric
           )}
         </span>
       </div>
+      ) : null}
       {discounts.map((d) => <DiscountRow key={d.id} d={d} applied={totals.discountLines.find((x) => x.id === d.id)?.minor ?? 0} subtotalMinor={totals.subtotalMinor} touch={touch} onPatch={(p) => patchDiscount(d.id, p)} onRemove={() => setDiscounts(discounts.filter((x) => x.id !== d.id))} />)}
       {discounts.length < 10 ? (
         <button type="button" className={styles.addDisc} data-testid="add-discount" onClick={() => setDiscounts([...discounts, { id: `d-${Date.now().toString(36)}`, label: '', mode: 'pct', value: 0 }])}>
@@ -142,7 +148,7 @@ export function TotalsCard({ totals, pricing, owner, gstLabel = 'GST 9%', onPric
       </div>
       <div className={styles.rule} />
       <div className={styles.trow}>
-        <span className={`${styles.tlabel} ${styles.totalLabel}`}><span className={styles.total}>{variation ? 'Change to the contract' : 'Total'}</span>{variation ? null : <button type="button" className={styles.roundLink} onClick={onRound}>Round Prices</button>}</span>
+        <span className={`${styles.tlabel} ${styles.totalLabel}`}><span className={styles.total}>{variation ? 'Change to the contract' : 'Total'}</span>{variation || !touch ? null : <button type="button" className={styles.roundLink} onClick={onRound}>Round prices</button>}</span>{/* (4-29 · W-344) on the desk Round prices… is the Items ⋮'s row; the touch sheet keeps it, its form has no ⋮ */}
         <span className={`${styles.tvalue} ${styles.total}`}>{money2(totals.totalMinor)}</span>
       </div>
       {owner ? (
@@ -225,14 +231,14 @@ export function ItemsBreakdown({ shares, onPick, owner }: { shares: CategoryShar
   const variation = useVariation()   // (fix-D, D-07)
   const band = (p: number) => (p >= 20 ? 'good' : p >= 10 ? 'fair' : 'low')
   return (
-    <section className={styles.bycat} aria-label="By category" data-testid="items-by-category">
+    <section className={styles.bycat} aria-label="By trade" data-testid="items-by-category">
       <div className={styles.bycatHead}>
-        <span>By category <span className={styles.bycatMeta}>· {shares.length} · {margin ? 'margin before the quote’s discounts' : 'share of the subtotal'}</span></span>
+        <span>By trade{margin ? <span className={styles.bycatMeta}> · before the quote’s discounts</span> : null}</span>
         {owner ? <Chips className={styles.bycatMode} label="Show" options={[{ value: 'share', label: 'Share' }, { value: 'margin', label: 'Margin' }]} value={mode} onChange={(v) => setMode(v === 'margin' ? 'margin' : 'share')} testId="bycat-mode" /> : null}
       </div>
       <div className={styles.shares} style={{ '--rows': rows } as CSSProperties}>
         {shares.map((c) => (
-          <Tooltip key={c.name} label={margin && c.marginPct !== null ? `${money2(c.totalMinor - c.costMinor)} on ${money2(c.totalMinor)} · open ${c.name} in View by: Category` : `Open ${c.name} in View by: Category`}>
+          <Tooltip key={c.name} label={margin && c.marginPct !== null ? `${money2(c.totalMinor - c.costMinor)} on ${money2(c.totalMinor)} · open ${c.name} in View by: Trade` : `Open ${c.name} in View by: Trade`}>
             <button type="button" className={styles.share} data-testid="items-share" onClick={() => onPick(c.name)}>
               <span className={styles.shareName}>{c.name}</span>
               {margin ? (

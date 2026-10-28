@@ -17,7 +17,7 @@ export function preselectWords(data: ScheduleData, templateId: string): string |
   const r = data.preselect?.reason
   const t = data.start.templates.find((x) => x.id === templateId)
   if (!t || !data.preselect || data.preselect.pick.kind !== 'template' || data.preselect.pick.id !== templateId) return null
-  if (r === 'property') return `Picked for ${data.kind?.propertyType ? `a ${data.kind.propertyType}` : 'this home'} — the ready-made ${t.name} schedule. Pick another if the job differs.`
+  if (r === 'property') return null   // (the calm UI build 2026-10-27, 3-34) the select names the ready-made pick; the preview shows it
   if (r === 'type') return `Settings › Projects starts every ${(data.kind?.projectType ?? 'such project').toLowerCase()} here.`
   if (r === 'studio') return 'The studio default in Settings › Projects › Schedule starts new schedules here.'
   return null
@@ -139,8 +139,9 @@ export function StartSchedule({ data, onCreate, onManageTemplates, draftAi = fal
       <form className={styles.startForm} onSubmit={(e) => { e.preventDefault(); void create() }}>
         <div>
           <h2 className={styles.startTitle}>Set up the schedule</h2>
-          {/* (B-47) Managers of the team's members may set it up too (`worksOn`) — named, as REG-1059 does in Settings */}
-          <p className={styles.startHelp}>{can ? 'Pick the day works start and where the milestones come from. Everything can be changed afterwards.' : 'Only the project’s team, their Managers, Owners and Admins set up its schedule.'}</p>
+          {/* (B-47) Managers of the team's members may set it up too (`worksOn`) — named, as REG-1059 does in Settings · (the calm UI build 2026-10-27,
+              3-34) the lede in the picker's own words, "what to build the schedule from" */}
+          <p className={styles.startHelp}>{can ? 'Pick the day works start and what to build the schedule from. Everything can be changed afterwards.' : 'Only the project’s team, their Managers, Owners and Admins set up its schedule.'}</p>
         </div>
         <div className={styles.startDate}><DateField label="Works start on" value={date} onChange={setDate} today={today} disabled={!can} /></div>
         <SourcePicker value={src} onChange={setSrc} quotes={quotes} templates={s.templates} disabled={!can} blank templateHelp={preselectWords(data, src.templateId)} testId="start-sources" ai={ai} />

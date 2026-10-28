@@ -25,7 +25,7 @@ export function HangoutGhost() {
   const view: View | null = isView(asked) ? asked : null
   return (
     <GhostSheet label="Loading the Hangout">
-      <GhostHead2 crumb={150} title={300} chips={[52, 64]} actions={view === 'plan' || view === 'meetings' ? [206] : []} />   {/* Your booking page ▾ — an ended Hangout (How it went's) has none */}
+      <GhostHead2 crumb={150} title={300} chips={[52, 36]} actions={view === 'plan' || view === 'meetings' ? [206] : []} />   {/* Your booking page ▾ — an ended Hangout (How it went's) has none */}
       {view ? <GhostTabs labels={LABELS} active={(['plan', 'meetings', 'results'] as const).indexOf(view)} /> : null}   {/* (S43E, F3-03 W3-04) the open view’s place */}
       <div className={styles.content}>
         <div className={styles.stack}>
@@ -76,7 +76,8 @@ function Plan({ taking }: { taking: boolean }) {
           <section className={cardStyles.card}>
             <CardHead w={72} />
             <div className={styles.cardBody}>
-              <GhostLines className={`${styles.help} ${styles.ghostLines}`} lh={16} h={10} lines={['88%', ['80%', 'phone'], ['70%', 'phone'], ['40%', 'phone']]} />
+              {/* (the calm UI build 2026-10-27) "Clients who book…" (was Homeowners) — three lines on a phone, as the sentence now runs */}
+              <GhostLines className={`${styles.help} ${styles.ghostLines}`} lh={16} h={10} lines={['88%', ['80%', 'phone'], ['56%', 'phone']]} />
               <div className={styles.people}>
                 {[84, 96, 72, 104, 64, 76, 92].map((w, i) => (
                   <div key={i} className={styles.person}>
@@ -132,7 +133,8 @@ function Chats() {
                   <Slot kind="avatar40" style={{ width: 36, height: 36 }} />
                   <span className={styles.whoText}>
                     <span className={styles.nameRow}><Line w={[100, 84, 108][i]!} lh={24} h={14} className={own.name} /><Line w={60} lh={20} h={14} /></span>
-                    <GhostLines className={`${styles.whoLine} ${styles.ghostLines}`} lh={16} h={10} lines={[[300, 300, 280][i] as number, [48, 'phone']]} />
+                    {/* (the calm UI build 2026-10-27, 2-26) a waiting chat's facts leave its shift to the head — "With Germaine · Table 7", one line */}
+                    <GhostLines className={`${styles.whoLine} ${styles.ghostLines}`} lh={16} h={10} lines={[[150, 150, 140][i] as number]} />
                   </span>
                 </span>
                 <span className={styles.press}><Slot kind="btn" w={66} /><Slot kind="icon" /></span>
@@ -156,7 +158,7 @@ function Results() {
         <CardHead w={96} />
         <div className={styles.cardBody}>
           <div className={styles.byTable} data-card-table="">
-            <div className={styles.byHead}><Words>Designer</Words><Words className={styles.num}>Chats</Words><Words className={styles.num}>Converted</Words><Words className={styles.num}>Follow-up</Words><Words className={styles.num}>Dropped</Words></div>
+            <div className={styles.byHead}><Words>Member</Words><Words className={styles.num}>Chats</Words><Words className={styles.num}>Converted</Words><Words className={styles.num}>Follow-up</Words><Words className={styles.num}>Dropped</Words></div>
             {[0, 1].map((i) => <div key={i} className={styles.byRow}><span className={styles.who}><Slot kind="avatar" /><Line w={[48, 72][i]!} lh={20} h={12} /></span>{[0, 1, 2, 3].map((j) => <Line key={j} w={10} lh={20} h={12} className={styles.num} />)}</div>)}
           </div>
         </div>

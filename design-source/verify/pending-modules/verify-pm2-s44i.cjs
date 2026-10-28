@@ -95,8 +95,11 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     await page.screenshot({ path: path.join(dir, 'a-branches-feet-1440.png') })
 
     console.log('\nB · B2 Collapse All / Expand All')
+    await page.getByRole('button', { name: 'More options for Items' }).click(); await settle(300)   // (the calm UI build 2026-10-27, a deliberate change) Expand / Collapse all is the Items ⋮'s row now (4-03)
     await page.getByTestId('toolbar-fold').click(); await settle()
-    ok(/Expand All$/.test((await page.getByTestId('toolbar-fold').innerText()).trim()), 'the toolbar reads Expand All once every section is folded')
+    await page.getByRole('button', { name: 'More options for Items' }).click(); await settle(300)
+    ok(/Expand all$/i.test((await page.getByTestId('toolbar-fold').innerText()).trim()), 'the toolbar reads Expand All once every section is folded')
+    await page.keyboard.press('Escape'); await settle(200)
     ok(await row(K1).count() === 0 && await page.locator('[data-section-foot]').count() === 0, 'no section line and no foot shows')
     ok(sql(`select count(*) from quote_items where quote_id = '${Q}' and parent_id is null and kind = 'group' and collapsed = 0`) === '0', 'every top section is folded on the record')
     await undo()
@@ -131,7 +134,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     await page.evaluate(() => document.activeElement?.blur?.())
     await page.locator(`[data-section-foot="${KITCHEN}"] [data-testid="foot-add-sub"]`).click(); await settle(1500)
     const sub = kids(KITCHEN).find((x) => x.name === 'New sub-section')
-    ok(!!sub && await row(sub.id).locator('text=Sub-section').count() >= 1, 'Add sub-section makes “New sub-section”, tagged Sub-section')
+    ok(!!sub && await row(sub.id).first().getAttribute('data-depth') === '1' && await row(sub.id).first().getAttribute('data-group') !== null, 'Add sub-section makes “New sub-section”, a sub-section row')   // (the calm UI build 2026-10-27, a deliberate change) the SECTION / Sub-section tag left the rows (4-12) — the row's own marks say it
     ok(!!sub && /Nothing in New sub-section yet/.test(await page.locator(`[data-section-foot="${sub.id}"]`).innerText()), 'its own foot says it is empty')
     await page.evaluate(() => document.activeElement?.blur?.())
     await page.getByRole('button', { name: 'Find items' }).click(); await page.keyboard.type('tile'); await settle(500)
@@ -158,7 +161,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nE · B5 Several…')
-    await kebab(K2); await item('Add Item').click(); await item('Add several…').click(); await settle(200)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
+    await kebab(K2); await item('More').click(); await item('Add item').click(); await item('Add several…').click(); await settle(200)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
     const stepper = page.getByTestId('several-stepper')
     ok(/5/.test(await stepper.innerText()), 'the stepper starts at 5')
     await stepper.getByRole('button', { name: 'More lines' }).click(); await stepper.getByRole('button', { name: 'More lines' }).click()
@@ -168,7 +171,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     ok(await page.evaluate((id) => document.activeElement?.closest('[data-item-id]')?.getAttribute('data-item-id') === id, k[2].id), 'the first new line takes the caret')
     await undo()
     ok(kids(KITCHEN).length === 3, 'one ⌘Z takes all seven away')
-    await kebab(KITCHEN); await item('Add Item').click(); await item('Add several…').click(); await settle(200)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
+    await kebab(KITCHEN); await item('More').click(); await item('Add item').click(); await item('Add several…').click(); await settle(200)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
     for (let i = 0; i < 3; i++) await page.getByTestId('several-stepper').getByRole('button', { name: 'Fewer lines' }).click()
     ok(await page.getByTestId('several-stepper').getByRole('button', { name: 'Fewer lines' }).isDisabled(), 'the stepper stops at 2')
     await item('Add 2 inside section').click(); await settle(1800)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
@@ -177,7 +180,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nF · B6 the Price book from a row')
-    await kebab(K2); await item('Add Item').click(); await item('Add from Price book…').click(); await settle(600)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
+    await kebab(K2); await item('More').click(); await item('Add item').click(); await item('Add from Price book…').click(); await settle(600)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
     const dlg = page.getByTestId('price-book-dialog')
     ok(await dlg.count() === 1 && await page.getByRole('radio', { name: 'Below' }).getAttribute('aria-checked') === 'true', 'the modal opens with Below picked')
     await page.locator(`[data-testid="book-item"]:has-text("Electrical point, new")`).first().click()
@@ -187,7 +190,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     ok(k[1].id === K2 && k[2].name === 'Electrical point, new' && k[3].name === 'Design consultation and 3D drawings', 'both land below the line in the order ticked')
     await undo()
     ok(kids(KITCHEN).length === 3, '⌘Z takes both back')
-    await kebab(K2); await item('Add Item').click(); await item('Add from Price book…').click(); await settle(600)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
+    await kebab(K2); await item('More').click(); await item('Add item').click(); await item('Add from Price book…').click(); await settle(600)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
     await page.getByRole('radio', { name: 'Above' }).click()
     await page.locator(`[data-testid="book-item"]:has-text("Electrical point, new")`).first().click()
     await page.getByRole('button', { name: 'Add 1 item' }).click(); await settle(2000)
@@ -206,7 +209,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nG · B7 Paste lines')
-    await kebab(K1); await item('Add Item').click(); await item('Paste lines…').click(); await settle(500)
+    await kebab(K1); await item('More').click(); await item('Add item').click(); await item('Paste lines…').click(); await settle(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: the row ⋮ keeps seven rows; the rest is one level in, under More
     ok(await page.getByTestId('paste-lines-box').count() === 1 && await page.getByRole('button', { name: /^Add \d+ items?$/ }).isDisabled(), 'an empty box to type into; Add waits')
     await page.getByTestId('paste-lines-box').locator('textarea').fill('• Hacking\t1\tlot\t1200\n2. Plastering\t2\tlot\t300'); await settle(400)
     const prev = await page.locator('[data-testid="import-row"]').allInnerTexts()
@@ -324,18 +327,18 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nL · C1 the divider over the sections priced after the contract')
-    await kebab(KITCHEN); await page.getByRole('menuitem', { name: /^Price after the contract/ }).last().click(); await settle(1800)
+    await kebab(KITCHEN); await item('Print as').click(); await page.getByRole('menuitem', { name: /^Price after the contract/ }).last().click(); await settle(1800)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: a section's print choices live under Print as ›
     const dv = await page.evaluate(({ k, bed }) => { const all = [...document.querySelectorAll('[role="row"]')]; const at = (sel) => all.findIndex((e) => e.matches(sel)); return { div: at('[data-testid="priced-after-divider"]'), k: at(`[data-item-id="${k}"]`), bed: at(`[data-item-id="${bed}"]`) } }, { k: KITCHEN, bed: BED })
     ok(dv.div >= 0 && dv.k === dv.div + 1 && dv.bed < dv.div, 'the marked section gathers at the end, under “Priced after the contract”')
     await page.screenshot({ path: path.join(dir, 'l-priced-after-divider-1440.png') })
-    await page.getByRole('button', { name: /^Create/ }).first().click(); await item('New Item').click(); await settle(1600)
+    await page.getByRole('button', { name: /^Create/ }).first().click(); await item('New item').click(); await settle(1600)
     const tops = kids(null)
     ok(tops[tops.length - 1].id === KITCHEN, 'a new top line lands above the estimates, never among them')
     await page.evaluate(() => document.activeElement?.blur?.())
     restoreItems(); await open()
 
     console.log('\nM · C2 Words on this line')
-    await kebab(K1); await item('Words on this line…').click(); await settle(500)
+    await kebab(K1); await item('More').click(); await item('Words on this line…').click(); await settle(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: the row ⋮ keeps seven rows; the rest is one level in, under More
     const words = page.getByRole('dialog', { name: 'Words on this line' })
     ok(await words.count() === 1, 'the line’s ⋮ opens Words on this line — the name above, the description below')
     const nameBox = words.getByTestId('words-name').locator('[contenteditable]')
@@ -357,7 +360,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nN · M3 paragraphs kept')
-    await kebab(K2); await item('Words on this line…').click(); await settle(500)
+    await kebab(K2); await item('More').click(); await item('Words on this line…').click(); await settle(500)
     const desc = page.getByRole('dialog', { name: 'Words on this line' }).getByTestId('words-description').locator('[contenteditable]')
     await desc.click(); await page.keyboard.press('Meta+a'); await page.keyboard.type('First paragraph'); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await page.keyboard.type('Second paragraph')
     await page.getByRole('dialog', { name: 'Words on this line' }).getByRole('button', { name: 'Save' }).click(); await settle(1400)
@@ -368,8 +371,8 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     console.log('\nO · M14 a label in another case picks the quote’s own')
     await kebab(T1); await settle(100); await page.keyboard.press('Escape')
     await row(T1).locator('[data-col="category"] button').click().catch(() => {})
-    if (await page.getByRole('menuitem', { name: 'Add Category' }).count()) {
-      await page.getByRole('menuitem', { name: 'Add Category' }).last().click(); await settle(300)
+    if (await page.getByRole('menuitem', { name: 'Add trade' }).count()) {   // (the calm UI build 2026-10-27, a deliberate change) 4-01: Trade, not Category
+      await page.getByRole('menuitem', { name: 'Add trade' }).last().click(); await settle(300)
       await page.getByRole('dialog').getByRole('textbox').fill('carpentry'); await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click(); await settle(1200)
       ok(one(T1, 'category') === 'Carpentry', 'Add Category “carpentry” → the line takes “Carpentry”')
     } else {
@@ -384,14 +387,14 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     restoreItems(); await open()
 
     console.log('\nQ · §12.6 a section’s ⋮ › Section note…')
-    await kebab(KITCHEN); await item('Section note…').click(); await settle(400)
+    await kebab(KITCHEN); await item('More').click(); await item('Section note…').click(); await settle(400)
     ok(await page.getByRole('dialog', { name: 'Section note' }).count() === 1, 'the section’s note opens in its dialog')
     await page.keyboard.press('Escape'); await settle(300)
 
     console.log('\nR · 316 Save section leaves empty sub-sections out')
     sql(`insert into quote_items (id, quote_id, parent_id, kind, position, name, status, qty, cost_minor, markup_minor, discount_pct, gst_pct, visibility, collapsed, created_at, updated_at) values ('s44i-empty', '${Q}', '${KITCHEN}', 'group', 9, 'Empty corner', 'Pending', 1, 0, 0, 0, 9, 'visible', 0, 0, 0)`)
     await open()
-    await kebab(KITCHEN); await item('Save section to My Sections').click(); await settle(1600)
+    await kebab(KITCHEN); await item('Save to Price book').click(); await settle(1600)   // (the calm UI build 2026-10-27, a deliberate change) W-608
     const saved = sql(`select lines_json from price_book_sections where name = 'Kitchen' order by created_at desc limit 1`)
     ok(saved && !/Empty corner/.test(saved), 'the saved section holds no empty sub-section')
     restoreItems(); await open()
@@ -453,7 +456,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
 
     console.log('\nU · row 352 the working columns, and Preview’s panel')
     await open()
-    await page.getByRole('button', { name: 'Column settings' }).click(); await settle(500)
+    await page.getByRole('button', { name: 'More options for Items' }).first().click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Column settings' }).click(); await settle(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-03
     const note = page.getByTestId('working-columns-note')
     ok(await note.count() === 1 && /What your client sees/.test(await note.innerText()), 'Column settings says these are the working columns')
     await note.getByRole('link').click(); await page.waitForURL(/preview\?panel=client/); await page.waitForTimeout(1200)
@@ -475,7 +478,7 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     await page.getByTestId('entity-helper').scrollIntoViewIfNeeded()
     ok(/It bills P-2026-001’s invoices — they are issued from/.test(await page.getByTestId('entity-helper').innerText()), 'NB-06 · the base quote of P-2026-001 says why its issuing entity stays')
     await open()
-    await kebab(KITCHEN); await item('Section note…').click(); await settle(400)
+    await kebab(KITCHEN); await item('More').click(); await item('Section note…').click(); await settle(400)
     const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByTestId('rich-picture').click()])
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEklEQVR4nGP4z8DAwMDAxMDAAAAuAAOz/FbbAAAAAElFTkSuQmCC', 'base64')
     await chooser.setFiles({ name: 'swatch.png', mimeType: 'image/png', buffer: png }); await settle(600)
@@ -503,7 +506,8 @@ const one = (id, col) => sql(`select ${col} from quote_items where id = '${id}'`
     const kc = pp.locator(`[data-testid="item-card"][data-item-id="${K2}"] [aria-label^="More options for"]`)
     await kc.scrollIntoViewIfNeeded(); await kc.tap(); await pp.waitForTimeout(400)
     await pp.getByRole('menuitem', { name: 'More…' }).last().tap(); await pp.waitForTimeout(200)   // (quotes on the move) the phone's ⋮ is five rows; the rest one level in
-    await pp.getByRole('menuitem', { name: 'Add Item' }).last().tap(); await pp.waitForTimeout(200)
+    await pp.getByRole('menuitem', { name: 'More', exact: true }).last().tap(); await pp.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: the row ⋮ keeps seven rows; the rest is one level in, under More
+    await pp.getByRole('menuitem', { name: 'Add item', exact: true }).last().tap(); await pp.waitForTimeout(200)
     await pp.getByRole('menuitem', { name: 'Add several…' }).last().tap(); await pp.waitForTimeout(200)   // (Dane's Items-sections round, REG-2534 · 2535 — a deliberate change of this rule) the row reads "Add several…"; on a section "Add n inside section"
     ok(await pp.getByTestId('several-stepper').count() === 1, 'the row menu’s sheet offers Several… with its stepper')
     await pp.screenshot({ path: path.join(dir, 'v-several-sheet-390.png') })

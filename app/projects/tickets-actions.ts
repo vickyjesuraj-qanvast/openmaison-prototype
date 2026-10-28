@@ -32,7 +32,7 @@ type Refusal = { error: string }
 const isRefusal = (x: unknown): x is Refusal => !!x && typeof x === 'object' && 'error' in x
 const GONE = 'This ticket isn’t there any more'
 const PROJECT_GONE = 'This project isn’t there any more'
-const CLOSED_RULE = 'Reopen the ticket to answer on it'
+const CLOSED_RULE = 'Reopen the issue to answer on it'
 const RUNS_RULE = 'Only Owners and Admins change the ticket categories'
 
 type Ctx = { p: typeof projects.$inferSelect; viewer: Viewer; me: { id: string; name: string }; team: string[]; client: string }

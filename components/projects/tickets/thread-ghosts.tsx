@@ -27,7 +27,7 @@ export function MessagesGhost({ title }: { /** (simplify S-03) the group's view 
     <div className={msg.tab} aria-hidden>
       <div className={msg.bar}>{title ?? <Line w={260} lh={36} h={16} />}<span className={msg.actions}><Slot kind="btnFold" w={176} /></span></div>
       <section className={msg.card}>
-        <div className={msg.convHead}><span className={msg.convStart}><span className={chipRow.chips}>{[64, 60].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</span></span><Slot kind="icon" /><Slot kind="icon" /><Slot kind="icon" /></div>   {/* (pending modules S26) search · Details · ⋮ */}
+        <div className={msg.convHead}><span className={msg.convStart}><Line w={72} lh={20} h={12} /></span><Slot kind="icon" /><Slot kind="icon" /><Slot kind="icon" /></div>   {/* (pending modules S26) search · Details · ⋮ · (the calm UI build 2026-10-27, 3-13) the head's start is the quiet Team chat link (was the Client · Team chips) */}
         <div className={msg.scroll}><div className={thread.lines}><GhostLine w={420} /><GhostLine w={300} /><GhostLine w={360} /></div></div>
         <div className={msg.foot}><div className={thread.composer}><Bone w="100%" h={64} r="var(--om-radius-1)" /><div className={thread.row}><Slot kind="icon" /><span className={thread.hint}><Line w={220} lh={16} h={10} /></span><span className={thread.send}><Bone w={72} h={36} r="var(--om-radius-1)" /></span></div></div></div>
       </section>
@@ -38,10 +38,10 @@ export function TicketsGhost({ first = false, title }: { first?: boolean; /** (s
   if (first) {
     return (
       <div className={styles.tab} aria-hidden>
-        <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Tickets</Words>}</div>
+        <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Issues</Words>}</div>
         <section className={empty.empty} data-tone="first">
           <span className={empty.glyph} />
-          <Words as="h3" className={empty.title}>No tickets yet</Words>
+          <Words as="h3" className={empty.title}>No issues yet</Words>
           <span className={empty.help}><Para lines={3} lh={20} h={12} w={300} last={240} /></span>
           <div className={empty.actions}><Bone w={140} h={36} r="var(--om-radius-1)" /></div>
         </section>
@@ -50,15 +50,16 @@ export function TicketsGhost({ first = false, title }: { first?: boolean; /** (s
   }
   return (
     <div className={styles.tab} aria-hidden>
-      <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Tickets</Words>}<span className={styles.actions}><Slot kind="icon" /><Slot kind="btnFold" w={132} /></span></div>
-      <div className={chipRow.chips}>{[84, 156, 64].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</div>
+      {/* (the calm UI build 2026-10-27, 3-37 · 1-25) "Issues" · "New issue" · Open · n · Closed · n · All · n */}
+      <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Issues</Words>}<span className={styles.actions}><Slot kind="icon" /><Slot kind="btnFold" w={120} /></span></div>
+      <div className={chipRow.chips}>{[84, 100, 72].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</div>
       <div className={styles.list}>
         {[260, 200, 240].map((w, i) => (
           <div key={i} className={styles.card}>
-            <span className={styles.head}><Line w={84} /><Line w={w} lh={20} h={14} /><Bone w={64} h={20} r="var(--om-radius-1)" /></span>
+            <span className={styles.head}><Line w={w} lh={20} h={14} /><Bone w={64} h={20} r="var(--om-radius-1)" /></span>
             <Line w="54%" className={styles.sub} />
             <Line w="70%" className={styles.last} />
-            <span className={styles.side}><Bone w={24} h={24} r="var(--om-radius-1)" /><Line w={88} lh={16} h={10} /></span>
+            <span className={styles.side}><Line w={88} lh={16} h={10} /><Bone w={24} h={24} r="var(--om-radius-1)" /></span>
           </div>
         ))}
       </div>

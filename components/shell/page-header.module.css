@@ -34,6 +34,11 @@
   color: var(--om-color-on-surface-default);
 }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
+/* (the calm UI build 2026-10-27, 6-22 · W-125) `after`: a status or an info glyph beside the title — the pair takes the title's room, the title
+   hugs its words. Two classes, so the title's own `flex: 1` (and its phone rule) never wins in any load order. */
+.titleWith { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
+.titleWith > .title { flex: 0 1 auto; min-width: 0; }
+.after { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
 
 /* Responsive (REG-269): ≤767 the header wraps — title row, then actions — instead of clipping actions. */
 @media (max-width: 767px) {
@@ -51,6 +56,8 @@
      ("Qanvast / Ops" beside Request reviews at 320, "Your / profile" beside Discard · Save at 360). A title wider than the screen on its own ends
      in an ellipsis. A header whose title and actions fit draws as before. */
   .title { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* (the calm UI build 2026-10-27, 6-22) …and what sits beside it takes the next line when the two don't fit, as the actions do */
+  .titleWith { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
 
   /* (REG-401) …and it leaves with the top bar: its own height plus the bar's puts it fully off the screen,
      so the two read as one block sliding away rather than a header stranded at the top edge. */

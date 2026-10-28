@@ -91,7 +91,7 @@ const FIN = ['finance.toolbar', 'finance.phoneTools', 'plan.sectionHead', 'books
 const ROUTES = [
   /* the four S15 named, then every other Settings module */
   { key: 'settings-notifications', path: '/settings?section=notifications', blocks: SETTINGS, named: true },
-  { key: 'co-members', path: '/company/members', blocks: ['members-view.card', 'members-view.row', 'members-view.prefRow'], named: true },
+  { key: 'co-members', path: '/company/members', blocks: ['members-view.card', 'members-view.row', 'members-view.metaRow'], named: true },   // (the calm UI build 2026-10-27, a deliberate change) one row a member, a meta line only off the usual (5-01)
   { key: 'co-profile', path: '/company/profile', blocks: ['profile-view.card', 'profile-view.cardHead', 'profile-view.regRow', 'profile-view.subGroup', 'profile-view.entity'], named: true },
   { key: 'settings-leads', path: '/settings?section=leads', blocks: [...SETTINGS, 'lead-stages-card.movement'], named: true },
   { key: 'settings-studio', path: '/settings?section=studio', blocks: SETTINGS },
@@ -112,7 +112,8 @@ const ROUTES = [
   { key: 'co-materials', path: '/company/materials', blocks: GALLERY, max: 2, screens: 1 },
   ...['todo', 'money-in', 'money-out', 'vendors', 'accounting'].map((k) => ({ key: `co-fin-${k}`, path: `/company/finance/${k}`, blocks: FIN, max: 1, screens: 1 })),
   { key: 'co-fin-commissions', path: '/company/finance/commissions', blocks: ['stat-tile.tile'], max: 2, screens: 1 },
-  ...['leads', 'projects'].map((k) => ({ key: `co-rep-${k}`, path: `/company/reports/${k}`, blocks: ['insights-view.bar', 'stat-tile.tile'], max: 2, screens: 1 })),
+  /* (the calm UI build 2026-10-27, a deliberate change) Reports › Leads' bar is the one pick bar (report + period pills, 5-19 · 5-20): insights-view.pickBar */
+  ...['leads', 'projects'].map((k) => ({ key: `co-rep-${k}`, path: `/company/reports/${k}`, blocks: ['insights-view.pickBar' /* (the calm UI build 2026-10-27, a deliberate change) R-B3-1: Projects' bar is the same pick bar */, 'stat-tile.tile'], max: 2, screens: 1 })),
   { key: 'co-rep-finance', path: '/company/reports/finance', blocks: ['books.block', 'books.head', 'stat-tile.tile'], max: 2, screens: 1 },
   { key: 'profile', path: '/profile', blocks: ['profile-view.card', 'profile-view.cardHead'] },
 ]
@@ -162,13 +163,13 @@ const ROUTES = [
     {
       const c = await desk(1440, 1200); const p = await c.newPage(); watch(p, 'xl')
       await go(p, '/quotes', 1800)
-      await p.getByRole('button', { name: /^Create Quote$/ }).first().click(); await settle(p, 1000)
+      await p.getByRole('button', { name: /^(Create Quote|New quote)$/ }).first().click(); await settle(p, 1000)   // (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote"
       const qh = await p.locator('[role="dialog"][aria-modal="true"]').last().evaluate((e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0)
       ok(qh === 928, 'Create Quote stands 928 on a 1200-tall window (it was 960)', `${qh}`)
       await p.keyboard.press('Escape'); await settle(p, 600)
       await go(p, '/leads', 1600)
       await p.locator('[data-kb="create"]').first().locator('button').first().click(); await settle(p, 500)
-      await p.getByRole('menuitem', { name: 'Import from File' }).click(); await settle(p, 1000)
+      await p.getByRole('menuitem', { name: /^(Import from File|Import a file)/ }).click(); await settle(p, 1000)   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: "Import a file"
       const ih = await p.locator('[role="dialog"][aria-modal="true"]').last().evaluate((e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0)
       ok(ih === 928, 'the Import wizard stands 928', `${ih}`)
       await p.keyboard.press('Escape'); await settle(p, 600)
@@ -195,7 +196,7 @@ const ROUTES = [
       const ft = p.getByRole('table', { name: 'Custom fields' })
       /* refused: the form stays with what was typed, the snackbar says what failed */
       await p.getByTestId('custom-fields').getByRole('button', { name: 'Add field' }).click(); await settle(p, 600)
-      const dlg = p.getByRole('dialog', { name: 'Add field' })
+      const dlg = p.getByRole('dialog', { name: /^(Add|New) field$/ })   // (the calm UI build 2026-10-27, a deliberate change) 5-29 · §2: the form says "New field"
       await dlg.getByLabel('Label').fill(PROBE_FIELD)
       const onSettings = (u) => u.pathname === '/settings'
       await p.route(onSettings, async (route) => { if (route.request().method() === 'POST' && route.request().headers()['next-action']) await route.fulfill({ status: 500, body: 'refused' }); else await route.continue() })
@@ -207,15 +208,19 @@ const ROUTES = [
       ok(!(await dlg.isVisible()), 'saved, the form closes')
       ok(await ft.getByTestId('custom-field').filter({ hasText: PROBE_FIELD }).count() === 1 && sql(`select count(*) from lead_custom_fields where label='${PROBE_FIELD}'`) === '1', 'and the new field is a row, on the record')
       ok(/definition-list-module__/.test(await ft.evaluate((e) => e.className).catch(() => '')), 'Settings › Custom fields is the definitions list')
-      await ft.getByRole('button', { name: `Delete ${PROBE_FIELD}` }).click(); await settle(p, 500)
+      await ft.getByRole('button', { name: `More options for ${PROBE_FIELD}` }).click(); await settle(p, 400)   // (the calm UI build 2026-10-27, a deliberate change) 5-30: Delete is the row's ⋮
+      await p.getByRole('menuitem', { name: `Delete ${PROBE_FIELD}` }).click(); await settle(p, 500)
       await p.getByRole('dialog', { name: 'Delete this field?' }).getByRole('button', { name: 'Delete' }).click(); await settle(p, 1600)
       ok(sql(`select count(*) from lead_custom_fields where label='${PROBE_FIELD}'`) === '0', 'its remove asks first, then the row goes')
       await go(p, '/company/questionnaire', 1800)
       const bt = p.getByRole('table', { name: 'Questions' })
       ok(/definition-list-module__/.test(await bt.evaluate((e) => e.className).catch(() => '')), 'Company › Questionnaire’s bank is the same list')
-      ok(await bt.getByRole('button', { name: /^Delete “/ }).count() > 0 && await bt.getByTestId('bank-question-handle').count() > 0, 'a question keeps its quoted names and its handle')
-      await p.getByRole('button', { name: 'Add question' }).click(); await settle(p, 600)
-      const qd = p.getByRole('dialog', { name: 'Add question' })
+      /* (the calm UI build 2026-10-27, a deliberate change) 5-30: the tools are the row's ⋮ — its rows keep the quoted names */
+      await bt.getByRole('button', { name: /^More options for “/ }).first().click(); await settle(p, 400)
+      ok(await p.getByRole('menuitem', { name: /^Delete “/ }).count() > 0 && await bt.getByTestId('bank-question-handle').count() > 0, 'a question keeps its quoted names and its handle')
+      await p.keyboard.press('Escape'); await settle(p, 300)
+      await p.getByRole('button', { name: 'New question' }).click(); await settle(p, 600)   // (the calm UI build 2026-10-27, a deliberate change) the page's create, in its header (5-29)
+      const qd = p.getByRole('dialog', { name: /^(Add|New) question$/ })
       await qd.getByRole('button', { name: 'Add', exact: true }).click(); await settle(p, 400)
       ok(await qd.isVisible() && /required|fill/i.test(await qd.innerText()), 'an empty question is refused in the form, which stays')
       await qd.getByLabel('Question').fill(PROBE_QUESTION)

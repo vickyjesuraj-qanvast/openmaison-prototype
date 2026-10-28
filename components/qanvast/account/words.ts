@@ -23,14 +23,14 @@ export const W = {
   left: 'Credits left',
   topUp: 'Need more? Ask your Qanvast account manager to top up.',
   usedIn: (month: string) => `Used in ${month}`,
-  onTheWay: 'On the way back',
+  onTheWay: 'Credits to come back',   // (the calm UI build 2026-10-27, 2-42 · W-232)
   byMonth: 'Leads received and credits used',
   byMonthHelp: 'The last six months, as Qanvast counts them',
   leadsChart: 'Leads received',
   creditsChart: 'Credits used',
   monthByMonth: 'Month by month',
-  closures: 'Closures in the last six months',
-  closuresFoot: 'Estimated from Qanvast Guarantee submissions and the dates contracts closed. For a truer rate, ask homeowners to submit the Qanvast Guarantee — or submit it for them.',
+  closures: 'Won in the last six months',   // (the calm UI build 2026-10-27, 2-42 · W-143) the app's word
+  closuresFoot: 'Estimated from Qanvast Guarantee submissions and the dates contracts closed. For a truer rate, ask clients to submit the Qanvast Guarantee — or submit it for them.',
   /** (S42E, E-07) while the stand-in answers: the rule it counts by — 1.0's Guarantee line returns with Qanvast's own figures */
   closuresFootSimulated: 'Counted from your Qanvast leads that reached Won, and what their projects are worth.',
   /* Transactions */
@@ -42,8 +42,9 @@ export const W = {
   /* Reviews */
   overview: 'Overview',
   seeAll: 'See every review on Qanvast',
-  askHomeowners: 'Ask homeowners for a review',
-  request: 'Request reviews',
+  /* (the calm UI build 2026-10-27, 2-42 · W-117 · W-341) one verb for asking — the header's and the links' alike; "clients", the app's word */
+  askHomeowners: 'Ask for reviews',
+  request: 'Ask for reviews',
   /* Ranking */
   rankHelp: (firms: string) => `of ${firms} firms on Qanvast`,
   rankLink: 'See Qanvast’s professionals listing',
@@ -51,8 +52,8 @@ export const W = {
   factorsHelp: 'Over the last 12 months',
   views: 'Page views',
   viewsHelp: 'Over the last 7 days, against the week before',
-  told: 'What homeowners told Qanvast',
+  told: 'What clients told Qanvast',
   toldHelp: 'Over the last 30 days',
   /* Feedback */
-  feedbackHelp: 'What homeowners told Qanvast about your studio after it sent you their lead',
+  feedbackHelp: 'What clients told Qanvast about your studio after it sent you their lead',
 } as const

@@ -1,16 +1,18 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
-import { Chips } from '@/components/om/chips'
-import { ChipRail } from '@/components/om/chip-rail'
+import { ScopePill } from '@/components/om/scope-pill'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { Icon } from '@/components/om/icon'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { EmptyState } from '@/components/om/empty-state'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import { InfoTip } from '@/components/om/info-tip'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { filterByQuery } from '@/lib/search'
@@ -31,6 +33,8 @@ import styles from './market-insights.module.css'
  * gallery's cards (a reading list on a phone), twenty-four at a time with Show more. The demo's sample articles say so above the list. What the
  * page shows lives in the address (`?category=reports&q=hdb&shown=48`) — a tag on an article opens its search here — so Back from an article
  * returns to it.
+ * (the calm UI build 2026-10-27, 6-12 · 6-27) The categories are ONE scope pill, "Category: All ▾", as the Marketplace's (one choice — REG-297),
+ * its rows without counts; a sample says so once (the note above the list); where the articles come from is the header's info glyph.
  */
 export function InsightsHome({ data }: { data: InsightsData }) {
   const params = useSearchParams()
@@ -63,7 +67,9 @@ export function InsightsHome({ data }: { data: InsightsData }) {
     const href = hereOf({ category, query, shown, ...next })
     try { window.history.replaceState(null, '', href) } catch { /* the address is a convenience */ }
   }
-  const pickCategory = (c: InsightCategory | '') => { setCategory(c); setShown(PAGE_SIZE); write({ category: c, shown: PAGE_SIZE }) }
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLButtonElement>(null)
+  const pickCategory = (c: InsightCategory | '') => { setCategory(c); setCatOpen(false); setShown(PAGE_SIZE); write({ category: c, shown: PAGE_SIZE }) }
   const typed = (q: string) => { setQuery(q); setShown(PAGE_SIZE); write({ query: q, shown: PAGE_SIZE }) }
   const clearAll = () => { setQuery(''); setCategory(''); setShown(PAGE_SIZE); write({ query: '', category: '', shown: PAGE_SIZE }) }
 
@@ -88,11 +94,13 @@ export function InsightsHome({ data }: { data: InsightsData }) {
   useMaisonAi(suggestions)
 
   const counts = new Map(CATEGORIES.map((c) => [c.key, all.filter((a) => a.category === c.key).length]))
+  /* 1.0's rule kept: a category with no article is left out of the pill's menu */
+  const live = CATEGORIES.filter((c) => (counts.get(c.key) ?? 0) > 0)
   const ghost = <GhostShape first={empty}><InsightsGhost /></GhostShape>
   return (
     <PageReveal skeleton={ghost}>
       <div className={pageStyles.body} data-testid="market-insights">
-        <PageHeader title="Market Insights" />
+        <PageHeader title="Market Insights" after={empty ? undefined : <InfoTip text={SOURCE_LINE} label="Where the articles come from" testId="insights-source" />} />   {/* (the calm UI build 2026-10-27, W-125) the glyph beside the title */}
         <div className={styles.content}>
           {empty ? (
             /* the feed's own first run: nothing the studio starts here (rule ③ — no search or chips to press) */
@@ -102,10 +110,9 @@ export function InsightsHome({ data }: { data: InsightsData }) {
             <>
               <div className={styles.bar}>
                 <div className={styles.views}>
-                  <ChipRail label="Categories" className={styles.rail}>
-                    <Chips label="Categories" testId="insights-categories" value={category || 'all'} onChange={(v) => pickCategory(isCategory(v) ? v : '')}
-                           options={[{ value: 'all', label: `All · ${all.length}` }, ...CATEGORIES.filter((c) => (counts.get(c.key) ?? 0) > 0).map((c) => ({ value: c.key, label: `${c.label} · ${counts.get(c.key)}` }))]} />
-                  </ChipRail>
+                  <span className={styles.pillAnchor} data-testid="insights-categories">
+                    <ScopePill ref={catRef} label={`Category: ${category ? categoryLabel(category) : 'All'}`} short={category ? categoryLabel(category) : 'All'} open={catOpen} scoped={!!category} onClick={() => setCatOpen((o) => !o)} />
+                  </span>
                 </div>
                 <div className={styles.tools}>
                   <ToolbarSearch query={query} onQuery={typed} placeholder="Search articles" label="Search articles" />
@@ -126,11 +133,14 @@ export function InsightsHome({ data }: { data: InsightsData }) {
                   <Button variant="secondary" appearance="outlined" onPress={() => { const n = shown + PAGE_SIZE; setShown(n); write({ shown: n }) }} data-testid="insights-more">Show more</Button>
                 </div>
               ) : null}
-              <p className={styles.source}>{SOURCE_LINE}</p>
             </>
           )}
         </div>
       </div>
+      <PortalMenu open={catOpen} anchor={catRef} onClose={() => setCatOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Category">
+        <DropdownItem role="menuitemradio" checked={!category} onSelect={() => pickCategory('')}>All</DropdownItem>
+        {live.map((c) => <DropdownItem key={c.key} role="menuitemradio" checked={category === c.key} onSelect={() => pickCategory(c.key)}>{c.label}</DropdownItem>)}
+      </PortalMenu>
     </PageReveal>
   )
 }

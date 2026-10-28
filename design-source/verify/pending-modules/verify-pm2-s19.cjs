@@ -23,6 +23,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s19')
@@ -59,7 +62,7 @@ const projectOf = (name) => sql(`select p.id from projects p join leads l on l.i
   const demoPlan = async (p, name) => {
     if (!(await p.getByRole('button', { name: /^Demo Studio/ }).count())) await go(p, '/leads')   // the editors have no rail
     await p.getByRole('button', { name: /^Demo Studio/ }).first().click(); await settle(p, 400)
-    await p.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
+    await (await openDemo(p)).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
     await settle(p, 2600)
   }
   /* the studio down to 15 AI credits as View as › Almost out writes it (a ledger adjustment, so the balance is still the ledger's sum) — the
@@ -210,6 +213,7 @@ const projectOf = (name) => sql(`select p.id from projects p join leads l on l.i
     const voCsv = csv(`s19-vo-${Date.now()}.csv`, 'Item,Qty,Unit,Rate\nAdditional power point,4,pcs,85\nCove light along the ceiling,12,m,45\n')
     await go(d, `/projects/${ben}/money`)
     await d.locator('[data-testid="money-new"]').click(); await settle(d, 300)
+    await d.getByRole('menuitem', { name: /^Variation order/ }).first().click(); await settle(d, 300)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
     await d.getByRole('menuitem', { name: /contractor/ }).first().click(); await settle(d, 600)
     const vo = d.getByTestId('vo-upload-dialog')
     ok(/XLSX · CSV · PDF · 5 AI credits/.test(await text(vo)), '5 · one price for every quote read: the VO dialog says it before the press')   // (S42 D-08 · D·2, a deliberate change of this rule) PDFs read by rule, at the same price
@@ -290,7 +294,7 @@ const projectOf = (name) => sql(`select p.id from projects p join leads l on l.i
     ok(await lockFeature(d) === 'quote_xray', '…its press opens the lock card')
     await closeLock(d)
     await d.getByRole('button', { name: 'More options' }).first().click(); await settle(d, 400)
-    await d.getByRole('menuitem', { name: /Save as Template/ }).click(); await settle(d, 600)
+    await d.getByRole('menuitem', { name: /Save as template/i }).click(); await settle(d, 600)   // (the calm UI build 2026-10-27, a deliberate change) T-13: sentence case
     ok(await lockFeature(d) === 'template_editor', 'Save as Template opens the template lock')
     await closeLock(d)
     ok(/\bpro\b/i.test(await text(d.getByTestId('template-card'))), 'the quote’s Template card wears Pro')

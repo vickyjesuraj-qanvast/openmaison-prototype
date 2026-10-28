@@ -10,6 +10,9 @@ import { Tooltip } from '@/components/om/tooltip'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import styles from './plan.module.css'
 
+/** (the calm UI build 2026-10-27 — 3-05) The head every table gives its row actions (a verb + ⋮) — on a phone's card that cell names nothing. */
+const ACTIONS_HEAD = 'Next step'
+
 /**
  * (REG-704) One of Plan & AI credits' tables, on the listing's model like every table (REG-430 · 454 · 614): the first column frozen with
  * its 1px edge (the shadow only while scrolled sideways), heads resizable and draggable with the whole column travelling, the house
@@ -67,9 +70,11 @@ export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, 
           </div>
           {rows.map((r) => (
             <div key={rowKey(r)} className={styles.row} role="row" {...(rowAttrs?.(r) ?? {})}>
-              {/* (REG-727) On a phone each row is a card: every line after the first column names itself with its head ("AI credits · 120"). */}
+              {/* (REG-727) On a phone each row is a card: every line after the first column names itself with its head ("AI credits · 120").
+                  (the calm UI build 2026-10-27 — 3-05) The row's actions — the "Next step" column (its verb and ⋮) — are the card's foot and name
+                  nothing: never "Next step · Open ⋮". A column of facts keyed `next` with its own head (Contractors' "Next on site") keeps it. */}
               {prefs.columns.map((c) => (
-                <div key={c.key} className={`${styles.cell}${pin(c.key)}`} role="cell" data-col={c.key} data-label={c.locked ? undefined : c.label} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)}>{cell(r, c.key)}</div>
+                <div key={c.key} className={`${styles.cell}${pin(c.key)}`} role="cell" data-col={c.key} data-label={c.locked || c.label === ACTIONS_HEAD ? undefined : c.label} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)}>{cell(r, c.key)}</div>
               ))}
             </div>
           ))}

@@ -36,7 +36,7 @@ export function contractReadiness(o: { source: string; body: string | null; valu
   const body = o.body ?? ''
   if (isBlankDoc(body)) return [{ label: 'The document is empty', blocking: true }]
   const fields = signFieldsIn(body)
-  if (!fields.includes('client-signature') && !o.toRead) out.push({ label: 'There’s no Client signature field — insert one from eSignatures', blocking: true, fix: 'esign' })
+  if (!fields.includes('client-signature') && !o.toRead) out.push({ label: 'There’s no Client signature field — insert one from Signatures', blocking: true, fix: 'esign' })
   if (named) out.push(named)
   if ((fields.includes('studio-signature') || fields.includes('studio-initial')) && !o.hasStudioSignature) out.push({ label: o.signatureOff ? 'Your signature is saved but not allowed on your documents, so the Studio signature box prints blank — turn it on in Your profile' : 'Your signature isn’t set up, so the Studio signature box prints blank — set it up in any quote’s Signature section', blocking: false })
   const used = tokensIn(body)
@@ -48,7 +48,7 @@ export function contractReadiness(o: { source: string; body: string | null; valu
 /** (sweep S2 #2 · #3) What a refused send says, wherever it is asked for — Send, Copy Link, a list's status menu. */
 export const SEND_BLOCK_WORDS: Record<string, string> = {
   empty: 'Add some content before it goes out',
-  'no-client-field': 'Add a place for the client to sign before it goes out — eSignatures in the editor',
+  'no-client-field': 'Add a place for the client to sign before it goes out — Signatures in the editor',
 }
 /** (UX audit C4) A document that can't go out, named — Send together's greyed row says which one holds it back. */
 export function docBlockLine(title: string, why: string): string {

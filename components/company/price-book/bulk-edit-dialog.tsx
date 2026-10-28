@@ -10,8 +10,8 @@ import { spellVendor } from '@/lib/finance/model'
 import { NewCategoryDialog } from './new-category-dialog'
 
 export type BulkEdit = 'category' | 'vendor' | 'markup'
-const NO_CATEGORY = 'No category'
-const TITLE: Record<BulkEdit, string> = { category: 'Set category', vendor: 'Set vendor', markup: 'Set markup' }
+const NO_CATEGORY = 'No trade'   // (the calm UI build 2026-10-27, the UI audit's 4-01) the grouping is a Trade on screen; the stored field stays `category`
+const TITLE: Record<BulkEdit, string> = { category: 'Set trade', vendor: 'Set vendor', markup: 'Set markup' }
 
 /**
  * (REG-653, price book parity Q-15) The list's bulk changes, one field each on the house form dialog: a category from the studio's trades,
@@ -49,8 +49,8 @@ export function BulkEditDialog({ open, kind, count, categories, vendors: inBook,
   return (
     <Dialog open={open} onClose={onClose} title={TITLE[kind]} subtitle={items} size="form" width={400}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!ready} onPress={apply}>{kind === 'vendor' && clearVendor ? `Clear on ${items}` : `Apply to ${items}`}</Button></>}>
-      {kind === 'category' ? <TextField label="Category" mode="select" placeholder="Choose a category" options={[NO_CATEGORY, ...trades]} value={value} onChange={setValue} helper="The studio’s trades — Settings › Quotes & pricing. No category clears it."
-                                        action={{ label: 'New category…', onSelect: () => setNaming(true), testId: 'new-category-row' }} />
+      {kind === 'category' ? <TextField label="Trade" mode="select" placeholder="Choose a trade" options={[NO_CATEGORY, ...trades]} value={value} onChange={setValue} helper="No trade clears it."
+                                        action={{ label: 'New trade…', onSelect: () => setNaming(true), testId: 'new-category-row' }} />
         : kind === 'vendor' ? (
           <>
             <VendorNameField label="Vendor" value={clearVendor ? '' : value} onChange={setValue} directory={vendors.list} onAdd={vendors.add} maxLength={80} autoFocus disabled={clearVendor} testId="bulk-vendor"

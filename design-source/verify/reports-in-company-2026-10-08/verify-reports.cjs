@@ -48,24 +48,27 @@ const as = (m) => sql(`update members set is_you = (id = '${m}')`)
 
     /* (lead ↔ project parity P-28…P-35 · Q-13…Q-20, 2026-10-08) the two turnaround reports read one set of rules */
     console.log('The numbers (parity P-28…P-35)')
-    const checked = async (testId) => (await p.getByTestId(testId).locator('[role="radio"][aria-checked="true"]').innerText()).trim()
-    const ranges = async (testId) => (await p.getByTestId(testId).locator('[role="radio"]').allInnerTexts()).map((t) => t.trim()).join(' · ')
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-19 · R-B3-1: a report's period is the house "Period: … ▾" pill — its label names the
+       pick, its menu's menuitemradio rows the ranges (the chips it was) */
+    const checked = async (testId) => (await p.getByTestId(testId).locator('[class*="label"]').first().innerText()).replace(/^Period:\s*/, '').trim()
+    const ranges = async (testId) => { await p.getByTestId(testId).getByRole('button').first().click(); await p.waitForTimeout(400); const r = (await p.getByRole('menuitemradio').allInnerTexts()).map((t) => t.split('\n')[0].trim()).join(' · '); await p.keyboard.press('Escape'); await p.waitForTimeout(300); return r }
     ok(await checked('project-insights-range') === 'Last 90 days' && await ranges('project-insights-range') === 'Last 30 days · Last 90 days · Last 12 months · All time', 'Projects: four ranges, opening on Last 90 days (P-31)')
-    ok(/^(Your team’s projects · )?Filtering on start and completion dates · \d+ projects? in range$/.test((await p.getByTestId('project-insights-scope').innerText()).trim()), `Projects: the caption says what the range filters and the count in range (${(await p.getByTestId('project-insights-scope').innerText()).trim()})`)
-    ok(/Start → Completed/i.test(await p.getByTestId('tile-duration').innerText()) && await p.locator('[data-testid="project-insights-members"] [role="columnheader"][data-col="duration"]').innerText().then((t) => /Start → Completed/i.test(t)), 'Projects: the tile and the column are both “Start → Completed” (P-32)')
+    ok(/^(Your team’s projects · )?Filtering on start and completion dates · \d+ projects? in range$/.test(((await p.getByTestId('project-insights-scope').getAttribute('data-tip')) ?? '').trim()) /* (the calm UI build 2026-10-27, a deliberate change) R-B3-1: the caption is the period pill's tooltip */, `Projects: the caption says what the range filters and the count in range (${(await p.getByTestId('project-insights-scope').innerText()).trim()})`)
+    ok(/Project length|Start → Completed/i.test(await p.getByTestId('tile-duration').innerText()) /* (the calm UI build 2026-10-27, a deliberate change) 5-09 */ && await p.locator('[data-testid="project-insights-members"] [role="columnheader"][data-col="duration"]').innerText().then((t) => /Project length|Start → Completed/i.test(t) /* (the calm UI build 2026-10-27, a deliberate change) 5-09: "Project length" */), 'Projects: the tile and the column are both “Start → Completed” (P-32)')
     { const t = await p.getByTestId('tile-late').innerText(); ok(!/running late|done late/i.test(t), `Late milestones counts what finished late, the overdue ones are the chips’ (${t.replace(/\n/g, ' · ')})`) }
     const waiting = p.getByTestId('project-insights-waiting')
     ok(!(await waiting.count()) || /(^|\n)\d+ milestones? overdue$/i.test((await waiting.innerText()).trim()), 'the waiting chip reads “n milestones overdue” (P-32 · P-34)')   // the chip's icon name and its capitals ride innerText
-    ok(!/weeks|—/.test(await p.getByTestId('project-insights-tiles').innerText() + await p.getByTestId('project-insights-members').innerText()), 'no weeks, no em dash — "n days" and the house "--" (P-28 · P-35)')
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-48 · T-08: the house's one empty mark is "—" now (lib/format EMPTY, BLANK) — the rule kept: "n days", never weeks, never a "— / med" pair */
+    ok(!/weeks|—\s*\/\s*med/.test(await p.getByTestId('project-insights-tiles').innerText() + await p.getByTestId('project-insights-members').innerText()), 'no weeks, no em dash — "n days" and the house "--" (P-28 · P-35)')
     ok(await p.getByTestId('project-insights-export').count() === 1, 'Projects: the house Export (Q-20)')
     await go(p, '/company/reports/leads')
     ok(await checked('insights-range-chips') === 'Last 90 days' && await ranges('insights-range-chips') === 'Last 30 days · Last 90 days · Last 12 months · All time', 'Leads: the same four ranges, opening on Last 90 days (P-31)')
     const legValues = await p.locator('[data-testid="insights-tiles"] [class*="__value"]').allInnerTexts()
-    ok(legValues.length === 3 && legValues.every((v) => /^(\d+m|\d+(\.\d)?h|\d+ days?|--)$/.test(v.trim())), `Leads: every leg reads "30m" · "26.3h" · "12 days" · "--", never "12d" (${legValues.join(' · ')})`)
-    const helpUnderBlank = await p.getByTestId('insights-members').evaluate((t) => [...t.querySelectorAll('[class*="__statValue"]')].filter((v) => v.textContent.trim() === '--' && v.nextElementSibling).length)
+    ok(legValues.length === 3 && legValues.every((v) => /^(\d+ min|\d+ hours?|\d+ days?|--|—)$/.test(v.trim())) /* (the calm UI build 2026-10-27, a deliberate change) 5-09 · 5-48: "30 min" · "26 hours" · the house "—" */, `Leads: every leg reads "30m" · "26.3h" · "12 days" · "--", never "12d" (${legValues.join(' · ')})`)
+    const helpUnderBlank = await p.getByTestId('insights-members').evaluate((t) => [...t.querySelectorAll('[class*="__statValue"]')].filter((v) => ['--', '—'].includes(v.textContent.trim()) && v.nextElementSibling).length)   // (the calm UI build 2026-10-27, a deliberate change) 5-48: the house "—"
     ok(helpUnderBlank === 0, 'no help line under an empty figure — it read "— / med" (P-35)')
-    ok(!/\bmed\b|—/.test(await p.getByTestId('insights-members').innerText()), 'the cells spell "median" and print "--" (P-35)')
-    ok(await p.getByText('By team member', { exact: true }).first().evaluate((e) => getComputedStyle(e).fontSize) === '16px', 'the table title is heading-h4, as Finance’s (Q-19)')
+    ok(!/\bmed\b|—\s*\/\s*med/.test(await p.getByTestId('insights-members').innerText()) /* (the calm UI build 2026-10-27, a deliberate change) 5-48: the empty mark is the house "—" */, 'the cells spell "median" and print "--" (P-35)')
+    ok(await p.getByText(/^By (team )?member$/).first()   /* (the calm UI build 2026-10-27, a deliberate change) W-617 · §2: "By member" */.evaluate((e) => getComputedStyle(e).fontSize) === '16px', 'the table title is heading-h4, as Finance’s (Q-19)')
     ok(await p.getByTestId('insights-export').count() === 1, 'Leads: the house Export (Q-20)')
     await p.getByRole('button', { name: 'Maison AI' }).click(); await settle(p, 500)
     const aiSheet = p.locator('[role="dialog"][aria-label="Maison AI suggestions"]')
@@ -80,7 +83,9 @@ const as = (m) => sql(`update members set is_you = (id = '${m}')`)
 
     console.log('The doors')
     await go(p, '/leads')
-    await p.getByRole('button', { name: 'Insights' }).first().click(); await p.waitForURL(/\/company\/reports\/leads/); await settle(p)
+    /* (the calm UI build 2026-10-27, a deliberate change) B2 2-13 · §2: the listing's Insights is the header ⋮'s first row, "Reports" */
+    await p.getByRole('button', { name: 'More options' }).first().click(); await settle(p)
+    await p.getByTestId('leads-reports').click(); await p.waitForURL(/\/company\/reports\/leads/); await settle(p)
     ok(/from=%2Fleads/.test(p.url()) && (await p.locator('a[data-kb="back"]').getAttribute('aria-label')) === 'Back to Leads', 'the Leads listing’s Insights opens Reports › Leads, Back to Leads')
     await shot(p, 'r4-from-leads-1440')
     await p.locator('a[data-kb="back"]').click(); await p.waitForURL(/\/leads(\?|$)/)
@@ -94,7 +99,9 @@ const as = (m) => sql(`update members set is_you = (id = '${m}')`)
       ok((await p.locator('a[data-kb="back"]').getAttribute('aria-label')) === `Back to ${leadName}`, `a lead’s Response time opens Reports › Leads, Back to ${leadName}`)
     } else ok(true, 'no Response time line on this lead — skipped')
     await go(p, '/projects?view=workload')
-    const insightsBtn = p.getByRole('button', { name: 'Insights' }).first()
+    /* (the calm UI build 2026-10-27, a deliberate change) B3 1-30: the Workload view's Insights is the header ⋮'s "Reports" row (`open-insights`) */
+    await p.getByTestId('projects-kebab').click(); await settle(p)
+    const insightsBtn = p.getByTestId('open-insights').first()
     if (await insightsBtn.count()) {
       await insightsBtn.click(); await p.waitForURL(/\/company\/reports\/projects/); await settle(p)
       ok(/\/company\/reports\/projects/.test(p.url()) && (await p.locator('a[data-kb="back"]').getAttribute('aria-label')) === 'Back to Projects', 'Projects’ Insights opens Reports › Projects, Back to Projects')
@@ -121,7 +128,7 @@ const as = (m) => sql(`update members set is_you = (id = '${m}')`)
     console.log('Who reads what')
     as('james')   // a Manager
     await go(p, '/company/reports')
-    ok(/\/company\/reports\/projects$/.test(p.url()) && /Your team’s projects/.test(await p.getByTestId('project-insights-scope').innerText()), 'a Manager lands on Projects, their team’s')
+    ok(/\/company\/reports\/projects$/.test(p.url()) && /Your team’s projects/.test((await p.getByTestId('project-insights-scope').getAttribute('data-tip')) ?? '') /* (the calm UI build 2026-10-27, a deliberate change) R-B3-1 */, 'a Manager lands on Projects, their team’s')
     await go(p, '/company/reports/leads')
     ok(await p.getByTestId('insights-gate').count() === 1 && /Lead reports are for Owners and Admins/.test(await p.getByTestId('insights-gate').innerText()), 'a Manager meets the Leads gate')
     as('sarah')   // a Designer

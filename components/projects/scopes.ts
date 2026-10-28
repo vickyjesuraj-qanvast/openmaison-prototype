@@ -15,17 +15,19 @@ export type ProjectScope = 'open' | 'setting_up' | 'in_progress' | 'completed' |
 /** What a scope's test reads besides the row: the day, and who is looking (Mine). */
 export type ScopeContext = { now: number; me?: string }
 export type ScopeGroup = 'top' | 'todo' | 'active' | 'inactive'
-export const SCOPES: { key: ProjectScope; label: string; group: ScopeGroup; help?: string; test: (r: ProjectRow, ctx: ScopeContext) => boolean }[] = [
+/* (the calm UI build 2026-10-27, 3-24 · 1-02 · T-01 · T-05) one line of help under a row — `full`, every reason it counts, in the row's tooltip;
+   "Needs your attention" and "Approvals" as everywhere else (the keys, the address and the tests are as they were) */
+export const SCOPES: { key: ProjectScope; label: string; group: ScopeGroup; help?: string; full?: string; test: (r: ProjectRow, ctx: ScopeContext) => boolean }[] = [
   { key: 'open', label: 'Open projects', group: 'top', test: (r) => r.stage !== 'completed' },
   { key: 'all', label: 'All projects', group: 'top', test: () => true },
   /* (parity P-20) the lead's Mine: a project the viewer is a member of (its lead's members, `lead_assignees`) */
   { key: 'mine', label: 'Mine', group: 'top', test: (r, { me }) => !!me && r.team.some((m) => m.id === me) },
-  { key: 'attention', label: 'Needs attention', group: 'todo', help: 'Overdue tasks, milestones, choices or payments; a client who says something is not right; a long wait; no recent update; a set-up that stalled',   /* (REG-1058) every reason it counts (lib/projects/attention.ts) */ test: (r) => r.attention.length > 0 },
-  { key: 'waiting', label: 'Waiting on client', group: 'todo', help: 'A quote, contract, variation order, invoice, stage or choice for them to answer; questions, designs or the portal invite not opened; a milestone that waits on them',   /* (REG-1058) every line it counts */ test: (r) => r.waitingOn.length > 0 },
+  { key: 'attention', label: 'Needs your attention', group: 'todo', help: 'Late, stuck or quiet', full: 'Overdue tasks, milestones, choices or payments; a client who says something is not right; a long wait; no recent update; a set-up that stalled',   /* (REG-1058) every reason it counts (lib/projects/attention.ts) */ test: (r) => r.attention.length > 0 },
+  { key: 'waiting', label: 'Waiting on client', group: 'todo', help: 'Something for them to answer', full: 'A quote, contract, variation order, invoice, payment or choice for them to answer; questions, designs or the portal invite not opened; a milestone that waits on them',   /* (REG-1058) every line it counts */ test: (r) => r.waitingOn.length > 0 },
   { key: 'month', label: 'Completing this month', group: 'todo', help: 'The target end falls this month', test: (r, { now }) => completingThisMonth(r, now) },
   /* (REG-956 · Projects rounds 5 · 6 · 7) · (simplify S-20, a deliberate change) every kind an Owner or an Admin approves on a project — the
      schedule's asks (Done, more time, a share) and the POs and expenses waiting join the updates, invoices, payments and handovers */
-  { key: 'review', label: 'Needs my review', group: 'todo', help: 'Updates, invoices, handovers, schedule asks, purchase orders and expenses waiting for your approval, and payments to confirm', test: (r) => reviewCount(r) > 0 },
+  { key: 'review', label: 'Approvals', group: 'todo', help: 'Waiting for your approval', full: 'Updates, invoices, handovers, schedule asks, purchase orders and expenses waiting for your approval, and payments to confirm', test: (r) => reviewCount(r) > 0 },
   { key: 'setting_up', label: 'Setting up', group: 'active', test: (r) => r.stage === 'setting_up' },
   { key: 'in_progress', label: 'In progress', group: 'active', test: (r) => r.stage === 'in_progress' },
   { key: 'completed', label: 'Completed', group: 'active', test: (r) => r.stage === 'completed' },

@@ -136,6 +136,9 @@ On ≤1024:
 - **A phone types at 16** — inputs, textareas and selects (iOS zooms the page under 16).
 - **Load order.** A same-weight override that only wins when it loads last breaks when any CSS changes the build's chunks: write it
   order-proof (a doubled class, `.x.x`); run `design-source/verify/responsive-all/css-order-scan.cjs` on the production build after CSS work.
+  A doubled class only beats a house rule of one class: against a house rule of a class AND an attribute (`.row[data-two]`, 0,2,0) it ties,
+  so add a step (`.row.row[data-two]`) — `next dev` loads stylesheets in another order than the build, and the scan reads the build only
+  (REG-3067: the Dashboard's Needs you rows fell to 36 in `next dev`).
 - **The sweep** (`design-source/verify/responsive-all/sweep.cjs`; its rules in its head) is the start of an audit, not
   the list — open what a person opens at every size.
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
 import { LeaveGuard } from '@/components/company/leave-guard'
-import { Card } from '@/components/leads/detail/card'
+import { PortalCard as Card } from './portal-card'   // (the calm UI build 2026-10-27 — 5-23) the Company card head
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { useSnackbar } from '@/components/om/snackbar'
 import { TextField } from '@/components/om/text-field'

@@ -37,17 +37,17 @@ function letter(): TemplateDesign {
       { id: newId(), kind: 'header', height: 76, repeat: 'every', elements: [
         img(0, 0, 36, 16, 'logo'),
         pageno(140, 1, 34, '{page} of {pages}', { font: 'Georgia', size: 9, align: 'right' }),
-        t(0, 20, 60, 'Sales Contract', { role: 'heading', underline: true }),
+        t(0, 20, 60, 'Quotation', { role: 'heading', underline: true }),   // (the calm UI build 2026-10-27, the UI audit's 4-33 · W-348) the client confirms a quote, not a contract — a studio keeps its own words once it edits
         kv(0, 27, 120, [['Date', '{date}'], ['Attn', '{client_name}'], ['IC', '{nric}'], ['Address', '{site_address}'], ['H/P', '{client_phone}'], ['Ref', '{project_ref}']], 16, { role: 'body', weight: 700 }, { role: 'body', weight: 700 }, 'none', 0.9),
         t(0, 55, 100, 'Dear Sir / Mdm,', body),
-        t(0, 61, 174, 'CONTRACT FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES', { role: 'body', weight: 700, underline: true, uppercase: true }),
+        t(0, 61, 174, 'QUOTATION FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES', { role: 'body', weight: 700, underline: true, uppercase: true }),
         t(0, 66, 174, 'We are to submit the following quotation for your kind perusal and consideration', body),
       ] },
       items({ groupBy: 'category', subGroupBy: 'room', sectionLabel: 'letters', numbering: 'lettered' /* (Dane UAT, Figma 1518:77) A1 · A2 · B1 — new templates only; stored designs keep theirs */, bandStyle: 'grey', groupNotes: true, groupNoteStyle: { role: 'table', weight: 700, underline: true }, areaStyle: { role: 'table', weight: 700 },
         columns: cols([['no', '', 8, 'center'], ['item', '', 0, 'left'], ['total', '', 30, 'right']]), headerRow: 'none', descriptions: 'none', subtotals: false, zeroAmount: 'Inclusive', currency: '$ ', ruled: false, density: 'compact', keepGroups: false, optionalTitle: 'Optional Works' }),
       { id: newId(), kind: 'notes', title: '', titleStyle: { role: 'body', weight: 700 }, style: { role: 'small', font: 'Arial', size: 7.5, weight: 700 }, numbered: true, grid: false, spaceBefore: 4 },
       { id: newId(), kind: 'totals', layout: 'right', width: 62, rules: 'double', style: { role: 'body', weight: 700 }, totalStyle: { role: 'body', weight: 700 }, lines: [
-        { key: 'pages', label: 'Total for page {n}', on: false }, { key: 'subtotal', label: 'TOTAL:', on: true }, { key: 'discount', label: 'Discount:', on: false }, { key: 'additional', label: 'Less discount:', on: true }, { key: 'gst', label: 'Gst {gst_rate}:', on: true }, { key: 'total', label: 'GRAND TOTAL:', on: true },
+        { key: 'pages', label: 'Total for page {n}', on: false }, { key: 'subtotal', label: 'TOTAL:', on: true }, { key: 'discount', label: 'Discount:', on: false }, { key: 'additional', label: 'Less discount:', on: true }, { key: 'gst', label: 'GST {gst_rate}:', on: true }, { key: 'total', label: 'GRAND TOTAL:', on: true },
       ], spaceBefore: 6 },
       { id: newId(), kind: 'payments', title: 'Terms & Mode of Payment', layout: 'list', showAmounts: false, showDue: false, letters: true, style: { role: 'body' }, titleStyle: { role: 'body', weight: 700, underline: true }, band: false, startNewPage: true },
       { id: newId(), kind: 'terms', title: 'Terms and Conditions', titleStyle: { role: 'body', weight: 700, underline: true }, style: { role: 'table', size: 8 }, numbered: true, grid: false },
@@ -57,7 +57,7 @@ function letter(): TemplateDesign {
           { id: newId('c'), heading: '{client_name}', lines: ['{client_phone}'], image: 'none' },
         ], style: { role: 'body' }, headingStyle: { role: 'body', weight: 700 }, lineWeight: 0.5, lineColor: 'ink' },
         /* (REG-569) the signature block is ~20 mm tall (mark, line, name, phone); the address sat at 16 and printed over it */
-        t(0, 22, 174, '{studio_name}\n{studio_address} Tel:{studio_phone} Fax:{studio_fax}\n{studio_website}\nGST Reg. No : {studio_gst}', { role: 'small', underline: true }),
+        t(0, 22, 174, '{studio_name}\n{studio_address} Tel:{studio_phone}\n{studio_website}\nGST Reg. No : {studio_gst}', { role: 'small', underline: true }),
       ] },
     ],
   }

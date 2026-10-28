@@ -25,12 +25,12 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     sql(`update quote_payments set pct = ${Number(pay[1]) + 5} where id='${pay[0]}'`)
     await openQuote(page, OM1)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    await page.getByRole('menuitem', { name: /Send for confirmation/ }).click()
+    await page.getByRole('menuitem', { name: /Ask to confirm/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-358
     await snack(page, 'Before you send: Payment schedule doesn’t add up to 100%')
     ok('no dialog opened', (await page.getByRole('dialog', { name: 'Send for confirmation' }).count()) === 0)
     await shot('01-send-blocked')
     await page.getByRole('button', { name: 'Show me' }).click(); await page.waitForTimeout(900)
-    ok('Show me opens the Payment Schedule', await page.locator('#section-payment').getByText('PAYMENT NAME', { exact: false }).first().isVisible().catch(() => false))
+    ok('Show me opens the Payment Schedule', await page.locator('#section-payment').getByText('When', { exact: true }).first().isVisible().catch(() => false))   // (the calm UI build 2026-10-27, a deliberate change) W-307: the schedule's heads are Payment · When · Share · Amount · Due
     sql(`update quote_payments set pct = ${pay[1]} where id='${pay[0]}'`)
   })
   await step('the link of a draft is not open yet', async () => {
@@ -79,7 +79,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     sql(`insert into contracts (id, lead_id, title, status, created_at, sent_at, from_quote_id) values ('probe-contract-r4', '${LEAD1}', 'Renovation agreement — Olivia', 'Sent to Client', strftime('%s','now'), strftime('%s','now'), '${OM1}')`)
     await page.goto(`${BASE}/leads/${LEAD1}/contracts`); await ready(page)
     const row = page.getByRole('row').filter({ hasText: 'Renovation agreement — Olivia' }).first()
-    await row.getByRole('button', { name: /Sent to Client/ }).first().click()
+    await row.getByRole('button', { name: /Waiting for signature/ }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) T-01: the status set on screen (a contract out for signing)
     await page.getByRole('menuitem', { name: /^Signed/ }).first().click()
     // (sweep S2 #3) a list's Signed goes through Mark as signed — its date and copy — and still signs the quote through
     const md = page.getByRole('dialog', { name: 'Mark as signed' }); await md.waitFor()

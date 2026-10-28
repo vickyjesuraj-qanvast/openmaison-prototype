@@ -120,10 +120,10 @@ async function measure(b, opts, url, blocks) {
         const ctx = await b.newContext(opts()); const p = await page(ctx, `m2-${who}`)
         await go(p, '/settings')
         const line = p.getByTestId('module-yours').first()
-        ok(await line.isVisible() && /Your own details, signature and notifications:/.test(await line.innerText()), `${role}: the head says “Your own details, signature and notifications:”`)
+        ok(await line.isVisible() && /Your profile/.test(await line.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) B5 5-17: the Related line's link; its sentence is the link's tooltip */, `${role}: the head says “Your own details, signature and notifications:”`)
         const from = new URL(p.url()).pathname + new URL(p.url()).search
         if (who === 'dane') await shot(p, '01-settings-your-profile-1440')
-        await line.getByRole('button', { name: 'Your profile' }).click()
+        await line.getByRole('link', { name: 'Your profile' }).click()   // (the calm UI build 2026-10-27, a deliberate change) a link on the Related line
         await p.waitForURL(/\/profile/, { timeout: 15000 }).catch(() => {}); await settle(p, 1400)
         const u = new URL(p.url())
         ok(u.pathname === '/profile' && decodeURIComponent(u.searchParams.get('from') ?? '') === from, `${role}: Your profile opens with the way back (${from})`, p.url())
@@ -137,12 +137,12 @@ async function measure(b, opts, url, blocks) {
       for (const section of ['leads', 'notifications']) {
         const ctx = await b.newContext(opts()); const p = await page(ctx, `m2-${section}`)
         await go(p, `/settings?section=${section}`)
-        ok(await p.getByTestId('module-yours').count() === 1, `Settings › ${section}: the line is in its head too`)
+        ok(await p.getByTestId('module-yours').count() === 1, `Settings › ${section}: the line is in its head too`)   // (the calm UI build 2026-10-27, a deliberate change) the module's last line (the Related line)
         await ctx.close()
       }
+      /* (the calm UI build 2026-10-27, a deliberate change) B5 5-17: the doors are the module's Related line at its end (below the ghost's first cards) — the head draws no door rows now */
+      { const cs = await b.newContext(opts()); const ps = await page(cs, 'm2-related'); await go(ps, '/settings?section=leads'); ok(await ps.getByTestId('module-related').count() === 1, 'the page draws its one Related line'); await cs.close() }
       const m = await measure(b, opts(), '/settings?section=leads', ['settings.moduleLinks'])
-      const r = m.rows?.find((x) => x.k === 'settings.moduleLinks')
-      ok(!m.none && r && r.ghost === r.page && r.ghost >= 2 && r.first && Math.abs(r.first.dy) <= 2 && Math.abs(r.first.dx) <= 2, 'the ghost draws the module head’s two door rows where the page draws them', r)
       ok(!m.none && !(m.words ?? []).some((w) => /Your own details/.test(w)), 'the ghost’s line is the page’s own words', m.words)
       const ph = await b.newContext(phoneOpts()); const q = await page(ph, 'm2-390')
       await go(q, '/settings?section=leads', 1800)
@@ -158,24 +158,19 @@ async function measure(b, opts, url, blocks) {
       as('dane')
       const ctx = await b.newContext(opts()); const p = await page(ctx, 'm3-dane')
       await go(p, '/dashboard', 1800)
-      const okLabel = (await p.getByTestId('needs-ok').innerText().catch(() => '')).replace(/\s+/g, ' ')
-      const n = Number((okLabel.match(/·\s*(\d+)/) ?? [])[1] ?? 0)
-      ok(n > 0, `Dane’s Dashboard: Needs your OK · ${n}`)
+      /* (Dashboard redesign 2026-10-26, a deliberate change) Needs you's approvals are its Your OK chip — the group label became a filter chip (lane D2) */
+      /* (the calm UI build 2026-10-27, a deliberate change) 1-03: approvals have one home — the Dashboard's Approvals tab and its Review pane. The Tasks page's line pointing there went
+         (its ghost too); the same rule read now: the Dashboard counts them, Tasks carries no line, at every width and for every role */
+      const okLabel = (await p.getByTestId('needs-chips').innerText().catch(() => '')).replace(/\s+/g, ' ')
+      const n = Number((okLabel.match(/(?:To approve|Approvals) (\d+)/) ?? [])[1] ?? 0)
+      ok(n > 0, `Dane’s Dashboard: Approvals ${n}`)
       await go(p, '/tasks', 1800)
-      const line = p.getByTestId('tasks-approvals')
-      const words = n === 1 ? '1 approval waits for you on the Dashboard' : `${n} approvals wait for you on the Dashboard`
-      ok(await line.isVisible() && (await line.innerText()).includes(words), `the line says the Dashboard’s own number: “${words}”`, await line.innerText().catch(() => ''))
-      const lineBox = await line.boundingBox(), barBox = await p.getByTestId('task-todos').boundingBox().catch(() => null)
-      ok(!!lineBox && (!barBox || lineBox.y < barBox.y), 'it sits at the top, above the toolbar')
+      ok(await p.getByTestId('tasks-approvals').count() === 0 && await p.getByTestId('tasks-approvals-door').count() === 0, 'Tasks carries no approvals line — the Dashboard is their one home')
       await shot(p, '03-tasks-approvals-1440')
-      await p.getByTestId('tasks-approvals-door').click()
-      await p.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
-      ok(new URL(p.url()).pathname === '/dashboard' && new URL(p.url()).searchParams.get('from') === '/tasks', 'Open Dashboard goes to the Dashboard with ?from=/tasks', p.url())
       await ctx.close()
       const m = await measure(b, opts(), '/tasks', ['approvals-line.line', 'approvals-line.text', 'approvals-line.door'])
       const rows = m.rows ?? []
-      ok(!m.none && rows.every((r) => r.ghost === 1 && r.page === 1 && r.first && Math.abs(r.first.dy) <= 2 && Math.abs(r.first.dx) <= 2), 'the reveal’s ghost draws the line where the page draws it', rows)
-      ok(!m.none && (m.words ?? []).length === 0, 'the ghost’s sentence is the page’s', m.words)
+      ok(m.none || rows.every((r) => r.ghost === 0 && r.page === 0), 'the reveal’s ghost draws no line either', rows)
       for (const [who, role] of [['germaine', 'Designer'], ['priya', 'Accounting'], ['nurul', 'Marketing']]) {
         as(who)
         const c2 = await b.newContext(opts()); const q = await page(c2, `m3-${who}`)
@@ -188,9 +183,7 @@ async function measure(b, opts, url, blocks) {
       as('dane')
       const ph = await b.newContext(phoneOpts()); const q = await page(ph, 'm3-390')
       await go(q, '/tasks', 1800)
-      ok(await q.getByTestId('tasks-approvals').isVisible() && await sideways(q) <= 0, '390: the line and its door fit the phone', `${await sideways(q)}px`)
-      const door = await q.getByTestId('tasks-approvals-door').boundingBox()
-      ok(!!door && door.height >= 44, '390: the door is a 44px target', door)
+      ok(await q.getByTestId('tasks-approvals').count() === 0 && await sideways(q) <= 0, '390: no line, and the page fits the phone', `${await sideways(q)}px`)
       await shot(q, '04-tasks-approvals-390')
       await ph.close()
     }
@@ -203,19 +196,21 @@ async function measure(b, opts, url, blocks) {
       ok(n >= 2, `the demo has new leads nobody has opened (${n})`)
       const ctx = await b.newContext(opts()); const p = await page(ctx, 'h2-dane')
       await go(p, '/tasks', 1500)
+      /* (the calm UI build 2026-10-27, a deliberate change) 1-04 · T-07: the rail's Leads wears no count — the leads nobody opened are the listing's own "Not opened yet" scope
+         (and the Dashboard's rows) — so the same rule is read there: the scope holds the n, by Who sees leads, and opening one takes it out */
+      const unseenShown = async (pg) => { await go(pg, '/leads?scope=unseen', 1500); return pg.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').count() }
       const link = railLeads(p)
-      ok((await link.getAttribute('aria-label')) === `Leads (${n} new)` && (await link.getAttribute('href')) === '/leads?scope=unseen', `the rail: “Leads (${n} new)”, landing on the Unseen scope`, [await link.getAttribute('aria-label'), await link.getAttribute('href')])
-      ok((await link.locator('[class*="app-rail-module__"][class*="__badge"]').innerText()).trim() === String(n), 'the badge reads the number')
+      ok((await link.getAttribute('aria-label')) === 'Leads' && (await link.getAttribute('href')) === '/leads', 'the rail: Leads is a plain destination (no count)', [await link.getAttribute('aria-label'), await link.getAttribute('href')])
+      ok(await link.locator('[class*="app-rail-module__"][class*="__badge"]').count() === 0, 'no badge on it')
       await p.locator('nav[aria-label="Workspace"]').screenshot({ path: path.join(dir, '05-rail-leads-count-1440.png') })
-      await link.click(); await p.waitForURL(/\/leads\?scope=unseen/, { timeout: 15000 }).catch(() => {}); await settle(p, 1500)
-      const shown = await p.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').count()
-      ok(shown === n, `the press lands on the listing’s Unseen scope — the ${n} it counted`, `${shown} rows`)
+      const shown = await unseenShown(p)
+      ok(shown === n, `the listing’s Not opened yet scope holds the ${n} nobody opened`, `${shown} rows`)
       await ctx.close()
       /* Germaine (Designer), Nurul (Marketing), Priya (Accounting) — and Who sees leads */
       for (const [who, role, expect] of [['germaine', 'Designer', n], ['nurul', 'Marketing', n]]) {
         as(who); const c2 = await b.newContext(opts()); const q = await page(c2, `h2-${who}`)
         await go(q, '/tasks', 1300)
-        ok((await railLeads(q).getAttribute('aria-label')) === `Leads (${expect} new)`, `${role} (everyone sees every lead): Leads (${expect} new)`)
+        ok(await unseenShown(q) === expect, `${role} (everyone sees every lead): Not opened yet · ${expect}`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
         await c2.close()
       }
       as('priya'); { const c2 = await b.newContext(opts()); const q = await page(c2, 'h2-priya'); await go(q, '/tasks', 1300); ok(await railLeads(q).count() === 0, 'Accounting: no Leads item, no count'); await c2.close() }
@@ -224,8 +219,8 @@ async function measure(b, opts, url, blocks) {
         const sees = unseenFor(`exists (select 1 from lead_assignees a where a.lead_id = l.id and a.member_id = '${who}')`)
         as(who); const c2 = await b.newContext(opts()); const q = await page(c2, `h2-${who}-assigned`)
         await go(q, '/tasks', 1300)
-        const label = await railLeads(q).getAttribute('aria-label')
-        ok(sees ? label === `Leads (${sees} new)` : label === 'Leads' && (await railLeads(q).getAttribute('href')) === '/leads', `Only the leads assigned to them: ${role} ${who} counts the ${sees} they see`, label)
+        const label = String(await unseenShown(q))   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
+        ok(label === String(sees), `Only the leads assigned to them: ${role} ${who} counts the ${sees} they see`, label)
         await c2.close()
       }
       if (vis0) sql(`update settings set value = '${vis0}' where key = 'lead_visibility'`); else sql(`delete from settings where key = 'lead_visibility'`)
@@ -234,7 +229,10 @@ async function measure(b, opts, url, blocks) {
       const ph = await b.newContext(phoneOpts()); const q = await page(ph, 'h2-390')
       await go(q, '/tasks', 1500)
       const dock = dockLeads(q)
-      ok((await dock.getAttribute('aria-label')) === `Leads (${n} new)` && (await dock.getAttribute('href')) === '/leads?scope=unseen', 'the phone’s dock: the same count, words and landing', [await dock.getAttribute('aria-label'), await dock.getAttribute('href')])
+      /* (the calm UI build 2026-10-27, a deliberate change) 1-04: as the rail — no count, its name "Leads" (the dock's link names itself by its
+         words, the rail's by its label: one accessible name), landing on the plain listing, no mark drawn */
+      const dockName = await q.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Leads', exact: true }).count()
+      ok(dockName === 1 && (await dock.getAttribute('href')) === '/leads' && await dock.locator('[class*="__dockBadge"], [class*="__dockDot"], [class*="__dockQuiet"]').count() === 0, 'the phone’s dock: the same count, words and landing', [dockName, await dock.getAttribute('aria-label'), await dock.getAttribute('href')])
       await q.locator('nav[aria-label="Primary"]').screenshot({ path: path.join(dir, '06-dock-leads-count-390.png') })
       await ph.close()
       /* opening clears it: from anywhere (the lead's own address), then from the listing */
@@ -242,14 +240,14 @@ async function measure(b, opts, url, blocks) {
       await go(r, `/leads/${CHLOE}`, 2500)
       ok(sql(`select seen_at is not null from leads where id = '${CHLOE}'`) === '1', 'opening a new lead from its address marks it opened')
       await go(r, '/tasks', 1300)
-      ok((await railLeads(r).getAttribute('aria-label')) === `Leads (${n - 1} new)`, `…and the count follows: Leads (${n - 1} new)`)
+      ok(await unseenShown(r) === n - 1, `…and the count follows: Not opened yet · ${n - 1}`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
       await go(r, '/leads?scope=unseen', 1500)
       await r.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').filter({ hasText: 'Rahul Menon' }).first().locator('[role="cell"]').nth(1).click()
       await r.waitForURL(new RegExp(`/leads/${RAHUL}`), { timeout: 15000 }).catch(() => {}); await settle(r, 2000)
       ok(sql(`select seen_at is not null from leads where id = '${RAHUL}'`) === '1', 'a press on the listing’s row marks it opened (the band’s own rule)')
       await go(r, '/tasks', 1300)
       const after = unseenFor('')
-      ok(after === n - 2 && (after ? (await railLeads(r).getAttribute('aria-label')) === `Leads (${after} new)` : (await railLeads(r).getAttribute('aria-label')) === 'Leads' && (await railLeads(r).getAttribute('href')) === '/leads'), `with none left the item is plain Leads again, landing on the listing (${after} left)`)
+      ok(after === n - 2 && await unseenShown(r) === after && (await railLeads(r).getAttribute('aria-label')) === 'Leads' && (await railLeads(r).getAttribute('href')) === '/leads', `with none left the item is plain Leads again, landing on the listing (${after} left)`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope counts, the rail stays plain
       await c3.close()
       sql(`update leads set seen_at = NULL where id in ('${CHLOE}', '${RAHUL}')`)
     }
@@ -290,7 +288,7 @@ async function measure(b, opts, url, blocks) {
       const chipsAll = (await p.getByTestId('task-todos').innerText().catch(() => '')).replace(/\s+/g, ' ')
       ok(!/Upcoming/.test(chipsAll) && /Unassigned/.test(chipsAll), 'All Tasks keeps Overdue · Due today · Unassigned — never four in one row', chipsAll)
       await go(p, '/tasks?due=upcoming', 1800)
-      ok(/My Tasks/.test(await p.getByRole('button', { name: /^My Tasks/ }).first().innerText().catch(() => '')) && (await p.getByTestId('task-todos').getByRole('button', { name: /^Upcoming · / }).getAttribute('aria-pressed')) === 'true', '?due=upcoming lands on My Tasks with Upcoming on')
+      ok(/My tasks/.test(await p.getByRole('button', { name: /^My tasks/ }).first().innerText().catch(() => '')) && (await p.getByTestId('task-todos').getByRole('button', { name: /^Upcoming · / }).getAttribute('aria-pressed')) === 'true', '?due=upcoming lands on My Tasks with Upcoming on')
       /* the row never overflows: four words don't fit beside an open rail — the chips say their glyph and count, as on a tablet */
       await ctx.close()
       const c2 = await b.newContext(opts()); await c2.addInitScript(() => { try { localStorage.setItem('om.rail.expanded', '1') } catch {} })
@@ -298,9 +296,14 @@ async function measure(b, opts, url, blocks) {
       await go(q, '/tasks', 1800)
       const fits = await q.evaluate(() => { const bar = document.querySelector('[data-testid="task-todos"]')?.parentElement; return bar ? bar.scrollWidth - bar.clientWidth : -1 })
       const compact = await q.getByTestId('task-todos').locator('button[data-compact]').count()
-      ok(fits <= 1 && compact >= 1, `an open rail at 1440: the chips go glyph-and-count instead of running under the search (${compact} compact, ${fits}px over)`)
-      await q.getByTestId('task-todos').locator('button').first().hover(); await settle(q, 700)
-      ok(/Overdue · \d+/.test(await q.locator('[role="tooltip"]').first().innerText().catch(() => '')), '…each keeps its words in its tooltip')
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-06 · 1-26) the Leads · Projects switch left the row for the scope's menu, so beside
+         an open rail the three chips fit WITH their words; they still fold to glyph-and-count only when they don't (the rule is measured, never
+         guessed) — the row never runs under the search either way */
+      ok(fits <= 1, `an open rail at 1440: the chips never run under the search (${compact} compact, ${fits}px over)`)
+      if (compact >= 1) {
+        await q.getByTestId('task-todos').locator('button').first().hover(); await settle(q, 700)
+        ok(/Overdue · \d+/.test(await q.locator('[role="tooltip"]').first().innerText().catch(() => '')), '…each folded chip keeps its words in its tooltip')
+      } else ok(/Overdue · \d+/.test(await q.getByTestId('task-todos').locator('button').first().innerText()), '…each chip says its words in the row')
       await c2.close()
       const ph = await b.newContext(phoneOpts()); const m = await page(ph, 'h4-390')
       await go(m, `/leads/${KELVIN}`, 2200)
@@ -350,8 +353,8 @@ async function measure(b, opts, url, blocks) {
       ok(num(`select count(*) from leads where id = 'probe-s46c-29'`) === 1 && num(`select count(*) from leads where id = '${BEN_LEAD}'`) === 1, '…and keeps the one inside them and the one a project keeps')
       await p.locator('button[aria-label="More options"]:visible').first().click(); await settle(p, 300)
       await p.getByRole('menuitem', { name: 'Deleted Leads' }).first().click(); await settle(p, 900)
-      const sheet = p.locator('[role="dialog"][aria-label="Deleted Leads"]')
-      ok(/Deleted leads are permanently removed after 30 days\./.test(await sheet.innerText()), 'the sheet’s promise stands, now true')
+      const sheet = p.locator('[role="dialog"][aria-label="Deleted leads"]')   // (the calm UI build 2026-10-27, a deliberate change) sentence case
+      ok(/Deleted leads are removed for good after 30 days\./.test(await sheet.innerText()), 'the sheet’s promise stands, now true')   // (the calm UI build 2026-10-27, a deliberate change — 2-31) plainer words
       ok(await sheet.locator('[role="row"]').filter({ hasText: 'Probe probe-s46c-29' }).count() === 1, 'the lead inside its 30 days is listed')
       const old = num(`select count(*) from leads where deleted_at is not null and direct = 0 and deleted_at < strftime('%s','now') - 30 * 86400 and id not in (select lead_id from projects)`)
       ok(old === 0, 'nothing the sheet lists is past its 30 days unless a project keeps it')

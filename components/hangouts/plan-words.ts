@@ -22,9 +22,9 @@ export function planSentLine(data: HangoutView): string {
   const sent = (at: number) => `Sent to Qanvast on ${displayDate(new Date(at))}${p?.planSentBy ? ` by ${p.planSentBy}` : ''}`
   return ended ? (p?.planSentAt ? sent(p.planSentAt) : 'Not sent to Qanvast')
     : p?.planSentAt ? (changedSince ? `Changed since you sent it to Qanvast on ${displayDate(new Date(p.planSentAt))} — send it again so Qanvast matches on it` : sent(p.planSentAt))
-    : 'Not sent to Qanvast yet — Qanvast matches homeowners to your studio on it'
+    : 'Not sent to Qanvast yet — Qanvast matches clients to your studio on it'
 }
-export const whoGoesHelp = (data: HangoutView) => `Who sits at your ${data.event.tablesPerStudio === 1 ? 'table' : `${data.event.tablesPerStudio} tables`} on each shift — up to ${data.event.tablesPerStudio} on a shift. Homeowners who book on your page meet whoever is on their shift, and see each one’s public card there.`
+export const whoGoesHelp = (data: HangoutView) => `Who sits at your ${data.event.tablesPerStudio === 1 ? 'table' : `${data.event.tablesPerStudio} tables`} on each shift — up to ${data.event.tablesPerStudio} on a shift. Clients who book on your page meet whoever is on their shift, and see each one’s public card there.`
 export const shiftLabel = (data: HangoutView, s: HangoutView['shifts'][number]) => (data.event.dayCount > 1 ? s.short : `${s.label} · ${s.short.split(', ')[1] ?? ''}`)
 /** the team as the plan lists them: who is on a shift first, then by name */
 export const planPeople = (data: HangoutView, plan: Record<string, string[]>) =>

@@ -61,14 +61,23 @@ export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled',
 /** (REG-319, mock 781:58313) The optional schedule block under a contact log — one heading for every outcome, the helper
  *  saying what filling it does. Replaces the outcome-keyed "Next step: …" headings (NEXT_STEP_BY_OUTCOME). */
 export const SCHEDULE = {
-  heading: 'Schedule a call/meeting (optional)',
-  helper: 'If you wish to be reminded, a task will be created.',
+  /* (the calm UI build 2026-10-27 — 2-08 · 2-30, a deliberate change of REG-319's words) the phone's vocabulary at every width */
+  heading: 'Call back (optional)',
+  helper: 'We’ll add a task to remind you.',
 } as const
 /** The reminder task the helper promises, from the schedule's own fields (invented copy, REG-319). */
 export const reminderTaskTitle = (when: string, mode: string): string =>
   mode === 'In person' ? `Meet the client on ${when}` : mode ? `Follow up with the client via ${mode} on ${when}` : `Follow up with the client on ${when}`
-/** "Preferred mode" options — the channels (Notes 931:45231); "In person" is one of them since REG-607. */
+/** "Call back by" options (was "Preferred mode") — the channels (Notes 931:45231); "In person" is one of them since REG-607. */
 export const CONTACT_MODES = CONTACT_CHANNELS
+
+/** (the calm UI build 2026-10-27 — T-01 · 2-08) ONE contact-log vocabulary on screen, the phone's words at every width — How · When · How it
+    went: a stored channel keeps its value (CONTACT_CHANNELS: "In person", "Others" — filters, search and the server read those); this is the one
+    place it is worded. Every screen that shows a channel or a call-back mode reads `channelLabel`. */
+export const CHANNEL_LABEL: Readonly<Record<string, string>> = { 'In person': 'Visit', Others: 'Other' }
+export const channelLabel = (c: string | null | undefined): string => (c ? CHANNEL_LABEL[c] ?? c : '')
+/** The channels in the order the log asks them — Call · WhatsApp · Visit · Email · SMS · Other (stored values, worded by `channelLabel`). */
+export const CONTACT_CHANNELS_SHOWN: readonly (typeof CONTACT_CHANNELS)[number][] = ['Call', 'WhatsApp', 'In person', 'Email', 'SMS', 'Others']
 
 /** (REG-607, parity Q-12) The lead's district — 1.0's "Area / District", Singapore's five regions as a select. */
 export const DISTRICTS = ['North', 'North East', 'East', 'West', 'Central'] as const
@@ -80,6 +89,9 @@ export const DISTRICTS = ['North', 'North East', 'East', 'West', 'Central'] as c
 export const STYLE_OPTIONS = ['Contemporary', 'Modern', 'Minimalist', 'Scandinavian', 'Japandi', 'Industrial', 'Mid-century', 'Classic', 'Luxury', 'Eclectic', 'Peranakan', 'Vintage', 'Transitional', 'No preference', 'Others'] as const
 export const KEY_COLLECTION_OPTIONS = ['Collected', 'in 3 months', 'in 6 months', 'in 9 months', 'Later'] as const
 export const CONDITION_OPTIONS = ['New', 'Resale', 'Renovated'] as const
+/** (the calm UI build 2026-10-27 — audit 2-15, W-499) "New" is also a stage and the not-opened mark: on the lead's record the condition reads
+ *  "New (never lived in)". Display only — the stored value and the form's options keep the word. */
+export const conditionLabel = (c: string | null | undefined): string => (c === 'New' ? 'New (never lived in)' : c ?? '')
 
 /**
  * On Hold: how long the lead is parked, and the follow-up date each duration promises.

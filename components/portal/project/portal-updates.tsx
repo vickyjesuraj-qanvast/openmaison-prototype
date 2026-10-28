@@ -81,7 +81,7 @@ export function PortalUpdatesView({ data, homes }: { data: PortalData; homes: Po
                                       </a>
                                     ) : null}
                                     {u.milestone && asks.includes(u.milestone.id)
-                                      ? <a className={`${p.link} ${p.rowGo}`} href={`${portalPath(data.slug, 'schedule')}#stage-${u.milestone.id}`} data-testid="portal-update-confirm">Confirm this stage</a>
+                                      ? <a className={`${p.link} ${p.rowGo}`} href={`${portalPath(data.slug, 'schedule')}#stage-${u.milestone.id}`} data-testid="portal-update-confirm">Confirm this milestone</a>
                                       : null}
                                   </>} />
               ))}

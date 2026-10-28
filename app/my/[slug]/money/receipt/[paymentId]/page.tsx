@@ -26,6 +26,6 @@ export default async function PortalReceiptPage({ params }: { params: Promise<{ 
   // (REG-1050) what needs the client, for the phone bar's More
   const [receipt, { needs }] = await Promise.all([fetchPortalReceipt(gate.visitor, paymentId), fetchPortalData(slug, gate.look, gate.visitor, gate.paused)])
   /* (fix-F, F-23) one that isn't theirs (or was voided) — the portal's own notice with the way back, never a bare 404 */
-  if (!receipt) return <PortalNotice look={gate.look} kind="gone" back={{ href: portalPath(slug, 'money'), label: 'Back to Money' }} />
+  if (!receipt) return <PortalNotice look={gate.look} kind="gone" back={{ href: portalPath(slug, 'money'), label: 'Back to Payments' }} />
   return <PortalDoc look={gate.look} slug={slug} visitor={{ name: gate.visitor.name, preview: gate.visitor.preview, memberName: gate.visitor.memberName, frame: !!gate.visitor.frame }} paused={gate.paused} needs={needs} receipt={receipt} />
 }

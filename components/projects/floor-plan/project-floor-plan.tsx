@@ -2,20 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Button, Switch } from '@/components/ds'
+import { Button } from '@/components/ds'
 import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Dialog } from '@/components/om/dialog'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
+import { ScopePill } from '@/components/om/scope-pill'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useSheetLayout } from '@/components/om/sheet'
-import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
 import { PhotoViewer } from '@/components/portal/project/photo-viewer'
@@ -81,6 +81,9 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
   const [pen, setPen] = useState<{ color: string | null; weight: 1 | 2 | 3; dashed: boolean }>({ color: null, weight: 2, dashed: false })
   const [layer, setLayer] = useState('general')
   const [filter, setFilter] = useState<MarkFilter>(ALL_MARKS)
+  /* (the calm UI build 2026-10-27, 3-28 · 3-08) whose marks, the trades shown and the fixed ones — one pill, "Show: Both · All trades ▾" */
+  const [showOpen, setShowOpen] = useState(false)
+  const showRef = useRef<HTMLSpanElement>(null)
   const [undo, setUndo] = useState<UndoStep[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [adding, setAdding] = useState<false | 'upload' | 'files'>(false)
@@ -310,6 +313,9 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
           : plans.length > 1 ? { tone: 'changes' as const, icon: 'pending', text: `Waiting on ${client.first} to confirm which layout to build`, sub: null, action: null }
             : { tone: 'changes' as const, icon: 'pending', text: `Waiting on ${client.first} to confirm the layout on their portal`, sub: null, action: null }
 
+  /* (the calm UI build 2026-10-27, 3-28) the trades the plan's marks are on, for the Show pill */
+  const allLayers = LAYERS.filter((l) => counts.has(l.key))
+  const shownLayers = allLayers.filter((l) => !filter.hidden.includes(l.key))
   const actions = { onOpen: setSelected, onStatus: status, onDelete: (m: MarkView) => { void remove(m) }, onComment: comment, onTask: toTask, onVariation: toVariation, onLayer: toLayer,
     onPhoto: (src: string, name: string) => setViewing({ photos: [{ id: src, src, name }], i: 0 }) }
   const canvasMarks = shown.map((m) => ({ id: m.id, tool: m.tool, shape: m.shape, side: m.side, status: m.status, mine: m.mine }))
@@ -320,10 +326,12 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
         {views ?? <h2 className={styles.title}>{plan ? plan.name : 'Floor plan'}</h2>}
         {first ? null : (
           <div className={styles.actions}>
-            {plan?.isMain ? <MetaChip icon="star">Main plan</MetaChip> : null}
+            {/* (the calm UI build 2026-10-27, 3-28 · T-04) no "Main plan" tag: with one plan it says nothing, with several the plan's own chip says
+                "· Main" */}
             {mayAct ? (phone
-              ? <Tooltip label="Add a plan" shortcut="create"><IconButton icon="add" label="Add a plan" variant="primary" onClick={() => setAdding('upload')} data-kb="create" data-testid="plan-add" /></Tooltip>
-              : <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setAdding('upload')} data-kb="create" data-testid="plan-add">Add a plan</Button>) : null}
+              /* (the calm UI build 2026-10-27, 3-12 · W-474) one create grammar on every tab: "New plan" */
+              ? <Tooltip label="New plan" shortcut="create"><IconButton icon="add" label="New plan" variant="primary" onClick={() => setAdding('upload')} data-kb="create" data-testid="plan-add" /></Tooltip>
+              : <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setAdding('upload')} data-kb="create" data-testid="plan-add">New plan</Button>) : null}
             {plan ? <Tooltip label="Download PDF for the contractor"><IconButton icon="download" label="Download PDF for the contractor" onClick={() => router.push(withFrom(`/projects/${project.id}/floor-plan/${plan.id}`, here()))} data-testid="plan-export" /></Tooltip> : null}
             <span ref={kebabRef} className={styles.anchor}>
               <Tooltip label="More options" disabled={kebab}><IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebab} onClick={() => setKebab((o) => !o)} data-testid="plan-kebab" /></Tooltip>
@@ -332,7 +340,7 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
                 {plan && mayAct ? <DropdownItem disabled={plan.isMain} title={plan.isMain ? `It’s the one ${client.first} opens on` : undefined} onSelect={() => { setKebab(false); makeMain(plan.id) }}>Make it the main plan</DropdownItem> : null}
                 {plan?.original ? <DropdownItem onSelect={() => { setKebab(false); window.open(plan.original!.href, '_blank', 'noopener') }} help={plan.original.name}>Open the original</DropdownItem> : null}
                 {/* (pending modules S28 — card studio:floorplan-isometric-ai) the plan on screen, traced in the 3D Space Planner as it is here */}
-                {plan && mayAct ? <DropdownItem onSelect={() => { setKebab(false); setPicture3d(true) }} help="Place its rooms on it, then see it in 3D">Make a 3D picture</DropdownItem> : null}
+                {plan && mayAct ? <DropdownItem onSelect={() => { setKebab(false); setPicture3d(true) }} help="Place its rooms on it, then see it in 3D">Trace a floor-plan photo</DropdownItem> : null}   {/* (the calm UI build 2026-10-27, 6-06 · W-020) the planner's own words for this door */}
                 {mayAct && data.files.length ? <DropdownItem onSelect={() => { setKebab(false); setAdding('files') }}>Use a file from Files</DropdownItem> : null}
                 {plan && mayAct ? <DropdownItem disabled={plans.length <= 1} title={plans.length <= 1 ? 'The only plan can’t be put away — add another first' : undefined} onSelect={() => { setKebab(false); putAway(plan.id) }}>Put away</DropdownItem> : null}
                 <DropdownItem disabled={!data.putAway.length} title={!data.putAway.length ? 'None put away' : undefined} meta={data.putAway.length ? String(data.putAway.length) : undefined} onSelect={() => { setKebab(false); setPutAwayOpen(true) }}>Plans put away</DropdownItem>
@@ -345,16 +353,17 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
       {first ? (
         <EmptyState icon="space_dashboard" title="No floor plan yet" testId="plan-empty"
                     help={`Add the plan and mark it up with ${client.first} — pins, boxes, sockets and lights, each with its own conversation. A PDF’s first page is what you mark up; the original is kept in Files.${client.portal && client.asked ? ` Asked ${client.first} for theirs on ${displayDate(new Date(client.asked.at))}${client.asked.by ? ` (${client.asked.by})` : ''} — it waits on their page until a plan arrives.` : ''}`}
-                    primary={mayAct ? { label: 'Add a plan', icon: 'upload_file', onPress: () => setAdding('upload'), testId: 'plan-empty-add' } : null}
+                    primary={mayAct ? { label: 'New plan', icon: 'upload_file', onPress: () => setAdding('upload'), testId: 'plan-empty-add' } : null}
                     secondary={mayAct && data.files.length ? { label: 'Use a file from Files', icon: 'folder_open', onPress: () => setAdding('files'), testId: 'plan-empty-files' } : null}
                     /* (parity map, TD-049) not on the portal → invite them; on it → ask them for their plan (again, once asked) */
                     link={!mayAct ? null : !client.portal ? { label: `Invite ${client.first} to the portal`, onPress: () => setInviting(true) }
                       : { label: client.asked ? 'Ask again' : `Ask ${client.first} for their floor plan`, onPress: ask, testId: 'plan-empty-ask' }} />
       ) : (
         <>
-          {plans.length > (views ? 0 : 1) ? (
+          {/* (the calm UI build 2026-10-27, 3-28) the plans as chips only when there is a choice; one plan is its name, said once */}
+          {plans.length > 1 ? (
             <ChipRail label="Plans"><Chips label="Plans" options={plans.map((p) => ({ value: p.id, label: p.isMain ? `${p.name} · Main` : p.name }))} value={plan?.id ?? null} onChange={openPlan} testId="plan-chips" /></ChipRail>
-          ) : null}
+          ) : views && plan ? <p className={styles.planName} data-testid="plan-name">{plan.name}</p> : null}
           {banner ? (
             <div className={styles.banner} data-tone={banner.tone} role="status" data-testid="plan-banner">
               <span className={styles.bannerIcon}><Icon name={banner.icon} size={20} /></span>
@@ -382,16 +391,36 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
               </div>
               <aside className={styles.rail} aria-label="Marks">
                 <div className={styles.filter} data-testid="plan-filter">
-                  <Chips label="Whose marks" options={[{ value: 'both', label: 'Both' }, { value: 'studio', label: 'Studio' }, { value: 'client', label: client.first }]} value={filter.who} onChange={(v) => setFilter({ ...filter, who: v as Who })} testId="plan-who" />
-                  <label className={styles.switchRow}>
-                    <Switch size="sm" isSelected={filter.resolved} onChange={(v: boolean) => setFilter({ ...filter, resolved: v })} aria-label="Show resolved marks" />
-                    <span className={styles.switchText}><span>Show resolved marks</span></span>
-                  </label>
-                  {counts.size > 1 ? (
-                    <ChipRail label="Layers"><Chips multiple label="Layers shown" options={LAYERS.filter((l) => counts.has(l.key)).map((l) => ({ value: l.key, label: `${l.label} ${counts.get(l.key)}` }))}
-                                                     value={LAYERS.filter((l) => counts.has(l.key) && !filter.hidden.includes(l.key)).map((l) => l.key)}
-                                                     onChange={(v) => setFilter({ ...filter, hidden: LAYERS.filter((l) => !v.includes(l.key)).map((l) => l.key) })} testId="plan-layers" /></ChipRail>
-                  ) : null}
+                  <span ref={showRef} className={styles.anchor} data-testid="plan-show">
+                    <ScopePill label={`Show: ${filter.who === 'both' ? 'Both' : filter.who === 'studio' ? 'Studio' : client.first} · ${shownLayers.length === allLayers.length ? 'All trades' : shownLayers.length === 1 ? shownLayers[0]!.label : `${shownLayers.length} of ${allLayers.length} trades`}`}
+                               open={showOpen} scoped={filter.who !== 'both' || !filter.resolved || filter.hidden.length > 0} onClick={() => setShowOpen((o) => !o)} />
+                  </span>
+                  <PortalMenu open={showOpen} anchor={showRef} onClose={() => setShowOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Show">
+                    <DropdownLabel>Whose marks</DropdownLabel>
+                    <span className={styles.menuRow} data-testid="plan-who">
+                      {([['both', 'Both'], ['studio', 'Studio'], ['client', client.first]] as [Who, string][]).map(([v, l]) => (
+                        <DropdownItem key={v} role="menuitemradio" checked={filter.who === v} onSelect={() => setFilter({ ...filter, who: v })}>{l}</DropdownItem>
+                      ))}
+                    </span>
+                    {allLayers.length > 1 ? (
+                      <>
+                        <DropdownDivider />
+                        <DropdownLabel>Trades</DropdownLabel>
+                        <span className={styles.menuRow} data-testid="plan-layers">
+                          {allLayers.map((l) => {
+                            const on = !filter.hidden.includes(l.key)
+                            return <DropdownItem key={l.key} role="menuitemcheckbox" checked={on} meta={String(counts.get(l.key) ?? 0)}
+                                                 onSelect={() => setFilter({ ...filter, hidden: on ? [...filter.hidden, l.key] : filter.hidden.filter((x) => x !== l.key) })}>{l.label}</DropdownItem>
+                          })}
+                        </span>
+                      </>
+                    ) : null}
+                    <DropdownDivider />
+                    {/* (the calm UI build 2026-10-27, W-372) "fixed" — the word the client reads too */}
+                    <span className={styles.menuRow} data-testid="plan-resolved">
+                      <DropdownItem role="menuitemcheckbox" checked={filter.resolved} onSelect={() => setFilter({ ...filter, resolved: !filter.resolved })}>Show fixed marks</DropdownItem>
+                    </span>
+                  </PortalMenu>
                   <span className={styles.markLine}>{shown.length === marks.length ? `${marks.length} ${marks.length === 1 ? 'mark' : 'marks'}` : `${shown.length} of ${marks.length} marks`}</span>
                 </div>
                 <PointsCard groups={points.groups} total={points.total} narrowed={narrowed} />

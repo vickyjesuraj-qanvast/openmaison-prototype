@@ -11,17 +11,18 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
+import { useSheetLayout } from '@/components/om/sheet'
 import { useHere } from '@/components/om/use-here'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { phoneLocal } from '@/lib/format'
-import { brandMessage, dealWhen, DEMO_ADDRESS, isDemoAddress, productPrice, reviewsWord, shortUrl, type BrandPageData, type DealView, type ProductView, type VendorLink } from '@/lib/marketplace/model'
+import { brandMessage, dealWhen, DEMO_ADDRESS, isDemoAddress, productPrice, realLogo, reviewsWord, shortUrl, type BrandPageData, type DealView, type ProductView, type VendorLink } from '@/lib/marketplace/model'
 import { waLink } from '@/lib/portal/model'
 import { runsBook } from '@/lib/company/price-book-rules'
 import { DealCard } from './cards'
 import { DealDialog } from './deal-dialog'
 import { AddProductDialog } from './add-product-dialog'
-import { BrandGhost } from './brand-ghost'
+import { BrandGhost, StateSpace } from './brand-ghost'
 import { useMarket, vendorHref } from './use-market'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './brand-page.module.css'
@@ -33,6 +34,9 @@ import styles from './brand-page.module.css'
  * categories, its reviews, whether it is one of your vendors) · Contact (WhatsApp, email, its business addresses) · Web links (its sites and
  * socials) at the left; Services · Deals · Products · Questions at the right. A product goes to the Price book's My Items (the products 1.0's
  * API sent and its page never showed); from there it reaches a quote's Add Item and a client's Choices. *(invented copy: the cards' words)*
+ * (the calm UI build 2026-10-27, 6-11 · 6-19) Each fact once: no counts after the cards' heads, no "Not in your vendors yet" under About (the
+ * header's Add to my vendors says it), the demo's addresses said once under Web links, the brand's own name off its deals here; WhatsApp and
+ * Email name the brand, as the gallery card's ⋮ does; a product's verb is a quiet "+ Add".
  */
 export function BrandPage({ data, from }: { data: BrandPageData; from?: string }) {
   const b = data.brand
@@ -41,6 +45,7 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
   const back = from ?? '/marketplace'
   const backName = from && !from.startsWith('/marketplace') ? fromLabel(from) : null
   const market = useMarket({ viewer: data.viewer, studioName: data.studioName, here })
+  const phone = useSheetLayout()   // (the calm UI build) the header's buttons share one row on a phone
   const [vendor, setVendor] = useState<VendorLink | null>(b.vendor)
   const [was, setWas] = useState(b.vendor)
   if (was !== b.vendor) { setWas(b.vendor); setVendor(b.vendor) }
@@ -70,17 +75,21 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
     ...(b.facebook ? [{ key: 'fb', icon: 'share', label: 'Facebook', url: b.facebook }] : []),
     ...(b.youtube ? [{ key: 'yt', icon: 'tv', label: 'YouTube', url: b.youtube }] : []),
   ]
+  /* (the calm UI build, 6-19 · W-435) "WhatsApp {brand}" at a desk; on a phone the brand is the title right above, and the two buttons share one
+     row — "WhatsApp" / "Email", the brand kept in the name a screen reader hears */
   const primary = b.whatsapp
-    ? <Button iconStart={<Icon name="chat" size={20} />} onPress={() => market.whatsapp(b)} data-testid="brand-whatsapp">WhatsApp</Button>
-    : email ? <Button iconStart={<Icon name="mail" size={20} />} onPress={() => { window.location.href = email }} data-testid="brand-email">Email</Button> : null
+    ? <Button iconStart={<Icon name="chat" size={20} />} onPress={() => market.whatsapp(b)} aria-label={`WhatsApp ${b.name}`} data-testid="brand-whatsapp">{phone ? 'WhatsApp' : `WhatsApp ${b.name}`}</Button>
+    : email ? <Button iconStart={<Icon name="mail" size={20} />} onPress={() => { window.location.href = email }} aria-label={`Email ${b.name}`} data-testid="brand-email">{phone ? 'Email' : `Email ${b.name}`}</Button> : null
+  const demoLinks = links.some((l) => isDemoAddress(l.url))
 
   return (
     <PageReveal skeleton={<BrandGhost />}>
       <div className={pageStyles.body} data-testid="market-brand-page">
         <PageHeaderL2 backHref={back} crumbs={[{ label: 'Marketplace', href: '/marketplace' }]} title={b.name} backLabel={backName ? `Back to ${backName}` : undefined}
-                      chips={b.featuredRank != null ? <MetaChip icon="star">Featured</MetaChip> : undefined}
+                      chips={b.featuredRank != null ? <span className={styles.chipHost} data-testid="brand-featured"><MetaChip icon="star">Featured</MetaChip></span> : undefined}
                       actions={<>
-                        {vendor ? null : <Button variant="secondary" appearance="outlined" onPress={() => { void addVendor() }} isDisabled={market.adding === b.id} data-testid="brand-add-vendor">Add to my vendors</Button>}
+                        {/* (6-11) not yet one of the studio's vendors: this button says it (the About card's line went) */}
+                        {vendor ? null : <span className={styles.chipHost} data-testid="brand-not-vendor"><Button variant="secondary" appearance="outlined" onPress={() => { void addVendor() }} isDisabled={market.adding === b.id} data-testid="brand-add-vendor">Add to my vendors</Button></span>}
                         {primary}
                       </>} />
         <div className={styles.content}>
@@ -91,7 +100,7 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
                 <div className={styles.cardBody}>
                   <div className={styles.identity}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <span className={styles.logo}>{b.logo ? <img src={b.logo} alt={`${b.name} logo`} /> : <Icon name="storefront" size={24} weight={300} />}</span>
+                    <span className={styles.logo}>{realLogo(b.logo) ? <img src={realLogo(b.logo)!} alt={`${b.name} logo`} /> : <Icon name="storefront" size={24} weight={300} />}</span>
                     <span className={styles.identityText}>
                       {b.tagline ? <span className={styles.tagline}>{b.tagline}</span> : null}
                       <span className={styles.small}>{[b.categories.join(' · '), b.reviews ? `${reviewsWord(b.reviews)} on Qanvast` : null].filter(Boolean).join(' · ')}</span>
@@ -103,7 +112,7 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
                       <span>{vendor.name === b.name ? 'In your vendors' : `In your vendors as ${vendor.name}`}</span>
                       <Link className={styles.textLink} href={vendorHref(vendor, here)} data-testid="brand-vendor-open">Open in Vendors</Link>
                     </div>
-                  ) : <span className={styles.small} data-testid="brand-not-vendor">Not in your vendors yet</span>}
+                  ) : <StateSpace />}
                 </div>
               </Card>
               {b.whatsapp || b.email || b.addresses.length ? (
@@ -121,7 +130,7 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
                     {links.map((l) => isDemoAddress(l.url) ? (
                       <div key={l.key} className={styles.row} data-testid="brand-link" data-demo-address="">
                         <span className={styles.rowIcon}><Icon name={l.icon} size={20} weight={300} /></span>
-                        <span className={styles.rowText}><span className={styles.rowLabel}>{l.label}</span><span className={styles.small}>{DEMO_ADDRESS}</span></span>
+                        <span className={styles.rowText}><span className={styles.rowLabel}>{l.label}</span></span>
                       </div>
                     ) : (
                       <a key={l.key} className={styles.row} href={l.url} target="_blank" rel="noopener noreferrer" data-testid="brand-link">
@@ -130,6 +139,8 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
                         <span className={styles.rowEnd}><Icon name="open_in_new" size={16} weight={300} /></span>
                       </a>
                     ))}
+                    {/* (6-11 · W-094) the demo's addresses (the reserved .example domain) said once, not on every row */}
+                    {demoLinks ? <p className={styles.linksNote} data-testid="brand-links-demo">{DEMO_ADDRESS}</p> : null}
                   </div>
                 </Card>
               ) : null}
@@ -137,21 +148,21 @@ export function BrandPage({ data, from }: { data: BrandPageData; from?: string }
             <div className={styles.mainCol}>
               {b.services ? <Card title="Services" testId="brand-services"><div className={styles.cardBody}><p className={styles.text}>{b.services}</p></div></Card> : null}
               {b.deals.length ? (
-                <Card title="Deals" meta={`· ${b.deals.length}`} testId="brand-deals">
+                <Card title="Deals" testId="brand-deals">
                   <div className={styles.deals} role="list" aria-label={`${b.name}’s deals`} data-kb-list="deal">
-                    {b.deals.map((d) => <DealCard key={d.id} d={d} now={data.now} viewerId={data.viewer.id} onOpen={setDeal} />)}
+                    {b.deals.map((d) => <DealCard key={d.id} d={d} now={data.now} viewerId={data.viewer.id} onOpen={setDeal} brand={false} />)}
                   </div>
                 </Card>
               ) : null}
               {b.products.length ? (
-                <Card title="Products" meta={`· ${b.products.length}`} testId="brand-products">
+                <Card title="Products" testId="brand-products">
                   <div className={styles.rows}>
                     {b.products.map((p) => <ProductRow key={p.id} p={p} brand={b.name} onAdd={() => setAdding(p)} onOpen={(id) => router.push(withFrom(`/company/price-book?open=${encodeURIComponent(id)}`, here))} />)}
                   </div>
                 </Card>
               ) : null}
               {b.faqs.length ? (
-                <Card title="Questions" meta={`· ${b.faqs.length}`} testId="brand-faqs">
+                <Card title="Questions" testId="brand-faqs">
                   <div className={styles.rows}>
                     {b.faqs.map((f) => <div key={f.question} className={styles.faq}><h3 className={styles.faqQ}>{f.question}</h3><p className={styles.faqA}>{f.answer}</p></div>)}
                   </div>
@@ -192,7 +203,8 @@ function ProductRow({ p, brand, onAdd, onOpen }: { p: ProductView; brand: string
             </>
           ) : <span className={styles.productState}>{`Proposed for My Items${p.inBook.by ? ` by ${p.inBook.by}` : ''}`}</span>
         ) : (
-          <Button variant="secondary" appearance="outlined" size="sm" iconStart={<Icon name="add" size={16} />} onPress={onAdd} data-testid="product-add">Add to Price book</Button>
+          /* (6-11) the row's one verb, quiet — its accessible name says which product and where it goes */
+          <Button variant="secondary" appearance="text" size="sm" iconStart={<Icon name="add" size={16} />} onPress={onAdd} aria-label={`Add ${p.name} to the Price book`} data-testid="product-add">Add</Button>
         )}
       </span>
     </div>

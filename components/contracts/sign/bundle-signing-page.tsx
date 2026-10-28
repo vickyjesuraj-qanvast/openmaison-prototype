@@ -5,7 +5,7 @@ import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every 
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
+import { PrivateLinkBadge } from '@/components/quotes/confirm/private-link-badge'
 import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
 import { SignaturePad } from '@/components/om/signature-pad'
@@ -189,7 +189,7 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
           {brand.logo ? <img className={styles.logo} src={brand.logo} alt="" /> : null}
           <span className={styles.studio}>{studioName}</span>
         </span>
-        <MetaChip color="green" icon="lock">Secure signing</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
+        <PrivateLinkBadge />   {/* (the calm UI build 2026-10-27, 4-09 · W-028) one badge on every client page — "Secure signing" was this page's own */}
       </header>
       <div ref={bodyRef} className={`${styles.body} ${ph.body}`}>
         {/* (C3 — P-05) the phone's hero: the set's documents as rows */}

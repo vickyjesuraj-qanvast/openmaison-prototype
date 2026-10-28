@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { Bone } from '@/components/shell/skeleton'
 import { Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
-import chipRow from '@/components/om/chips.module.css'
-import rail from '@/components/om/chip-rail.module.css'
 import styles from './compliance.module.css'
 
 /**
@@ -17,17 +15,16 @@ export function ComplianceGhost({ title }: { /** (simplify S-03) the group's vie
         {title ?? <Line w={220} lh={36} h={16} />}
         <span className={styles.actions}><Slot kind="btn" w={176} /></span>
       </div>
+      {/* (the calm UI build 2026-10-27, 3-08 · 3-29) the phase pill and the one progress line beside it */}
       <div className={styles.lead}>
-        <div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[128, 144, 136].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div>
-        <Line w="70%" lh={20} h={12} />
+        <div className={styles.phaseLine}><Slot kind="btn" w={156} /><Line w={260} lh={20} h={12} /></div>
       </div>
       <div className={styles.groups}>
         {[3, 2].map((n, g) => (
           <section key={g} className={styles.group}>
-            <span className={styles.groupHead}><Words>{g === 0 ? 'Permits & Approvals' : 'Professional Engagement'}</Words></span>
-            <div className={styles.table}>
-              {/* (simplify round 2) the card table's head, as the page draws it (gone on a phone) */}
-              <div className={styles.head}><Words>Item</Words></div>
+            <span className={styles.groupHead}><Words>{g === 0 ? 'Permits and approvals' : 'Professionals to engage'}</Words></span>
+            {/* (the calm UI build 2026-10-27, 3-29) a plain headed list, as the page draws it — (6-13) its heads in the checklist's own sentence case */}
+            <div className={styles.list}>
               {Array.from({ length: n }, (_, i) => (
                 <div key={i} className={styles.row}>
                   <div className={styles.item}>

@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { Chips } from '@/components/om/chips'
-import { ChipRail } from '@/components/om/chip-rail'
+import { ScopePill } from '@/components/om/scope-pill'
 import { EmptyState } from '@/components/om/empty-state'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -15,7 +14,7 @@ import { withFrom } from '@/lib/nav'
 import { COMPLIANCE_PHASES, groupByCategory, isCompliancePhase, tallyOf, type ComplianceAnswer, type ComplianceItem, type CompliancePhase, type ComplianceState } from '@/lib/compliance/model'
 import type { ComplianceData } from '@/lib/compliance/queries'
 import { setComplianceItem, undoComplianceItem } from '@/app/projects/compliance-actions'
-import { ItemHead, ItemRow } from './item-row'
+import { ItemRow } from './item-row'
 import { ProjectViews } from '../project-views'
 import styles from './compliance.module.css'
 
@@ -49,6 +48,9 @@ export function ProjectCompliance({ data, grouped = false }: { data: ComplianceD
   const [busy, setBusy] = useState<string | null>(null)
   const [menu, setMenu] = useState<string | null>(null)
   const menuAnchor = useRef<HTMLElement | null>(null)
+  /* (the calm UI build 2026-10-27, 3-08 · 3-29) the phase is the list's one scope pill — its menu says what each phase still has to do */
+  const [phaseMenu, setPhaseMenu] = useState(false)
+  const phaseAnchor = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (!landedItem) return
@@ -58,6 +60,7 @@ export function ProjectCompliance({ data, grouped = false }: { data: ComplianceD
   }, [landedItem])
 
   const tallies = useMemo(() => Object.fromEntries(COMPLIANCE_PHASES.map((p) => [p.key, tallyOf(data.items.filter((i) => i.phase === p.key), answers)])) as Record<CompliancePhase, ReturnType<typeof tallyOf>>, [data.items, answers])
+  const phaseWord = (p: CompliancePhase) => `${COMPLIANCE_PHASES.find((x) => x.key === p)?.label ?? p}${p === data.phase ? ' (now)' : ''}`
   const items = data.items.filter((i) => i.phase === phase)
   const groups = groupByCategory(items)
   const t = tallies[phase]
@@ -103,30 +106,42 @@ export function ProjectCompliance({ data, grouped = false }: { data: ComplianceD
   return (
     <div className={styles.tab} data-testid="project-compliance">
       <div className={styles.bar}>
-        {grouped ? <ProjectViews slug="compliance" note={`${data.kindLabel} · ${toDoNow ? `${plural(toDoNow, 'item')} to do this phase` : 'nothing to do this phase'}`} />
+        {/* (the calm UI build 2026-10-27, 3-29 · W-500) the home as the record names it ("Executive Condo", not the checklist's "Condo") and what is
+            to do in the phase the project is in — "4 to do now" */}
+        {grouped ? <ProjectViews slug="compliance" note={`${data.propertyType || data.kindLabel} · ${toDoNow ? `${toDoNow} to do now` : 'nothing to do now'}`} />
           : <h2 className={styles.title}>{`Compliance · ${data.kindLabel}`}</h2>}
         <div className={styles.actions}>
           <Button variant="secondary" appearance="text" iconStart={<Icon name="open_in_new" size={20} />} onPress={() => router.push(withFrom('/compliance', `${pathname}?phase=${phase}`))} data-testid="compliance-navigator">Compliance Navigator</Button>
         </div>
       </div>
+      {/* (the calm UI build 2026-10-27, 3-08 · 3-29 · W-468) one line: the phase as the list's scope pill, then where it stands — "4 of 6 items done ·
+          4 required left" (the checklist's kind when it isn't the home's own words, e.g. an Executive Condo reads the condo checklist) */}
       <div className={styles.lead}>
-        <ChipRail label="Phase">
-          <Chips label="Phase" testId="compliance-phases" value={phase} onChange={(v) => { setPhase(v as CompliancePhase); setOpen(null) }}
-                 options={COMPLIANCE_PHASES.map((p) => ({ value: p.key, label: `${p.label} · ${tallies[p.key].open ? `${tallies[p.key].open} to do` : 'all answered'}` }))} />
-        </ChipRail>
-        <p className={styles.progress} data-testid="compliance-progress">
-          <b>{`${t.answered} of ${plural(t.total, 'item')} answered`}</b>
-          {` · ${t.mandatoryOpen ? `${plural(t.mandatoryOpen, 'mandatory item')} still to do` : 'every mandatory item answered'} · ${COMPLIANCE_PHASES.find((p) => p.key === phase)?.help ?? ''}`}
-          {phase === data.phase ? ' · the phase this project is in' : ''}
-        </p>
+        <div className={styles.phaseLine}>
+          <span ref={phaseAnchor} data-testid="compliance-phases">
+            <ScopePill label={phaseWord(phase)} open={phaseMenu} scoped={phase !== data.phase} onClick={() => setPhaseMenu((o) => !o)} />
+          </span>
+          <p className={styles.progress} data-testid="compliance-progress">
+            <b>{`${t.done} of ${plural(t.total, 'item')} done`}</b>
+            {` · ${t.mandatoryOpen ? `${t.mandatoryOpen} required left` : 'nothing required left'}${t.answered > t.done ? ` · ${t.answered - t.done} not needed` : ''}${data.propertyType && data.propertyType !== data.kindLabel ? ` · the ${(data.kindLabel ?? '').replace(/^(Condo|Landed)/, (w) => w.toLowerCase())} checklist` : ''}`}
+          </p>
+        </div>
+        <PortalMenu open={phaseMenu} anchor={phaseAnchor} onClose={() => setPhaseMenu(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Phase">
+          {COMPLIANCE_PHASES.map((p) => (
+            <span key={p.key} className={styles.menuRow} data-testid={`compliance-phase-${p.key}`}>
+              <DropdownItem role="menuitemradio" checked={phase === p.key} help={p.help} meta={tallies[p.key].open ? `${tallies[p.key].open} to do` : 'all answered'}
+                            onSelect={() => { setPhaseMenu(false); setPhase(p.key); setOpen(null) }}>{phaseWord(p.key)}</DropdownItem>
+            </span>
+          ))}
+        </PortalMenu>
       </div>
       <div className={styles.groups} data-kb-list="compliance items">
         {groups.map((g) => (
           <section key={g.key} className={styles.group} aria-label={g.label} data-testid="compliance-group">
             <h3 className={styles.groupHead}>{g.label}<span className={styles.groupHelp}>{g.help}</span></h3>
-            {/* (simplify round 2) the card table with its head (REG-727): the item · Mark done · ⋮, so it reads — and measures — as every card table */}
-            <div className={styles.table} role="table" aria-label={g.label} data-card-table="">
-              <ItemHead />
+            {/* (the calm UI build 2026-10-27, 3-29) a plain headed list — no frame and no "Item" head over its one column; the rows keep the card
+                table's rows (item · Mark done · ⋮) */}
+            <div className={styles.list} role="table" aria-label={g.label}>
               {g.items.map((item) => (
                 <ItemRow key={item.id} item={item} answer={answers[item.id] ?? null} task={data.tasks[item.id] ?? null} open={open === item.id} fresh={fresh === item.id}
                          onToggle={() => setOpen(open === item.id ? null : item.id)} onDone={() => answer(item, 'done')} busy={busy === item.id} mayChange={data.mayChange}

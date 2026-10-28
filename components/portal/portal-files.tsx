@@ -16,7 +16,7 @@ import styles from './portal.module.css'
  * (Projects round 4a) The portal's Files: the client's documents — each quote and agreement the studio sent, opened on today's link (Q-40) —
  * and the files the studio marked Shown to client, and nothing else (the team's own files never reach the page). One block per home when
  * the client has more than one.
- * (gaps build D, item 8 — 1.0 I-321…I-325) The documents grouped by kind under the card's subheads: Quotes · Agreements · Variation orders ·
+ * (gaps build D, item 8 — 1.0 I-321…I-325) The documents grouped by kind under the card's subheads: Quotes · Contract · Variation orders ·
  * Payment receipts · Selection receipts (a group with nothing in it is not drawn); the files shown come after, as before.
  */
 export function PortalFilesView({ data }: { data: PortalData }) {
@@ -31,7 +31,7 @@ export function PortalFilesView({ data }: { data: PortalData }) {
           {empty ? null : <p className={styles.lede}>{`What ${data.look.studio} has shared with you.`}</p>}
         </div>
         {empty ? (
-          <EmptyState icon="folder" tone="plain" title="Nothing shared yet" help="Your quote, your agreement and the files your designer shares with you will be here." testId="portal-files-empty" />
+          <EmptyState icon="folder" tone="plain" title="Nothing shared yet" help="Your quote, your contract and the files your designer shares with you will be here." testId="portal-files-empty" />
         ) : homes.map((h) => (h.documents.length || h.files.length ? (
           <div key={h.id} className={styles.section}>
             {homes.length > 1 ? <h2 className={styles.h2}>{h.place ? `Your home at ${h.place}` : h.title}</h2> : null}
@@ -44,14 +44,15 @@ export function PortalFilesView({ data }: { data: PortalData }) {
                     <div key={g.key} role="group" aria-label={g.label} data-testid="portal-documents-group" data-group={g.key}>
                       <h3 className={styles.docGroup}>{g.label}</h3>
                       {list.map((d) => (
-                        <div key={d.key} className={styles.row}>
+                        /* a receipt opens in the portal; a quote or an agreement on today's link, in a new tab (F-24) — (the calm UI build 2026-10-27,
+                           3-50 · T-02) the whole row opens, its chevron says so: no "Open" on every row */
+                        <a key={d.key} className={`${styles.row} ${styles.rowLink}`} data-testid="portal-document" {...hrefFor(visitor.preview, d.group === 'receipts' || d.group === 'selections' ? { href: d.href, previewHref: null } : d)}>
                           <span className={styles.rowLead}>
                             <span className={styles.rowGlyph}><Icon name={d.icon} size={20} weight={300} /></span>
                             <span className={styles.rowText}><span className={styles.rowTitle}>{d.title}</span><span className={styles.rowLine}>{d.line}</span></span>
                           </span>
-                          {/* a receipt opens in the portal; a quote or an agreement on today's link, in a new tab (F-24) */}
-                          <a className={`${styles.link} ${styles.rowGo}`} {...hrefFor(visitor.preview, d.group === 'receipts' || d.group === 'selections' ? { href: d.href, previewHref: null } : d)}>Open</a>
-                        </div>
+                          <span className={styles.rowChevron} aria-hidden><Icon name="chevron_right" size={20} /></span>
+                        </a>
                       ))}
                     </div>
                   ) : null

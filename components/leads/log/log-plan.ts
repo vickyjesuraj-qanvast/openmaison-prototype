@@ -136,7 +136,7 @@ export const isOutcome = (o: string) => (OUTCOMES as readonly string[]).includes
 /** What the log is called in the snackbar after a save. */
 export function logNoun(channel: SheetChannel, kind: LogKind): string {
   if (kind === 'note') return 'Note'
-  if (kind === 'meeting') return 'Site visit'
+  if (kind === 'meeting') return 'Visit'   // (the calm UI build 2026-10-27 — 2-08) one word for it, the chip's
   return channel === 'Call' ? 'Call' : channel === 'WhatsApp' ? 'WhatsApp chat' : channel === 'Visit' ? 'Visit' : channel === 'Email' ? 'Email' : channel === 'SMS' ? 'SMS' : 'Contact'
 }
 /** The snackbar after a save: what was kept, where the lead now is, the call-back's day ("Call logged — Farah is in Contacted. Call back

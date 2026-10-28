@@ -15,9 +15,11 @@ import type { NoteKind } from '@/lib/leads/note-model'
 export function DeleteNoteDialog({ open, kind, onNo, onYes }: { open: boolean; kind: NoteKind; onNo: () => void; onYes: () => void }) {
   const log = kind === 'contact'
   return (
-    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={log ? 'Delete Contact Log' : 'Delete Note'} confirmLabel="Delete"
+    /* (the calm UI build 2026-10-27 — T-13 · T-09) sentence case, and one sentence that is true on a lead and on a project (it said "from this
+       project" on a lead's page) */
+    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={log ? 'Delete contact log' : 'Delete note'} confirmLabel="Delete"
                    message={log
-                     ? 'Are you sure you want to delete this contact log from this project? This action cannot be undone.'
-                     : 'Are you sure you want to delete this note from this project? This action cannot be undone.'} />
+                     ? 'Delete this contact log? This can’t be undone.'
+                     : 'Delete this note? This can’t be undone.'} />
   )
 }

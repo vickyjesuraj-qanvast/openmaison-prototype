@@ -7,7 +7,6 @@ import { PageReveal } from '@/components/shell/page-reveal'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
 import { ProgressCard } from '@/components/om/progress-card'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Dropzone } from '@/components/leads/move-stage/fields'
@@ -16,11 +15,12 @@ import { CornerEditor } from '@/components/planner/photo/corner-editor'
 import { RoomList } from '@/components/planner/photo/room-list'
 import { cornersStart, readPlanFile, readPlanUrl, squareByCorners, straightenPlan, type ReadPlan, type Straightened } from '@/components/planner/photo/straighten-photo'
 import { quadUsable, type Quad } from '@/lib/planner/corners'
-import { lookLabel, roomSummary } from '@/lib/planner/photo'
-import { FP3D_WORDS, LOOK_CHOICES, READY_SAMPLES, renderFileName, sampleLooks, sampleRooms, type Look, type PlaceRoom, type SamplePlan } from '@/lib/floorplan-3d/model'
+import { lookLabel, roomSentence } from '@/lib/planner/photo'
+import { FP3D_WORDS, LOOK_CHOICES, READY_SAMPLES, lookNotReady, renderFileName, sampleLooks, sampleRooms, type Look, type PlaceRoom, type SamplePlan } from '@/lib/floorplan-3d/model'
 import type { Fidelity } from '@/lib/floorplan-3d/service'
 import { readFloorPlanRooms, renderFloorPlan } from '@/app/floorplan-3d/actions'
 import { BetaTag, FloorplanGhost } from './floorplan-ghost'
+import { InfoTip } from '@/components/om/info-tip'   // (the calm UI build, 6-22) the tools' one info glyph — a house piece since the landing
 import welcome from '@/components/visualizer/home/welcome.module.css'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './floorplan-tool.module.css'
@@ -45,9 +45,15 @@ const SAMPLE_BEAT = 700
  *     three steps (Read the plan · Confirm the rooms · 3D render);
  *   confirm — the plan, straightened, with S28's rescues (Turn a quarter · Square it by its corners — 1.0's spec: "Adjust corners"); We found
  *     (1.0's chip row) and the look (1.0's example pictures), then Generate;
- *   done — the view, Regenerate · Download, Switch style (it regenerates), Start a new plan; 1.0's soft note when the rooms didn't match.
+ *   done — the view, Download · Try another take (1.0's Regenerate), Switch style (it regenerates), Start a new plan; 1.0's soft note when the rooms didn't match.
  * A sample's rooms are its plan's own and its views were made ahead — said under the view; a studio's own plan, while no image model is
  * plugged in (`live` false), is straightened and then the page says so plainly and offers the samples (lib/floorplan-3d/service.ts).
+ * (2026-10-27, his "a lot of things missing … 1.0 is simpler to use" and the testers' "I can't see the button to generate top-down view") As
+ * 1.0 does: both looks are always offered — on Confirm and as Switch style on the view — a look a sample has no view for yet staying in its
+ * place, not pressable, its line saying so (the house rule: a refused choice says why in the row); a sample's Confirm is 1.0's — the plan, We
+ * found, Style, Generate — with S28's rescues (Turn a quarter · Square it by its corners) kept for a studio's own plan, where a sideways photo
+ * needs them (1.0's own gap); the plan stays in view, faded, while it renders (1.0); and the landing says before the upload what the
+ * prototype does with a studio's own plan, so it is never a surprise after it.
  */
 export function FloorplanTool({ live }: { /** an image model answers (lib/floorplan-3d/service.ts `floorplanLive`) */ live: boolean }) {
   const snackbar = useSnackbar()
@@ -71,12 +77,12 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
   const top = useRef<HTMLDivElement>(null)
 
   const sample = source?.kind === 'sample' ? source.sample : null
-  /* the looks on offer: a sample's, those it has views for (his "Ship HDB 4-Room only" — Dollhouse alone for now); both for the image model */
-  const looks = sample ? sampleLooks(sample) : LOOK_CHOICES
+  /* (2026-10-27) both looks, always, as 1.0 offers them; one a sample has no view for yet says so in its card (`lookNotReady`) */
+  const notReady = (l: Look) => lookNotReady(sample, l)
   /** a studio's own plan on the prototype: straightened, then said plainly — no rooms read, nothing drawn */
   const held = source?.kind === 'own' && !live
   const name = sample?.name ?? (source?.kind === 'own' ? source.name : 'Floor plan')
-  const summary = useMemo(() => (rooms?.length ? roomSummary(rooms) : []), [rooms])
+  const summary = useMemo(() => (rooms?.length ? roomSentence(rooms) : ''), [rooms])
 
   /* every stage starts at the page's top, and the keyboard's place moves with it (the control that was pressed is gone) */
   const first = useRef(true)
@@ -176,9 +182,11 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
   const matched = !result?.fidelity || result.fidelity.matched === result.fidelity.total
 
   return (
-    <PageReveal skeleton={<FloorplanGhost />}>
+    <PageReveal skeleton={<FloorplanGhost live={live} />}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
-        <PageHeader title={FP3D_WORDS.title} actions={<BetaTag />} />
+        {/* (the calm UI build 2026-10-27, 6-22 · W-293) the prototype's note about a studio's own plan, before the upload — behind the info glyph
+            beside Beta, not a line on the landing (T-05); the held line after an upload stays where it happens */}
+        <PageHeader title={FP3D_WORDS.title} after={<span className={styles.headActions}><BetaTag />{!live ? <InfoTip text={FP3D_WORDS.prototypeHint} label={FP3D_WORDS.prototypeLabel} testId="fp3d-prototype-hint" /> : null}</span>} />   {/* (the calm UI build 2026-10-27, 6-22 · W-125) Beta and the glyph beside the title, as 1.0's BetaChip */}
         <div ref={top} className={styles.content} tabIndex={-1} data-testid="fp3d" data-stage={stage}>
           {stage === 'idle' ? (
             /* ── idle: the AI Visualizer's welcome, in 1.0's words ── */
@@ -217,7 +225,12 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
             <section className={styles.card} aria-label={FP3D_WORDS.title}>
               <ProgressCard glyph="view_in_ar" testId="fp3d-progress" steps={FP3D_WORDS.pipeline} at={step}
                             title={stage === 'reading' ? 'Reading your floor plan…' : sample ? `Opening the ${sample.name}’s ${lookLabel(look).toLowerCase()} view…` : 'Creating your 3D floor plan…'}
-                            help={stage === 'reading' ? 'Straightening and cleaning it — a moment.' : sample ? 'A sample’s views were made ahead with the image model — a moment.' : 'This takes about half a minute — please keep this page open.'} />
+                            help={stage === 'reading' ? 'Straightening and cleaning it — a moment.' : sample ? FP3D_WORDS.sampleWait : 'This takes about half a minute — please keep this page open.'} />
+              {/* (2026-10-27) 1.0: the plan stays in view, faded, while it renders */}
+              {stage === 'generating' && out ? (
+                // eslint-disable-next-line @next/next/no-img-element -- a picture drawn in the browser (a data URL)
+                <img src={out.data} alt="" className={styles.faded} data-testid="fp3d-faded" />
+              ) : null}
             </section>
           ) : stage === 'error' && failure ? (
             <section className={styles.card} aria-label={failure.title}>
@@ -251,42 +264,43 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
                       {/* eslint-disable-next-line @next/next/no-img-element -- a picture drawn in the browser (a data URL) */}
                       <img src={out.data} alt={`${name} — ${turnLine}`} className={styles.picture} data-testid="fp3d-picture" data-angle={out.angle.toFixed(2)} />
                     </div>
-                    <div className={styles.controls}>
+                    {/* (2026-10-27) a sample is straight already — 1.0's plain plan; a studio's own plan keeps S28's two rescues (a sideways photo) */}
+                    {!sample ? <div className={styles.controls}>
                       <span className={styles.line} data-testid="fp3d-line">{turnLine}</span>
                       <span className={styles.actions}>
                         <Button variant="secondary" appearance="text" size="sm" iconStart={<Icon name="refresh" size={18} weight={300} />} isDisabled={turning}
                                 onPress={() => { const q = (quarter + 1) % 4; setQuarter(q); void restraighten(q, squared?.plan ?? null) }} data-testid="fp3d-turn">Turn a quarter</Button>
                         <Button variant="secondary" appearance="text" size="sm" iconStart={<Icon name="crop_free" size={18} weight={300} />} isDisabled={turning} onPress={openCorners} data-testid="fp3d-corners-open">{squared ? 'Move the corners' : 'Square it by its corners'}</Button>
                       </span>
-                    </div>
+                    </div> : null}
                   </div>
                 )}
               </section>
               <section className={styles.card} aria-label="We found" data-testid="fp3d-confirm">
                 <div className={styles.section}>
-                  <span className={styles.eyebrow}>We found</span>
+                  <span className={styles.eyebrow}>{held ? FP3D_WORDS.samples.replace(/^Or t/, 'T') : 'We found'}</span>
                   {held ? (
                     <>
-                      <p className={styles.prototype} data-testid="fp3d-held"><Icon name="info" size={18} weight={300} /><span>This is the prototype, so your own plan isn’t read or drawn in 3D — in the live app, the image model lists its rooms and draws it in about half a minute. Try a sample plan to see the whole way through.</span></p>
+                      <p className={styles.prototype} data-testid="fp3d-held"><Icon name="info" size={18} weight={300} /><span>{FP3D_WORDS.held}</span></p>
                       <SampleList onPick={pickSample} />
                     </>
-                  ) : summary.length ? (
+                  ) : summary ? (
                     <>
-                      <div className={styles.chips} data-testid="fp3d-rooms">
-                        {summary.map((c) => <MetaChip key={c}>{c}</MetaChip>)}
+                      {/* (the calm UI build, 6-08 · 6-22 — T-06) what was found as one plain sentence that adds up, not capital chips */}
+                      <div className={styles.found} data-testid="fp3d-rooms">
+                        <p className={styles.foundText}>{summary}</p>
                         {!sample ? <Button variant="secondary" appearance="text" size="sm" iconStart={<Icon name="edit" size={18} weight={300} />} onPress={() => setEditing((v) => !v)} aria-expanded={editing} data-testid="fp3d-rooms-edit">{editing ? 'Done editing' : 'Not quite right?'}</Button> : null}
                       </div>
-                      {sample ? <p className={styles.note}>The sample’s own rooms, as its plan has them.</p> : null}
                       {editing && rooms ? <RoomList rooms={rooms} onRooms={(next) => setRooms((list) => next(list ?? []))} label="The rooms on the plan" testId="fp3d-room" /> : null}
                     </>
                   ) : (
                     <p className={styles.note} data-testid="fp3d-no-rooms">We couldn’t auto-detect the rooms — you can still generate, or upload a clearer photo.</p>
                   )}
                 </div>
-                {!held && looks.length > 1 ? (
+                {!held ? (
                   <div className={styles.section}>
                     <span className={styles.eyebrow}>Style</span>
-                    <LookCards choices={looks} on={look} onPick={setLook} testId="fp3d-look" />
+                    <LookCards on={look} notReady={notReady} onPick={setLook} testId="fp3d-look" />
                   </div>
                 ) : null}
                 <div className={styles.buttons}>
@@ -304,21 +318,20 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
                   {/* eslint-disable-next-line @next/next/no-img-element -- a ready-made sample view, or the image model's */}
                   <img src={result.image} alt={`${name} — ${lookLabel(result.look)} view`} className={styles.render} data-testid="fp3d-render" data-take={result.take} />
                 </div>
-                {sample ? <p className={styles.note} data-testid="fp3d-sample-note">{`Sample · ${sample.name} — its views were made ahead with the image model the live app uses.`}</p> : null}
-                {!matched ? <p className={styles.prototype} data-testid="fp3d-mismatch"><Icon name="info" size={18} weight={300} /><span>This render may not match the plan exactly — regenerating usually fixes it.</span></p> : null}
+                {sample ? <p className={styles.note} data-testid="fp3d-sample-note">{FP3D_WORDS.sampleNote}</p> : null}
+                {!matched ? <p className={styles.prototype} data-testid="fp3d-mismatch"><Icon name="info" size={18} weight={300} /><span>This render may not match the plan exactly — another take usually fixes it.</span></p> : null}
               </section>
               <section className={styles.card} aria-label="Your 3D floor plan’s actions" data-testid="fp3d-done">
+                {/* (the calm UI build 2026-10-27, 6-22 · W-338 — T-03) the view's one job is to take it away: Download filled, another take outlined */}
                 <div className={styles.buttons}>
-                  <Button iconStart={<Icon name="refresh" size={20} />} onPress={() => { void generate(result.look, true) }} data-testid="fp3d-regenerate">Regenerate</Button>
-                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="fp3d-download">Download</Button>
+                  <Button iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="fp3d-download">Download</Button>
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="refresh" size={20} />} onPress={() => { void generate(result.look, true) }} data-testid="fp3d-regenerate">Try another take</Button>
                 </div>
-                {looks.length > 1 ? (
-                  <div className={styles.section}>
-                    <span className={styles.eyebrow}>Switch style</span>
-                    <LookCards choices={looks} on={result.look} onPick={(l) => { if (l !== result.look) void generate(l) }} testId="fp3d-switch" />
-                    <p className={styles.note}>Switching regenerates in the new style.</p>
-                  </div>
-                ) : null}
+                <div className={styles.section}>
+                  <span className={styles.eyebrow}>Switch style</span>
+                  <LookCards on={result.look} notReady={notReady} onPick={(l) => { if (l !== result.look) void generate(l) }} testId="fp3d-switch" />
+                  <p className={styles.note}>Switching regenerates in the new style.</p>
+                </div>
                 <div className={styles.buttons}>
                   <Button variant="secondary" appearance="outlined" onPress={reset} data-testid="fp3d-new">Start a new plan</Button>
                 </div>
@@ -331,11 +344,15 @@ export function FloorplanTool({ live }: { /** an image model answers (lib/floorp
   )
 }
 
-/** 1.0's looks on offer as the house ChoiceCard with its picture (REG-2802) — one radio group. */
-function LookCards({ choices, on, onPick, testId }: { choices: typeof LOOK_CHOICES; on: Look; onPick: (l: Look) => void; testId: string }) {
+/** 1.0's two looks as the house ChoiceCard with its picture (REG-2802) — one radio group, both always there (1.0); one with no view to show
+    stays in its place, not pressable, and its line says why. */
+function LookCards({ on, notReady, onPick, testId }: { on: Look; notReady: (l: Look) => string | null; onPick: (l: Look) => void; testId: string }) {
   return (
     <div className={styles.looks} role="radiogroup" aria-label="Style">
-      {choices.map((o) => <ChoiceCard key={o.value} title={o.label} help={o.line} picture={o.example} selected={on === o.value} onSelect={() => onPick(o.value)} testId={`${testId}-${o.value}`} />)}
+      {LOOK_CHOICES.map((o) => {
+        const why = notReady(o.value)
+        return <ChoiceCard key={o.value} title={o.label} help={why ?? o.line} picture={o.example} selected={on === o.value} disabled={!!why} onSelect={() => onPick(o.value)} testId={`${testId}-${o.value}`} />
+      })}
     </div>
   )
 }

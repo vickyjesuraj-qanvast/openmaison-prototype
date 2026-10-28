@@ -39,6 +39,7 @@ import type { ProjectNumbering } from '@/lib/projects/model'
 import { completedBlock } from '@/lib/projects/handover-model'
 import { tellInvoiceSent } from '@/lib/portal/client-tells'   // (gaps build H)
 import { syncPreparedSnapshot } from '@/lib/quotes/prepared-server'   // (pending modules S04)
+import { closeQuoteFollowUps, reopenQuoteFollowUps } from '@/lib/quotes/follow-up'   // (the Dashboard redesigned, P-14)
 import { confirmKeyOf, confirmPath } from '@/lib/quotes/confirm'
 import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
@@ -101,6 +102,8 @@ export type VariationUndo = {
   quoteId: string; status: string; visibility: string; sentAt: number | null; clientSentAt: number | null
   confirmedAt: number | null; confirmedBy: string | null; confirmedVia: string | null; confirmedMarkedBy: string | null
   amounts: AmountsUndo; eventIds: string[]; raisedAt: number
+  /** (the Dashboard redesigned, P-14) the due-date follow-ups the approval closed — the Undo opens them again */
+  followUps?: string[]
 }
 /**
  * (F-07) Mark as approved by the client — an approval given in person, on WhatsApp, by email or on paper, with the day it was given (the
@@ -121,9 +124,10 @@ export async function markVariationApproved(quoteId: string, o: { on: number; vi
   const before = { quoteId, status: q.status, visibility: q.visibility, sentAt: ms(q.sentAt), clientSentAt: ms(q.clientSentAt), confirmedAt: ms(q.confirmedAt), confirmedBy: q.confirmedBy, confirmedVia: q.confirmedVia, confirmedMarkedBy: q.confirmedMarkedBy }
   await db.update(quotes).set({ status: 'Confirmed', confirmedAt: on, confirmedBy: c.client, confirmedVia: o.via, confirmedMarkedBy: c.viewer.id, sentAt: q.sentAt ?? on, clientSentAt: q.clientSentAt ?? on, visibility: 'Shared', updatedAt: new Date() }).where(eq(quotes.id, quoteId))
   await syncPreparedSnapshot(quoteId)   // (pending modules S04) approved: the order keeps its preparer
+  const followUps = await closeQuoteFollowUps(quoteId)   // (the Dashboard redesigned, P-14) the client said yes: nothing left to chase
   const r = await onVariationApproved(quoteId, { by: c.client, via: o.via, actorId: c.viewer.id, at: new Date() })
   touch(c.p); revalidatePath(`/quotes/${quoteId}`); revalidatePath(confirmPath(confirmKeyOf(q)))
-  return { sentence: r ? `${q.number} approved — ${r.sentence.replace(/^The contract is now/, 'the contract is now')}` : `${q.number} approved`, undo: { ...before, amounts: r?.undo ?? [], eventIds: r?.eventIds ?? [], raisedAt: r?.raisedAt ?? Date.now() } }
+  return { sentence: r ? `${q.number} approved — ${r.sentence.replace(/^The contract is now/, 'the contract is now')}` : `${q.number} approved`, undo: { ...before, amounts: r?.undo ?? [], eventIds: r?.eventIds ?? [], raisedAt: r?.raisedAt ?? Date.now(), followUps } }
 }
 /** The approval's Undo: the variation order back as it was, the Drafts back to their amounts, the trail and the bell rows it raised gone. */
 export async function undoVariationApproval(undo: VariationUndo): Promise<{ ok: true } | Refusal> {
@@ -137,6 +141,7 @@ export async function undoVariationApproval(undo: VariationUndo): Promise<{ ok: 
   await db.update(quotes).set({ status: typeof undo.status === 'string' ? undo.status.slice(0, 40) : 'Draft', visibility: undo.visibility === 'Shared' ? 'Shared' : 'Private', sentAt: d(undo.sentAt), clientSentAt: d(undo.clientSentAt), confirmedAt: d(undo.confirmedAt), confirmedBy: s(undo.confirmedBy), confirmedVia: s(undo.confirmedVia), confirmedMarkedBy: s(undo.confirmedMarkedBy), updatedAt: new Date() }).where(eq(quotes.id, q.id))
   await undoVariationApproved(q.projectId, q.id, { undo: undo.amounts ?? [], eventIds: undo.eventIds ?? [], raisedAt: undo.raisedAt })
   await syncPreparedSnapshot(q.id)   // (pending modules S04)
+  await reopenQuoteFollowUps(q.id, undo.followUps)   // (the Dashboard redesigned, P-14)
   touch(c.p); revalidatePath(`/quotes/${q.id}`)
   return { ok: true }
 }

@@ -26,6 +26,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s21')
@@ -146,7 +149,7 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     ok(await setup().isVisible(), 'X-Ray’s setup opens for Vivien Lee (Pro)')
     await pick('urban-nest-quotation.pdf')
     const tile = await text(setup().getByTestId('xray-file'))
-    ok(/7 lines\s*read from Urban Nest Interior’s quote · S\$29,260\.00/.test(tile), `the PDF reads as its studio, its lines and their sum — ${tile}`)
+    ok(/7 items\s*read from Urban Nest Interior’s quote · S\$29,260\.00/.test(tile), `the PDF reads as its studio, its lines and their sum — ${tile}`)   // (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items
     ok(/the same as its own total/.test(tile) && (await setup().getByTestId('xray-file-check').count()) === 0, '…and the lines come to the quote’s own sub-total (GST, the payment row and the totals left out)')
     ok(await setup().getByRole('textbox', { name: /Their studio’s name/ }).inputValue() === 'Urban Nest Interior', 'the letterhead’s name is offered as their studio’s name, theirs to correct')
     await shot(d, '01-pdf-read-1440')
@@ -168,21 +171,23 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     await go(d, `/quote-x-ray?lead=${VIV}`)
     await otherInput().setInputFiles(path.join(__dirname, '../../../public/uat-files/urban-nest-competitor-quote.pdf')); await settle(d, 2500)
     const v1 = await text(setup().getByTestId('xray-file'))
-    ok(/23 lines\s*read from Urban Nest Design & Renovation’s quote · S\$40,210\.00 — the same as its own total/.test(v1), `1.0’s demo competitor quote reads whole — ${v1.replace(/^.*?delete /, '')}`)
+    ok(/23 items\s*read from Urban Nest Design & Renovation’s quote · S\$40,210\.00 — the same as its own total/.test(v1), `1.0’s demo competitor quote reads whole — ${v1.replace(/^.*?delete /, '')}`)   // (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items
 
     // ── 2 · their arithmetic ────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('2 · 1.0’s arithmetic check — their numbers that don’t add up')
     await go(d, `/quote-x-ray/${cmp}`)
     const points = d.getByTestId('xray-points')
+    for (const w of await points.getByTestId('xray-why').all()) await w.click()   // (the calm UI build 2026-10-27, a deliberate change) — 6-23: a point's evidence is behind its Why
+    await settle(d, 300)
     const ptText = await text(points)
     ok(/Their numbers don’t add up/.test(ptText) && /S\$180\.00 × 10 ft run is S\$1,800\.00/.test(ptText), `a point says their wardrobe states S$18,000.00 but S$180.00 × 10 ft run is S$1,800.00`)
     const pointLi = points.locator('li').filter({ hasText: 'Their numbers don’t add up' }).first()
-    const said = await text(pointLi.locator('[class*="say"]'))
+    const said = await text(pointLi.locator('[class*="__say"]:not([class*="__sayRow"])'))   // (the calm UI build 2026-10-27, a deliberate change) — the sentence sits in a row with its Why
     ok(/In the other quote, the full-height wardrobe/i.test(said) && !/Urban Nest/.test(said), `the sentence to the client never names the other studio — ${said.slice(0, 90)}…`)
     const slip = d.getByTestId('xray-slip')
     ok(await slip.count() === 1 && /S\$1,800\.00 at their rate/.test(await text(slip)), 'the row shows what their own rate makes — “S$1,800.00 at their rate”')
     await shot(d, '02-arithmetic-1440', true)
-    await pointLi.getByRole('button', { name: 'Say it as a question' }).click(); await settle(d, 300)
+    await points.getByRole('button', { name: 'Say it as a question' }).first().click(); await settle(d, 300)   // (the calm UI build 2026-10-27, a deliberate change) — 6-23: one toggle in the card head
     await points.getByRole('button', { name: 'Send to client' }).click()
     const dlg = d.getByRole('dialog', { name: 'Send to client' }); await dlg.waitFor(); await settle(d, 500)
     const draft = await dlg.getByRole('textbox', { name: /Message/ }).inputValue()
@@ -201,7 +206,7 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     await say('Flo named but empty.pdf', /We couldn’t read this one — a spreadsheet of their quote reads best\./, 'S42 E-05: a file NAMED like a reference with nothing in it is not read as the reference')
     await shot(d, '03-refusal-1440')
     await removeOther(); await pick('Flo Design Sample Quotation.pdf')
-    ok(/28 lines\s*read from Flo Design’s quote · S\$31,140\.00/.test(await text(setup().getByTestId('xray-file'))), 'a reference quote reads by its own words (the curated reading wins) — S42 E-05: never by its name')
+    ok(/28 items\s*read from Flo Design’s quote · S\$31,140\.00/.test(await text(setup().getByTestId('xray-file'))), 'a reference quote reads by its own words (the curated reading wins) — S42 E-05: never by its name')   // (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items
     await removeOther(); await pick('urban-nest-short.pdf')
     const chk = setup().getByTestId('xray-file-check')
     ok(await chk.count() === 1 && /The quote’s own total is S\$32,260\.00 — a line may not have been read\./.test(await text(chk)), 'lines that don’t reach the stated total say so under the file')
@@ -211,7 +216,7 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     console.log('4 · spreadsheets: an Amount column prices, a Total row is the sheet’s figure')
     await removeOther(); await pick('amounts-only.csv')
     const sheetTile = await text(setup().getByTestId('xray-file'))
-    ok(/4 lines\s*read · S\$12,240\.00 — the same as its own total/.test(sheetTile), `a sheet of amounts reads its amounts and leaves its Total row out — ${sheetTile}`)
+    ok(/4 items\s*read · S\$12,240\.00 — the same as its own total/.test(sheetTile), `a sheet of amounts reads its amounts and leaves its Total row out — ${sheetTile}`)   // (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items
     await removeOther(); await pick('ringgit-sheet.csv')
     ok(/This quote is in RM — Quote X-Ray compares quotes in S\$\./.test(await text(setup())), 'a sheet whose amounts are in RM (its column says so) is refused too')
     await removeOther(); await pick('gst-in-every-line.csv')
@@ -223,6 +228,8 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     await setup().getByRole('textbox', { name: /Their studio’s name/ }).fill('Rival Studio')
     await setup().getByRole('button', { name: 'Compare' }).click()
     await d.waitForURL(/\/quote-x-ray\/[0-9a-f-]{36}/, { timeout: 25000 }); await settle(d, 1500)
+    for (const w of await d.getByTestId('xray-points').getByTestId('xray-why').all()) await w.click()   // (the calm UI build 2026-10-27, a deliberate change) — 6-23: the evidence is behind Why
+    await settle(d, 300)
     ok(/Their numbers don’t add up/.test(await text(d.getByTestId('xray-points'))) && (await d.getByTestId('xray-slip').count()) === 1, 'a sheet’s Rate and Amount that disagree on one line: the same point and row')
 
     /* Create Quote › Upload a quote reads sheets through the same reader: an Amount column prices the lines (they were S$0) */
@@ -234,7 +241,7 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     if (await upInput.count()) {
       await upInput.setInputFiles(nm('amounts-only.csv')); await settle(d, 2200)
       const box = await text(d.getByTestId('upload-quote'))
-      ok(/4 lines?/.test(box) && /12,240/.test(box) && !/Total\b.*S\$12,240\.00.*Total/.test(box), `Upload a quote reads the same sheet: 4 lines, S$12,240.00 — ${box.slice(0, 120)}`)
+      ok(/* (the calm UI build 2026-10-27, a deliberate change) T-01: Upload a quote reads "items" */ /4 items?/.test(box) && /12,240/.test(box) && !/Total\b.*S\$12,240\.00.*Total/.test(box), `Upload a quote reads the same sheet: 4 lines, S$12,240.00 — ${box.slice(0, 120)}`)
       await d.keyboard.press('Escape'); await settle(d, 500); await d.keyboard.press('Escape'); await settle(d, 300)
     } else ok(false, 'Create Quote › Upload a quote reachable from the lead’s Quotes tab')
 
@@ -247,7 +254,7 @@ fs.writeFileSync(nm('gst-in-every-line.csv'), 'Item,Qty,Unit,Rate,Amount,Trade\n
     const demoPlan = async (name) => {
       await go(d, '/leads')
       await d.getByRole('button', { name: /^Demo Studio/ }).first().click(); await settle(d, 400)
-      await d.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click(); await settle(d, 2600)
+      await (await openDemo(d)).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click(); await settle(d, 2600)
     }
     await demoPlan(/^Free\b/)
     await go(d, `/meetings/${meeting}`)

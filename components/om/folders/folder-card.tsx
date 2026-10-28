@@ -13,8 +13,11 @@ import styles from './folder-card.module.css'
  * folder icon's place on hover and while selected (inline on a touch pointer, REG-273); the kebab hands its anchor to the host, which
  * opens the folder's menu through the portal (Open · Move · Rename · Delete).
  */
-export function FolderGroup({ label = 'Folders', ids, selected, onSelect, rowClassName, min, children }: {
+export function FolderGroup({ label = 'Folders', head = true, ids, selected, onSelect, rowClassName, min, children }: {
   label?: string
+  /** (the calm UI build 2026-10-27, 4-37 · 6-20 — additive) false: no "☐ Folders" head — the folder cards read as folders by themselves and
+   *  each keeps its own tick; the host offers select-all elsewhere (a gallery's list view: its Select all takes every folder and entry shown). */
+  head?: boolean
   /** The group's folder ids — the head checkbox selects or clears them all. */
   ids: string[]
   selected?: Set<string>
@@ -36,10 +39,12 @@ export function FolderGroup({ label = 'Folders', ids, selected, onSelect, rowCla
   }
   return (
     <div className={styles.group} role="group" aria-label={label}>
-      <div className={styles.groupHead}>
-        {onSelect ? <Checkbox isSelected={all} isIndeterminate={on > 0 && !all} onChange={toggle} aria-label={`Select all ${label.toLowerCase()}`} /> : null}
-        <span className={styles.groupTitle}>{label}</span>
-      </div>
+      {head ? (
+        <div className={styles.groupHead}>
+          {onSelect ? <Checkbox isSelected={all} isIndeterminate={on > 0 && !all} onChange={toggle} aria-label={`Select all ${label.toLowerCase()}`} /> : null}
+          <span className={styles.groupTitle}>{label}</span>
+        </div>
+      ) : null}
       <div className={`${styles.row} ${rowClassName ?? ''}`} style={min ? ({ '--folder-min': `${min}px`, '--folder-min-narrow': `${min}px` } as React.CSSProperties) : undefined}>{children}</div>
     </div>
   )

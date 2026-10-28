@@ -40,7 +40,6 @@ import {
   undoMarkDone, type DoneTold,   // (simplify S-18)
   addMilestoneTasks, moveForVariation, notNowVariationDays, undoSuggestedTasks, undoVariationDays,   // (parity map, SC-094 · SC-056)
 } from '@/app/projects/schedule-actions'
-import { MetaChip } from '@/components/om/meta-chip'
 import { suggestForMilestone } from '@/lib/projects/task-suggestions'   // (parity map, SC-056) by rule — a stand-in for 1.0's AI
 import { VoDaysDialog } from './vo-days-dialog'
 import { SuggestTasksDialog } from './suggest-tasks-dialog'
@@ -549,6 +548,15 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
       <span>{sees}{seesCount ? <> <span className={styles.seesCount}>{seesCount} to share.</span></> : null}</span>
     </button>
   )
+  /* (parity map, SC-094 — 1.0's "+3d" VO chip) the days approved variation orders add; while one waits for an answer, it opens its dialog —
+     (the calm UI build 2026-10-27, 3-23 · T-06) said in the summary's line as words, not a capitals tag in the toolbar */
+  const voChip = voDays && voDays.total > 0 ? (
+    <Tooltip label={voDays.vos.map((v) => `${v.number} · +${plural(v.days, 'day')}${v.answer === 'moved' ? ' · moved' : v.answer === 'asked' ? ' · asked for' : ''}`).join('; ')}>
+      {voDays.open.length && data.mayChange
+        ? <Button appearance="text" onPress={() => setVoFor(voDays.open[0]!.id)} data-testid="vo-days">{`+${plural(voDays.total, 'day')} from changes`}</Button>
+        : <span className={styles.voWords} data-testid="vo-days" tabIndex={0}>{`+${plural(voDays.total, 'day')} from changes`}</span>}
+    </Tooltip>
+  ) : null
   const shareButton = shareLabel ? (
     <Button variant="primary" appearance="outlined" size={phone ? 'sm' : undefined} onPress={() => setShareOpen(true)} data-testid="schedule-share">{shareLabel}</Button>
   ) : null
@@ -584,12 +592,9 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
   const nudgeM = nudge ? list.find((m) => m.id === nudge.id) ?? null : null
   const readyInvoice = nudgeM ? (data.invoices?.[nudgeM.id] ?? []).find((i) => i.state === 'ready') ?? null : null
   const updateHref = (m: Milestone) => withFrom(`/projects/${data.projectId}/updates?new=1&milestone=${encodeURIComponent(m.id)}`, here())
-  /* (gaps build, package C — 5 · 8) what waits on an Owner or an Admin, said once above the list */
-  const doneAsks = list.filter((m) => m.doneAsked && m.status !== 'done')
-  const extAsks = data.extensions ?? []
-  const firstAsk = answers ? (doneAsks[0] ? { m: doneAsks[0], words: `${data.team.find((x) => x.id === doneAsks[0]!.doneAsked!.by)?.name.split(' ')[0] ?? 'A member'} marked ${doneAsks[0].title} done — it waits for your approval.` }
-    : extAsks[0] ? { m: list.find((x) => x.id === extAsks[0]!.milestoneId) ?? null, words: `${extAsks[0].byName.split(' ')[0]} asks for more time on ${list.find((x) => x.id === extAsks[0]!.milestoneId)?.title ?? 'a milestone'}.` } : null) : null
-  const asksMore = answers ? Math.max(0, doneAsks.length + extAsks.length - 1) : 0
+  /* (gaps build, package C — 5 · 8 → the calm UI build 2026-10-27, 3-01 · T-04) what waits on an Owner or an Admin is said on its own row ("Done —
+     waiting for approval" · "More time asked, to …") and answered in its panel (Approve · Decline), and it is the Overview's Needs your attention row
+     and the header's button — the band that said it a fourth time above the list is gone */
 
   const toolbarStart = (
     <div className={styles.toolStart}>
@@ -601,6 +606,11 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
       {/* (gaps build, package C — 13) the list to the window's edges; Esc or the same button brings it back */}
       <Tooltip label={full ? 'Leave full screen' : 'Full screen'}>
         <IconButton icon={full ? 'close_fullscreen' : 'fullscreen'} label={full ? 'Leave full screen' : 'Full screen'} onClick={() => setFull((f) => !f)} data-testid="schedule-full" />
+      </Tooltip>
+      {/* (the calm UI build 2026-10-27, 3-23 · T-05) how to read the chart — today's line, weekends, the diamonds, the joining lines — behind a "?"
+          on the chart's head, no longer a paragraph under it on every visit */}
+      <Tooltip label={legend}>
+        <IconButton icon="help" label="How to read the schedule" onClick={() => {}} data-testid="schedule-legend" />
       </Tooltip>
     </div>
   )
@@ -615,8 +625,13 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
       <section className={styles.summary} aria-label="Where the job stands" data-testid="schedule-summary">
         <div className={styles.summaryInner}>
         <div className={styles.summaryText}>
-          <p className={styles.headline} data-alert={list.some((m) => m.status !== 'done' && m.end < today) || undefined}>{sum.headline}</p>
-          {phone ? <p className={styles.subline}>{allDone ? `Every milestone is done · ${done} of ${list.length}` : `${toGo !== null && toGo >= 0 ? `${plural(toGo, 'day')} to go · ` : ''}${done} of ${list.length} done`}</p> : sum.line ? <p className={styles.subline}>{sum.line}</p> : null}
+          {/* (the calm UI build 2026-10-27, 3-23) on a desk the paragraph is the headline's own second sentence (quiet, never red), not a block of its own */}
+          <p className={styles.headline} data-alert={list.some((m) => m.status !== 'done' && m.end < today) || undefined}>
+            <span className={styles.headlineLead}>{sum.headline}</span>{!phone && sum.line ? <span className={styles.headlineMore}>{` ${sum.line}`}</span> : null}
+          </p>
+          {phone ? <p className={styles.subline}>{allDone ? `Every milestone is done · ${done} of ${list.length}` : `${toGo !== null && toGo >= 0 ? `${plural(toGo, 'day')} to go · ` : ''}${done} of ${list.length} done`}</p> : null}
+          {/* (the calm UI build 2026-10-27, 3-23) the days variation orders add and who sees the schedule — one line in the summary, out of the toolbar */}
+          {phone ? null : <p className={styles.summaryMeta} data-testid="schedule-summary-meta">{voChip}{seesButton}</p>}
         </div>
         {phone ? null : (
           <dl className={styles.stats}>
@@ -644,14 +659,7 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
           </span>
         </div>
       ) : null}
-      {/* (gaps build, package C — 5 · 8) what waits on an Owner or an Admin; a share asked and who it waits on */}
-      {firstAsk?.m ? (
-        <div className={styles.nudge} role="status" data-testid="schedule-asks">
-          <Icon name="approval" size={20} weight={300} />
-          <span className={styles.nudgeText}>{firstAsk.words}{asksMore ? ` ${plural(asksMore, 'more ask')} ${asksMore === 1 ? 'waits' : 'wait'} too.` : ''}</span>
-          <span className={styles.askActions}><Button size="sm" variant="secondary" appearance="outlined" onPress={() => openRow(firstAsk.m!)} data-testid="asks-open">Open it</Button></span>
-        </div>
-      ) : null}
+      {/* (gaps build, package C — 8) a share asked and who it waits on — (the calm UI build 2026-10-27, 3-01) a milestone's ask lives on its row */}
       {shareAsk && data.mayChange ? (
         <div className={styles.nudge} role="status" data-testid="share-ask-band">
           <Icon name="share" size={20} weight={300} />
@@ -668,20 +676,12 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
         <div className={styles.toolbar} data-rows={asRows || undefined}>
           {asRows ? null : toolbarStart}
           <div className={styles.toolEnd}>
-            {/* (parity map, SC-094 — 1.0's "+3d" VO chip) the days approved variation orders add; while one waits for an answer, it opens its dialog */}
-            {voDays && voDays.total > 0 ? (
-              <Tooltip label={voDays.vos.map((v) => `${v.number} · +${plural(v.days, 'day')}${v.answer === 'moved' ? ' · moved' : v.answer === 'asked' ? ' · asked for' : ''}`).join('; ')}>
-                {voDays.open.length && data.mayChange
-                  ? <Button appearance="text" onPress={() => setVoFor(voDays.open[0]!.id)} data-testid="vo-days">{`+${plural(voDays.total, 'day')} from changes`}</Button>
-                  : <span data-testid="vo-days" tabIndex={0}><MetaChip>{`+${plural(voDays.total, 'day')} from changes`}</MetaChip></span>}
-              </Tooltip>
-            ) : null}
             {/* (S45B · H-UHD-2) who works on site — shown once the studio keeps contractors (or the project has some) */}
             {crew.has ? <Button appearance="text" iconStart={<Icon name="handyman" size={20} />} onPress={crew.open} data-testid="schedule-crew">{crew.count ? `Contractors · ${crew.count}` : 'Contractors'}</Button> : null}
-            {seesButton}
             {shareButton}
             <span className={styles.toolActs}>
-              {data.mayChange ? <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setAdding({ after: null })} data-testid="add-milestone">Add milestone</Button> : null}
+              {/* (the calm UI build 2026-10-27, 3-12 · T-13) one create grammar on every tab: "New milestone" (was Add milestone) */}
+              {data.mayChange ? <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setAdding({ after: null })} data-testid="add-milestone">New milestone</Button> : null}
               {scheduleMenu}
             </span>
           </div>
@@ -704,7 +704,7 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
           </aside>
         ) : null}
       </div>
-      {asRows ? null : <p className={styles.legend}>{legend}</p>}
+      {/* (the calm UI build 2026-10-27, 3-23) the legend is the "?" on the chart head (toolbarStart) */}
 
       {/* (gaps build, package C — 13) full screen: the scale, Today and the list to the window's edges, above the page and under its menus and panel */}
       {full && !asRows ? (
@@ -714,11 +714,10 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
             {toolbarStart}
           </div>
           {timeline}
-          <p className={styles.legend}>{legend}</p>
         </div>
       ) : null}
 
-      {phone && data.mayChange ? <div className={styles.dock}><Button variant="primary" appearance="outlined" onPress={() => setAdding({ after: null })} data-testid="add-milestone">Add milestone</Button></div> : null}
+      {phone && data.mayChange ? <div className={styles.dock}><Button variant="primary" appearance="outlined" onPress={() => setAdding({ after: null })} data-testid="add-milestone">New milestone</Button></div> : null}
 
       <Drawer open={pane && (!wide || phone)} title={`What ${client} sees`} onClose={() => setPane(false)}>{clientPane}</Drawer>
       <MilestonePanel milestone={open} list={list} payments={data.payments} tasks={data.tasks} team={data.team} client={client} decider={data.decider} mayChange={data.mayChange} today={today} readOnlyWhy={completedBlock(data.stage, 'schedule')}
@@ -751,7 +750,7 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
                   onSave={async (name) => {
                     let id: string | null = null
                     const ok = await run('save the template', async () => { const r = await saveScheduleAsTemplate(data.projectId, name); if ('id' in r) id = r.id; return r })
-                    if (ok) { setSaving(false); snackbar({ message: 'Saved to Company › Templates › Schedules', actionLabel: 'Open', onAction: () => { if (id) router.push(withFrom(`/templates/schedules/${id}`, here())) } }) }
+                    if (ok) { setSaving(false); snackbar({ message: 'Saved to Company › Templates › Project schedules', actionLabel: 'Open', onAction: () => { if (id) router.push(withFrom(`/templates/schedules/${id}`, here())) } }) }
                     return ok
                   }} />
       <ConfirmDialog open={!!deleting} nested={!!open} title={`Delete ${deleting?.title ?? 'this milestone'}?`} confirmLabel="Delete" tone="danger"

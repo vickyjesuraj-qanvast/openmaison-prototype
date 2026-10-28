@@ -38,6 +38,7 @@ import { arrangeBlock, arrangeRoom, presetRoom } from '@/lib/planner/templates'
 import { rescalePlan } from '@/lib/planner/photo'   // (pending modules S28)
 import type { LayoutVersionRow, PlannerEditorData } from '@/lib/planner/queries'
 import { displayDate } from '@/lib/format'
+import { STUDIO_OWN } from '@/components/visualizer/home/kind-label'   // (the calm UI build, W-027)
 import { stashPhotos } from '@/lib/visualizer/pending-photos'
 import { createDesign, openLeadDesign } from '@/app/visualizer/actions'
 import { createLayout, deleteLayouts, duplicateLayout, linkLayoutToProject, readLinkableProjects, recordLayoutSent, renameLayout, saveLayoutAsTemplate, saveLayoutVersion, shareLayout, stopSharingLayout, undoSaveAsTemplate, undoStopSharing, unlinkLayout } from '@/app/planner/actions'
@@ -142,7 +143,9 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
 
   const back = () => { void flush(); router.push(from ?? (project ? `/projects/${project.id}` : onLead ? `/leads/${onLead.id}` : '/planner')) }
   const backLabel = from ? backWords(from, { fallback: 'Back to the 3D Space Planner' }) : project ? 'Back to the project' : onLead ? 'Back to the lead' : 'Back to the 3D Space Planner'
-  const chip = project ? `${project.number} · ${project.leadName}` : onLead ? `${onLead.name} · Lead` : isTemplate ? 'Template' : 'Personal'
+  /* (the calm UI build 2026-10-27, 6-16 · 6-08) whose it is rides the title's tooltip — the chip cut the layout's name; a template keeps its chip (a state) */
+  const whose = project ? `${project.number} · ${project.leadName}` : onLead ? `${onLead.name} · Lead` : isTemplate ? null : STUDIO_OWN
+  const chip = isTemplate ? 'Template' : null
 
   /* what overlaps — shown, never refused (J-Q8) */
   const runs = useMemo(() => wallRuns(plan.rooms), [plan.rooms])
@@ -562,7 +565,7 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
     if (busyAction) return
     setBusyAction('render')
     try {
-      const file = await jpegFile(shot, `${name} — 3D picture.jpg`)
+      const file = await jpegFile(shot, `${name} — 3D floor plan.jpg`)
       if (!file) { snackbar({ message: 'Couldn’t draw the picture — please try again' }); return }
       await toVisualizer(file)
     } catch { snackbar({ message: 'Couldn’t open the AI Visualizer — please try again' }) } finally { setBusyAction(null) }
@@ -609,6 +612,9 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
   /* ── what renders ── */
   const flyTo = useCallback((id: string) => threeRef.current?.flyTo(id), [])
   const portal: 'on' | 'invite' | 'off' | null = !client ? null : !client.portal ? 'invite' : client.designsOn ? 'on' : 'off'
+  /* (the calm UI build 2026-10-27, 6-31) the rooms in one place: in 3D or Walk beside the stage, the stage's room strip picks the room the
+     Finishes panel paints (and flies to it); in Top, and in a sheet that covers the stage, the panel keeps its own room chips */
+  const finishesOnStage = !compact && view !== 'top' && tab === 'finishes' && !presentingNow
   const panelFor = (t: Tab) => t === 'rooms'
     ? <RoomsPanel plan={plan} sel={sel} library={data.library} readOnly={readOnly} drawing={drawing} onDraw={() => { setDrawing((d) => !d); setView('top'); setRuler(false); if (compact) setSheet(null) }}
                   levels={levels} level={level} onLevels={(a) => { onLevels(a); if (compact && a === 'add') setSheet(null) }}
@@ -616,7 +622,7 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
                   plans={data.plans} onTrace={trace} moveUnderlay={moveUnderlay} onMoveUnderlay={(on) => { setMoveUnderlay(on); if (on) setView('top') }} onUnderlay={onUnderlay}
                   toPlace={toPlace} onPlaceNext={placeNext} onSkipPlace={skipPlace} onResize={() => { setSizing(true); if (compact) setSheet(null) }} />
     : t === 'furniture' ? <FurniturePanel readOnly={readOnly} onPlace={(k) => addPiece(k)} onPlaceDescribed={placeDescribed} count={plan.pieces.length} />
-    : <FinishesPanel plan={plan} roomId={finishRoom} onRoom={setFinishRoom} library={data.library} readOnly={readOnly} onFinish={setFinish} onEveryRoom={everyRoom} />
+    : <FinishesPanel plan={plan} roomId={finishRoom} onRoom={setFinishRoom} library={data.library} readOnly={readOnly} onFinish={setFinish} onEveryRoom={everyRoom} roomsOnStage={finishesOnStage} />
   /* in a sheet the Panel's own collapse closes it (PanelClose); beside the stage the inspector lets go with its × */
   const close = compact ? undefined : () => setSel(null)
   const inspector = selPiece ? (
@@ -667,7 +673,7 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
 
   return (
     <div ref={editorRef} className={styles.editor} data-insp={!compact && inspector && !presentingNow ? '' : undefined} data-has-sel={sel ? '' : undefined} data-present={presentingNow || undefined} data-testid="planner-editor">
-      <PlannerTopbar backLabel={backLabel} onBack={back} title={name} chip={chip} view={view} onView={setView} compact={phone} tight={compact}
+      <PlannerTopbar backLabel={backLabel} onBack={back} title={name} chip={chip} whose={whose} sharedOn={share ? displayDate(new Date(share.updatedAt)) : null} view={view} onView={setView} compact={phone} tight={compact}
                      saving={save.saving} savedLabel={save.label} savedTone={save.tone} canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo}
                      onShare={() => setShareOpen(true)} shareBlock={data.mayChange ?? (isTemplate ? TEMPLATE_SHARE : null)} shared={!!share} onMenu={(el) => { menuRef.current = el; setMenuEl((m) => (m ? null : el)) }} menuOpen={!!menuEl}
                      viewButton={<ViewMenuButton onOpen={openViewMenu} open={!!viewMenuEl} on={viewOff} compact={compact} />} />   {/* (pending modules S28, found) ≤1024 the View ▾ is its icon — at 768 its words ran over Undo */}
@@ -705,7 +711,8 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
           {ruler && view === 'top' && !compact ? <div className={`${styles.float} ${styles.hint}`} data-testid="planner-ruler-hint">{measure?.b ? 'Press again to measure afresh · Esc clears · Alt measures freely' : 'Press two points to measure between them — they land on a wall or a piece · Esc stops'}</div> : null}
           {view !== 'top' && plan.rooms.length && !presentingNow ? (
             <div className={`${styles.float} ${styles.roomsBar}`} data-below={phone || undefined} data-levels={levels.length > 1 ? '' : undefined}>
-              <Chips label="Go to a room" options={plan.rooms.map((r) => ({ value: r.id, label: r.name }))} value={null} onChange={(id) => threeRef.current?.flyTo(id)} testId="planner-room-chips" />
+              <Chips label="Go to a room" options={plan.rooms.map((r) => ({ value: r.id, label: r.name }))} value={finishesOnStage ? (plan.rooms.find((r) => r.id === finishRoom)?.id ?? plan.rooms[0]?.id ?? null) : null}
+                     onChange={(id) => { threeRef.current?.flyTo(id); if (finishesOnStage) setFinishRoom(id) }} testId="planner-room-chips" />
             </div>
           ) : null}
           {view === 'top' ? (
@@ -744,12 +751,12 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
             <div className={`${styles.float} ${styles.guide}`} data-levels={levels.length > 1 ? '' : undefined} data-phone={phone || undefined} role="status" aria-live="polite" data-testid="planner-place-guide">
               <span className={styles.guideText}>
                 <span className={styles.guideTitle} data-testid="planner-place-title">{placing && nextPlace ? (drawing ? `Drag over the ${nextPlace.name} on the plan` : `Next: the ${nextPlace.name}`) : 'Every room is on the plan'}</span>
-                <span className={styles.guideSub}>{placing ? `${plan.rooms.length} placed · ${toPlace.length} to go${drawing && !compact ? ' · Esc stops' : ''}` : 'Line up any edge with the plan, then make the picture.'}</span>
+                <span className={styles.guideSub}>{placing ? `${plan.rooms.length} placed · ${toPlace.length} to go${drawing && !compact ? ' · Esc stops' : ''}` : 'Line up any edge with the plan, then make the 3D floor plan.'}</span>
               </span>
               <span className={styles.guideActions}>
                 {placing && !drawing ? <Button size="sm" onPress={() => placeNext(0)} data-testid="planner-place-next">Place it</Button> : null}
                 {placing ? <Button variant="secondary" appearance="text" size="sm" onPress={() => skipPlace(0)} data-testid="planner-place-skip">Not on this plan</Button> : null}
-                {plan.rooms.length ? <Button variant={placing ? 'secondary' : 'primary'} appearance={placing ? 'outlined' : 'filled'} size="sm" onPress={makePicture} data-testid="planner-make-picture">Make the 3D picture</Button> : null}
+                {plan.rooms.length ? <Button variant={placing ? 'secondary' : 'primary'} appearance={placing ? 'outlined' : 'filled'} size="sm" onPress={makePicture} data-testid="planner-make-picture">Make the 3D floor plan</Button> : null}
                 {!placing ? <Tooltip label="Put this away"><IconButton icon="close" label="Put this away" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setListDone(true)} /></Tooltip> : null}
               </span>
             </div>
@@ -800,7 +807,7 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
         <DropdownItem onSelect={() => { setMenuEl(null); setVersionsOpen(true) }} meta={versionCount ? String(versionCount) : undefined} help="Every version kept — bring one back">Versions…</DropdownItem>
         <DropdownDivider />
         <DropdownItem onSelect={makePicture} disabled={!plan.rooms.length} title={!plan.rooms.length ? 'Add a room first — the picture is drawn from the rooms' : undefined}
-                      help={plan.rooms.length ? 'Dollhouse or Top-down — download it, or keep it in Files' : undefined}>3D picture…</DropdownItem>   {/* (pending modules S28) */}
+                      help={plan.rooms.length ? 'Dollhouse or Top-down — download it, or keep it in Files' : undefined}>3D floor plan…</DropdownItem>   {/* (pending modules S28; the calm UI build, 6-06 — one name for the picture, "3D floor plan") */}
         <DropdownItem onSelect={() => { void renderInVisualizer() }} disabled={busyAction === 'render' || !allRooms(doc).length} title={!allRooms(doc).length ? 'Add a room first — the picture is the 3D view' : undefined}
                       help={allRooms(doc).length ? (client ? `The 3D view becomes a room photo in ${client.name}’s design` : 'The 3D view becomes the room photo of a new design') : undefined}>Render in AI Visualizer</DropdownItem>
         <DropdownDivider />
@@ -815,7 +822,7 @@ function Editor({ data, from, initialView = 'top', initialShare = false, initial
       </PortalMenu>
       {/* (parity map, TD-081 · TD-092 · TD-098) the one View ▾ */}
       <PortalMenu open={!!viewMenuEl} anchor={viewMenuRef} onClose={() => setViewMenuEl(null)} width={300} role="menu" sheetTitle="View">
-        <DropdownItem role="menuitemcheckbox" checked={iso} onSelect={() => { setViewMenuEl(null); const on = !iso; setIso(on); if (on && view !== '3d') setView('3d') }} help="The 3D view at 35°, every length to one scale">Isometric</DropdownItem>
+        <DropdownItem role="menuitemcheckbox" checked={iso} onSelect={() => { setViewMenuEl(null); const on = !iso; setIso(on); if (on && view !== '3d') setView('3d') }} help="Every length to one scale">3D at an angle</DropdownItem>   {/* (the calm UI build, W-532 — the 3D view at 35°, was "Isometric") */}
         <DropdownItem role="menuitemcheckbox" checked={ruler} onSelect={() => { setViewMenuEl(null); const on = !ruler; setRuler(on); setMeasure(null); if (on) { setView('top'); setDrawing(false); setSel(null) } }} help="Press two points on the Top view — Esc clears">Ruler</DropdownItem>
         <DropdownItem role="menuitemcheckbox" checked={showPieces} onSelect={() => { setViewMenuEl(null); setShowPieces((v) => !v) }} help={showPieces ? 'Hide it to see the bare rooms' : 'Show the pieces again'}>Furniture</DropdownItem>
         <DropdownItem role="menuitemcheckbox" checked={showDims} onSelect={() => { setViewMenuEl(null); setShowDims((v) => !v) }} help="The rooms’ sizes and the overall lengths on the Top view">Dimensions</DropdownItem>

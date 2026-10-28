@@ -13,8 +13,18 @@
 
 /* Head (931:46985): H g16 p16/24 → 16 + 20 + 16 = 52. */
 .head { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-6); min-height: 52px; }
-.q { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* question 14/Regular #1a1a1a */
-.qLabel { font: var(--om-type-subtitle-m); }   /* "Q: " 14/Medium */
+.q { flex: 1; min-width: 0; margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* (the calm UI build 2026-10-27 — 2-18) the question is the row's title — no "Q:" */
+/* (2-18) an open question: the row is the press that opens the answer box; "Not answered" in grey under the question */
+.headPress.headPress {
+  width: 100%; border: 0; margin: 0; background: none; cursor: pointer; text-align: left; color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.headPress.headPress:hover { background: var(--om-color-hover-04p); }
+.headPress.headPress:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.qStack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.qStack .q { display: block; }
+.notAnswered { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* Answer block while answering (931:46995): fill #f2f2f2, V g16 p24; the card's bottom corners. */
 .block {
@@ -43,8 +53,7 @@
   background: var(--om-color-surface-bg);
   border-radius: 0 0 var(--om-radius-1) var(--om-radius-1);
 }
-.a { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* answer 14/Regular */
-.aLabel { font: var(--om-type-subtitle-m); }   /* "A: " 14/Medium */
+.a { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* answer 14/Regular — no "A:" (2-18) */
 .when { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "1d ago" 14/Regular #666666 */
 
 /* Bare 20 icon button — components/leads/detail/info-column.module.css .iconBtn, glyph in the secondary colour (edit 20/Regular #666666). */
@@ -90,13 +99,11 @@
   .iconBtn { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }
 
-/* (Leads on the move, L4 — C-25 · C-17) On a finger who answered reads in the answer's line at 14 ("By Studio · 1d ago") and the head's 10px
-   tag steps out; the question and the answer read at 16. The desk keeps the mock's tag and 14. */
-.by { display: none; }
+/* (Leads on the move, L4 — C-25 · C-17) On a finger the question and the answer read at 16. (the calm UI build 2026-10-27 — 2-18) Who answered
+   reads in the answer's line at every width ("Answered by the studio · 1d ago"); the head's tag is gone. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .by { display: inline; }
-  .byTag { display: none; }
-  .q, .a { font: var(--om-type-body-l); }
-  .qLabel, .aLabel { font: var(--om-type-subtitle-l); }
+  .a { font: var(--om-type-body-l); }
+  .q { font: var(--om-type-subtitle-l); }
+  .notAnswered { font: var(--om-type-body-m); }
   .when { white-space: normal; }
 }

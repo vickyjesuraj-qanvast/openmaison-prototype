@@ -6,6 +6,7 @@
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const path = require('path')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const DB = process.env.TESTDB, BASE = process.env.BASE || 'http://localhost:3033', OUT = __dirname
 const results = []
 const ok = (name, pass, note = '') => { results.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${note ? ' — ' + note : ''}`) }
@@ -43,7 +44,8 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
     // (pending modules S14, a deliberate change of this rule) the first module is named for what it holds — Roles & access
     // (pending modules S23, a deliberate change of this rule) Meetings is a module of its own, after Lead management — the co-pilot's parts,
     // the deal score, the checklists, the objection answers and the competitors (1.0's /copilot/settings)
-    ok('g-tabs the strip reads in the new order', tabs.map((t) => t.trim()).join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Notifications', tabs.join(' · '))
+    // (the calm UI build 2026-10-27, a deliberate change) 1-41: the last module reads "Studio notifications" (Your profile keeps Your notifications); the order and ?section=notifications stay
+    ok('g-tabs the strip reads in the new order', tabs.map((t) => t.trim()).join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Studio notifications', tabs.join(' · '))
     // REG-921 (Projects round 1): Settings › Projects is live — and the gaps build's money out (F1, REG-1261…) made Finance live too
     await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Finance' }).click()
     await page.waitForURL(/section=finance/, { timeout: 8000 }).catch(() => {})
@@ -68,18 +70,19 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
   await step('g-whomay', async () => {
     await page.goto(`${BASE}/settings`); await ready(page)
     // (pending modules S14, a deliberate change of this rule) Who sees leads sits on this module now, above the table
+    await openRoles(page)   // (the calm UI build 2026-10-27, a deliberate change)
     ok('g-whomay See leads names Who sees leads', (await page.getByTestId('may-link-see').innerText()) === 'Who sees leads, above')
     ok('g-whomay a fixed rule has no link', (await page.getByTestId('may-delete-lead').locator('a').count()) === 0)
     await page.getByTestId('studio-roles').scrollIntoViewIfNeeded()
     await shot(page, 'g-whomay-links-1440', { clip: { x: 60, y: 0, width: 1380, height: 1024 } })
     const land = async (key, hash, section) => {
-      await page.goto(`${BASE}/settings`); await ready(page)
+      await page.goto(`${BASE}/settings`); await ready(page); await openRoles(page)   // (the calm UI build 2026-10-27, a deliberate change)
       await page.getByTestId(`may-link-${key}`).click()
       await page.waitForURL(new RegExp(`section=${section}.*#${hash}`)); await page.waitForTimeout(1600)
       ok(`g-whomay ${key} lands on #${hash}`, await inView(page, `#${hash}`))
     }
     /* (pending modules S14, a deliberate change of this rule) See leads' rule is on this page: the link lands on the card above, no navigation */
-    await page.goto(`${BASE}/settings`); await ready(page)
+    await page.goto(`${BASE}/settings`); await ready(page); await openRoles(page)   // (the calm UI build 2026-10-27, a deliberate change)
     await page.getByTestId('may-link-see').click(); await page.waitForTimeout(1200)
     ok('g-whomay see lands on #lead-visibility, in the page', new URL(page.url()).hash === '#lead-visibility' && /section=studio|\/settings$|\/settings#/.test(page.url()) && await inView(page, '#lead-visibility'))
     await shot(page, 'g-whomay-landed-visibility-1440')
@@ -87,7 +90,7 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
     ok('g-whomay the landing page has Back to Settings (from=)', /from=%2Fsettings/.test(page.url()))
     await land('publish', 'template-approval', 'quotes')
     await land('payments', 'payment-lock', 'quotes')
-    await page.goto(`${BASE}/settings`); await ready(page)
+    await page.goto(`${BASE}/settings`); await ready(page); await openRoles(page)   // (the calm UI build 2026-10-27, a deliberate change)
     ok('g-whomay Members rows open Company › Members with the way back', /^\/company\/members\?from=%2Fsettings/.test(await page.getByTestId('may-link-members').getAttribute('href')))
     ok('g-whomay AI rows open Plan & AI credits', /^\/company\/plan\?from=/.test(await page.getByTestId('may-link-ai-buy').getAttribute('href')))
     ok('g-whomay Price book rows open the Price book', /^\/company\/price-book\?from=/.test(await page.getByTestId('may-link-price-book').getAttribute('href')))
@@ -117,12 +120,12 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
     const card = page.getByTestId('lead-reasons')
     ok('g-reasons the card is "Lost and On Hold reasons"', /^Lost and On Hold reasons/.test((await card.innerText()).trim()))
     const add = page.getByTestId('add-reason-lost')
-    ok('g-reasons the add row reads "Contacts expected first" with its help line', /Contacts expected first/.test(await add.innerText()) && /Blank asks for none — the Lost dialog says how many are logged/.test(await add.innerText()))
+    ok('g-reasons the add row reads "Contacts expected first" with its help line', /Contacts (expected|logged) first/.test(await add.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-154 · 5-32 */ && /Blank asks for none — the Lost dialog says how many are logged/.test(await add.innerText()))
     ok('g-reasons "Needs logged contacts" is gone', !/Needs logged contacts/.test(await page.locator('body').innerText()))
     await card.scrollIntoViewIfNeeded(); await shot(page, 'g-reasons-card-1440', { clip: await card.boundingBox() })
     await card.getByRole('button', { name: /^Unresponsive/ }).click()
     const dlg = page.getByTestId('list-entry')
-    ok('g-reasons the reason dialog says it the same way', /Contacts expected first/.test(await dlg.innerText()) && /Blank asks for none/.test(await dlg.innerText()))
+    ok('g-reasons the reason dialog says it the same way', /Contacts (expected|logged) first/.test(await dlg.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-154 */ && /Blank asks for none/.test(await dlg.innerText()))
     await page.getByRole('dialog', { name: 'Lost reason' }).getByRole('button', { name: 'Cancel' }).click(); await page.waitForTimeout(300)
   })
 
@@ -154,15 +157,20 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
     ok('g-dragorder the bank keeps the dragged order', sql(`select sort_order from studio_scope_questions where question = '${first.replace(/'/g, "''")}'`) === '1', first)
     await page.reload(); await ready(page)
     ok('g-dragorder the order holds after a reload', (await qText(1)) === first)
-    ok('g-dragorder the arrows stay for keyboard and touch', await rows.nth(0).getByRole('button', { name: /Move .* down/ }).isVisible())
+    /* (the calm UI build 2026-10-27, a deliberate change) 5-30: the row's tools are its one ⋮ — Move up / Move down are its rows, a key press and a
+       tap away, each with the question's name (the keyboard and a finger keep a way to reorder without dragging) */
+    await rows.nth(0).getByRole('button', { name: /^More options for / }).click(); await page.waitForTimeout(400)
+    const down = page.getByRole('menuitem', { name: /^Move .* down$/ })
+    ok('g-dragorder the arrows stay for keyboard and touch', await down.isVisible() && (await down.getAttribute('aria-disabled')) !== 'true' && (await page.getByRole('menuitem', { name: /^Move .* up$/ }).getAttribute('aria-disabled')) === 'true')
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300)
     await shot(page, 'g-dragorder-questions-1440', { clip: { x: 60, y: 80, width: 1380, height: 520 } })
   })
   await step('g-dragorder custom fields', async () => {
     await page.goto(`${BASE}/settings?section=leads`); await ready(page)
     for (const label of ['Site access', 'Parking']) {
       await page.getByTestId('custom-fields').getByRole('button', { name: 'Add field' }).click()
-      await page.getByRole('dialog', { name: 'Add field' }).getByLabel('Label').fill(label)
-      await page.getByRole('dialog', { name: 'Add field' }).getByRole('button', { name: 'Add', exact: true }).click()
+      await page.getByRole('dialog', { name: /^(Add|New) field$/ /* (the calm UI build 2026-10-27, a deliberate change) 5-29 · §2: "New field" */ }).getByLabel('Label').fill(label)
+      await page.getByRole('dialog', { name: /^(Add|New) field$/ /* (the calm UI build 2026-10-27, a deliberate change) 5-29 · §2: "New field" */ }).getByRole('button', { name: 'Add', exact: true }).click()
       await snack(page, new RegExp(`${label} added`)); await page.waitForTimeout(900)
     }
     const rows = page.getByTestId('custom-field')
@@ -205,14 +213,15 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
   await step('k-instagram', async () => {
     await page.goto(`${BASE}/company/profile`); await ready(page)
     const body = await page.locator('#details').innerText()
-    ok('k-instagram the Social links help shows a handle', /Handles or links, as you want them printed — e\.g\. @demostudio\.sg\./.test(body))
+    // (the calm UI build 2026-10-27, a deliberate change) W-207: the help is one line — "As you want them printed, e.g. @demostudio.sg." (the field codes are the template editor's Insert field menu)
+    ok('k-instagram the Social links help shows a handle', /As you want them printed, e\.g\. @demostudio\.sg\./.test(body))
   })
 
   /* ── b-brandkit + g-preview-large (Figma 1517:11, UAT 2.01 · 3.34) ── */
   await step('b-brandkit', async () => {
     await page.goto(`${BASE}/company/templates/brand`); await ready(page)
     const note = await page.getByTestId('brand-kit-own-note').innerText()
-    ok('b-brandkit the preview says what Default Quote PDF sets for itself', note === 'Default Quote PDF sets its own Brand ink, Brand grey and Band colours, and its own fonts, so changing those here doesn’t show on it. Templates that use the brand kit follow it.', note)
+    ok('b-brandkit the preview says what Default Quote PDF sets for itself', note === 'When it prints, Default Quote PDF keeps its own Brand ink, Brand grey and Table band colours, and its own fonts.', note)   // (the calm UI build 2026-10-27, a deliberate change) 4-35: the preview follows the kit; the note says what the template keeps on paper
     ok('b-brandkit the hint says where the stamp prints', /The stamp prints only where a template places it\./.test(await page.getByTestId('brand-kit-preview').innerText()))
     await shot(page, 'b-brandkit-preview-column-1440', { clip: { x: 1060, y: 120, width: 380, height: 700 } })
   })
@@ -285,7 +294,7 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
       await p.goto(`${BASE}${u}`); await ready(p)
       const sw = await p.evaluate(() => document.documentElement.scrollWidth)
       ok(`phone ${n}: no sideways scroll at 390`, sw <= 390, String(sw))
-      if (n === 'studio') { await p.getByTestId('may-link-see').scrollIntoViewIfNeeded(); await shot(p, 'phone-settings-studio-whomay-390') }
+      if (n === 'studio') { await openRoles(p); await p.getByTestId('may-link-see').scrollIntoViewIfNeeded(); await shot(p, 'phone-settings-studio-whomay-390') }   // (the calm UI build 2026-10-27, a deliberate change)
       if (n === 'leads') { await p.getByTestId('lead-reasons').scrollIntoViewIfNeeded(); await shot(p, 'phone-settings-reasons-390') }
       if (n === 'quotes') { await p.getByTestId('numbering-switches').scrollIntoViewIfNeeded(); await shot(p, 'phone-settings-numbers-390') }
     }

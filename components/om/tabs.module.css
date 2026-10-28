@@ -43,3 +43,6 @@ button.tab { border: 0; background: none; cursor: pointer; }   /* (REG-645) a mo
 
 /* (gaps build, package A — 12) A tab with a count: its label and the DS Badge's count side by side, on the label's own line. */
 .withCount { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+/* (the calm UI build 2026-10-27 — the audit's 2-22, T-07: a red badge means overdue and yours) a tab's count is a quiet grey number; the DS
+   Badge's red stays for `countTone: 'late'`. Doubled, so it wins over the design system's badge class in any load order. */
+.quietCount.quietCount { background: var(--om-color-surface-variant); color: var(--om-color-on-surface-default); }

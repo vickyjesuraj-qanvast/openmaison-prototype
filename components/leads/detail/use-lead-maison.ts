@@ -9,6 +9,7 @@ import { displayDate, displayDue, moneyCard, parseInputDateTime } from '@/lib/fo
 import { firstName, waLink } from '@/lib/portal/model'
 import { STAGE_LABEL, isProjectStage } from '@/lib/projects/model'
 import { briefBudget } from '@/lib/leads/briefs'
+import { channelLabel } from '@/lib/leads/enums'
 import { DRAFTS, type DraftLead } from '@/lib/maison-ai/drafts'
 import { reviewAsk } from '@/lib/maison-ai/review-ask'   // (pending modules S14)
 import type { MaisonAnswer, MaisonProposal, MaisonRow, MaisonSuggestion } from '@/lib/maison-ai'
@@ -144,10 +145,12 @@ export function useLeadMaison(o: LeadMaisonInput): (label: string) => MaisonSugg
       case 'Share moodboard': return run(doors.visualizer)
 
       /* proposals — a task */
-      case 'Auto-schedule first meet': return task(`Book the first meet with ${first}`, () => dueIn(1), `A task to agree the first meeting with ${first} — it shows as the lead’s next follow-up.`)
+      case 'Book the first meeting':   // (the calm UI build 2026-10-27 — W-487) was "Auto-schedule first meet"
+      case 'Auto-schedule first meet': return task(`Book the first meeting with ${first}`, () => dueIn(1), `A task to agree the first meeting with ${first} — it shows as the lead’s next follow-up.`)
       case 'Plan site visit': return task(`Site visit — ${lead.propertyAddress ?? pt}`, () => workday(dueIn(3)), `A task to visit the ${pt} with ${first}${lead.propertyAddress ? ` at ${lead.propertyAddress}` : ''}.`)
       case 'Schedule check-in': return task(`Check in with ${first}`, () => workday(dueIn(3)), `A task to check in with ${first} while the quote is prepared.`)
       case 'Schedule a call': return task(`Call ${first} about ${quote?.number ?? 'the quote'}`, () => workday(dueIn(1)), `A task to call ${first} and ask what would make the quote a yes.`)
+      case 'Remind me in 6 months':   // (the calm UI build — W-613) was "Set a 6-month revisit"
       case 'Set a 6-month revisit': return task(`Revisit ${first}`, () => dueIn(0, 6), `A task six months from now to see whether ${first}’s plans have changed.`)
       case 'Remind me in a year': return task(`Check in with ${first}`, () => dueIn(0, 12), `A task a year from now to say hello — lost leads who part on good terms come back or refer friends.`)   // (pending modules S10) *(invented copy)*
       case 'Create project checklist': return task(`Prepare the project handover for ${first}`, () => workday(dueIn(2)), 'A task to confirm the milestone schedule and the site start date with the project team.')
@@ -185,10 +188,10 @@ export function useLeadMaison(o: LeadMaisonInput): (label: string) => MaisonSugg
         if (!logs.length) return { title: 'No contact logged yet', text: `Log a call or a message with ${first} and its remarks show here.`, rows: [{ id: 'log', label: 'Log a contact', run: doors.contactLog }] }
         return {
           title: logs.length === 1 ? 'The last contact' : `The last ${logs.length} contacts`,
-          text: 'Their outcome and remarks, newest first. Open one in Notes & Logs.',
+          text: 'Their outcome and remarks, newest first. Open one in Notes & logs.',
           rows: logs.map((l, i) => {
             const at = l.when ? parseInputDateTime(l.when) : null
-            return { id: `log-${i}`, label: [l.channel, l.outcome].filter(Boolean).join(' · ') || 'Contact', meta: [at ? displayDate(at) : null, l.notes || 'No remarks'].filter(Boolean).join(' — '), href: doors.tab('notes') }
+            return { id: `log-${i}`, label: [channelLabel(l.channel), l.outcome].filter(Boolean).join(' · ') || 'Contact', meta: [at ? displayDate(at) : null, l.notes || 'No remarks'].filter(Boolean).join(' — '), href: doors.tab('notes') }
           }),
         }
       })

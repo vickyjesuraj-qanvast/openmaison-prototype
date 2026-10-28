@@ -234,7 +234,7 @@ const sample = (n) => fs.readFileSync(path.join(ROOT, 'public', 'uat-files', n))
     /* (simplify round 2, a deliberate change of this rule) the Event pill lists only the events the log holds — a baseline database may hold no
        render_feedback message, so the probe reads the menu first: render_feedback when it is offered, else the first event that isn't All, and
        asserts the filter on that event (the render_feedback words only when that is the one picked) */
-    const RENDERS = 'A client responds to shared renders'
+    const RENDERS = 'A client responds to shared versions'   // (the calm UI build 2026-10-27, a deliberate change) 6-07: the event's label says versions
     const offered = (await s.getByRole('menuitemradio').allInnerTexts()).map((t) => t.trim()).filter((t) => t && t !== 'All events')
     const picked = offered.includes(RENDERS) ? RENDERS : offered[0]
     ok(!!picked, `5 the Event pill offers the events the log holds (${offered.length})`)

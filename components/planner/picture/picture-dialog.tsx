@@ -99,7 +99,7 @@ export function PictureDialog({ open, onClose, plan, library, name, layoutId, cl
   const visualize = () => { const url = shot(); if (!url) { snackbar({ message: 'Couldn’t draw the picture — please try again' }); return } onVisualize(url) }
   const line = LOOKS.find((l) => l.value === look)?.line ?? ''
   return (
-    <Dialog open={open} onClose={onClose} title="3D picture" subtitle={`${name} — drawn from the layout, every room furnished by the planner’s rule.`} size="modal" width={800}
+    <Dialog open={open} onClose={onClose} title="3D floor plan" subtitle={`${name} — drawn from the layout, every room furnished by the planner’s rule.`} size="modal" width={800}
             footer={<>
               <FootStart><Button variant="secondary" appearance="text" onPress={visualize} isDisabled={visualizing || !!clipping} data-testid="picture-visualize">{visualizing ? 'Opening…' : 'Render in AI Visualizer'}</Button></FootStart>
               {client ? <Button variant="secondary" appearance="outlined" onPress={() => { void save() }} isDisabled={saving || !!clipping} data-testid="picture-save">{saving ? 'Saving…' : 'Save to Files'}</Button> : null}

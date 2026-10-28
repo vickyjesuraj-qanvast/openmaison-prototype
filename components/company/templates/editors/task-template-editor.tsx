@@ -7,7 +7,6 @@ import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Avatar } from '@/components/om/avatar'
-import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { SelectTrigger } from '@/components/om/select-trigger'
@@ -134,7 +133,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
     <PageReveal skeleton={<LibraryEditorGhost kind="tasks" />}>
       <div className={page.page} data-testid="task-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Tasks', href: '/company/templates/tasks' }]} title={name.trim() || 'Untitled template'}
-                       chips={<><MetaChip>{steps.length} {steps.length === 1 ? 'step' : 'steps'}</MetaChip><MetaChip>{usedBy === 0 ? 'Not used yet' : `Added to ${usedBy} ${usedBy === 1 ? 'lead' : 'leads'}`}</MetaChip></>}
+                       chips={null}   /* (the calm UI build 2026-10-27, the UI audit's 4-11) no tags: the steps are the card below, the usage is the gallery card's */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
                          <DropdownItem onSelect={() => setAddOpen(true)} disabled={steps.length === 0} help={steps.length === 0 ? 'Add a step first' : undefined}>Add to a lead…</DropdownItem>   {/* (REG-728) the reason in the row */}
@@ -167,7 +166,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
         <PickLeadDialog open={addOpen} onClose={() => setAddOpen(false)} leads={leads} allowStudio title="Add these tasks to which lead?" confirmLabel="Add tasks"
                         onPick={(leadId) => { setAddOpen(false); void flushRef.current().then(() => addTaskTemplateToLead(template.id, leadId)).then((n) => snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }), () => snackbar({ message: 'Couldn’t add the tasks — please try again' })) }} />
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
-                       message={usedBy ? `The tasks it already added to ${usedBy} ${usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.'}
+                       message={usedBy ? `The tasks it already added to ${usedBy} ${usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted templates.` : 'You can restore it from Deleted templates.'}
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTaskTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/tasks') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         {/* (Dane UAT 3.20) The Tasks tab's Manage Tags and its delete confirm, as they are there (902:27709). */}
         <ManageTagsDialog open={manageTags} tags={tags} onClose={() => setManageTags(false)}

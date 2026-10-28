@@ -237,16 +237,19 @@ export function ReturnLeadWizard({
             {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
                 `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
             <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
-                        role="dialog" aria-modal aria-label={appeal ? 'Appeal the return' : 'Return Lead'} tabIndex={-1}
+                        role="dialog" aria-modal aria-label={appeal ? 'Appeal the return' : 'Return to Qanvast'} tabIndex={-1}
                         data-testid="return-wizard" data-step={step}>
               {/* (REG-725) the house head and foot. Heading 84: "Return Lead" 20/Bold · "<name> · Received on <date>" 12 secondary ·
                   info 24 (coming soon) · close 24 */}
-              <SurfaceHead title={appeal ? 'Appeal the return' : 'Return Lead'} subtitle={appeal ? `${lead.name} · Rejected${appeal.repliedAt ? ` on ${displayDate(appeal.repliedAt)}` : ''}` : `${lead.name} · Received on ${displayDate(lead.createdAt)}`} className={styles.head} onClose={onClose}
+              <SurfaceHead title={appeal ? 'Appeal the return' : 'Return to Qanvast'} subtitle={appeal ? `${lead.name} · Rejected${appeal.repliedAt ? ` on ${displayDate(appeal.repliedAt)}` : ''}` : `${lead.name} · Received on ${displayDate(lead.createdAt)}`} className={styles.head} onClose={onClose}
                            actions={
-                             /* (pending modules S05) the control opens Qanvast's return policy */
+                             /* (pending modules S05) the control opens Qanvast's return policy — (the calm UI build 2026-10-27 — audit 2-38) only on the
+                                steps whose body has no link to it: the first two say "Qanvast’s return policy" / "Rules" in their own text */
+                             step === 'late' || step === 'reason' ? undefined : (
                              <Tooltip label="Qanvast’s return policy">
                                <IconButton icon="info" label="Qanvast’s return policy" size={24} variant="bare" iconSize={24} className={styles.info} onClick={() => setPolicyOpen(true)} />
                              </Tooltip>
+                             )
                            } />
 
               <div className={styles.steps}>

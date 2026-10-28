@@ -1,14 +1,14 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { Button, Link, Tag, TextArea } from '@/components/ds'
+import { Button, Tag, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import type { Question } from '@/lib/db/schema'
-import { QUESTION_TYPE_LABELS, answerText, parseMulti, parseOptions, validateAnswer } from '@/lib/leads/question-model'
+import { QUESTION_TYPE_LABELS, answerShown, parseMulti, parseOptions, validateAnswer } from '@/lib/leads/question-model'
 import { displayDayShortMonth, relativeTime } from '@/lib/format'
 import styles from './question-card.module.css'
 
@@ -25,9 +25,11 @@ import styles from './question-card.module.css'
  * The inputs are the app's 48px `TextField` / `DateField` where 02 draws "Text Field 36" (REG-189, as REG-176).
  */
 export function QuestionCard({
-  question, now, mode, onAnswer, onCancel, onSave, saving, askedAt = null, changes = 0, onHistory,
+  question, now, mode, onAnswer, onCancel, onSave, saving, askedAt = null, changes = 0, onHistory, client = '',
 }: {
   question: Question
+  /** (the calm UI build 2026-10-27 — 2-18) the client's first name — "Answered by Olivia" */
+  client?: string
   /** Server "now" (ms) for the "1d ago" stamp — never Date.now() in render. */
   now: number
   mode: 'view' | 'answer'
@@ -60,16 +62,34 @@ export function QuestionCard({
     if (!validateAnswer(question.type, draft)) onSave(draft)
   }
   const state = mode === 'answer' ? 'answering' : question.answeredBy === 'client' ? 'client' : question.answeredBy === 'studio' ? 'studio' : 'open'
+  /* (the calm UI build 2026-10-27 — 2-18 · T-02, a deliberate change of 931:46985's "Q: … Answer") The question is the row's title, with no
+     "Q:" before it; an open one says "Not answered" in grey under it and the row itself opens the answer box — the purple "Answer" link it
+     repeated on every row is gone (its press is the row's). Who answered reads beside the answer, in grey words — never a tag. */
+  const open = mode === 'view' && !answered
+  const tags = (
+    <>
+      {question.required && !answered ? <Tag appearance="outlined" className={styles.tag} data-testid="question-required">Required</Tag> : null}   {/* (REG-647) the bank's Required */}
+      {askedAt && !answered ? <Tag appearance="outlined" color="blue" className={styles.tag} data-testid="question-asked">{`Asked · ${displayDayShortMonth(new Date(askedAt))}`}</Tag> : null}   {/* (T12) */}
+    </>
+  )
+  const by = question.answeredBy === 'client' ? `Answered by ${client.trim() || 'the client'}` : 'Answered by the studio'
 
   return (
     <div className={styles.card} data-testid="question-card" data-state={state}>
-      <div className={styles.head}>
-        <p className={styles.q}><span className={styles.qLabel}>Q: </span>{question.text}</p>
-        {question.required && !answered ? <Tag appearance="outlined" className={styles.tag} data-testid="question-required">Required</Tag> : null}   {/* (REG-647) the bank's Required */}
-        {askedAt && !answered ? <Tag appearance="outlined" color="blue" className={styles.tag} data-testid="question-asked">{`Asked · ${displayDayShortMonth(new Date(askedAt))}`}</Tag> : null}   {/* (T12) */}
-        {mode === 'view' && !answered ? <Link variant="primary" onPress={onAnswer}>Answer</Link> : null}
-        {answered ? <Tag appearance="outlined" className={`${styles.tag} ${styles.byTag}`}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
-      </div>
+      {open ? (
+        <button type="button" className={`${styles.head} ${styles.headPress}`} onClick={onAnswer} aria-label={`Answer: ${question.text}`} data-testid="question-answer">
+          <span className={styles.qStack}>
+            <span className={styles.q}>{question.text}</span>
+            <span className={styles.notAnswered}>Not answered</span>
+          </span>
+          {tags}
+        </button>
+      ) : (
+        <div className={styles.head}>
+          <p className={styles.q}>{question.text}</p>
+          {tags}
+        </div>
+      )}
 
       {mode === 'answer' ? (
         <div className={styles.block}>
@@ -82,9 +102,10 @@ export function QuestionCard({
         </div>
       ) : answered ? (
         <div className={styles.answer}>
-          <p className={styles.a}><span className={styles.aLabel}>A: </span>{answerText(question)}</p>
-          {/* (Leads on the move, L4 — C-25) on a finger who answered is a 14 line beside the when — the head's 10px "By Studio" tag steps out */}
-          <span className={styles.when}><span className={styles.by} data-testid="question-by">{question.answeredBy === 'client' ? 'By Client · ' : 'By Studio · '}</span>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
+          <p className={styles.a}>{answerShown(question)}</p>
+          {/* (Leads on the move, L4 — C-25) who answered is a line beside the when — (the calm UI build 2026-10-27 — 2-18) at every width now, the
+              head's tag gone */}
+          <span className={styles.when}><span className={styles.by} data-testid="question-by">{`${by} · `}</span>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
           {/* (gaps build D, item 9 — 1.0's clock icon) an answer changed since it was first given keeps every version: old → new, who, when */}
           {changes > 0 && onHistory ? (
             <Tooltip label="Answer history">

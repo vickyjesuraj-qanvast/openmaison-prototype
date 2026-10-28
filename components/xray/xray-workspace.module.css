@@ -1,5 +1,6 @@
 /* Quote X-Ray — setup (REG-529): an intro card you can dismiss, the setup card beside Recent comparisons (360). Cards on the
-   table-card frame (r8, surface-variant stroke); every value is a token. */
+   table-card frame (r8, surface-variant stroke); every value is a token.
+   (the calm UI build 2026-10-27, 6-10) The intro card on a first run only; otherwise one line with How it works (`.lede`), its points in a drawer. */
 .content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); }   /* (REG-639) the page ends clear of the FAB and the dock */
 .intro { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .introText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
@@ -8,14 +9,18 @@
 .introList li { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .introList li > :first-child { color: var(--om-color-primary-default); flex-shrink: 0; margin-top: 1px; }
 .introNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 6-10 — T-05) what X-Ray is, in one line, and How it works beside it (the DS text button) */
+.lede { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--om-spacing-2); row-gap: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.howBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .columns { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
 .card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
 .side { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption — (the calm UI build, 6-14) X-Ray's own fields no longer wear it; the website trial's setup still does */
 .lockedLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; padding: 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }   /* (REG-530) the lead the page belongs to — read, not picked */
 .lockedName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lockedLead .lockedClear { margin-left: auto; margin-right: calc(-1 * var(--om-spacing-2)); }
+.lockedType { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (the calm UI build, T-06) a property type is a fact, not a status: sentence-case secondary text */
 .quotes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 /* (REG-639, Q-11) a lead with nothing to compare: the two ways on */
 .noQuote { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
@@ -38,9 +43,9 @@
 .foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* Progress: the house's ProgressCard (components/om/progress-card.tsx, REG-2801), moved from here. */
-/* Recent comparisons: a 360 card of rows — the Deleted sheets' link row with a chevron and a bare delete. */
+/* Recent comparisons: a 360 card of rows — the row opens the comparison, its ⋮ holds Open the quote · Delete (the calm UI build, 6-15). */
 .recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (REG-729) no letter-spacing on an uppercase caption */
+.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (the calm UI build 2026-10-27, T-06) one card head: bold sentence case, not a capitals caption */
 .recentsSearch { display: block; padding: var(--om-spacing-3) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .recentsSearch > * { width: 100%; }
 .recentsEmpty { padding: var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
@@ -53,7 +58,7 @@
 .recentText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .recentTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .recentMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chev { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.recentMenu { display: inline-flex; flex-shrink: 0; }
 @media (max-width: 1024px) {
   .columns { flex-direction: column; align-items: stretch; }   /* (sweep S3 · T-04) stacked, the setup card fills the column like the intro and Recent */
   .recents { width: 100%; }

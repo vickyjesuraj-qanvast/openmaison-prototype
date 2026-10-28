@@ -86,14 +86,14 @@ export function CostSettings({ rules, canManage }: { rules: CostRules; canManage
       <div className={s.setting} id="cost-settings" data-testid="cost-settings">
         <div className={s.settingHead}>
           <span className={s.settingTitle}>Costs</span>
-          <span className={s.settingHelp}>Purchase orders to vendors and the team’s expenses — who approves them and when vendors are paid. POs are numbered under Document numbers, above.</span>
+          <span className={s.settingHelp}>When POs, expenses and bills need an Owner’s or an Admin’s approval, and when vendors are paid.</span>   {/* (the calm UI build, 5-34 · T-05) one sentence — POs' numbers are the Document numbers card's own row, above */}
         </div>
         <div className={`${s.eventTable} ${u.table}`} role="table" aria-label="Cost approvals" data-card-table="">
           <div className={s.eventHead} role="row"><span role="columnheader">Rule</span><span role="columnheader">Who approves</span><span role="columnheader" className={s.eventCol}>On</span></div>
           {row('poApproval', poApproval, 'local_shipping', 'Purchase orders over the limit need approval', `A Designer’s or a Manager’s PO over the limit below, or one with an advance, waits; an Owner’s or an Admin’s goes at once.`, 'cost-po-approval')}
           {row('expenseApproval', expenseApproval, 'shopping_cart', 'Expenses need approval', 'A Designer’s or a Manager’s expense — and a claim to be paid back — waits; an Owner’s or an Admin’s counts at once.', 'cost-expense-approval')}
           {/* (S44R — UAT row 361, call C8) invented copy */}
-          {row('billApproval', billApproval, 'receipt_long', 'Supplier bills over the limit or off their PO need approval', 'A bill over the limit below with no PO, or one that takes its PO’s bills over the PO by more than the tolerance below, waits in To do before it is paid; an Owner’s or an Admin’s goes at once. Every other bill is paid as before.', 'cost-bill-approval')}
+          {row('billApproval', billApproval, 'receipt_long', 'Supplier bills over the limit or off their PO need approval', 'A bill over the limit below with no PO, or over its PO by more than the tolerance below, waits for approval before it is paid; an Owner’s or an Admin’s goes at once.', 'cost-bill-approval')}
         </div>
         <div className={s.numGrid}>
           <TextField label="Approval limit (S$)" value={limit} numeric="amount" onChange={setLimit} helper="A PO — or a bill on no PO — over this, GST included, waits for approval" error={!limitOk ? 'Enter the limit in dollars' : undefined} />
@@ -105,7 +105,7 @@ export function CostSettings({ rules, canManage }: { rules: CostRules; canManage
         </div>
         {canManage ? <div className={s.settingActions}>
           <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !limitOk} data-testid="cost-settings-save">{busy ? 'Saving…' : 'Save cost rules'}</Button>
+          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !limitOk} data-testid="cost-settings-save">{busy ? 'Saving…' : 'Save'}</Button>
         </div> : null}
       </div>
     </>

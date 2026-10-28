@@ -3,10 +3,10 @@
 import { AutoFillNote, ChoiceChips, Divider, LinkButton, NotesArea, SectionRow } from '@/components/leads/move-stage/fields'
 import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
-import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
+import { CONTACT_CHANNELS_SHOWN, CONTACT_MODES, OUTCOMES, SCHEDULE, channelLabel } from '@/lib/leads/enums'
 import type { NoteDraft } from '@/lib/leads/note-model'
 import { attachLabel } from '@/lib/leads/stage-data'
-import { displayDateTime, parseInputDateTime } from '@/lib/format'
+import { displayDue, parseInputDateTime } from '@/lib/format'
 import styles from './contact-editor.module.css'
 
 /**
@@ -53,15 +53,17 @@ export function ContactEditor({
         {editing ? (
           <>
             {fillNote ? <AutoFillNote text={fillNote} /> : null}
-            <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={draft.channel}
+            {/* (the calm UI build 2026-10-27 — T-01 · 2-08) one contact-log vocabulary, the log sheet's: How · When · How it went, the outcome as
+                chips at every width (it was a select here), the stored values unchanged (lib/leads/enums.ts `channelLabel`). Opens focused on the
+                first thing still to choose, as the note editor does — when the user came here to enter data (REG-294). */}
+            <ChoiceChips label="How" required options={CONTACT_CHANNELS_SHOWN} value={draft.channel} render={channelLabel} autoFocus={autoFocus && !draft.channel}
                          onChange={(v) => onChange({ channel: v })} error={errors.channel} />
             <div className={styles.fieldPair}>
-              <DateTimeField label="Date & Time" value={draft.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) */
+              <DateTimeField label="When" value={draft.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) */
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
-              {/* Opens focused on its first field, as the note editor does — when the user came here to enter data (REG-294). */}
-              <TextField label="Outcome" required autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
-                         onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             </div>
+            <ChoiceChips label="How it went" required options={OUTCOMES} value={draft.outcome || null} autoFocus={autoFocus && !!draft.channel}
+                         onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             {/* (REG-319, mock 781:58313) The optional schedule block, one heading + helper for every outcome — the Move stage window's. */}
             {/* (REG-324) It appears once an outcome is chosen — the empty log (780:89150) offers no schedule yet. */}
             {draft.outcome ? (
@@ -71,10 +73,11 @@ export function ContactEditor({
                   <span className={styles.sectionHelper}>{SCHEDULE.helper}</span>
                 </div>
                 <div className={styles.fieldPair}>
-                  <DateTimeField label="Date & Time" value={draft.nextStepWhen} today={today}
+                  <DateTimeField label="Date and time" value={draft.nextStepWhen} today={today}
                                  onChange={(v) => onChange({ nextStepWhen: v })} error={errors.nextStepWhen} />
-                  <TextField label="Preferred mode" value={draft.nextStepMode} mode="select" options={CONTACT_MODES}
-                             onChange={(v) => onChange({ nextStepMode: v })} error={errors.nextStepMode} />
+                  {/* (2-08) "Preferred mode" → "Call back by"; the options worded by `channelLabel`, their stored values kept */}
+                  <TextField label="Call back by" value={channelLabel(draft.nextStepMode)} mode="select" options={CONTACT_MODES.map(channelLabel)}
+                             onChange={(v) => onChange({ nextStepMode: CONTACT_MODES.find((m) => channelLabel(m) === v) ?? v })} error={errors.nextStepMode} />
                 </div>
             </div>
             ) : null}
@@ -89,7 +92,7 @@ export function ContactEditor({
               <>
                 <Divider />
                 {/* (UX audit 2026-09-30, T3) worded by the channel: photos from a visit, screenshots of a call or a message */}
-                <SectionRow label={attachLabel(draft.channel)}
+                <SectionRow label={`${attachLabel(draft.channel)} (optional)`}
                             action={<LinkButton icon="attach_file" onClick={onAttach}>Attach</LinkButton>} />
               </>
             ) : null}
@@ -97,20 +100,20 @@ export function ContactEditor({
         ) : (
           <div className={styles.rows}>
             <div className={styles.labels}>
-              <span className={styles.label}>{meeting ? 'Where' : 'Contacted via'}</span>
-              <span className={styles.label}>Date & Time</span>
-              {meeting ? null : <span className={styles.label}>Outcome</span>}
-              {scheduled ? <span className={styles.label}>Next follow-up</span> : null}
-              {scheduled ? <span className={styles.label}>Preferred mode</span> : null}
+              <span className={styles.label}>{meeting ? 'Where' : 'How'}</span>
+              <span className={styles.label}>When</span>
+              {meeting ? null : <span className={styles.label}>How it went</span>}
+              {scheduled ? <span className={styles.label}>Call back</span> : null}
+              {scheduled ? <span className={styles.label}>Call back by</span> : null}
               {/* Last row on both sides, so a remark that wraps cannot pull the columns out of step. */}
               {remarks ? <span className={styles.label}>Remarks</span> : null}
             </div>
             <div className={styles.values}>
-              <span className={styles.value}>{draft.channel ?? ''}</span>
+              <span className={styles.value}>{meeting ? draft.channel ?? '' : channelLabel(draft.channel)}</span>
               <span className={styles.value}>{viewDateTime(draft.when)}</span>
               {meeting ? null : <span className={styles.value}>{draft.outcome}</span>}
-              {scheduled ? <span className={styles.value}>{draft.nextStepWhen ? viewDateTime(draft.nextStepWhen) : '--'}</span> : null}
-              {scheduled ? <span className={styles.value}>{draft.nextStepMode || '--'}</span> : null}
+              {scheduled ? <span className={styles.value}>{draft.nextStepWhen ? viewDateTime(draft.nextStepWhen) : '—'}</span> : null}
+              {scheduled ? <span className={styles.value}>{channelLabel(draft.nextStepMode) || '—'}</span> : null}
               {remarks ? <span className={`${styles.value} ${styles.remarksValue}`}>{remarks}</span> : null}
             </div>
           </div>
@@ -120,8 +123,9 @@ export function ContactEditor({
   )
 }
 
-/** View values read "17 Jul ’26, 3:00 PM" (`displayDateTime`); a saved log always parses — the raw string is the fallback. */
+/** View values read "Fri, 17 Jul ’26 · 3:00 PM" — the house date and clock (the calm UI build 2026-10-27, T-11 · 2-24); a saved log always
+    parses — the raw string is the fallback. */
 function viewDateTime(input: string): string {
   const d = parseInputDateTime(input)
-  return d ? displayDateTime(d) : input
+  return d ? displayDue(d) : input
 }

@@ -93,20 +93,21 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
         {/* (pending modules S03 — 1.0's signing library) a standard PDF that goes with signings */}
         <DropdownItem onSelect={() => { close(); setUploadIn(place.folderId) }} help="Terms, a warranty — added to signings">Upload a PDF…</DropdownItem>
       </>)}
-      filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]}
+      filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]} filterLabel="Use"   /* (the calm UI build 2026-10-27, W-383) named by what it filters */
       searchText={(t) => (isPdf(t) ? `${t.fileName ?? ''} PDF` : excerptOf(t.body, 400))}
       /* (pending modules S03) a standard PDF shows its first page */
       thumb={(t) => (isPdf(t) ? <span className={own.thumbPage}>{/* eslint-disable-next-line @next/next/no-img-element */}<img className={own.thumbPdf} src={pdfThumb(t)} alt="" /></span>
         : <span className={own.thumbPage}><span className={own.thumbScale}><ContractPaper html={t.body} values={values} brand={brand} studio={studio} studioSignature={null} client={null} compact width={600} /></span></span>)}
       glyph={(t) => (isPdf(t) ? <span className={own.pdfGlyph}><Icon name="picture_as_pdf" size={24} fill /></span> : <span className={styles.glyph} data-lines={Math.min(6, Math.max(2, outlineOf(t.body).length))}><span className={styles.glyphTitle} /><span className={styles.glyphLines} /></span>)}
-      meta={(t) => { if (isPdf(t)) return `PDF${t.fileSize ? ` · ${fileSize(t.fileSize)}` : ''} · added to signings`; const n = outlineOf(t.body).length; return `${n} ${n === 1 ? 'heading' : 'headings'} · ${excerptOf(t.body, 60) || 'empty page'}` }}
+      meta={(t) => { if (isPdf(t)) return `PDF${t.fileSize ? ` · ${fileSize(t.fileSize)}` : ''} · added to signings`; const n = outlineOf(t.body).length; return n ? `${n} ${n === 1 ? 'clause' : 'clauses'}` : excerptOf(t.body, 1) ? 'No clauses yet' : 'Empty page' }}   /* (the calm UI build 2026-10-27, the UI audit's 4-36) the one fact that tells them apart — the raw first words with their field names went (the page thumb shows them) */
       usage={(t) => (t.usedBy === 0 ? 'Not used yet' : `Used by ${t.usedBy} ${t.usedBy === 1 ? 'contract' : 'contracts'}`)}
+      foot={(t) => (t.usedBy ? `Used by ${t.usedBy} ${t.usedBy === 1 ? 'contract' : 'contracts'}` : '\u00a0')}   /* (4-36 · W-049) nothing until it is used; edited and by whom are the list's Updated · Updated by */
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} contract${t.usedBy === 1 ? '' : 's'}`)}
       columns={[{ key: 'excerpt', label: 'Starts with', track: '320px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{isPdf(t) ? `PDF · ${t.fileName ?? t.title}` : excerptOf(t.body, 120) || '—'}</span> }, { key: 'used', label: 'Used by', track: '140px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} contract{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not used yet</span>) }]}
       onOpen={(t) => open(t.id)}
       move={{ rows: rowsOn, pinned: (t) => t.isDefault || t.useAtHandover, state: stateWords, tabletColumns: ['used', 'updated'], rowTestId: 'contract-template-row', menuTestId: 'contract-template-row-menu',
               facts: (t) => galleryFacts({ kind: t.kind, usedBy: t.usedBy, body: t.body, size: t.fileSize ? fileSize(t.fileSize) : null }, ago(t.updatedAt.getTime(), now)) }}
-      chips={(t) => (t.isDefault || isPdf(t) || t.useAtHandover ? <><span className={own.chipsDesk}>{t.isDefault ? <MetaChip>Default</MetaChip> : null}{t.useAtHandover ? <MetaChip>At handover</MetaChip> : null}{isPdf(t) ? <MetaChip>PDF</MetaChip> : null}</span><span className={own.chipsTouch} data-testid="template-state-words">{chipWords(t)}</span></> : null)}   /* (REG-632, parity Q-13) · (pending modules S03) a standard PDF says so · (S44R, C9) the completion letter */
+      chips={(t) => (t.isDefault || isPdf(t) || t.useAtHandover ? <><span className={own.chipsDesk}>{t.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}{t.useAtHandover ? <MetaChip kind="fact">At handover</MetaChip> : null}{isPdf(t) ? <MetaChip kind="fact">PDF</MetaChip> : null}</span><span className={own.chipsTouch} data-testid="template-state-words">{chipWords(t)}</span></> : null)}   /* (REG-632, parity Q-13) · (pending modules S03) a standard PDF says so · (S44R, C9) the completion letter */
       kebab={(t) => [
         { label: 'New contract from this template', onSelect: () => setPickFor(t.id) },
         { label: 'Set as default', disabled: t.isDefault || !!templateDefaultBlock(data.viewer), title: templateDefaultBlock(data.viewer) ?? (t.isDefault ? 'Already the default' : 'Contracts raised from a quote or the Won step start from it'), onSelect: () => { void run('set the default', () => setDefaultContractTemplate(t.id), `${t.title} is the default contract template`) } },
@@ -118,7 +119,7 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
       onDuplicate={(t) => create(() => duplicateContractTemplate(t.id), 'duplicate the template')}
       onRename={(t, name) => renameContractTemplate(t.id, name)}
       onDelete={(t) => deleteContractTemplate(t.id)}
-      deleteMessage={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.')}
+      deleteMessage={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted templates.` : 'You can restore it from Deleted templates.')}
       onRestore={(ids) => restoreContractTemplates(ids)} onDeleteForever={(ids) => deleteContractTemplatesForever(ids)} onEmptyTrash={() => emptyContractTemplateTrash()}
       deletedMeta={{ label: 'Starts with', value: (t) => (isPdf(t) ? `PDF · ${t.fileName ?? t.title}` : excerptOf(t.body, 40) || '—') }}
       keepReason={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract names' : 'contracts name'} it — kept while they do` : null)}   /* (REG-634, parity Q-21 · Q-24) */

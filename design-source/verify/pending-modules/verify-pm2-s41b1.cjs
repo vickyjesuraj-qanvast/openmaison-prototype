@@ -72,7 +72,10 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const text = async (l) => ((await l.count()) ? (await l.first().innerText()).replace(/\s+/g, ' ') : '')
   const heads = async (p) => (await p.getByRole('columnheader').allInnerTexts()).map((t) => t.replace(/unfold_more|arrow_upward|arrow_downward/g, '').replace(/\s+/g, ' ').trim().toLowerCase())   // heads print in capitals; a sort glyph's name left out
-  const reach = (p, row, role) => p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach')
+  const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) Who may do what is Roles & access' drawer now (5-04)
+  const reach = async (p, row, role) => { await openRoles(p); const v = await p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach'); await p.keyboard.press('Escape'); await p.waitForTimeout(450); return v }   // (the calm UI build 2026-10-27, a deliberate change) read, then the drawer closes — the card's switches sit under it
+  /* (the calm UI build 2026-10-27, a deliberate change) Reports › Finance's report is one pill (5-20): its menu's rows are the reports this viewer reads */
+  const reportsIn = async (p) => { await p.getByTestId('report-chips').getByRole('button').first().click(); await p.waitForTimeout(450); const rows = (await p.getByRole('menuitemradio').allInnerTexts()).map((t) => t.split('\n')[0].trim()).join(' · '); await p.keyboard.press('Escape'); await p.waitForTimeout(300); return `${await text(p.getByTestId('report-chips'))} | ${rows}` }
   const roleSwitch = (p, plural) => p.getByRole('switch', { name: `${plural} see costs and margins` })
   const flip = async (p, plural) => { const sw = roleSwitch(p, plural); await sw.locator('xpath=ancestor::label[1]').click().catch(async () => { await sw.click({ force: true }) }); await settle(p, 1400) }
   const fab = async (p) => { await p.locator('button[aria-label="Maison AI"]').last().click(); await settle(p, 800) }
@@ -168,7 +171,9 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     ok(await d.getByRole('switch', { name: 'Owners always see costs and margins' }).isDisabled(), 'the Owners’ switch is on and fixed')
     for (const pl of ['Admins', 'Managers', 'Designers', 'Accounting']) ok(await roleSwitch(d, pl).isChecked(), `${pl}: on by default`)
     for (const [r, want] of [['Owner', 'yes'], ['Admin', 'yes'], ['Manager', 'yes'], ['Designer', 'yes']]) ok(await reach(d, 'cost-line', r) === want, `Who may do what · See a quote line’s cost — ${r}: ${want}`)
+    await openRoles(d)   // (the calm UI build 2026-10-27, a deliberate change) the row is in Roles & access' drawer (5-04)
     ok(/Who sees costs and margins, above/.test(await text(d.getByTestId('may-cost-line'))), 'the row says where its rule is set')
+    await d.keyboard.press('Escape'); await d.waitForTimeout(450)
     ok(await d.getByTestId('read-only-line').count() === 0 || !(await text(card)).includes('Only the Owner changes'), 'the Owner reads no rule line on it')
     await shot(d, '01-card-owner-1440')
     /* defaults: a Designer still sees a line's cost — nothing changed for a studio that never opened it */
@@ -206,7 +211,7 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     ok(!hs.includes('cost') && !hs.includes('markup') && !hs.includes('margin'), 'no Cost · Markup · Margin columns', hs.join(' | '))
     ok(hs.includes('unit price'), 'the Unit Price column stays')
     ok(await g.getByTestId('below-cost').count() === 0, 'no Below cost tag')
-    await g.getByRole('button', { name: 'Column settings' }).first().click(); await settle(g, 600)
+    await g.locator('#section-items').getByRole('button', { name: 'More options for Items' }).first().click(); await settle(g, 300); await g.getByRole('menuitem', { name: 'Column settings' }).click(); await settle(g, 600)   // (the calm UI build 2026-10-27, a deliberate change) 4-03: Column settings is the Items ⋮'s row
     ok(await g.getByRole('switch', { name: 'Show Cost column' }).count() === 0 && await g.getByRole('switch', { name: 'Show Markup column' }).count() === 0, 'Column settings offers neither')
     await g.getByRole('button', { name: 'Done' }).last().click(); await settle(g, 500)
     await g.getByLabel('Select TV console and feature wall').first().click({ force: true }); await settle(g, 500)
@@ -229,7 +234,7 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     await g.getByRole('menuitem', { name: 'Remove' }).click(); await settle(g, 600)
     await g.getByRole('dialog', { name: 'Remove this item?' }).getByRole('button', { name: 'Remove' }).click(); await settle(g, 1600)
     ok(sql(`select count(*) from quote_items where id = '${LINE}'`) === '0', 'Remove takes the line off')
-    await g.getByRole('button', { name: 'Undo', exact: true }).first().click(); await settle(g, 2500)   // the Items table's own Undo (⌘Z)
+    await g.locator('#section-items').getByRole('button', { name: 'More options for Items' }).first().click(); await settle(g, 300); await g.getByRole('menuitem', { name: 'Undo' }).click(); await settle(g, 2500)   // the Items table's own Undo (⌘Z) — (the calm UI build 2026-10-27, a deliberate change) 4-03: the Items ⋮'s row
     line = json(`select cost_minor c, markup_minor m, rebate_minor r from quote_items where id = '${LINE}'`)[0]
     ok(line && line.c === COST && line.m === 900000 - COST && line.r === REBATE, 'Undo brings it back with its cost and rebate (kept on the server, never sent)', JSON.stringify(line))
     /* Maison AI: no margin hints */
@@ -238,7 +243,7 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     ok(!/below cost|margin|markup/i.test(sh), 'Maison AI offers no cost or margin hint', sh.slice(0, 160))
     await g.keyboard.press('Escape'); await settle(g, 500)
     /* the export: no Cost · Markup */
-    await g.getByRole('button', { name: 'Export As' }).first().click(); await settle(g, 600)
+    await g.getByRole('button', { name: /^(Export As|Export…)$/ }).first().click(); await settle(g, 600)   // (the calm UI build 2026-10-27, a deliberate change) W-185: "Export…"
     const csv = await download(g, () => g.getByRole('dialog', { name: 'Export Items' }).getByRole('button', { name: 'Export' }).click())
     const head = csvHead(csv)
     ok(head.includes('Unit Price') && !head.includes('Cost') && !head.includes('Markup'), 'Export Items: no Cost or Markup column', head.join(' | '))
@@ -286,7 +291,8 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     await g.getByTestId('money-new').first().click(); await settle(g, 600)
     const menu = (await g.getByRole('menuitem').allInnerTexts()).join(' | ')
     ok(/Purchase order/.test(menu) && !/Order from the quote/.test(menu), 'New ▾: Purchase order, no Order from the quote', menu.slice(0, 200))
-    await g.getByRole('menuitem', { name: /^Purchase order/ }).first().click(); await settle(g, 1200)
+    await g.getByRole('menuitem', { name: /^Purchase order/ }).first().click(); await settle(g, 600)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+    if (await g.locator('[data-testid="money-new-level"]').count()) { ok(!/Order from the quote/.test((await g.getByRole('menuitem').allInnerTexts()).join(' | ')), 'Purchase order’s ways: no Order from the quote'); await g.getByRole('menuitem', { name: /^New purchase order/ }).first().click(); await settle(g, 1200) }
     await g.getByTestId('po-from-quote').click(); await settle(g, 900)
     const lines = g.getByTestId('po-quote-line')
     ok(await lines.count() > 0 && !/S\$/.test(await text(g.getByTestId('po-quote-lines'))), 'Add from the quote lists the lines and their quantities — no amounts')
@@ -314,8 +320,8 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     ok(await roleSwitch(a, 'Designers').isDisabled(), 'its switches are theirs to read only')
     await shot(a, '05-card-admin-1440')
     await go(a, '/company/reports/finance?report=pl', 2000)
-    const chips = await text(a.getByTestId('report-chips'))
-    ok(!/Profit and loss|Profitability/.test(chips) && /Owed to you/.test(chips), 'Reports › Finance: no Profit and loss, no Profitability — Owed to you opens', chips.slice(0, 160))
+    const chips = await reportsIn(a)
+    ok(!/Profit and loss|Profitability/.test(chips) && /Report: To collect/.test(chips), 'Reports › Finance: no Profit and loss, no Profitability — To collect opens (was Owed to you, §2)', chips.slice(0, 200))
     h = await html(a)
     const profits = [...h.matchAll(/\\?"profitMinor\\?":(-?\d+)/g)].map((m) => Number(m[1]))
     ok(profits.length > 0 && profits.every((x) => x === 0), 'its payload carries no project’s profit', `${profits.length} profits, ${profits.filter((x) => x).length} non-zero`)
@@ -323,7 +329,7 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     await go(a, '/dashboard', 2000)
     const tiles = await text(a.getByTestId('stands-tiles'))
     ok(tiles.length > 0 && !/Profit this month/.test(tiles), 'the Dashboard: no Profit this month tile', tiles.slice(0, 160))
-    await fab(a)
+    await go(a, '/tasks', 1500); await fab(a)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field — the floating button steps aside there (Q-02)
     { const box = sheet(a).locator('[data-testid="maison-ask"] input'); await box.fill('Which projects have the thinnest margins?'); await box.press('Enter') }
     await a.waitForFunction(() => [...document.querySelectorAll('[role="dialog"][aria-label="Maison AI suggestions"] [data-testid="maison-answer"]')].some((e) => /hidden for your role|margins by project/i.test(e.textContent || '')), null, { timeout: 20000 }).catch(() => {})
     ok(/Profit and margin are hidden for your role/.test(await text(sheet(a).locator('[data-testid="maison-answer"]'))), 'Maison AI: “Profit and margin are hidden for your role”')
@@ -342,9 +348,10 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     as('priya')
     { const C = await desk(); const k = await page(C, 'accounting')
       await go(k, '/company/reports/finance', 2000)
-      ok(!/Profit and loss|Profitability/.test(await text(k.getByTestId('report-chips'))), 'Accounting switched off: no Profit and loss, no Profitability')
+      ok(!/Profit and loss|Profitability/.test(await reportsIn(k)), 'Accounting switched off: no Profit and loss, no Profitability')
       await go(k, '/dashboard', 2000)
-      ok(!/Profit this month/.test(await text(k.getByTestId('stands-tiles'))), 'and no Profit tile on the Dashboard')
+      /* (the calm pass 2026-10-26, a deliberate change — lane C1) the figure names its month: "Profit · October" */
+      ok(!/Profit this month|Profit · /i.test(await text(k.getByTestId('stands-tiles'))), 'and no Profit tile on the Dashboard')
       await C.close() }
 
     // ── 7 · the server refuses anyone but the Owner ──────────────────────────────────────────────────────────────────────────────
@@ -424,14 +431,19 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
         const n = await p.evaluate(() => {
           const reveal = [...document.querySelectorAll('[class*="page-reveal-module__"]')].find((e) => [...e.classList].some((c) => /__reveal$/.test(c)))
           const ghost = reveal && [...reveal.children].find((e) => [...e.classList].some((c) => /__ghost$/.test(c))), content = reveal?.querySelector(':scope > [data-ready]')
-          const tiles = (root) => { const box = root && [...root.querySelectorAll('[class*="__standTiles"]')][0]; return box ? box.children.length : -1 }
+          /* (Dashboard redesign 2026-10-26, a deliberate change) Where it stands became Pulse (his P-03): the figures in its strip, ghost and page */
+          const tiles = (root) => (root ? root.querySelectorAll('[data-slot="pulse"] [class*="dashboard-module__"][class*="__figure"]').length : -1)
           return { g: tiles(ghost), p: tiles(content) }
         })
         /* (pending modules S45A, a deliberate change of this rule) an Admin's tiles are now six without Profit: Leads · Sales · Response time · Open
            projects · Messages · Owed to you (H-UHD-3 put Reports › Leads' two after Leads) */
         /* (pending modules S45B, a deliberate change of this rule) seven without Profit: S45B's Contractors after Open projects (H-UHD-2) */
         /* (pending modules S46B, a deliberate change of this rule) eight without Profit: Projects › Tickets' figure after Contractors (M1) */
-        ok(n.p === 8 && n.g === n.p, `${w} an Admin switched off · the Dashboard: the ghost draws the page’s eight tiles (no Profit this month)`, JSON.stringify(n))
+        /* (Dashboard redesign 2026-10-26, a deliberate change) an Admin's Pulse without costs is five: Leads this week · Won · First response ·
+           Owed to you · Coming in — no Profit this month */
+        /* (the calm pass 2026-10-26, a deliberate change — lane C1, the Claude Design option's four) an Admin's Pulse without costs is three:
+           Won · Owed to you · First response — no Profit */
+        ok(n.p === 3 && n.g === n.p, `${w} an Admin switched off · the Dashboard: the ghost draws the page’s three figures (no Profit)`, JSON.stringify(n))
         await c.close()
       }
     }

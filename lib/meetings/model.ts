@@ -35,15 +35,16 @@ export const MEETING_STATUSES: readonly MeetingStatus[] = ['planned', 'live', 'h
 
 /**
  * What a list row says about where a meeting stands — one word in the Status column and, under it, what waits:
- *   Upcoming (planned, still ahead) · To write up (planned and its time has passed — nothing recorded) · Live · Held · Cancelled.
- * `waits` — the one thing a held meeting still asks of the studio: its brief to save to the lead.
+ *   Upcoming (planned, still ahead) · Needs notes (planned and its time has passed — nothing recorded) · Live · Held · Cancelled.
+ * `waits` — the one thing a held meeting still asks of the studio: its summary to save to the lead.
+ * (the calm UI build 2026-10-27, 2-20 · W-411) "To write up" → "Needs notes": the state in a studio's words, with no line under it.
  */
-export type MeetingStanding = { word: 'Upcoming' | 'To write up' | 'Live' | 'Held' | 'Cancelled'; waits: 'save' | 'write' | null; late: boolean }
+export type MeetingStanding = { word: 'Upcoming' | 'Needs notes' | 'Live' | 'Held' | 'Cancelled'; waits: 'save' | 'write' | null; late: boolean }
 export function standingOf(m: { status: string; startsAt: number; endsAt?: number | null; briefAt: number | null; briefSavedAt: number | null; fromLog?: boolean }, now: number): MeetingStanding {
   if (m.status === 'cancelled') return { word: 'Cancelled', waits: null, late: false }
   if (m.status === 'live') return { word: 'Live', waits: null, late: false }
   /* a planned meeting is still ahead until its planned end — only then do its notes wait */
-  if (m.status === 'planned') return now < (m.endsAt ?? m.startsAt + DEFAULT_LENGTH_MIN * 60_000) ? { word: 'Upcoming', waits: null, late: false } : { word: 'To write up', waits: 'write', late: true }
+  if (m.status === 'planned') return now < (m.endsAt ?? m.startsAt + DEFAULT_LENGTH_MIN * 60_000) ? { word: 'Upcoming', waits: null, late: false } : { word: 'Needs notes', waits: 'write', late: true }
   return { word: 'Held', waits: m.briefAt && !m.briefSavedAt && !m.fromLog ? 'save' : null, late: false }
 }
 
@@ -88,6 +89,10 @@ export function scoreOf(d: Dims, w: Weights): number {
 /** 1.0's tiers and the prep card's lines (prep-card.tsx). */
 export type Tier = 'Hot' | 'Warm' | 'Cool' | 'Cold'
 export const tierOf = (score: number): Tier => (score >= 80 ? 'Hot' : score >= 60 ? 'Warm' : score >= 40 ? 'Cool' : 'Cold')
+/** (the calm UI build 2026-10-27, 2-20 · W-040) The tier as a studio says it — the display map beside the tiers; the stored score, the tier keys
+    and every rule that reads them stay. "Very likely" keeps 1.0's four tiers apart (Reports groups by them). */
+export const TIER_LABEL: Record<Tier, string> = { Hot: 'Very likely', Warm: 'Likely', Cool: 'Maybe', Cold: 'Unlikely' }
+export const tierLabel = (score: number): string => TIER_LABEL[tierOf(score)]
 export const TIER_LINES: Record<Tier, string> = {
   Hot: 'Ready to go ahead — ask for the commitment',
   Warm: 'Keen, with doubts to settle',
@@ -107,11 +112,13 @@ export function parseCopilotSettings(v: unknown): CopilotSettings {
 
 /* ── consent — 1.0's Recording Reminder (consent-dialog.tsx) and its upload dialog's permission ── */
 export const DISCLOSURE = 'I’m using an assistant in our meeting to help me give you the best ideas. It follows what we discuss and suggests things to me. What we say stays with our studio — it’s only used for this meeting and never shared with anyone else.'
-export const consentLabel = (client: string) => `I’ve told ${client} about the co-pilot`
+export const consentLabel = (client: string) => `I’ve told ${client} about Meeting Copilot`
 export const RECORDING_CONSENT = 'Everyone in the meeting agreed to it being recorded and read'
-/** The prototype's honest line where 1.0 listened (Deepgram) — shown in the meeting, never hidden. */
-export const LISTENING_STAND_IN = 'Listening isn’t connected in this prototype — type what’s said, or paste a transcript. The co-pilot reads it as you go.'
-export const TRANSCRIBE_STAND_IN = 'Turning a recording into words isn’t connected in this prototype. The recording is kept in Files — paste its transcript or your notes to make the brief.'
+/** The prototype's honest line where 1.0 listened (Deepgram) — (the calm UI build 2026-10-27, 2-09 · W-542) the meeting says what to do in one line,
+    and the prototype's note sits behind its "?" (LISTENING_PROTOTYPE_NOTE), never on the studio's page. */
+export const LISTENING_STAND_IN = 'Type or paste what’s said — Meeting Copilot reads it as you go.'
+export const LISTENING_PROTOTYPE_NOTE = 'Listening isn’t connected in this prototype — type what’s said, or paste a transcript.'
+export const TRANSCRIBE_STAND_IN = 'Turning a recording into words isn’t connected in this prototype. The recording is kept in Files — paste its transcript or your notes to make the summary.'
 /** (pending modules S34) A build whose server has a transcriber plugged in (lib/meetings/transcribe.ts) — the write-up dialog then takes a
     recording without notes and drops the stand-in's line. Inlined at build time; off on the prototype. */
 export const TRANSCRIBES = process.env.NEXT_PUBLIC_TRANSCRIPTION === '1'

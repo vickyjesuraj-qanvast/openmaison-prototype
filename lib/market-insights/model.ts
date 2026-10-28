@@ -5,12 +5,13 @@
  */
 import type { Block } from './markdown'
 
-/** 1.0's four categories, in its order, with the glyph a card without a picture shows (1.0's category icons). */
+/** 1.0's four categories, in its order, with the glyph a card without a picture shows (1.0's category icons). (the calm UI build 2026-10-27,
+    6-12 · T-13) Their names in sentence case — the keys, and the `?category=` they travel in, stay 1.0's. */
 export const CATEGORIES = [
   { key: 'trends', label: 'Trends', icon: 'trending_up' },
   { key: 'reports', label: 'Reports', icon: 'bar_chart' },
-  { key: 'case-studies', label: 'Case Studies', icon: 'lightbulb' },
-  { key: 'industry-news', label: 'Industry News', icon: 'article' },
+  { key: 'case-studies', label: 'Case studies', icon: 'lightbulb' },
+  { key: 'industry-news', label: 'Industry news', icon: 'article' },
 ] as const
 export type InsightCategory = (typeof CATEGORIES)[number]['key']
 export const isCategory = (v: unknown): v is InsightCategory => CATEGORIES.some((c) => c.key === v)
@@ -44,6 +45,7 @@ export const articlesWord = (n: number) => `${n} ${n === 1 ? 'article' : 'articl
 /** (invented copy) What the demo's sample articles say about themselves, on their page and above the list. */
 export const SAMPLE_NOTE = 'A sample article written for the demo. Its figures are illustrative — not market data.'
 export const SAMPLES_NOTE = 'Sample articles written for the demo — their figures are illustrative, not market data.'
+/** Where the articles come from — (the calm UI build 2026-10-27, W-114) said by the header's info glyph, no longer a line under the list. */
 export const SOURCE_LINE = 'Articles come from OpenMaison’s editors.'
 
 /** 1.0's featured article: the newest one the editors marked featured (its list came featured first, then newest). */

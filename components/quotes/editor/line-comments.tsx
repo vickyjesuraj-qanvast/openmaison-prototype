@@ -58,18 +58,19 @@ export function LineCommentsDrawer({ open, lines, comments, focus, me, members, 
                     <TextField label="Comment on" mode="select" size="s" options={lines.map((l) => l.name || 'Item')} value={postTo ? nameOf(postTo) : ''}
                                onChange={(v) => setTarget(lines.find((l) => (l.name || 'Item') === v)?.id ?? null)} />
                   ) : null}
-                  <TextField className={styles.field} label="Chat with your team here" placeholder="Chat with your team here" value={draft} onChange={setDraft}
+                  <TextField className={styles.field} label="Write a comment" placeholder="Write a comment" value={draft} onChange={setDraft}
                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit() } }} />
                   <div className={styles.composerRow}>
                     <span className={styles.privacy}>Clients can’t see these comments</span>
-                    <Button onPress={submit} isDisabled={!draft.trim() || !postTo}>Submit</Button>
+                    <Button onPress={submit} isDisabled={!draft.trim() || !postTo}>Send</Button>
                   </div>
                 </div>
               </div>
             }>
       <div className={styles.thread} data-testid="line-comments">
-        <span className={styles.count}>{shown.length === 1 ? '1 Comment' : `${shown.length} Comments`}{focus ? '' : threads.length ? ` · ${threads.length} ${threads.length === 1 ? 'line' : 'lines'}` : ''}</span>
-        {!shown.length ? <p className={own.empty}>{focus ? 'No comments on this line yet. Ask your team about it below.' : 'No comments on this quote’s lines yet. Comment on a line from its ⋯ menu, or pick one below.'}</p> : null}
+        {/* (the calm UI build 2026-10-27, 4-49 · W-458) the count only once there is one — the empty line says it once */}
+        {shown.length ? <span className={styles.count}>{shown.length === 1 ? '1 comment' : `${shown.length} comments`}{focus ? '' : threads.length ? ` · ${threads.length} ${threads.length === 1 ? 'item' : 'items'}` : ''}</span> : null}
+        {!shown.length ? <p className={own.empty}>{focus ? 'No comments yet — ask your team below.' : 'No comments yet — pick an item below.'}</p> : null}
         {threads.map((itemId) => (
           <section key={itemId} className={own.group} aria-label={`Comments on ${nameOf(itemId)}`}>
             {focus ? null : (

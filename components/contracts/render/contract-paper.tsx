@@ -1,5 +1,5 @@
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
-import { resolveTokens, SIGN_LABEL, type SignKey, type TokenValues } from '@/lib/contracts/tokens'
+import { resolveTokens, SIGN_LABEL, tightenPunctuation, type SignKey, type TokenValues } from '@/lib/contracts/tokens'
 import { displayDateLong } from '@/lib/format'
 import { sanitizeContractHtml } from '@/lib/contracts/sanitize'
 import type { SignedLetterhead } from '@/lib/contracts/policy'
@@ -59,7 +59,7 @@ export function ContractPaper({ html, values, brand, studio, studioSignature, cl
   /* (REG-631, E-130) The allowlist again at print: whatever reached the record, the page shows only the editor's own markup. */
   const issuer = letterhead?.name || values['studio.name'] || studio.name
   const logo = letterhead?.logo ?? brand.logo
-  const resolved = renderSignFields(resolveTokens(sanitizeContractHtml(html), values), { studio: studioSignature, client, studioName: issuer, live })
+  const resolved = renderSignFields(tightenPunctuation(resolveTokens(sanitizeContractHtml(html), values)), { studio: studioSignature, client, studioName: issuer, live })   // (4-45) punctuation hugs a field, for the eye only
   const line = letterhead ? letterhead.line : [studio.address, studio.phone, studio.email, studio.uen ? `UEN ${studio.uen}` : ''].filter(Boolean).join(' · ')
   return (
     <article className={styles.paper} data-compact={compact || undefined} style={width ? { width } : undefined} data-testid="contract-paper">

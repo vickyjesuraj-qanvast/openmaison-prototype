@@ -7,7 +7,14 @@ export type TaskSort = 'due' | 'newest' | 'oldest'
 export type TaskStatus = 'open' | 'completed'
 /** The rail's Tasks page scope chip (REG-466): every task · the signed-in member's · nobody's · the studio's own (no lead). */
 export type TaskScope = 'all' | 'mine' | 'unassigned' | 'studio'
-export const TASK_SCOPE_LABEL: Record<TaskScope, string> = { all: 'All Tasks', mine: 'My Tasks', unassigned: 'Unassigned', studio: 'Studio Tasks' }
+/** (the calm UI build 2026-10-27, T-13 · 1-16) The scopes' words, sentence case; the studio's own tasks (no lead, no project) are "General
+    tasks" — "Studio" also names the whole studio on the Dashboard and the all-hands chat. The keys (and `?scope=`) are unchanged. */
+export const TASK_SCOPE_LABEL: Record<TaskScope, string> = { all: 'All tasks', mine: 'My tasks', unassigned: 'Unassigned', studio: 'General tasks' }
+/** (the calm UI build 2026-10-27, 1-06) The scope pill's rows: Unassigned left the pill — its to-do chip narrows to the same tasks (REG-297: never a
+    pill and a chip for one dimension). `?scope=unassigned` still lands; the pill then names it and lists it, checked, so it can be let go. */
+export const TASK_SCOPES_IN_PILL: readonly TaskScope[] = ['all', 'mine', 'studio']
+/** (the calm UI build 2026-10-27, 1-26) The pill's words once its menu narrows whose tasks too — "All tasks in projects". */
+export const TASK_SOURCE_IN: Record<'all' | 'leads' | 'projects', string> = { all: '', leads: ' in leads', projects: ' in projects' }
 /** (gaps build, package C — 16) The rail's Tasks page: whose work the tasks are — every task, the leads' (in the pipeline), the projects'. */
 export type TaskSource = 'all' | 'leads' | 'projects'
 export const TASK_SOURCE_LABEL: Record<TaskSource, string> = { all: 'All', leads: 'Leads', projects: 'Projects' }

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChipRail } from '@/components/om/chip-rail'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
@@ -11,7 +10,6 @@ import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, useTableColumns, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
-import { Chips } from '@/components/om/chips'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Button } from '@/components/ds'
@@ -26,8 +24,9 @@ import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import { DEFAULT_RANGE, INSIGHTS_SHAPE, LEGS, MEDIANS_NOTE, RANGES, insightsReport, insightsSheet, rangeLabel, rangeParam, tatGrade, type MemberRow, type Range } from '@/lib/leads/tat'
 import { setCountPref, setFlagPref } from '@/lib/prefs'
 import type { InsightsData } from '@/lib/leads/insights'
-import { LEAD_REPORTS, QUIET_DAYS, defaultGranularity, pctWords, readLeadReport, salesReport, salesSheet, type Granularity, type LeadReportKey, type SalesData } from '@/lib/leads/sales'
+import { LEAD_REPORTS, QUIET_DAYS, SALES_HELP, defaultGranularity, pctWords, readLeadReport, salesReport, salesSheet, type Granularity, type LeadReportKey, type SalesData } from '@/lib/leads/sales'
 import { SalesReportBody } from '@/components/company/reports/sales-report'
+import { HowCounted, PickPill } from '@/components/company/reports/report-pill'
 import styles from './insights-view.module.css'
 
 /*
@@ -43,11 +42,16 @@ const HERE = '/company/reports/leads'
 const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
   { key: 'leads', label: 'Leads', track: 'minmax(96px, 96fr)' },
-  { key: 'outreach', label: 'Assign → First outreach', track: 'minmax(220px, 220fr)' },
-  { key: 'won', label: 'First outreach → Won', track: 'minmax(200px, 200fr)' },
+  /* (the calm UI build 2026-10-27 — 5-09, T-09) the heads in a studio owner's words — the keys (and so Column settings' memory) are unchanged */
+  { key: 'outreach', label: 'Time to first contact', track: 'minmax(220px, 220fr)' },
+  { key: 'won', label: 'First contact to Won', track: 'minmax(200px, 200fr)' },
   { key: 'wonCount', label: 'Won', track: 'minmax(88px, 88fr)' },
-  { key: 'awaiting', label: 'Awaiting outreach', track: 'minmax(180px, 180fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
+  { key: 'awaiting', label: 'Not contacted yet', track: 'minmax(180px, 180fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
 ]
+/** (the calm UI build 2026-10-27 — 5-20) each report's one line, as the Report pill's menu says it (Sales' is the report's own help) */
+const REPORT_HELP: Record<LeadReportKey, string> = { response: 'How fast leads get a member, a first contact and a win', sales: SALES_HELP.replace(/\.$/, '') }
+/** (the calm UI build 2026-10-27 — 5-09) a figure's average, said as a studio owner says it — the median is the figure ("usually") */
+const onAverage = (ms: number | null) => `${durationWords(ms)} on average`
 
 /** (REG-1361) Company › Reports › Leads — this body inside the Reports frame (components/company/reports/reports-workspace.tsx), which draws the
     header, the tab strip and the page's ghost. */
@@ -91,17 +95,17 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
     const slow = report.members.filter((m) => m.outreachMedian !== null).sort((a, b) => b.outreachMedian! - a.outreachMedian!)
     return [
       { label: 'Who is slowest to make first contact?', answer: {
-        title: slow.length ? `${slow[0]!.name} is slowest to first contact` : 'No first contact logged in this range',
-        text: slow.length ? `Assignment → first outreach, the median per person, ${span}.` : 'Change the range to look further back.',
-        rows: slow.map((m) => ({ id: m.id, label: m.name, meta: `median ${durationWords(m.outreachMedian)} · ${plural(m.outreachCount, 'lead')}` })) } },
-      { label: 'Which leads are still unassigned?', answer: {
-        title: report.unassigned.length ? `${plural(report.unassigned.length, 'lead')} awaiting assignment` : 'Every lead in this range has a member',
+        title: slow.length ? `${slow[0]!.name} is slowest to first contact` : 'No first contact logged in this period',
+        text: slow.length ? `The usual time from being given a lead to the first contact, per member, ${span}.` : 'Pick a longer period to look further back.',
+        rows: slow.map((m) => ({ id: m.id, label: m.name, meta: `usually ${durationWords(m.outreachMedian)} · ${plural(m.outreachCount, 'lead')}` })) } },
+      { label: 'Which leads have no member yet?', answer: {
+        title: report.unassigned.length ? `${plural(report.unassigned.length, 'lead')} waiting for a member` : 'Every lead in this period has a member',
         text: report.unassigned.length ? 'Open one to assign a member.' : undefined,
         rows: report.unassigned.map((l) => ({ id: l.id, label: l.name, meta: `${l.stage} · added ${spanWords(l.createdAt, data.now)} ago`, href: withFrom(`/leads/${l.id}`, HERE) })) } },
       { label: 'Summarise the turnaround', answer: {
         title: `Turnaround · ${span}`,
-        text: `${plural(report.inRange, 'lead')} created in this range.`,
-        rows: LEGS.map(({ key, label }) => { const s = report.legs[key]; return { id: key, label, meta: s.count ? `median ${durationWords(s.median)} · avg ${durationWords(s.mean)} · ${plural(s.count, 'lead')}` : 'No completed legs yet' } }) } },
+        text: `${plural(report.inRange, 'lead')} added in this period.`,
+        rows: LEGS.map(({ key, label }) => { const s = report.legs[key]; return { id: key, label, meta: s.count ? `usually ${durationWords(s.median)} · ${onAverage(s.mean)} · ${plural(s.count, 'lead')}` : 'None yet' } }) } },
     ]
   }, [report, data, range])
   /* (S45A) Sales answers from its own report — who is quiet, where leads stop, which sources pay; each lead row opens the lead (invented copy) */
@@ -149,23 +153,17 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
             </div>
           ) : (
             <>
-              {/* (pending modules S45A — H-UHD-1) the tab's reports, picked as Reports › Finance picks its own — an Owner's and an Admin's (Marketing reads
-                  Response time alone: no chips) */}
-              {sales ? (
-                <div className={styles.reports}>
-                  <Chips label="Report" testId="leads-report-chips" options={LEAD_REPORTS.map((r) => ({ value: r.key, label: r.label }))} value={kind} onChange={(v) => pickReport(v as LeadReportKey)} />
-                </div>
-              ) : null}
-              <div className={styles.bar}>
-                <ChipRail label="Range">
-                  {/* (REG-614) The house chips (components/om/chips) — a radio group, as the Move stage window's ChoiceChips. */}
-                  <Chips label="Range" testId="insights-range-chips" options={RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => pickRange(v === 'all' ? null : (Number(v) as Range))} />
-                </ChipRail>
-                <span className={styles.barEnd}>
-                  <span className={styles.caption} data-testid="insights-range">Filtering on lead created date · {plural(report.inRange, 'lead')} in range</span>
-                  {/* (parity Q-20) the house Export — Finance's reports' button */}
-                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="insights-export">Export</Button>
+              {/* (the calm UI build 2026-10-27 — 5-19 · 5-20, T-10) one bar, one look: "Report: Response time ▾" (an Owner's and an Admin's — S45A;
+                  Marketing reads Response time alone, no pill) and "Period: Last 90 days ▾", the house scope pills, then Export. What the period
+                  counts by and how many leads it holds — the old caption — is the Period pill's tooltip. */}
+              <div className={styles.pickBar}>
+                <span className={styles.picks}>
+                  {sales ? <PickPill name="Report" testId="leads-report-chips" wide options={LEAD_REPORTS.map((r) => ({ value: r.key, label: r.label, help: REPORT_HELP[r.key] }))} value={kind} onChange={(v) => pickReport(v as LeadReportKey)} /> : null}
+                  <PickPill name="Period" testId="insights-range-chips" tip={{ testId: 'insights-range', text: `Counts the leads added in this period · ${plural(report.inRange, 'lead')}` }} scoped={range !== DEFAULT_RANGE}
+                            options={RANGES.map((r) => ({ value: rangeParam(r.key), label: r.label }))} value={rangeParam(range)} onChange={(v) => pickRange(v === 'all' ? null : (Number(v) as Range))} />
                 </span>
+                {/* (parity Q-20) the house Export — Finance's reports' button */}
+                <span className={styles.pickEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="insights-export">Export</Button></span>
               </div>
 
               {sold ? <SalesReportBody report={sold} range={range} onGranularity={setGranularity} /> : <>
@@ -175,8 +173,13 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
                 {LEGS.map(({ key, label }) => {
                   const s = report.legs[key]
                   const grade = key === 'outreach' ? tatGrade(s.median) : null
+                  /* (the calm UI build 2026-10-27 — 5-09 · W-546) the figure is the usual time; its average is the figure's tooltip (the house tile's,
+                     components/finance/books/project-profit.tsx) */
+                  const figure = durationWords(s.median)
                   return (
-                    <StatTile key={key} testId={`tile-${key}`} label={label} value={durationWords(s.median)} grade={grade ?? undefined} help={s.count ? `median · avg ${durationWords(s.mean)} · ${plural(s.count, 'lead')}` : 'No completed legs in this range'}>
+                    <StatTile key={key} testId={`tile-${key}`} label={label} figure={figure} grade={grade ?? undefined}
+                              value={s.mean !== null ? <Tooltip label={onAverage(s.mean)}><span tabIndex={0} className={styles.tileValue}>{figure}</span></Tooltip> : figure}
+                              help={s.count ? `Usually · ${plural(s.count, 'lead')}` : 'None in this period yet'}>
                       {s.delta !== null ? (
                         <span className={styles.tileDelta}>
                           {/* A DECREASE is improving (1.0). */}
@@ -190,16 +193,18 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
 
               {report.awaitingAssignment > 0 || report.awaitingOutreach > 0 ? (
                 <div className={styles.awaiting} data-testid="insights-awaiting">
-                  {report.awaitingAssignment > 0 ? <MetaChip color="yellow" icon="person_add">{`${plural(report.awaitingAssignment, 'lead')} awaiting assignment`}</MetaChip> : null}
-                  {report.awaitingOutreach > 0 ? <MetaChip color="yellow" icon="schedule">{`${report.awaitingOutreach} assigned, no outreach logged yet`}</MetaChip> : null}
+                  {/* (the calm UI build 2026-10-27 — W-076 · W-087) */}
+                  {report.awaitingAssignment > 0 ? <MetaChip color="yellow" icon="person_add">{`${plural(report.awaitingAssignment, 'lead')} waiting for a member`}</MetaChip> : null}
+                  {report.awaitingOutreach > 0 ? <MetaChip color="yellow" icon="schedule">{`${report.awaitingOutreach} not contacted yet`}</MetaChip> : null}
                 </div>
               ) : null}
 
-              <section className={styles.section} aria-label="By team member">
+              {/* (the calm UI build 2026-10-27 — 5-41 · W-036 · W-299) "Member", the house word; the help in plain words */}
+              <section className={styles.section} aria-label="By member">
                 <div className={styles.sectionHead}>
                   <div>
-                    <span className={styles.sectionTitle}>By team member</span>
-                    <span className={styles.sectionHelp}>Outreach & conversion attributed to whoever logged the first outreach</span>
+                    <span className={styles.sectionTitle}>By member</span>
+                    <span className={styles.sectionHelp}>Counted for whoever logged the first contact</span>
                   </div>
                   {mobile ? null : (
                     <Tooltip label="Column settings">
@@ -213,8 +218,9 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
                   <MembersTable rows={report.members} columns={columnPrefs.columns} onReorder={columnPrefs.reorder} />
                 )}
               </section>
-              {/* (parity P-35 · C-13) the reports' one first sentence, then this page's own */}
-              <p className={styles.foot}>{MEDIANS_NOTE} Leads with no outreach yet are excluded from elapsed-time math and counted in “Awaiting outreach”.</p>
+              {/* (parity P-35 · C-13) the reports' one first sentence, then this page's own — (the calm UI build 2026-10-27 — 5-09, T-05) folded
+                  behind "How these are counted" */}
+              <HowCounted testId="insights-foot">{`${MEDIANS_NOTE} Leads nobody has contacted yet are left out of the times and counted in Not contacted yet.`}</HowCounted>
               </>}
             </>
           )}
@@ -225,7 +231,7 @@ export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE,
   )
 }
 
-/** The By team member table — the Qanvast Ops table's structure (frozen Member, resizable and draggable heads, Column settings). */
+/** The By member table — the Qanvast Ops table's structure (frozen Member, resizable and draggable heads, Column settings). */
 function MembersTable({ rows, columns, onReorder }: { rows: MemberRow[]; columns: readonly TableColumn[]; onReorder: (keys: string[]) => void }) {
   const colWidths = useColumnWidths('insights-members')
   const tracks = gridTemplateFor(columns, colWidths)
@@ -244,15 +250,16 @@ function MembersTable({ rows, columns, onReorder }: { rows: MemberRow[]; columns
       case 'leads': return cell(key, <span className={styles.num}>{r.leads}</span>)
       /* (parity P-35 · C-11) a figure's second line spells "median" as the tiles do, and an empty figure is the house "--" with no line under
          it (it read "— / med") */
-      case 'outreach': return cell(key, <span className={styles.stat}><span className={styles.statValue} data-grade={tatGrade(r.outreachMedian) ?? undefined}>{durationWords(r.outreachMedian)}</span>{r.outreachMedian !== null ? <span className={styles.statHelp}>{`median · avg ${durationWords(r.outreachMean)}`}</span> : null}</span>)
-      case 'won': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{durationWords(r.wonMedian)}</span>{r.wonMedian !== null ? <span className={styles.statHelp}>{`median · avg ${durationWords(r.wonMean)}`}</span> : null}</span>)
+      /* (the calm UI build 2026-10-27 — 5-09) the usual time, its average under it in words */
+      case 'outreach': return cell(key, <span className={styles.stat}><span className={styles.statValue} data-grade={tatGrade(r.outreachMedian) ?? undefined}>{durationWords(r.outreachMedian)}</span>{r.outreachMedian !== null ? <span className={styles.statHelp}>{onAverage(r.outreachMean)}</span> : null}</span>)
+      case 'won': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{durationWords(r.wonMedian)}</span>{r.wonMedian !== null ? <span className={styles.statHelp}>{onAverage(r.wonMean)}</span> : null}</span>)
       case 'wonCount': return cell(key, <span className={styles.num}>{r.won}</span>)
       case 'awaiting': return cell(key, r.awaitingOutreach > 0 ? <MetaChip color="yellow">{String(r.awaitingOutreach)}</MetaChip> : <span className={styles.num}>{BLANK}</span>)
       default: return cell(key, null)
     }
   }
   return (
-    <div className={styles.card} role="table" data-drag-root="" aria-label="By team member" data-testid="insights-members" data-cols="insights-members" style={{ '--tracks': tracks } as React.CSSProperties}
+    <div className={styles.card} role="table" data-drag-root="" aria-label="By member" data-testid="insights-members" data-cols="insights-members" style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (

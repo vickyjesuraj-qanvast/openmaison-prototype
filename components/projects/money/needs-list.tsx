@@ -3,18 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
 import { useSheetLayout } from '@/components/om/sheet'
+import { Card } from '@/components/leads/detail/card'
 import { duration, ease } from '@/lib/motion'
-import { money2 } from '@/lib/quotes/math'
 import { phoneDisplay } from '@/lib/format'
+import { money2 } from '@/lib/quotes/math'
 import { useSnackbar } from '@/components/om/snackbar'
 import type { NeedRow } from '@/lib/projects/needs-you'
 import type { MoneyData, useInvoices } from './use-invoices'
 import type { usePayments } from './payments-section'
 import type { useCreditNotes } from '@/components/finance/books/credit-notes'
 import type { useProjectCosts } from '@/components/finance/project-costs'
+import { Row, RowMore } from '../overview/row'
+import ov from '../project-overview.module.css'
 import styles from './money.module.css'
 
 type Btn = { label: string; run: () => void; testId?: string; busy?: boolean }
@@ -23,7 +24,6 @@ type Drawn = { icon: string; testId: string; primary: Btn | null; secondary: Btn
 /** How many rows show before "Show n more" — 3 at a desk, 2 on a phone (P3 §6.2 · §6.3). */
 const SHOWN = 3
 const SHOWN_PHONE = 2
-const TONE: Record<NeedRow['tone'], string> = { late: 'alert', approve: 'await', neutral: 'note' }
 
 /**
  * (simplify S-07, P3 §6.2 Region 2) **Needs you** on the Money tab: every money step waiting on THIS viewer — the server's rows
@@ -159,7 +159,7 @@ export function MoneyNeeds({ rows, data, inv, payments, cn, costs, onOpenInvoice
         return { icon: 'receipt_long', testId: 'money-to-credit', secondary: [], primary: cn.openOffer ? { label: 'Issue a credit note', run: cn.openOffer, testId: 'money-issue-credit' } : link(r) }
       case 'money-to-refund': {
         const k = cn.credits.find((x) => x.id === r.ref)
-        return { icon: 'payments', testId: 'money-to-refund', secondary: [], primary: k ? { label: 'Record the refund', run: () => cn.openRefund(k), testId: 'money-record-refund' } : link(r) }
+        return { icon: 'payments', testId: 'money-to-refund', secondary: [], primary: k ? { label: 'Record', run: () => cn.openRefund(k), testId: 'money-record-refund' } : link(r) }   // (the calm UI build 2026-10-27, W-602) the title says the refund
       }
       /* (pending modules S07 — D-14) a client's credit held: Use on the next invoice that owes — else Record the refund */
       case 'money-credit-held': {
@@ -194,49 +194,43 @@ export function MoneyNeeds({ rows, data, inv, payments, cn, costs, onOpenInvoice
   const limit = phone ? SHOWN_PHONE : SHOWN
   const first = rows.slice(0, limit)
   const rest = rows.slice(limit)
+  /* (the calm UI build 2026-10-27, 3-07) red is for the one row most past its day and ours */
+  const redKey = rows.find((r) => r.tone === 'late')?.key ?? null
+  /* (the calm UI build 2026-10-27, 3-05 · 3-22 · 5-13 · T-02 · T-03) the Overview's own Needs your attention row, filtered to money: the icon,
+     the title and its caption, the amount, ONE verb (the house Row's text button — never a filled one: the page's one filled button is the
+     header's), and every other step in the row's ⋮ with the mark it had. The row keeps its band's mark (`invoice-overdue`, `payment-to-confirm`…). */
   const row = (r: NeedRow) => {
     const d = draw(r)
+    /* an approval's verb reads "Approve" — the one that also sends opens its send, which says so */
+    const verb = d.primary ? { label: r.tone === 'approve' && /^Approve/.test(d.primary.label) ? 'Approve' : d.primary.label, onPress: () => d.primary!.run(), busy: d.primary.busy, testId: d.primary.testId } : null
     return (
-      <div key={r.key} className={styles.banner} role="status" data-tone={TONE[r.tone]} data-testid={d.testId} data-need={r.kind} {...(d.attrs ?? {})}>
-        <span className={styles.bannerIcon}><Icon name={d.icon} size={20} weight={300} /></span>
-        <span className={styles.bannerText}>
-          <span className={styles.needTitle}><b>{r.title}</b>{r.amountMinor ? <span className={styles.nowrap}> · {money2(r.amountMinor)}</span> : null}</span>
-          {r.meta ? <span className={styles.needMeta} data-tone={r.tone === 'late' ? 'alert' : undefined}>{r.meta}</span> : null}
-        </span>
-        {d.primary || d.secondary.length ? (
-          <span className={styles.bannerActions}>
-            {d.secondary.map((b) => <Button key={b.label} appearance="text" onPress={b.run} isDisabled={b.busy} data-testid={b.testId}>{b.label}</Button>)}
-            {d.primary ? <Button onPress={d.primary.run} isDisabled={d.primary.busy} data-testid={d.primary.testId}>{d.primary.label}</Button> : null}
-          </span>
-        ) : null}
-      </div>
+      <Row key={r.key} two icon={d.icon} name={r.title} caption={r.meta} meta={r.amountMinor ? money2(r.amountMinor) : undefined}   /* a money page keeps the cents its tables print (T-12) */
+           state={r.key === redKey ? 'alert' : undefined} tone={r.tone === 'approve' ? 'approve' : undefined}
+           actions={verb ? [verb] : []} testId={d.testId} attrs={{ 'data-need': r.kind, ...(d.attrs ?? {}) }}
+           menu={d.secondary.length ? <RowMore items={d.secondary.map((b) => ({ label: b.label, onPress: b.run, disabled: b.busy, testId: b.testId }))} label={`More for ${r.title}`} title={r.title} testId={`${d.testId}-more`} /> : undefined} />
     )
   }
   return (
-    <section className={styles.needs} aria-labelledby="money-needs-title" data-testid="money-needs">
-      <div className={styles.needsHead}>
-        <h3 id="money-needs-title" className={styles.needsTitle}>Needs you</h3>
-        <span className={styles.needsCount}>{rows.length}</span>
-      </div>
-      <div className={styles.banners}>
-        {first.map(row)}
-        <AnimatePresence initial={false}>
-          {open && rest.length ? (
-            <motion.div key="rest" className={styles.needsRest} initial={{ height: 0, opacity: 0, overflow: 'hidden' }} animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
-                        exit={{ height: 0, opacity: 0, overflow: 'hidden' }} transition={{ duration: duration.step, ease: ease.standard }}>
-              {rest.map(row)}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-      {rest.length ? (
-        <div className={styles.toggleRow}>
-          <button type="button" className={styles.toggle} aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="money-needs-more">
-            {open ? 'Show less' : `Show ${rest.length} more`}
-            <span data-chev><Icon name={open ? 'keyboard_arrow_up' : 'expand_more'} size={20} /></span>
-          </button>
+    <div className={styles.needs} data-testid="money-needs">
+      {/* (the calm UI build 2026-10-27, 3-07 · W-001 · W-561 · T-01 · T-07) "Needs your attention · n", the Overview's card */}
+      <Card title="Needs your attention" headGap={8} meta={`· ${rows.length}`} testId="money-needs">
+        <div className={ov.body}>
+          <div className={ov.group}>
+            {first.map(row)}
+            <AnimatePresence initial={false}>
+              {open && rest.length ? (
+                <motion.div key="rest" className={styles.needsRest} initial={{ height: 0, opacity: 0, overflow: 'hidden' }} animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                            exit={{ height: 0, opacity: 0, overflow: 'hidden' }} transition={{ duration: duration.step, ease: ease.standard }}>
+                  {rest.map(row)}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+            {rest.length ? (
+              <Row icon={open ? 'keyboard_arrow_up' : 'expand_more'} name={open ? 'Show less' : `Show ${rest.length} more`} onPress={() => setOpen((o) => !o)} testId="money-needs-more" toggle attrs={{ 'aria-expanded': open ? 'true' : 'false' }} />
+            ) : null}
+          </div>
         </div>
-      ) : null}
-    </section>
+      </Card>
+    </div>
   )
 }

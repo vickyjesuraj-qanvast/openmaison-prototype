@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Bone } from '@/components/shell/skeleton'
-import { GhostChips, GhostTable, GhostTextButton, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
+import { GhostTable, GhostTextButton, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
 import { StatTiles } from '@/components/om/stat-tile'
 import tile from '@/components/om/stat-tile.module.css'
 import wl from '@/components/projects/workload/workload.module.css'
@@ -16,11 +16,11 @@ const TILES = [['Free this week', 'Nothing booked this week'], ['Free within 7 d
 export function ContractorsGhost({ chips, bySite }: { chips: boolean; bySite: boolean }) {
   return (
     <>
-      {chips ? <GhostChips labels={['Members', 'Contractors']} /> : null}
+      {chips ? <Slot kind="btn" w={204} /> : null}   {/* (the calm UI build 2026-10-27, 3-08) the segmented Members · Contractors */}
       <div className={wl.view} aria-hidden>
         <div className={wl.caption}>
           <Line w={300} lh={20} h={10} />
-          <span className={wl.captionActions}><Slot kind="pill" w={176} /><GhostChips labels={['By contractor', 'By site']} /><GhostTextButton label="Vendors" icon /></span>
+          <span className={wl.captionActions}><Slot kind="pill" w={176} /><Slot kind="btn" w={196} /><GhostTextButton label="Vendors" icon /></span>
         </div>
         <StatTiles>
           {TILES.map(([label, help]) => (

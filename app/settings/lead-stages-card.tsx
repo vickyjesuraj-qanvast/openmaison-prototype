@@ -75,7 +75,7 @@ export function LeadStagesCard({ counts, rules: initial, canManage, from, mode, 
       {canManage ? null : <ReadOnlyNote text={`${locked}.`} />}
       <div className={`${styles.eventTable} ${own.table}`} role="table" aria-label="Lead stages" data-card-table="">
         <div className={`${styles.eventHead} ${own.row}`} role="row">
-          <span role="columnheader">Stage</span><span role="columnheader">What it keeps on the lead</span><span role="columnheader" className={own.countHead}>Leads now</span>
+          <span role="columnheader">Stage</span><span role="columnheader">What it keeps on the lead</span><span role="columnheader" className={own.countHead}>Leads</span>   {/* (the calm UI build, W-540) */}
         </div>
         {ALL_STAGES.map((s) => {
           const a = asks[s]
@@ -94,7 +94,7 @@ export function LeadStagesCard({ counts, rules: initial, canManage, from, mode, 
                   </label>
                 ) : null}
               </span>
-              <span role="cell" className={own.count} data-label="Leads now">
+              <span role="cell" className={own.count} data-label="Leads">
                 {n ? <Link className={own.countLink} href={withFrom(`/leads?scope=${stageSlug(s)}`, from)} aria-label={`${leadsLine(n)} in ${s} — open them`}>{leadsLine(n)}</Link> : <span className={own.none}>No leads</span>}
               </span>
             </div>

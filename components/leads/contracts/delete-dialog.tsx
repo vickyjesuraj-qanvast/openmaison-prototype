@@ -16,9 +16,9 @@ export function DeleteContractsDialog({ open, count, onNo, onYes }: { open: bool
   const many = count > 1
   return (
     /* (REG-631, contracts parity E-115) Deleting is soft: the editor's dialog and this one say the same thing. */
-    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={many ? 'Delete Contracts' : 'Delete Contract'} confirmLabel="Delete"
+    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={many ? 'Delete contracts' : 'Delete contract'} confirmLabel="Delete"
                    message={many
-                     ? 'Are you sure you want to delete these contracts? You can restore them from Deleted Contracts.'
-                     : 'Are you sure you want to delete this contract? You can restore it from Deleted Contracts.'} />
+                     ? 'Are you sure you want to delete these contracts? You can restore them from Deleted contracts.'
+                     : 'Are you sure you want to delete this contract? You can restore it from Deleted contracts.'} />
   )
 }

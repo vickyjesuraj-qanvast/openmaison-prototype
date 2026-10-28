@@ -17,13 +17,14 @@ import { PickOneDialog, type PickOption } from '@/components/company/templates/p
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { createTicket, readTicket } from '@/app/projects/tickets-actions'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
+import { setCountPref } from '@/lib/prefs'
 import { withFrom } from '@/lib/nav'
 import { filterByQuery } from '@/lib/search'
 import type { StudioTicketsData, TicketLine, TicketProject, TicketRow, TicketTeamMember } from '@/lib/projects/tickets'
 import { TicketCard, TicketDrawer } from './ticket-parts'
 import { scopeChips, scopeOf, type TicketScope } from './project-tickets'
 import { NewTicketDialog, type NewTicketInput } from './ticket-dialogs'
-import { STUDIO_TICKETS_SHAPE, StudioTicketsGhost } from './studio-tickets-ghost'
+import { STUDIO_TICKETS_COUNT_KEY, STUDIO_TICKETS_SHAPE, StudioTicketsGhost } from './studio-tickets-ghost'
 import { TicketsFiltersModal, type TicketPerson } from './tickets-filters-modal'
 import { EMPTY_TICKET_FILTERS, keepsTicket, ticketFilterCount, type TicketFilters } from '@/lib/projects/tickets-model'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -53,7 +54,7 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
   const [open, setOpen] = useState<Open | null>(null)
   const load = useCallback(async (id: string) => {
     const r = await readTicket(id).catch(() => null)
-    if (!r || 'error' in r) { snackbar({ message: 'This ticket isn’t there any more' }); setOpen(null); return }
+    if (!r || 'error' in r) { snackbar({ message: 'This issue isn’t there any more' }); setOpen(null); return }   // (the calm UI build 2026-10-27, 3-37) "Issues" on screen
     setOpen({ ticket: r.ticket, lines: r.lines, team: r.team, mayChange: r.mayChange })
   }, [snackbar])
   const param = params.get('open')
@@ -84,7 +85,7 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
   const compose = (at: TicketProject) => { setComposeFor(at); setComposing(true) }
   const loadProjects = useCallback(async (): Promise<PickOption[]> => (raise?.projects ?? []).map((x) => ({ id: x.id, label: x.name, sub: x.number, blocked: x.blocked ?? undefined })), [raise])
   const startNew = (projectId?: string | null) => {
-    if (!raise) { snackbar({ message: 'There’s no project you can raise a ticket on' }); return }   // (invented copy)
+    if (!raise) { snackbar({ message: 'There’s no project you can raise an issue on' }); return }   // (invented copy)
     const at = projectId ? raise.projects.find((x) => x.id === projectId && !x.blocked) : null
     if (at) compose(at); else setPicking(true)
   }
@@ -104,25 +105,29 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
     if (!at) return false
     try {
       const r = await createTicket(at.id, i)
-      if ('error' in r) { snackbar({ message: couldnt('add the ticket', refusalOf(r.error)) }); return false }
+      if ('error' in r) { snackbar({ message: couldnt('add the issue', refusalOf(r.error)) }); return false }
       setComposing(false); setScope('open')
       snackbar({ message: `${r.number} added — ${at.client.split(/\s+/)[0] ?? at.client} sees it on their page` })   // the project tab's words
       router.refresh(); void load(r.id)
       return true
-    } catch { snackbar({ message: 'Couldn’t add the ticket — please try again' }); return false }
+    } catch { snackbar({ message: 'Couldn’t add the issue — please try again' }); return false }
   }
   const first = data.tickets.length === 0
   useRememberShape(STUDIO_TICKETS_SHAPE, first)   // (REG-708) the loader draws the first-run card next time while there is none
+  /* (the calm UI build 2026-10-27, 1-45) the loader draws as many cards as the page opens on (its Open list, before a search or a filter) */
+  const openCount = data.tickets.filter((t) => scopeOf(t, 'open')).length
+  useEffect(() => { if (openCount) setCountPref(STUDIO_TICKETS_COUNT_KEY, openCount) }, [openCount])
   const newButton = raise && !first ? (sheet ? (
-    <Tooltip label="New ticket" shortcut="create"><IconButton icon="add" label="New ticket" variant="filled" onClick={() => startNew()} data-kb="create" data-kb-label="New ticket" data-testid="studio-new-ticket" /></Tooltip>
+    <Tooltip label="New issue" shortcut="create"><IconButton icon="add" label="New issue" variant="filled" onClick={() => startNew()} data-kb="create" data-kb-label="New issue" data-testid="studio-new-ticket" /></Tooltip>
   ) : (
-    <span data-kb="create" data-kb-label="New ticket"><Button iconStart={<Icon name="add" size={20} />} onPress={() => startNew()} data-testid="studio-new-ticket">New ticket</Button></span>
+    <span data-kb="create" data-kb-label="New issue"><Button iconStart={<Icon name="add" size={20} />} onPress={() => startNew()} data-testid="studio-new-ticket">New issue</Button></span>
   )) : null
   return (
     <PageReveal skeleton={<GhostShape first={first}><StudioTicketsGhost raise={!!raise} /></GhostShape>}>
       <div className={pageStyles.body} data-testid="studio-tickets">
         {/* (S46 — REG-2524) a rail place of its own, as Tasks is: the L1 header, its New ticket in the actions */}
-        <PageHeader title="Tickets" actions={newButton} />
+        {/* (the calm UI build 2026-10-27, 3-37 · 1-10 · T-01) "Issues" on screen, the client's word — /tickets, its testids and ⌘K's old words stay */}
+        <PageHeader title="Issues" actions={newButton} />
         <div className={pageStyles.content}>
           {data.tickets.length ? (
             <div className={styles.tab}>
@@ -140,23 +145,23 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
               </div>
               {list.length ? (
                 <div className={styles.list} data-testid="ticket-list">
-                  {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} showProject onOpen={() => { void load(t.id) }} />)}
+                  {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} showProject scope={scope} onOpen={() => { void load(t.id) }} />)}
                 </div>
               ) : (
-                <EmptyState icon="handyman" tone="plain" testId="tickets-none" title={query.trim() ? `No tickets match “${query.trim()}”` : filterCount ? 'No tickets match the filters' : scope === 'open' ? 'Nothing open' : 'Nothing here yet'}
-                            help={query.trim() ? 'Try a number, a word of the subject or the project’s name.' : filterCount ? 'Clear a filter to see more.' : 'Every ticket the studio holds is resolved or closed.'}
+                <EmptyState icon="handyman" tone="plain" testId="tickets-none" title={query.trim() ? `No issues match “${query.trim()}”` : filterCount ? 'No issues match the filters' : scope === 'open' ? 'Nothing open' : 'Nothing here yet'}
+                            help={query.trim() ? 'Try a number, a word of the subject or the project’s name.' : filterCount ? 'Clear a filter to see more.' : 'Every issue the studio holds is resolved or closed.'}
                             primary={filterCount ? { label: 'Clear the filters', onPress: () => setFilters(EMPTY_TICKET_FILTERS) } : null} />
               )}
             </div>
           ) : (
-            <EmptyState icon="handyman" testId="studio-tickets-empty" title="No tickets yet"
-                        help={`When a client reports a problem on their page — a leak, a scratch, a door that sticks — it lands on the project’s Tickets tab and here, with their photos.${raise ? ' You can add one for them too.' : ''}`}
-                        primary={raise ? { label: 'New ticket', icon: 'add', onPress: () => startNew(), testId: 'studio-new-ticket' } : null} />
+            <EmptyState icon="handyman" testId="studio-tickets-empty" title="No issues yet"
+                        help={`When a client reports a problem on their page — a leak, a scratch, a door that sticks — it lands on the project’s Issues and here, with their photos.${raise ? ' You can add one for them too.' : ''}`}
+                        primary={raise ? { label: 'New issue', icon: 'add', onPress: () => startNew(), testId: 'studio-new-ticket' } : null} />
           )}
         </div>
         <TicketsFiltersModal open={filtering} people={people} value={filters} onApply={applyFilters} onClose={() => setFiltering(false)} />
         {raise ? (<>
-          <PickOneDialog open={picking} onClose={() => setPicking(false)} title="Which project is this ticket for?" label="Project" load={loadProjects} confirmLabel="Continue"
+          <PickOneDialog open={picking} onClose={() => setPicking(false)} title="Which project is this issue for?" label="Project" load={loadProjects} confirmLabel="Continue"
                          onPick={(id) => { const at = raise.projects.find((x) => x.id === id); if (!at || at.blocked) return; setPicking(false); compose(at) }} empty="No projects yet" />
           <NewTicketDialog open={composing && !!composeFor} categories={raise.categories} team={composeTeam} client={composeFor?.client ?? ''} onClose={() => setComposing(false)} onSave={add} />
         </>) : null}

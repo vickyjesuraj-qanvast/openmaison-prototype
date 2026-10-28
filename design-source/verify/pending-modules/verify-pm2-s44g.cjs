@@ -306,7 +306,7 @@ const hexRgb = (h) => { const n = parseInt(h.replace('#', ''), 16); return `rgb(
     const Ph = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const ph = await page(Ph, 'phone-confirm')
     await go(ph, `/confirm/${token}`); await settle(ph, 800)
-    const printedBtn = ph.getByRole('button', { name: /View as printed/ }).first()
+    const printedBtn = ph.getByRole('button', { name: /as printed/i }).first()   // (the calm UI build 2026-10-27, a deliberate change) W-116: See it as printed
     if (await printedBtn.count()) { await printedBtn.tap(); await settle(ph, 1200) }
     const phBlk = ph.locator('[data-page] [class*="textBlock"]').filter({ hasText: 'Probe bold words' }).first()
     ok(await phBlk.count() === 1 && await phBlk.evaluate((el) => !!el.querySelector('ul li') && !!el.querySelector('a[target="_blank"]')), '390: the confirmation page’s View as printed shows the formatted block')

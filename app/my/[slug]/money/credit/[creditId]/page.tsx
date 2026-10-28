@@ -24,6 +24,6 @@ export default async function PortalCreditNotePage({ params }: { params: Promise
   if (gate.kind === 'out') redirect(loginPath(slug, portalPath(slug, `money/credit/${creditId}`)))
   await stampOpened(gate.visitor)
   const [credit, { needs }] = await Promise.all([fetchPortalCreditNote(gate.visitor, creditId), fetchPortalData(slug, gate.look, gate.visitor, gate.paused)])
-  if (!credit) return <PortalNotice look={gate.look} kind="gone" back={{ href: portalPath(slug, 'money'), label: 'Back to Money' }} />
+  if (!credit) return <PortalNotice look={gate.look} kind="gone" back={{ href: portalPath(slug, 'money'), label: 'Back to Payments' }} />
   return <PortalDoc look={gate.look} slug={slug} visitor={{ name: gate.visitor.name, preview: gate.visitor.preview, memberName: gate.visitor.memberName, frame: !!gate.visitor.frame }} paused={gate.paused} needs={needs} credit={credit} />
 }

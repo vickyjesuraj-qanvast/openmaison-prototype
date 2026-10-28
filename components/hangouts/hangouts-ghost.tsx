@@ -19,7 +19,7 @@ export function HangoutsGhost() {
       <div className={styles.content}>
         <div className={styles.bar}>
           <div className={styles.views}><GhostChips widths={[59, 121, 107, 77]} rail /></div>
-          <div className={styles.tools}><Slot kind="search" w={280} /></div>
+          <div className={styles.tools}><Slot kind="search" w={280} /><Slot kind="icon" /></div>   {/* (the calm UI build 2026-10-27, 2-09) the sample's "?" */}
         </div>
         <div className={styles.list}>
           {[0, 1, 2].map((i) => (

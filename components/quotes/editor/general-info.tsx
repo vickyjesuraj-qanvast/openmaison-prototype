@@ -61,22 +61,26 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra, vari
   return (
     <div className={styles.grid}>
       {/* Row 1 */}
-      <TextField label={variation ? 'Title' : 'Quote Title'} value={value.title} onChange={(v) => onChange({ title: v })} />
+      <TextField label="Title" value={value.title} onChange={(v) => onChange({ title: v })} />
       <div className={styles.pair}>
         {/* The client is the lead: the field shows the name and its trailing open_in_new opens the lead (1271:39696). */}
-        <TextField label="Client" value={lead.name} mode="trigger" trailingIcon="open_in_new"
-                   onOpen={() => { window.open(`/leads/${lead.id}`, '_blank', 'noopener') }} />
-        <TextField label="Property Type" value={value.propertyType} mode="select" options={PROPERTY_TYPES}
+        {/* (the calm UI build 2026-10-27, 4-31) "Add a second client" sits under the Client field, not alone in an empty half-row */}
+        <div className={styles.stack}>
+          <TextField label="Client" value={lead.name} mode="trigger" trailingIcon="open_in_new"
+                     onOpen={() => { window.open(`/leads/${lead.id}`, '_blank', 'noopener') }} />
+          {second ? null : <span className={styles.stackAction}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></span>}
+        </div>
+        <TextField label="Property type" value={value.propertyType} mode="select" options={PROPERTY_TYPES}
                    onChange={(v) => onChange({ propertyType: v })} />
       </div>
       {/* Row 2 */}
-      <TextField label="Project Ref #" value={value.projectRef} onChange={(v) => onChange({ projectRef: v })} />
-      <TextField label="Site Address" value={value.siteAddress} onChange={(v) => onChange({ siteAddress: v })} />
+      <TextField label="Project ref" value={value.projectRef} onChange={(v) => onChange({ projectRef: v })} />
+      <TextField label="Site address" value={value.siteAddress} onChange={(v) => onChange({ siteAddress: v })} />
       {/* Row 3 */}
       <div className={styles.pair}>
         <TextField label="Prepared by" value={preparedName} mode="select" options={names}
                    onChange={(name) => onChange({ preparedBy: members.find((m) => m.name === name)?.id ?? null })} />
-        <DateField label={variation ? 'Valid until' : 'Quote Valid Until'} value={value.validUntil} today={today} icon="calendar_month" onChange={(v) => onChange({ validUntil: v })} />
+        <DateField label="Valid until" value={value.validUntil} today={today} icon="calendar_month" onChange={(v) => onChange({ validUntil: v })} />
       </div>
       <div className={styles.pair}>
         <TextField label="NRIC" value={value.nric} onChange={(v) => onChange({ nric: v })} maxLength={20}
@@ -90,11 +94,9 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra, vari
           <TextField label="NRIC (second client)" value={value.client2Nric} onChange={(v) => onChange({ client2Nric: v })} maxLength={20}
                      onBlur={() => setLeft((l) => ({ ...l, client2Nric: true }))} error={nricError('client2Nric')} />
         </div>
-      ) : (
-        <div className={styles.pair}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></div>
-      )}
+      ) : null}
       {/* (S44T — UAT row 321, his UAT ask 2026-10-15) the quote's own remarks — printed wherever its template places the Remarks field */}
-      <TextField label="Remarks" value={value.remarks} onChange={(v) => onChange({ remarks: v })} maxLength={500} helper="Prints where the quote’s template has the Remarks field" />
+      <TextField label="Remarks" value={value.remarks} onChange={(v) => onChange({ remarks: v })} maxLength={500} helper={variation ? 'Shows on the printed variation order' : 'Shows on the printed quote'} />
       {/* (parity map, SC-094 — 1.0's VO "timeline impact days") a variation order says how many days it adds to the schedule */}
       {variation ? <div className={styles.pair}><VariationDaysField /><span /></div> : null}
       {extra ? <div className={styles.full}>{extra}</div> : null}

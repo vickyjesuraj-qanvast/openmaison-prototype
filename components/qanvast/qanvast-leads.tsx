@@ -1,17 +1,16 @@
 'use client'
 
-import { useMemo, useState, type MouseEvent } from 'react'
+import { useCallback, useMemo, useState, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
-import { Button } from '@/components/ds'
 import { useMaisonAi } from '@/lib/maison-ai'
+import { useShortcut } from '@/lib/keys/store'
 import { useListingMaison } from '@/components/leads/use-listing-maison'
 import { copyText } from '@/lib/clipboard'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, exportFileName, type ExportFormat } from '@/lib/leads/export'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
-import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { ScopePill } from '@/components/om/scope-pill'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -53,6 +52,9 @@ import { QANVAST_LEADS_HREF, QANVAST_TAB_ITEMS, onQanvastTabsClick } from './qan
  * answer coming soon — search is real (REG-275). (one-home N-05) Add Lead, Insights and Filters are the house's own now: the
  * listing's lead form with the source set to Qanvast, Company › Reports › Leads (Owners and Admins, as the listing's Insights), and
  * the listing's Filters over these rows.
+ * (the calm UI build 2026-10-27, 2-27 · 1-30 · 2-09 — the L1 header's one anatomy) Adding a lead and the reports belong to Leads: the header holds
+ * the title and ⋮ — New Qanvast lead (C, the same form with the source set) · Request leads (coming soon) · Reports (Owners and Admins) · Export
+ * all… — and the toolbar keeps the scope, search, Filters and Column settings.
  */
 const TABS_HREF = QANVAST_LEADS_HREF
 /** (one-home N-05) Add Lead's new lead starts as a Qanvast one — the form's own prefill (UX audit L11), the source field set. */
@@ -78,7 +80,9 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
   const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const assignHintText = assignHint(viewer)
   const assignable = assignableIds(viewer, team)
-  const openCreate = () => setLeadForm({ mode: 'create', prefill: QANVAST_PREFILL })
+  const openCreate = useCallback(() => setLeadForm({ mode: 'create', prefill: QANVAST_PREFILL }), [])
+  /* (the calm UI build 2026-10-27, 2-27) C keeps opening the Qanvast lead form here, now that its button is a row in the ⋮ */
+  useShortcut('create', openCreate, true, 'New Qanvast lead')
   /* (one-home N-05) The house Filters (REG-464: they apply live) — sort, quick filters, property type, source, members, date. */
   const [filters, setFilters] = useState<LeadFilters>(EMPTY_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -139,10 +143,10 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
 
   /* (REG-728) The house rows: a radio DropdownItem (the current scope in the Selected fill) with its count as the row's meta — 12/Regular
      secondary, right-aligned; 0 when the loader counted none (as text, so a 0 still prints). */
-  const item = (label: string, value: string | null) => (
+  const item = (label: string, value: string | null, shown: string = label) => (
     <DropdownItem key={label} role="menuitemradio" checked={scope === value} meta={String(counts[label] ?? 0)}
                   onSelect={() => { setScope(value); setScopeOpen(false) }}>
-      {label}
+      {shown}
     </DropdownItem>
   )
 
@@ -154,6 +158,11 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
   }
   const kebabMenu = (
     <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Qanvast Ops">
+      {/* (the calm UI build 2026-10-27, 2-27 · 2-09) the header's Add Lead and Insights and the toolbar's Request Leads, moved here — the same presses */}
+      <DropdownItem onSelect={() => { setKebabOpen(false); openCreate() }} shortcut="create" testId="qanvast-new-lead">New Qanvast lead</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); comingSoon() }} testId="qanvast-request-leads">Request leads</DropdownItem>
+      {canInsights ? <DropdownItem onSelect={() => { setKebabOpen(false); openInsights() }} testId="qanvast-reports">Reports</DropdownItem> : null}
+      <DropdownDivider />
       <DropdownItem onSelect={() => { setKebabOpen(false); setExportOpen(true) }}>Export all as…</DropdownItem>
     </Dropdown>
   )
@@ -166,46 +175,16 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
         <PageHeader
           title="Qanvast Ops"
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-369) */
-          actions={mobile ? (
-            /* (REG-361, user 2026-09-06: "Qanvast Ops should match the leads listing page header") The listing's
-               mobile header (REG-299, 1082:25131): Add Lead as the filled square, Insights and the kebab as
-               outlined squares, all three on the title's row — the same actions, icon-only. */
-            <>
-              <Tooltip label="Add Lead">
-                <IconButton icon="add" label="Add Lead" variant="filled" onClick={openCreate} />
+          /* (the calm UI build 2026-10-27, 2-27 · 1-30) the title and ⋮ at every width — Add Lead and Insights are the ⋮'s rows now (the Leads page
+             is where a lead is added and the reports are Company's); REG-361's phone squares go with them */
+          actions={(
+            <span className={styles.kebabWrap}>
+              <Tooltip label="More options" disabled={kebabOpen}>
+                {/* (REG-728) the house trigger: aria-expanded lets a press on the open kebab close its menu (REG-153) instead of reopening it */}
+                <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
               </Tooltip>
-              {canInsights ? (
-                <Tooltip label="Insights">
-                  <IconButton icon="bar_chart_4_bars" label="Insights" onClick={openInsights} />
-                </Tooltip>
-              ) : null}
-              <span className={styles.kebabWrap}>
-                <Tooltip label="More options" disabled={kebabOpen}>
-                  {/* (REG-728) the house trigger: aria-expanded lets a press on the open kebab close its menu (REG-153) instead of reopening it */}
-                  <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
-                </Tooltip>
-                {kebabMenu}
-              </span>
-            </>
-          ) : (
-            /* (REG-361) Add Lead first, then Insights — the listing's own order (REG-305). */
-            <>
-              <Button iconStart={<Icon name="add" size={20} />} onPress={openCreate} data-kb="create" data-kb-label="Add Lead">
-                Add Lead
-              </Button>
-              {canInsights ? (
-                <Button variant="secondary" appearance="outlined" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={openInsights}>
-                  Insights
-                </Button>
-              ) : null}
-              <span className={styles.kebabWrap}>
-                <Tooltip label="More options" disabled={kebabOpen}>
-                  {/* (REG-728) the house trigger: aria-expanded lets a press on the open kebab close its menu (REG-153) instead of reopening it */}
-                  <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
-                </Tooltip>
-                {kebabMenu}
-              </span>
-            </>
+              {kebabMenu}
+            </span>
           )}
         />
         {/* Page Tabs: Leads (selected) · Studios · Lead credits · Reviews · Hangouts. */}
@@ -221,13 +200,14 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
           <div className={styles.bar}>
             <div className={styles.left}>
               {/* (REG-729) The house scope pill — the applied dot off "All Leads" (REG-295) comes with it. */}
-              <ScopePill label={`${scope ?? 'All Leads'} (${visible.length})`} onClick={() => setScopeOpen((o) => !o)}
+              {/* (the calm UI build 2026-10-27, 2-11 · 2-12) sentence case and the house count ("All leads · 7") */}
+              <ScopePill label={`${scope ?? 'All leads'} · ${visible.length}`} onClick={() => setScopeOpen((o) => !o)}
                          open={scopeOpen} scoped={scope !== null} />
               {/* Dropdown Menu / Leads "Lead Status" 200 wide (931:49435): All Leads · ACTIVE stages · INACTIVE stages · Lead Return states.
                   (REG-728) The house group titles and rules (DropdownLabel · DropdownDivider: 1px with 4 above and below, so three of them
                   still take the menu to the mock's 613); "Lead Return" keeps the mock's blue, which DropdownLabel has no tone for (.returnTone). */}
               <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={MENU_WIDTH.standard} sheetTitle="Lead Status">
-                {item('All Leads', null)}
+                {item('All Leads', null, 'All leads')}
                 <DropdownDivider />
                 <DropdownLabel tone="green" dot>ACTIVE</DropdownLabel>
                 {STAGES.map((s) => item(s, s))}
@@ -235,7 +215,7 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
                 <DropdownLabel tone="orange" dot>INACTIVE</DropdownLabel>
                 {INACTIVE_STAGES.map((s) => item(s, s))}
                 <DropdownDivider />
-                <div className={styles.returnTone}><DropdownLabel dot>Lead Return</DropdownLabel></div>
+                <div className={styles.returnTone}><DropdownLabel dot>Lead return</DropdownLabel></div>
                 {RETURN_FILTERS.map((s) => item(s, s))}
               </Dropdown>
             </div>
@@ -245,7 +225,6 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
                 now the DS Search Bar 280 every other list toolbar uses, wired live (REG-275, owner-directed — the mock draws the icon).
                 The wrapper is a <label> so the 2px band it grows on a touch pointer still focuses the field (REG-273). */}
             <div className={styles.right}>
-              <Button variant="secondary" appearance="outlined" onPress={comingSoon}>Request Leads</Button>
               <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search" label="Search leads" />
               <span className={toolbar.filterWrap}>
                 <Tooltip label={filterLabel} shortcut="filters">
@@ -295,7 +274,7 @@ export function QanvastLeads({ data, leadRows, team, viewer, liveSources, custom
             /* (gaps build E, item 1) a picked file goes up with its bytes once the lead exists — the listing's own steps */
             const picked = extras?.picked ?? []
             const id = await createLead({ ...form, files: (extras?.files ?? []).filter((n) => !picked.some((f) => f.name === n)), customValues: extras?.customValues })
-            snackbar({ message: 'Successfully Created' })
+            snackbar({ message: `${form.name.trim()} added`, actionLabel: 'Open', onAction: () => router.push(`/leads/${id}?from=qanvast`) })   // (the calm UI build 2026-10-27, 2-34 · W-392)
             for (const f of picked) {
               const up = await uploadPicked(id, f).catch(() => null)
               if (!up || 'error' in up) snackbar({ message: couldnt(`upload ${f.name}`, up && 'error' in up ? up.error : null) })

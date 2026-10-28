@@ -57,8 +57,12 @@ export function ToolsPanel({ pending, onTool, onPatch, sketch, onUseAsPhoto, onD
   const program = ROOM_PROGRAMS.find((r) => r.id === pending.furnish.room) ?? ROOM_PROGRAMS[0]!
   const density = FURNISH_DENSITIES.find((d) => d.key === pending.furnish.density) ?? FURNISH_DENSITIES[1]!
   const places = [...program.essential, ...(pending.furnish.density === 'minimal' ? [] : pending.furnish.density === 'balanced' ? program.optional.slice(0, 3) : program.optional)].filter((x) => !leavesOut(pending.furnish.leaveOut, x))
+  /* (the calm UI build 2026-10-27, 6-17 · W-412 · W-440 · W-402 · W-451 · W-130) the engine's words ("Whole-room passes", "The next Generate",
+     "By hand") in a designer's: the tab and the panel are "Whole room", the cards' group says what Generate does, the first card is "Only what
+     I picked", and Draw a surface says itself without a head over it. (The sub's old pointer to "Describe a change" stays where the box is —
+     above Generate, always in view.) */
   return (
-    <Panel title="Tools" sub="Whole-room passes and a surface drawn by hand — describe a change in the box above Generate" testId="viz-tools">
+    <Panel title="Whole room" sub="Empty or furnish the whole room, or draw a surface the photo missed" testId="viz-tools">
       {sketch && !pending.asPhoto ? (
         <div className={styles.section}>
           <div className={styles.note}><Icon name="draw" size={20} weight={300} /><span><b>Looks like a sketch.</b> Render from sketch turns it into a photo first — then every tool works on it. Pick a style to render it in that look.</span></div>
@@ -66,9 +70,9 @@ export function ToolsPanel({ pending, onTool, onPatch, sketch, onUseAsPhoto, onD
         </div>
       ) : (
         <div className={styles.section}>
-          <span className={styles.head}>The next Generate</span>
-          <div ref={group} className={styles.field} role="radiogroup" aria-label="The next Generate" onKeyDown={(e) => { rovingKey(e, ':scope > [role=radio]') }}>
-            <ChoiceCard title="Your picks" help="Surfaces, furniture, style and light — whatever you’ve picked" selected={pending.tool === null} onSelect={() => onTool(null)} />
+          <span className={styles.head}>What Generate does</span>
+          <div ref={group} className={styles.field} role="radiogroup" aria-label="What Generate does" onKeyDown={(e) => { rovingKey(e, ':scope > [role=radio]') }}>
+            <ChoiceCard title="Only what I picked" help="Surfaces, furniture, style and light — whatever you’ve picked" selected={pending.tool === null} onSelect={() => onTool(null)} />
             <ChoiceCard title="Empty the room" help={tools?.emptyWhy ?? 'Take the furniture out and keep the room’s finishes, camera and light'} selected={pending.tool === 'empty'} disabled={emptyOff} onSelect={() => onTool('empty')} />
             {pending.tool === 'empty' ? (
               <div ref={opts} className={styles.field} style={{ paddingLeft: 'var(--om-spacing-4)' }}>
@@ -97,7 +101,6 @@ export function ToolsPanel({ pending, onTool, onPatch, sketch, onUseAsPhoto, onD
         </div>
       )}
       <div className={styles.section}>
-        <span className={styles.head}>By hand</span>
         <span className={styles.actions}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="draw" size={20} weight={300} />} onPress={onDraw} isDisabled={sketch && !pending.asPhoto}>Draw a surface</Button></span>
         <span className={styles.hint}>{sketch && !pending.asPhoto ? 'Render the sketch into a photo first — then trace what it didn’t mark.' : 'Trace a wall, a floor or a panel the photo didn’t mark — it joins the Surfaces list.'}</span>
       </div>

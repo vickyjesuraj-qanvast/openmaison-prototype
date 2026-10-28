@@ -53,26 +53,27 @@ export function TicketCategoriesSetting({ data, canManage }: { data: TicketCateg
       const r = await renameTicketCategory({ from, to: e.name, position: e.position })
       if ('error' in r) { if (/already in the list/i.test(r.error)) setTakenName(listedMatch(names, e.name, from) ?? e.name); else snackbar({ message: couldnt('rename the category', refusalOf(r.error)) }); return }
       setList(r.list); setEdit(null); setTakenName(null)
-      snackbar({ message: from !== e.name ? `${from} is now ${e.name}${counts[from] ? ` — its ${counts[from]} ${counts[from] === 1 ? 'ticket follows' : 'tickets follow'}` : ''}` : 'Saved' })
+      snackbar({ message: from !== e.name ? `${from} is now ${e.name}${counts[from] ? ` — its ${counts[from]} ${counts[from] === 1 ? 'issue follows' : 'issues follow'}` : ''}` : 'Saved' })
     } catch { snackbar({ message: 'Couldn’t rename the category — please try again' }) }
   }
   return (
     <div className={styles.setting} data-testid="ticket-categories" id="ticket-categories">
       <div className={styles.settingHead}>
-        <span className={styles.settingTitle}>Ticket categories</span>
-        <span className={styles.settingHelp}>What a client picks when they report an issue on their page, and what a new ticket offers. Retire a category to keep its tickets and stop offering it; one no ticket holds can be removed.</span>
+        {/* (the calm UI build 2026-10-27, 3-37 · T-01) "Issues" on screen — the settings key, the list's testids and ⌘K's old words stay */}
+        <span className={styles.settingTitle}>Issue categories</span>
+        <span className={styles.settingHelp}>What a client picks when they report an issue on their page, and what a new issue offers. Retire a category to keep it on its issues and stop offering it; one no issue holds can be removed.</span>
       </div>
-      <ul className={styles.trades} aria-label="Ticket categories">
+      <ul className={styles.trades} aria-label="Issue categories">
         {list.map((c, i) => {
           const n = counts[c.name] ?? 0
           return (
             <li key={c.name} className={styles.trade} data-retired={c.retired || undefined} data-match={lit === c.name || undefined} data-testid="ticket-category">
               {canManage ? <button type="button" className={styles.chipName} onClick={() => { setTakenName(null); setEdit({ name: c.name, position: i + 1 }) }}>{c.name}</button> : <span>{c.name}</span>}
-              <span className={styles.sourceCount} aria-label={`${n} ${n === 1 ? 'ticket' : 'tickets'}`}>{n}</span>
+              <span className={styles.sourceCount} aria-label={`${n} ${n === 1 ? 'issue' : 'issues'}`}>{n}</span>
               {!canManage ? null : c.retired ? (
                 <Tooltip label={`Restore ${c.name}`}><IconButton icon="undo" label={`Restore ${c.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void write(list.map((x) => (x.name === c.name ? { name: x.name } : x)), `${c.name} restored`) }} /></Tooltip>
               ) : n > 0 ? (
-                <Tooltip label={`Retire ${c.name} — its ${n} ${n === 1 ? 'ticket keeps' : 'tickets keep'} it`}><IconButton icon="visibility_off" label={`Retire ${c.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void write(list.map((x) => (x.name === c.name ? { ...x, retired: true } : x)), `${c.name} retired — its tickets keep it`, list) }} /></Tooltip>
+                <Tooltip label={`Retire ${c.name} — its ${n} ${n === 1 ? 'issue keeps' : 'issues keep'} it`}><IconButton icon="visibility_off" label={`Retire ${c.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void write(list.map((x) => (x.name === c.name ? { ...x, retired: true } : x)), `${c.name} retired — its issues keep it`, list) }} /></Tooltip>
               ) : (
                 <Tooltip label={`Remove ${c.name}`}><IconButton icon="close" label={`Remove ${c.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void write(list.filter((x) => x.name !== c.name), `${c.name} removed`, list) }} /></Tooltip>
               )}
@@ -87,7 +88,7 @@ export function TicketCategoriesSetting({ data, canManage }: { data: TicketCateg
         </div>
       ) : null}
       <ListEntryDialog open={!!edit} title="Ticket category" entry={edit} total={list.length} taken={takenName}
-                       note="A rename carries the tickets that hold it." onClose={() => { setEdit(null); setTakenName(null) }} onSave={(e) => { void save(e) }} />
+                       note="A rename carries the issues that hold it." onClose={() => { setEdit(null); setTakenName(null) }} onSave={(e) => { void save(e) }} />
     </div>
   )
 }

@@ -7,6 +7,10 @@ import { filterByQuery } from '@/lib/search'
 
 export const CONTRACT_STATUSES = ['Draft', 'Sent to Client', 'Signed'] as const
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
+/** (the calm UI build 2026-10-27 — T-01, audit 4-04) What a contract's status READS as on screen: Draft · Waiting for signature · Signed — ONE
+ *  map, lib/contracts/status-words.ts (it imports only this file's type), re-exported here. Display only — the stored value, the status menu's
+ *  keys, filters and URLs keep the stored words above. */
+export { CONTRACT_STATUS_LABEL, contractStatusLabel } from '@/lib/contracts/status-words'
 
 export type ContractSort = 'newest' | 'oldest'
 export type ContractDatePreset = '' | 'today' | 'last7' | 'last30' | 'custom'

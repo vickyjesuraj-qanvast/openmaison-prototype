@@ -77,13 +77,15 @@ export function ColumnSettingsDrawer({ open, onClose, columns, onSave, onReset, 
   )
   return (
     <Drawer open={open} title="Column settings" onClose={onClose} label="Column settings"
+            actions={/* (the calm UI build 2026-10-27 — the audit's 2-43, T-05) the how-to is the title's tooltip, not a paragraph */ (
+              <Tooltip label={HOW_TO}><span tabIndex={0} role="note" aria-label={HOW_TO} className={styles.howTo}><Icon name="info" size={20} weight={300} /></span></Tooltip>
+            )}
             footer={<><Button variant="secondary" appearance="outlined" onPress={() => setDraft(normalise(onReset(), pins))}>Reset to default</Button><Button onPress={onClose}>Done</Button></>}>
       <div className={styles.settings}>
-        <p className={styles.help}>Toggle columns you want to see. Drag columns up or down to reorder them.</p>
         {extras}
         {pins ? (
           <div className={styles.group}>
-            <div className={styles.eyebrow}><Icon name="push_pin" size={16} fill />Pinned ({max} columns max)</div>
+            <div className={styles.eyebrow}><Icon name="push_pin" size={16} fill />{`Pinned · up to ${max}`}</div>
             <Reorder.Group as="ul" axis="y" values={pinnedRows.map((c) => c.key)} className={styles.list} onReorder={(keys: string[]) => reorderGroup(true, keys)}>
               {pinnedRows.map(row)}
             </Reorder.Group>
@@ -102,6 +104,9 @@ export function ColumnSettingsDrawer({ open, onClose, columns, onSave, onReset, 
     </Drawer>
   )
 }
+
+/** (the calm UI build 2026-10-27, 2-43) what the drawer is for, said once, in its title's tooltip (was a paragraph over the list) */
+const HOW_TO = 'Show or hide a column with its switch, drag it up or down to reorder, pin up to three to keep them in view.'
 
 function ColumnRow({ col, pinning, pinState, onPin, onToggle, onMove }: {
   col: ColumnItem; pinning: boolean; pinState: 'none' | 'locked' | 'pinned' | 'free' | 'hidden'

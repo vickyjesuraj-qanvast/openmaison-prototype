@@ -24,10 +24,11 @@ export function ResultsView({ data }: { data: HangoutView }) {
         {resultTiles(r).map((t) => <StatTile key={t.key} label={t.label} value={t.value} help={t.help} testId={`tile-${t.key}`} />)}
       </StatTiles>
       <p className={styles.help} data-testid="hangout-leads-line">{leadsLine(r)}<Link className={styles.whoLink} href={withFrom('/leads?source=Hangout', here)}>{LEADS_LINK}</Link></p>
-      <Card title="By designer" testId="hangout-by-designer">
+      {/* (the calm UI build 2026-10-27, 2-14 · W-491) the studio's people are Members — the card's and the head's word */}
+      <Card title="By member" testId="hangout-by-designer">
         <div className={styles.cardBody}>
-          <div className={styles.byTable} role="table" aria-label="Chats by designer" data-card-table="">
-            <div className={styles.byHead} role="row"><span role="columnheader">Designer</span><span role="columnheader" className={styles.num}>Chats</span><span role="columnheader" className={styles.num}>Converted</span><span role="columnheader" className={styles.num}>Follow-up</span><span role="columnheader" className={styles.num}>Dropped</span></div>
+          <div className={styles.byTable} role="table" aria-label="Chats by member" data-card-table="">
+            <div className={styles.byHead} role="row"><span role="columnheader">Member</span><span role="columnheader" className={styles.num}>Chats</span><span role="columnheader" className={styles.num}>Converted</span><span role="columnheader" className={styles.num}>Follow-up</span><span role="columnheader" className={styles.num}>Dropped</span></div>
             {r.byDesigner.map((d) => (
               <div key={d.memberId} className={styles.byRow} role="row" data-testid="by-designer-row">
                 <span role="cell" className={styles.who}><Avatar name={d.name} color={d.color} size={24} tooltip={false} /><span className={styles.whoName}>{d.name}</span></span>

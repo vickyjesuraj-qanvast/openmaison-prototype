@@ -6,6 +6,12 @@
 .bar { composes: bar from '../../leads/insights/insights-view.module.css'; }
 .barEnd { composes: barEnd from '../../leads/insights/insights-view.module.css'; }
 .caption { composes: caption from '../../leads/insights/insights-view.module.css'; }
+/* (the calm UI build 2026-10-27 — 5-19) the reports' one bar (insights-view.module.css) */
+.pickBar { composes: pickBar from '../../leads/insights/insights-view.module.css'; }
+.picks { composes: picks from '../../leads/insights/insights-view.module.css'; }
+.pickEnd { composes: pickEnd from '../../leads/insights/insights-view.module.css'; }
+/* (5-22) "Show all figures" under the four headline tiles — the tiles' row gap above it */
+.more { margin-top: var(--om-spacing-2); }
 .section { composes: section from '../../leads/insights/insights-view.module.css'; }
 .sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; }
 .sectionTitle { composes: sectionTitle from '../../leads/insights/insights-view.module.css'; margin: 0; }   /* a heading here (each group is a region named by it) */

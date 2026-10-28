@@ -83,7 +83,8 @@ const later = (q) => undo.push(q)
     // ── A PO from the quote: Draft → sent on WhatsApp → accepted on the vendor's link → paid in full (it closes itself) → Undo ─────────────────
     console.log('A PO from the quote')
     await s.getByTestId('money-new').click(); await settle(s, 400)   // (simplify S-07) the one New ▾ — its Costs group
-    await menuItem(s, /^Purchase order/).click(); await settle(s, 700)
+    await menuItem(s, /^Purchase order/).click(); await settle(s, 500)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+    if (await s.locator('[data-testid="money-new-level"]').count()) { await s.getByRole('menuitem', { name: /^New purchase order/ }).first().click(); await s.waitForTimeout(700) }
     const dlg = s.locator('[role="dialog"][aria-label="New purchase order"]')
     ok(await dlg.count() === 1, 'New cost › Purchase order opens its dialog')
     await pick(s, dlg, 'Vendor', /ColourPro/)
@@ -110,7 +111,7 @@ const later = (q) => undo.push(q)
     await row.getByRole('button', { name: 'Send', exact: true }).click(); await settle(s, 700)
     const send = dialog(s)
     ok(/Send PO-2026-\d+ to ColourPro/.test(await send.innerText()), 'Send opens the WhatsApp dialog to the vendor')
-    await send.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(s, 1500)
+    await send.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(s, 1500)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const opened = await s.evaluate(() => window.__opened)
     ok(opened.some((u) => /wa\.me\/6590213344/.test(u) && /po%2F/.test(u)), 'WhatsApp opens on the press with the vendor’s mobile and the PO’s link')
     ok(sql(`select status || '|' || (sent_at is not null) || '|' || (due_on is not null) from purchase_orders where id='${newPo}'`) === 'sent|1|1', 'it is recorded as sent, its payment day worked out from the terms')
@@ -150,7 +151,7 @@ const later = (q) => undo.push(q)
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
     ok(/Germaine/.test(await s.locator('[data-testid="costs-po-awaiting"]').innerText()), 'the Needs you row names who submitted it')
     await s.getByTestId('costs-approve-po').click(); await settle(s, 700)
-    await dialog(s).getByRole('button', { name: /Approve and send via WhatsApp/ }).click(); await settle(s, 1600)
+    await dialog(s).getByRole('button', { name: /Approve and send (via|on) WhatsApp/ }).click(); await settle(s, 1600)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     ok(sql(`select status || '|' || approved_by from purchase_orders where id='${po8}'`) === 'sent|dane', 'an Owner’s send approves it — one path')
     ok(sql(`select count(*) from notifications where kind='po_approved' and member_id='germaine' and href like '%${po8}%' and created_at >= ${startAt}`) === '1', 'Germaine hears it was approved and sent')
     later(`delete from notifications where kind='po_approved' and href like '%${po8}%' and created_at >= ${startAt}`)

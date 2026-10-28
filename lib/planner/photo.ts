@@ -85,7 +85,9 @@ const GROUPS: Group[] = [
   { label: 'study', one: 'study', many: 'studies', kinds: ['study'] },
 ]
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-/** "3 bedrooms" · "2 bathrooms" · "Kitchen" · … · "11 rooms in all" — the list at a glance, as 1.0's chip row said it. */
+/** "3 bedrooms" · "2 bathrooms" · "Kitchen" · … · "11 rooms in total" — the list at a glance, as 1.0's chip row said it (2026-10-27: 1.0's "in total", was "in all").
+    (the calm UI build 2026-10-27, 6-22 · W-080 — T-17) the total counts what it names: a room of a kind outside 1.0's groups (a corridor, a foyer)
+    is named too, by its own kind ("Corridor"), so 3 + 2 + 1 + 1 + 1 + 2 + 1 = "11 rooms in total". */
 export function roomSummary(rooms: PlaceRoom[]): string[] {
   const out: string[] = []
   for (const g of GROUPS) {
@@ -93,8 +95,21 @@ export function roomSummary(rooms: PlaceRoom[]): string[] {
     if (!n) continue
     out.push(cap(n === 1 ? (g.bare ? g.one : `1 ${g.one}`) : `${n} ${g.many}`))
   }
-  out.push(`${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'} in all`)
+  const grouped = new Set(GROUPS.flatMap((g) => g.kinds))
+  for (const kind of [...new Set(rooms.map((r) => r.kind))].filter((k) => !grouped.has(k))) {
+    const n = rooms.filter((r) => r.kind === kind).length, word = KIND_LABEL[kind].toLowerCase()
+    out.push(cap(n === 1 ? word : `${n} ${word}s`))
+  }
+  out.push(`${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'} in total`)
   return out
+}
+/** (the calm UI build 2026-10-27, 6-08 · 6-22 — T-06: capitals are for a status) The same list as one plain sentence, not a row of capital chips:
+    "3 bedrooms, 2 bathrooms, kitchen, living / dining area, 1 service yard, 2 storerooms, corridor — 11 rooms in total". */
+export function roomSentence(rooms: PlaceRoom[]): string {
+  const parts = roomSummary(rooms)
+  const total = parts.pop() ?? ''
+  if (!parts.length) return cap(total)
+  return `${parts.map((x, i) => (i === 0 ? x : x.charAt(0).toLowerCase() + x.slice(1))).join(', ')} — ${total}`
 }
 
 /** The bedrooms and bathrooms a list holds — what 1.0's fidelity check counted (its gate: "the plan has 3 bedrooms, the render has 4"). */

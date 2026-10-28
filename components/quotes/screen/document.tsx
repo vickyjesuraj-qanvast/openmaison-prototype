@@ -17,7 +17,7 @@ export type Reading = NonNullable<ReturnType<typeof readingSections>>
  * The tail — the optional works, the Total, the sections priced after the contract and the payment schedule — is `ReadingCards` itself,
  * so one component draws them on the client's page and here. "As printed" opens the Preview's paper viewer.
  */
-export function QuoteDocument({ reading, totalMinor, lineCount, onAsPrinted }: { reading: Reading | null; totalMinor: number; lineCount: number; onAsPrinted: () => void }) {
+export function QuoteDocument({ reading, totalMinor, lineCount: _lineCount, onAsPrinted }: { reading: Reading | null; totalMinor: number; lineCount: number; onAsPrinted: () => void }) {
   const [open, setOpen] = useState<Set<string>>(() => new Set(reading?.sections[0] ? [reading.sections[0].id] : []))
   const toggle = (id: string) => setOpen((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const lineAmount = (l: ReadingLine) => (l.word ? l.word : l.noPrice ? '—' : money2(l.totalMinor))
@@ -50,8 +50,9 @@ export function QuoteDocument({ reading, totalMinor, lineCount, onAsPrinted }: {
   return (
     <div className={styles.doc} data-testid="quote-document">
       <div className={styles.docHead}>
-        <span className={styles.count}>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
-        <Button appearance="text" iconStart={<Icon name="description" size={20} />} onPress={onAsPrinted} data-testid="as-printed">As printed</Button>
+        {/* (the calm UI build 2026-10-27, 4-28 · W-060 · W-116) the hero above already counts the items — the head keeps the way to the paper */}
+        <span className={styles.count} aria-hidden />
+        <Button appearance="text" iconStart={<Icon name="description" size={20} />} onPress={onAsPrinted} data-testid="as-printed">See it as printed</Button>
       </div>
       {reading ? (
         <>
@@ -61,7 +62,7 @@ export function QuoteDocument({ reading, totalMinor, lineCount, onAsPrinted }: {
           <ReadingCards sections={[]} optional={reading.optional} amounts={reading.amounts} totalMinor={totalMinor} after={reading.after} afterTitle={reading.afterTitle} schedule={null} />
         </>
       ) : (
-        <p className={styles.none}>This template prints no item list — open As printed to read the quote as the client gets it.</p>
+        <p className={styles.none}>This template prints no item list — open See it as printed to read the quote as the client gets it.</p>
       )}
     </div>
   )

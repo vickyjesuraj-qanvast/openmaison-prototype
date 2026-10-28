@@ -205,7 +205,7 @@ export const DETAIL_TABS = [
   { label: 'Quotes', slug: 'quotes' },
   { label: 'Contracts', slug: 'contracts' },
   { label: 'Files', slug: 'files' },
-  { label: 'Notes & Logs', slug: 'notes' },   // (REG-550) the tab names the logs it holds (tester feedback 2026-09-15)
+  { label: 'Notes & logs', slug: 'notes' },   // (REG-550) the tab names the logs it holds (tester feedback 2026-09-15) · (the calm UI build 2026-10-27 — W-282) sentence case
   /* (pending modules S23 — his "build all of them" 2026-10-11 lifted REG-552's hold for this card) Meetings, where the mock drew it (858:24784),
      with the Meeting quick link: a lead's meetings, its co-pilot and the briefs (components/meetings/lead-meetings.tsx). */
   { label: 'Meetings', slug: 'meetings' },

@@ -82,12 +82,15 @@ export function actionLabel(a: WritingAction, kind: WritingKind, blank: boolean)
   }
 }
 /** The snackbar once the words are in (with Undo). */
-export function doneWords(a: WritingAction, label: string, blank: boolean): string {
+export function doneWords(a: WritingAction, label: string, blank: boolean,
+  /** (calm-build regression fix F — S42 B-20 kept) the label is a titled block's own title (Terms, Notes) — named as a title whatever its case:
+      the calm UI build's sentence-case titles (W-200, "Additional notes") have no capital after a space for the rule below to see */
+  title = false): string {
   const low = label.charAt(0).toLowerCase() + label.slice(1)
   switch (a) {
     case 'improve': return `${label} improved`
     case 'shorten': return `${label} shortened`
-    case 'expand': return /\s[A-Z]/.test(label) ? `Added to ${label}` : `Added to the ${low}`   // (S42 B-20) a section's own title keeps its capitals: “Added to Additional Notes”
+    case 'expand': return title || /\s[A-Z]/.test(label) ? `Added to ${label}` : `Added to the ${low}`   // (S42 B-20) a section's own title keeps its capitals: “Added to Additional notes”
     case 'plain': return `${label} in plain English`
     case 'rewrite': return blank ? `${label} written` : `${label} rewritten`
   }

@@ -6,7 +6,7 @@ import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { keepBytes } from '@/lib/leads/file-store'   // (pending modules S34)
 import {
-  homeownerProfiles, leadAssignees, leadFiles, leads, members, projectInvoices, projectMilestones, projectPayments, projectSelections, projects, quotePayments, quotes, settings,
+  creditNotes, homeownerProfiles, leadAssignees, leadFiles, leads, members, projectInvoices, projectMilestones, projectPayments, projectSelections, projects, quotePayments, quotes, settings,
   type Lead, type Project, type ProjectPayment,
 } from '@/lib/db/schema'
 import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
@@ -19,7 +19,7 @@ import type { FeedRow, NotificationRules } from '@/lib/notifications/model'
 import type { ReceiptPaperData } from '@/components/projects/money/payments-receipt'
 import type { ProjectNumbering } from './model'
 import { seesMoney } from './policy'
-import { moneyOf } from './money'
+import { isOverpayment, moneyOf } from './money'
 import { newShareToken } from './invoices-token'   // (gaps build B, item 6) a receipt's no-login link
 import { readySentence } from './invoices-kinds'
 import {
@@ -384,16 +384,22 @@ export async function derivedPaymentRows(memberId: string, role: string, rules: 
     .where(and(eq(projectInvoices.status, 'sent'), isNull(projects.deletedAt), isNotNull(projectInvoices.dueAt)))   // (fix-D, D-11 · E-02) money still owed on a completed project keeps its row
   const late = rows.filter((r) => r.i.dueAt && now >= r.i.dueAt.getTime() + 86_400_000)
   if (!late.length) return []
-  const [pays, links] = await Promise.all([
+  const [pays, links, credits] = await Promise.all([
     db.select({ invoiceId: projectPayments.invoiceId, amountMinor: projectPayments.amountMinor, status: projectPayments.status, trusted: projectPayments.trusted }).from(projectPayments)
       .where(and(inArray(projectPayments.invoiceId, late.map((r) => r.i.id)), inArray(projectPayments.status, ['confirmed', 'to_confirm']))),
     db.select({ leadId: leadAssignees.leadId, memberId: leadAssignees.memberId }).from(leadAssignees).where(inArray(leadAssignees.leadId, late.map((r) => r.p.leadId))),
+    /* (the Dashboard redesigned, 2026-10-26 — P-14, a bug B's study found: ST-23) an issued credit note lowers what its invoice owes, as the
+       Money tab counts it (`overdueOf` · `creditedOf`: the kind that lowers its invoice — an overpayment's held credit lowers none) — a credited
+       invoice rang "Overdue" here while its Money said it was settled */
+    db.select({ invoiceId: creditNotes.invoiceId, amountMinor: creditNotes.amountMinor, kind: creditNotes.kind }).from(creditNotes)
+      .where(and(inArray(creditNotes.invoiceId, late.map((r) => r.i.id)), eq(creditNotes.status, 'issued'))),
   ])
   const channels = (Object.entries(rules.channels.payment_overdue) as [FeedRow['channels'][number], boolean][]).filter(([, on]) => on).map(([c]) => c)
   const out: FeedRow[] = []
   for (const { i, p } of late) {
     const mine = pays.filter((x) => x.invoiceId === i.id)
-    const owed = i.amountMinor - mine.filter(countsAsPaid).reduce((s, x) => s + x.amountMinor, 0) - mine.filter(isPending).reduce((s, x) => s + x.amountMinor, 0)
+    const credited = credits.filter((c) => c.invoiceId === i.id && !isOverpayment(c)).reduce((s, c) => s + c.amountMinor, 0)
+    const owed = i.amountMinor - credited - mine.filter(countsAsPaid).reduce((s, x) => s + x.amountMinor, 0) - mine.filter(isPending).reduce((s, x) => s + x.amountMinor, 0)
     if (owed <= 0) continue
     const team = links.filter((x) => x.leadId === p.leadId).map((x) => x.memberId)
     if (!(team.includes(memberId) || (team.length === 0 && runsStudio(role)) || isAccounting(role))) continue   // (parity map, MI-007) Accounting chases every late payment

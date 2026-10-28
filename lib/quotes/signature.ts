@@ -67,4 +67,4 @@ export function appliedSignatureOf(m: { name: string; signatureKind: string | nu
 }
 /** The switch's words (invented copy, 1.0's card as the model). */
 export const CONSENT_LABEL = 'Put it on the quotes and contracts I prepare'
-export const CONSENT_HELP = 'Off, the studio signature box stays blank and you sign by hand. You can change this any time.'
+export const CONSENT_HELP = 'Off: you sign printed quotes by hand.'   // (the calm UI build 2026-10-27, 1-29) the one helper that changes a decision

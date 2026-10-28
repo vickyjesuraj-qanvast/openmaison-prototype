@@ -82,14 +82,15 @@ export function ProjectMenuItems({ project, onPick, canRename = true, ends, edit
         </>
       ) : null}
       {/* (Projects r4a) the client's portal: who can open it, invite, See it as the client, withdraw — (one-home N-15) the panel's one name */}
-      <DropdownItem onSelect={() => onPick('access')}>Invite to Portal</DropdownItem>
+      {/* (the calm UI build 2026-10-27, 3-25 · W-218) Company's name for it — the panel is the client's portal, invited or not */}
+      <DropdownItem onSelect={() => onPick('access')}>Client portal</DropdownItem>
       {/* (S46B, M7 — 1.0's Preview as Homeowner) the Invite to Portal panel's own See it as, on its own row: refused in the row as the panel's rule */}
       {seeAs ? <DropdownItem onSelect={() => onPick('preview')} disabled={!!seeAs.why} title={seeAs.why ?? undefined}>{`See it as ${seeAs.first}`}</DropdownItem> : null}
       {/* (parity map, FB-042 · FB-043) the project's commission — Owners, Admins and its team (a Designer reads the rule and asks for another) */}
       {id && canRename ? <DropdownItem onSelect={() => { onPick('commission'); openProjectCommission(id) }}>Commission</DropdownItem> : null}
       {/* (parity map, PR-058) a new project from this one — for the same client, another or a new one; its schedule and a draft of its quote */}
       {id ? <DropdownItem onSelect={() => { onPick('duplicate'); openDuplicateProject(id) }}>Duplicate project</DropdownItem> : null}
-      <DropdownItem onSelect={() => onPick('copy')}>Copy Link</DropdownItem>
+      <DropdownItem onSelect={() => onPick('copy')}>Copy link</DropdownItem>   {/* (the calm UI build 2026-10-27, 3-40 · W-005) sentence case */}
       {/* (S46B, M6 — 1.0's Close project, just above Delete) the Stage menu's Completed row: its move, its words, its refusal in the row */}
       {handover ? <DropdownItem onSelect={() => onPick('complete')} disabled={!!handover.why} title={handover.why ?? undefined}>{handover.move === 'review' ? 'Review the handover' : 'Complete handover'}</DropdownItem> : null}
       {ends ? <DropdownItem onSelect={() => onPick('delete')} tone="danger" disabled={!ends.runs} title={ends.runs ? undefined : RUNS_RULE}>Delete</DropdownItem> : null}

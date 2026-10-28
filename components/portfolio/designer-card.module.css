@@ -10,7 +10,7 @@
 .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .name { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .title { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
-.known { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1); margin-top: var(--om-spacing-1); }
+.known { display: block; margin-top: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }   /* (the calm UI build 2026-10-27 — 5-24) a line of words */
 .bio { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .when { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); align-items: flex-start; }
 .whenGlyph { display: inline-flex; flex-shrink: 0; }

@@ -25,6 +25,11 @@
 .cellNone { font: var(--om-type-body-m); color: var(--om-color-on-surface-disabled); }
 .siteName { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-m); text-align: left; }
 .whoName { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subtitle-m); text-align: left; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (the calm UI build 2026-10-27, 3-15 · T-12) a contractor's name wraps to a second line rather than "AquaFlow Plumbing Wo…" */
+.whoName.whoName { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.stateTop { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.rowMenu { position: relative; display: inline-flex; flex-shrink: 0; margin: calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-2)) 0; }
+.menuRow { display: contents; }
 .siteSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 

@@ -251,3 +251,21 @@
   display: flex; flex-direction: column; gap: var(--om-spacing-6);
   padding: var(--om-spacing-4);   /* (REG-372) the sheet gutter — 16, like every other sheet's body */
 }
+
+/* (the calm UI build 2026-10-27 — audit 2-03 · 3-32 · T-08) A section's empty rows as ONE quiet link at its foot ("Add district, area size…"),
+   opening Edit details on the first of them — the house text link at the section's 14, 16 under its last row. */
+.addLink { composes: link from '../../om/text-link.module.css'; align-self: flex-start; margin-top: var(--om-spacing-4); text-align: left; }
+.sectionBody > .kv:empty { display: none; }
+.sectionBody > .kv:empty + .addLink { margin-top: 0; }
+/* (2-14 · 3-18) "· in charge" beside the first member — the role the New gate asks for, in the row's secondary ink */
+.assigneeRole { color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .addLink { min-height: 44px; display: inline-flex; align-items: center; margin-top: var(--om-spacing-1); }
+}
+/* (the calm UI build — audit 2-36) A phone's page bar already holds the name: the identity block keeps its pencil and the contact rows. */
+@media (max-width: 767px) {
+  .nameRow.nameRow { justify-content: flex-end; min-height: 0; }
+  .nameRow .name { display: none; }
+}
+/* (the calm UI build) the Members section's own list, then its chat rows 16 below */
+.memberList + .kv { margin-top: var(--om-spacing-4); }

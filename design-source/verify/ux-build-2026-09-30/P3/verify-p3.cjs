@@ -50,7 +50,8 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   ok((await railLink.getAttribute('href')) === '/tasks?scope=mine&due=overdue', 'rail: Tasks with a badge links to /tasks?scope=mine&due=overdue')
   ok((await railLink.getAttribute('aria-label')) === `Tasks (${mineOverdue} overdue)`, `rail: the badge counts the viewer's own overdue tasks (${mineOverdue})`)
   await railLink.click(); await p.waitForURL(/\/tasks\?scope=mine&due=overdue/); await p.waitForTimeout(900)
-  ok((await p.locator('[data-kb-list="task"]').count()) === 1 && (await p.getByRole('button', { name: /^My Tasks/ }).count()) === 1, 'landing: the scope pill reads My Tasks')
+  await p.getByRole('button', { name: /^My tasks/ }).first().waitFor({ timeout: 8000 }).catch(() => {})   // a loaded machine paints the pill after the list
+  ok((await p.locator('[data-kb-list="task"]').count()) === 1 && (await p.getByRole('button', { name: /^My tasks/ }).count()) === 1, 'landing: the scope pill reads My tasks')   // (the calm UI build 2026-10-27, a deliberate change)
   const overdueChip = p.locator('[data-testid="task-todos"] button', { hasText: 'Overdue' })
   ok((await overdueChip.getAttribute('aria-pressed')) === 'true', 'landing: the Overdue to-do chip is on')
   ok((await rowsShown()) === mineOverdue, `landing: the list is exactly the viewer's overdue tasks (${mineOverdue})`)
@@ -60,12 +61,14 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   await go('/tasks')
   const chips = (await p.locator('[data-testid="task-todos"] button').allInnerTexts()).map((c) => c.trim().split('\n').pop())   // the icon's ligature is the first line
   ok(chips.some((c) => /^Overdue · \d+$/.test(c.trim())), 'All Tasks: an "Overdue · n" to-do chip')
-  ok(chips.some((c) => /^Due today · \d+$/.test(c.trim())), 'All Tasks: a "Due today · n" to-do chip')
+  ok(chips.some((c) => /^Today · \d+$/.test(c.trim())), 'All Tasks: a "Today · n" to-do chip')   // (the calm UI build 2026-10-27, a deliberate change)
   ok(chips.some((c) => /^Unassigned · \d+$/.test(c.trim())), 'T4 · All Tasks: an "Unassigned · n" to-do chip')
   await shot('t5-tasks-todo-chips')
   await p.locator('[data-testid="task-todos"] button', { hasText: 'Unassigned' }).click(); await p.waitForTimeout(300)
-  const unassignedRows = await p.locator('[data-kb-list="task"] [data-kb-row] [data-col="assignees"]').allInnerTexts()
-  ok(unassignedRows.length > 0 && unassignedRows.every((t) => t.includes('Assign')), 'Unassigned: every row shows the "Assign" link — nobody on it')
+  /* (the calm UI build 2026-10-27, a deliberate change — 1-07) an unassigned row's Assign is the grey person-plus, not a purple "Assign" link */
+  const unassignedCells = p.locator('[data-kb-list="task"] [data-kb-row] [data-col="assignees"]')
+  const unassignedCount = await unassignedCells.count()
+  ok(unassignedCount > 0 && (await unassignedCells.locator('[data-testid="task-row-assign"]').count()) === unassignedCount, 'Unassigned: every row shows the person-plus Assign — nobody on it')
 
   /* ── T6 · a title click opens the panel; a double-click selects its Task name ── */
   console.log('T6 — the title opens the task')
@@ -104,9 +107,9 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   await tick(`Select ${T_MAT}`); await tick(`Select ${T_SITE}`); await p.waitForTimeout(400)
   const bar = p.locator('[role="toolbar"][aria-label="2 selected"]')
   const barLabels = (await bar.locator('button').allInnerTexts()).map((s) => s.trim()).filter(Boolean)
-  ok(barLabels[0] === 'Assign' && barLabels[1] === 'Mark as completed', `the bar leads with Assign · Mark as completed (${barLabels.join(' · ')})`)
+  ok(barLabels[0] === 'Assign' && barLabels[1] === 'Mark as done', `the bar leads with Assign · Mark as done (${barLabels.join(' · ')})`)   // (the calm UI build 2026-10-27, a deliberate change)
   await bar.getByRole('button', { name: 'Assign', exact: true }).click(); await p.waitForTimeout(500)
-  const pop = p.locator('[role="dialog"][aria-label="Assign Member"]')
+  const pop = p.locator('[role="dialog"][aria-label="Assign members"]')
   const pb = await pop.boundingBox(), bb = await bar.boundingBox()
   ok(!!pb && !!bb && pb.y + pb.height <= bb.y, 'Assign opens the Assign popover above the bar, never over it')
   await shot('t11-bulk-assign-popover')
@@ -119,7 +122,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   await undo('Sarah added to 2 tasks'); await p.waitForTimeout(900)
   ok(one(`select count(*) from task_assignees where member_id = 'sarah' and task_id in ('${matId}','${siteId}')`) === '0', 'Undo takes Sarah off both again')
   await tick(`Select ${T_MAT}`); await tick(`Select ${T_SITE}`); await p.waitForTimeout(300)
-  await p.locator('[role="toolbar"][aria-label="2 selected"]').getByRole('button', { name: 'Mark as completed' }).click()
+  await p.locator('[role="toolbar"][aria-label="2 selected"]').getByRole('button', { name: 'Mark as done' }).click()
   ok(await seen('2 tasks completed'), 'Mark as completed answers "2 tasks completed"')
   ok(one(`select count(*) from lead_tasks where done = 1 and id in ('${matId}','${siteId}')`) === '2', 'both tasks are completed')
   await undo('2 tasks completed'); await p.waitForTimeout(900)
@@ -139,7 +142,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   ok(!acts.some((t) => t.includes(`You completed the task “${T_SITE}”`)), '…and no "You completed" line for it')
   ok(!acts.some((t) => t.includes(`“${T_MAT}” was updated`)), 'an undone press leaves no line behind (the task keeps its own last-change stamp)')
   const chipNames = (await p.locator('[data-testid="activity-chips"] [role="radio"]').allInnerTexts()).map((s) => s.trim())
-  ok(chipNames.join(' · ') === 'All · Tasks · Files · Notes · Stage', `chips above the timeline: ${chipNames.join(' · ')}`)
+  ok(chipNames.join(' · ') === 'All · Tasks · Files · Notes · Quotes · Stage', `chips above the timeline: ${chipNames.join(' · ')}`)   // (the calm UI build 2026-10-27, a deliberate change) — 2-50's Quotes chip
   await shot('t10-activity-chips-all')
   await p.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: 'Tasks' }).click(); await p.waitForTimeout(300)
   const taskLines = await p.locator('[data-testid="activity-row"]').allInnerTexts()
@@ -162,14 +165,14 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   await p.waitForTimeout(600)
   ok(sql(`select group_concat(member_id) from (select member_id from task_assignees where task_id = (select id from lead_tasks where title = 'Probe T4 task') order by member_id)`) === 'dane,sarah', 'the new task carries Dane and Sarah')
   await p.locator('[data-add] [data-testid="add-row-members"] button[aria-label="Members of the new task"]').click(); await p.waitForTimeout(400)
-  await p.locator('[role="dialog"][aria-label="Assign Member"] label:has(input[aria-label="Assign Sarah"])').click()
-  await p.locator('[role="dialog"][aria-label="Assign Member"]').getByRole('button', { name: 'Assign', exact: true }).click(); await p.waitForTimeout(300)
+  await p.locator('[role="dialog"][aria-label="Assign members"] label:has(input[aria-label="Assign Sarah"])').click()
+  await p.locator('[role="dialog"][aria-label="Assign members"]').getByRole('button', { name: 'Assign', exact: true }).click(); await p.waitForTimeout(300)
   await p.locator('[data-add] input[aria-label="Task title"]').fill('Probe T4 task two'); await p.keyboard.press('Enter')
   await p.waitForTimeout(900)
   ok(sql(`select group_concat(member_id) from task_assignees where task_id = (select id from lead_tasks where title = 'Probe T4 task two')`) === 'dane', 'a member taken off in the add row stays off (Dane only)')
   await p.keyboard.press('Escape')
   await go(`/leads/${OLIVIA}/tasks?add=1`)
-  ok((await p.locator('[data-add] [data-testid="add-row-members"]').innerText()).includes('Assign'), 'a lead with nobody on it: the add row offers "Assign"')
+  ok((await p.locator('[data-add] [data-testid="add-row-members"] button[aria-label="Members of the new task"]').count()) === 1, 'a lead with nobody on it: the add row offers the person-plus to assign')   // (the calm UI build 2026-10-27, a deliberate change)
   await p.keyboard.press('Escape')
 
   /* ── T8 · comments are heard; the count; the file composer ── */
@@ -204,7 +207,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   const before = Number(one(`select count(*) from lead_files where lead_id = '${OLIVIA}'`))
   await go(`/leads/${OLIVIA}/tasks`)
   await p.locator(`button[aria-label="Open ${T_MAT}"]`).click(); await p.waitForTimeout(500)
-  await p.locator('[role="dialog"][aria-label="Task"]').getByRole('button', { name: 'Attach Files', exact: true }).click(); await p.waitForTimeout(500)
+  await p.locator('[role="dialog"][aria-label="Task"]').getByRole('button', { name: 'Attach files', exact: true }).last().click(); await p.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) — the panel's button is "Attach files" now, as its head glyph's name; the button is the last
   const modal = p.locator('[role="dialog"][aria-label="Attach files"]')
   await modal.locator('input[type="file"]').setInputFiles([IMG[0], IMG[1]])
   ok(await modal.getByText('Uploading 2 files').isVisible(), 'the toast reads "Uploading 2 files" — two files in one pick')
@@ -240,7 +243,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
     window.__dt = dt
   }, b64)
   await p.waitForTimeout(300)
-  ok(await p.getByText('Drop to upload to All Files').isVisible(), 'dragging files over the grid shows where they will land')
+  ok(await p.getByText('Drop to upload to All files').isVisible(), 'dragging files over the grid shows where they will land')
   await shot('t2-files-drop-over')
   await p.evaluate(() => { const t = document.querySelector('[data-kb-list="file"]'); t.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: window.__dt })) })
   ok(await seen('File uploaded', 12000), 'a drop uploads: "File uploaded"')
@@ -262,7 +265,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   ok((await p.locator('button[aria-label="Filters (1 active)"]').count()) === 1, 'the Filters button wears its count')
   await shot('t9-files-filtered')
   await p.locator('button[aria-label="Filters (1 active)"]').click(); await p.waitForTimeout(300)
-  await p.locator('[data-testid="files-filters"]').getByRole('button', { name: 'Clear All' }).click()
+  await p.locator('[data-testid="files-filters"]').getByRole('button', { name: 'Clear', exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) — W-010 "Clear"
   await p.locator('[data-testid="files-filters"]').getByRole('button', { name: 'Done' }).click(); await p.waitForTimeout(400)
   const shared = one(`select id from lead_files where lead_id = '${OLIVIA}' and name = 'kitchen-moodboard.jpg' limit 1`)
   await p.locator(`[data-kb-id="${shared}"] button[aria-label="Actions for kitchen-moodboard.jpg"]`).click(); await p.waitForTimeout(300)
@@ -297,7 +300,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   /* ── T12 · Ask Client says what it asks ── */
   console.log('T12 — Ask Client')
   await go(`/leads/${OLIVIA}/questionnaire`)
-  await p.getByRole('button', { name: 'Ask Client' }).click(); await p.waitForTimeout(500)
+  await p.locator('[data-testid="ask-client"]').click(); await p.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) — "Ask Olivia" 
   const ask = p.locator('[data-testid="ask-questions"]')
   const open = Number(one(`select count(*) from questions where lead_id = '${OLIVIA}' and answered_by is null`))
   ok((await ask.locator('input[type="checkbox"]').count()) === open, `the dialog lists the ${open} unanswered questions with ticks`)
@@ -306,7 +309,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   await ask.locator('label').first().click(); await p.waitForTimeout(200)
   ok((await ask.innerText()).includes(`Questions to ask (${open - 1} of ${open})`), 'unticking one: "Questions to ask (n of m)"')
   await shot('t12-ask-dialog')
-  await p.getByRole('button', { name: 'Send via WhatsApp' }).click()
+  await p.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
   /* (parity map CP-110, a deliberate change of this rule) the snackbar says where the questions are now */
   ok(await seen(`Asked Olivia Martinez — ${open - 1} questions are on their page`), `"Asked Olivia Martinez — ${open - 1} questions are on their page"`)
   await p.waitForTimeout(900)
@@ -343,7 +346,7 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
     await g.screenshot({ path: path.join(dir, 'ghost-activity-loader.png') }); await c.close()
     await go(`/leads/${OLIVIA}/activity`)
     const real = await p.locator('[data-testid="activity-chips"] [role="radio"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().y)))
-    ok(bones.length === 5, `the Activity loader draws the five chips (${bones.length})`)
+    ok(bones.length === 6, `the Activity loader draws the six chips (${bones.length})`)   // (the calm UI build 2026-10-27, a deliberate change) — 2-50's Quotes chip, as the page
     ok(bones.length > 0 && real.length > 0 && Math.abs(bones[0] - real[0]) <= 4, `…on the page's chip row (ghost y ${bones[0]} · page y ${real[0]})`)
   }
 

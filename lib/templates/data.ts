@@ -118,7 +118,7 @@ export const DEMO_STUDIO: StudioDetails = {
   tagline: '', social: '', socials: {}, entities: [EMPTY_ENTITY('Demo Studio Pte Ltd')],   // (REG-562) filled in Company › Profile; nothing invented here
 }
 
-const dueLabel = (kind: string, at: Date | null) => (kind === 'approval' ? 'On approval' : at ? (kind === 'estimate' ? `~ ${displayDate(at)}` : displayDate(at)) : '')
+const dueLabel = (kind: string, at: Date | null) => (kind === 'approval' ? 'On signing' : at ? (kind === 'estimate' ? `~ ${displayDate(at)}` : displayDate(at)) : '')
 
 /**
  * (S44Q — row 256, his UAT ask 2026-10-15) The rate `{gst_rate}` prints: the one the quote's GST-bearing lines carry (the most of them; a tie goes to

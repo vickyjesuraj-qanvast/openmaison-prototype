@@ -246,14 +246,16 @@ export function UpdateComposer({ open, projectId, clientFirst, reachLine = null,
         <RichEditor value={html} onChange={setHtml} label="Details" framed minHeight={120}
                     placeholder={`What was done, what’s next, anything ${clientFirst} should decide`} />
       </div>
+      {/* (the calm UI build 2026-10-27, T-01) "the milestone it belongs to" — "stage" is the project's alone */}
       {milestones.length ? (
-        <TextField label="Milestone" mode="select" options={[NONE, ...milestones.map((m) => m.name)]} value={milestone} onChange={setMilestone} helper="The stage of the work it belongs to" />
+        <TextField label="Milestone" mode="select" options={[NONE, ...milestones.map((m) => m.name)]} value={milestone} onChange={setMilestone} helper="The milestone it belongs to" />
       ) : null}
     </>
   )
   return (
     <>
-      <Dialog open={open} onClose={close} closeOnScrim={false} size="form" width={600} title={editing ? 'Edit update' : 'Post an update'} subtitle={subtitle}
+      {/* (the calm UI build 2026-10-27, W-590) named as its button, New update */}
+      <Dialog open={open} onClose={close} closeOnScrim={false} size="form" width={600} title={editing ? 'Edit update' : 'New update'} subtitle={subtitle}
               footer={<>
                 <FootStart>
                   {preview

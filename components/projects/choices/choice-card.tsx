@@ -42,8 +42,10 @@ export function OptionSquare({ o, className }: { o: Pick<OptionView, 'src' | 'he
  * house square, each with its own ⋮ (Edit · Move earlier · Move later · Remove), the pick ringed and ticked. A pick's price shows as
  * "+S$1,308.00 on the contract (S$1,200.00 + GST)" — what the variation order round 6 drafts from it carries (REG-1068; one format, fix-C C-21).
  */
-export function ChoiceCard({ c, clientFirst, invited, section = true, stage, today, now, gstPct, mayChange, busy, onAction, onOption, onAdd }: {
+export function ChoiceCard({ c, groupedBy, clientFirst, invited, section = true, stage, today, now, gstPct, mayChange, busy, onAction, onOption, onAdd }: {
   c: ChoiceView
+  /** (the calm UI build 2026-10-27, 3-27 · T-04) the group the card sits under says its room (or its milestone) — the card doesn't say it again */
+  groupedBy?: 'room' | 'milestone'
   clientFirst: string
   /** The client can open their portal — a shared choice reaches them there. */
   invited: boolean
@@ -84,7 +86,8 @@ export function ChoiceCard({ c, clientFirst, invited, section = true, stage, tod
       <span className={styles.bandText}><b>Draft</b> — {c.options.length ? (reaches ? `only the studio sees it. Share it and ${clientFirst} chooses on their portal.` : !invited ? `only the studio sees it. Share it, and ${clientFirst} chooses once invited to the portal.` : `only the studio sees it. The portal’s Choices are switched off — choose with ${clientFirst} once it’s shared.`) : `add the options, then share it with ${clientFirst}.`}</span>
       {mayChange ? (
         <span className={styles.bandActions}>
-          <Button onPress={() => onAction('share', c)} isDisabled={busy || !!shareWhy} data-testid="choice-share">{`Share with ${clientFirst}`}</Button>
+          {/* (the calm UI build 2026-10-27, 3-27 · T-03) outlined — the page's one filled button is the project header's */}
+          <Button variant="primary" appearance="outlined" onPress={() => onAction('share', c)} isDisabled={busy || !!shareWhy} data-testid="choice-share">{`Share with ${clientFirst}`}</Button>
         </span>
       ) : null}
     </div>
@@ -100,8 +103,8 @@ export function ChoiceCard({ c, clientFirst, invited, section = true, stage, tod
       </span>
       {mayChange ? (
         <span className={styles.bandActions}>
-          <Button onPress={() => onAction('share', c)} isDisabled={busy || !!shareWhy} data-testid="choice-share-again">Share again</Button>
-          <Button variant="secondary" appearance="outlined" onPress={() => onAction('choose', c)} isDisabled={busy || !!pickWhy} data-testid="choice-choose">{`Choose with ${clientFirst}`}</Button>
+          {/* (the calm UI build 2026-10-27, 3-27 · T-02 · T-03) one verb, outlined: Share again — Choose with {client} is in the card's ⋮ */}
+          <Button variant="primary" appearance="outlined" onPress={() => onAction('share', c)} isDisabled={busy || !!shareWhy} data-testid="choice-share-again">Share again</Button>
         </span>
       ) : null}
     </div>
@@ -121,8 +124,8 @@ export function ChoiceCard({ c, clientFirst, invited, section = true, stage, tod
       </span>
       {mayChange ? (
         <span className={styles.bandActions}>
+          {/* (the calm UI build 2026-10-27, 3-27 · T-02) one verb: Invite {client} while they can't see it — Choose with {client} is in the card's ⋮ */}
           {!invited ? <Button appearance="text" onPress={() => onAction('invite', c)} isDisabled={busy} data-testid="choice-invite">{`Invite ${clientFirst}`}</Button> : null}
-          <Button variant="secondary" appearance="outlined" onPress={() => onAction('choose', c)} isDisabled={busy || !!pickWhy} data-testid="choice-choose">{`Choose with ${clientFirst}`}</Button>
         </span>
       ) : null}
     </div>
@@ -152,10 +155,18 @@ export function ChoiceCard({ c, clientFirst, invited, section = true, stage, tod
         <div className={styles.head}>
           <div className={styles.headText}>
             <h3 className={styles.choiceTitle}>{c.title}</h3>
+            {/* (the calm UI build 2026-10-27, 3-27 · T-06) the room, the milestone and the day it's needed by are words under the title — the room left
+                out under its own room's group (the milestone under its milestone's); a capitals tag only for the state */}
             <span className={styles.meta}>
-              {c.room ? <MetaChip icon="chair">{c.room}</MetaChip> : null}
-              {c.milestone ? <MetaChip icon="flag">{c.milestone.title}</MetaChip> : null}
-              {c.neededBy && c.status !== 'chosen' && !(done && c.status === 'shared') ? <MetaChip icon="event" color={overdue ? 'red' : 'default'}>{neededLine(c.neededBy, today)}</MetaChip> : null}
+              {(() => {
+                const words = [groupedBy === 'room' ? null : c.room, groupedBy === 'milestone' ? null : c.milestone?.title ?? null].filter(Boolean) as string[]
+                const needed = c.neededBy && c.status !== 'chosen' && !(done && c.status === 'shared') ? neededLine(c.neededBy, today) : null
+                return words.length || needed ? (
+                  <span className={styles.metaWords} data-testid="choice-meta">
+                    {words.join(' · ')}{words.length && needed ? ' · ' : ''}{needed ? <span data-alert={overdue || undefined} className={styles.neededWord}>{needed.replace(/^./, (x) => x.toUpperCase())}</span> : null}
+                  </span>
+                ) : null
+              })()}
               {c.status === 'chosen' ? <span data-testid="choice-state"><MetaChip color="green">Chosen</MetaChip></span> : null}   {/* (REG-1060) the row's own chip, as the portal draws "Chosen" */}
               {c.status === 'declined' && c.answer ? <span data-testid="choice-state"><MetaChip color="red">{answerOf(c.answer.kind).chip}</MetaChip></span> : null}   {/* (gaps build D, item 2) */}
             </span>
@@ -173,7 +184,9 @@ export function ChoiceCard({ c, clientFirst, invited, section = true, stage, tod
             {c.receipt ? <DropdownItem onSelect={() => pick('receipt')} help="The pick, printable — also in Files › Choices">Selection receipt</DropdownItem> : null}
             {/* (parity map, TD-044 — 1.0's receipt for every answered selection) the client's no has its receipt too */}
             {!c.receipt && c.status === 'declined' && c.answer ? <DropdownItem onSelect={() => pick('receipt')} help={`${clientFirst}’s answer, printable`}>Selection receipt</DropdownItem> : null}
-            {mayChange ? <DropdownItem onSelect={() => pick('choose')} disabled={!!pickWhy} title={pickWhy ?? undefined} help={pickWhy ? undefined : c.status === 'chosen' ? 'Until the work starts' : 'A pick made with them off the portal'}>{c.status === 'chosen' ? 'Change the pick' : `Choose with ${clientFirst}`}</DropdownItem> : null}
+            {/* (the calm UI build 2026-10-27, 3-27) the band's Choose with {client} lives here — its handle with it */}
+            {mayChange && c.status === 'chosen' ? <DropdownItem onSelect={() => pick('choose')} disabled={!!pickWhy} title={pickWhy ?? undefined} help={pickWhy ? undefined : 'Until the work starts'}>Change the pick</DropdownItem> : null}
+            {mayChange && c.status !== 'chosen' ? <span className={styles.menuRow} data-testid="choice-choose"><DropdownItem onSelect={() => pick('choose')} disabled={!!pickWhy} title={pickWhy ?? undefined} help={pickWhy ? undefined : 'A pick made with them off the portal'}>{`Choose with ${clientFirst}`}</DropdownItem></span> : null}
             {mayChange && (c.status === 'shared' || c.status === 'declined') ? <DropdownItem onSelect={() => pick('unshare')} disabled={!!unshareWhy} title={unshareWhy ?? undefined} help={`${clientFirst} no longer sees it — it goes back to Draft`}>Take back</DropdownItem> : null}
             {mayChange ? <DropdownItem tone="danger" onSelect={() => pick('delete')} disabled={!!deleteWhy} title={deleteWhy ?? undefined}>Delete</DropdownItem> : null}
           </PortalMenu>
@@ -252,7 +265,7 @@ function OptionTile({ o, c, first, last, chosen, mayChange, gstPct, onOption }: 
         </span>
       ) : null}
       <Tooltip label={o.name} whenCut><span className={styles.optionName}>{o.name}</span></Tooltip>   {/* (REG-1063) a cut name on the house Tooltip, never a native title (REG-820) */}
-      <span className={styles.optionPrice} data-none={o.priceMinor == null || undefined}>{priceText(o.priceMinor, gstPct)}</span>   {/* (fix-C, C-21) "+S$240 + GST" */}
+      <span className={styles.optionPrice} data-none={o.priceMinor == null || undefined}>{priceText(o.priceMinor, gstPct)}</span>   {/* (fix-C, C-21) · (the calm UI build 2026-10-27, 3-21) "+S$261.60 incl. GST" — the client's figure */}
       <span className={styles.optionSource}>{o.vendor ? `${SOURCE_WORD[o.source]} · ${o.vendor}` : SOURCE_WORD[o.source]}</span>   {/* (gaps build D, item 11) its vendor */}
     </div>
   )

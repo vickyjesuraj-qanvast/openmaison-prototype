@@ -20,7 +20,7 @@ type Group = 'priority' | 'status' | 'owners'
 const TABS: { key: Group; label: string }[] = [
   { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
-  { key: 'owners', label: 'Looks after' },
+  { key: 'owners', label: 'Handled by' },   // (the calm UI build 2026-10-27, W-244) the drawer's own word
 ]
 export type TicketPerson = { id: string; name: string; color: string; role?: string }
 

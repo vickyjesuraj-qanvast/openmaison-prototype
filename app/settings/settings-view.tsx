@@ -15,7 +15,7 @@ import { Switch } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dialog } from '@/components/om/dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { defaultNextNumber, DEFAULT_LEAD_REASONS, DEFAULT_LEAD_SOURCES, formatQuoteNumber, initialsOf, isDefaultNumbering, nextSequence, shortStudioName, type Studio, PREPARED_BY_OPTIONS, QUOTE_APPROVAL_OPTIONS, ROUND_STEP_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, tradeKey, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type TemplateApproval } from '@/lib/settings/types'
+import { defaultNextNumber, formatQuoteNumber, initialsOf, isDefaultNumbering, nextSequence, shortStudioName, type Studio, PREPARED_BY_OPTIONS, QUOTE_APPROVAL_OPTIONS, ROUND_STEP_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, tradeKey, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type TemplateApproval } from '@/lib/settings/types'
 import { CustomFieldsCard } from './custom-fields-card'
 import { LeadStagesCard } from './lead-stages-card'   // (pending modules S05)
 import { DEFAULT_LEAD_STAGE_RULES, type LeadStageRules } from '@/lib/settings/types'
@@ -23,7 +23,7 @@ import type { CustomFieldDef } from '@/lib/leads/custom-fields-model'
 import { setCostVisibility } from './actions'   // (pending modules S41b-1)
 import { editLeadReason, renameLeadSource, renameTrade, setLeadReasons, setLeadSources, setLeadVisibility, setNumbering, setQuoteApproval, setQuoteRules, setStageMovement, setStudioGst, setTemplateApproval, setTradeNote, setTrades } from './actions'
 import { GATE_HELP, GATE_LABEL, ListEntryDialog, type EntryEdit } from './list-entry-dialog'
-import { LOST_COMPETITOR, LOST_POSTPONED, LEAD_VISIBILITY_OPTIONS, VISIBILITY_HELP, VISIBILITY_HREF, VISIBILITY_POINTER, type LeadSourceEntry, type LeadVisibility, type LeadReason, type LeadReasons } from '@/lib/settings/types'
+import { LOST_COMPETITOR, LOST_POSTPONED, LEAD_VISIBILITY_OPTIONS, VISIBILITY_HELP, VISIBILITY_HREF, type LeadSourceEntry, type LeadVisibility, type LeadReason, type LeadReasons } from '@/lib/settings/types'
 import { NotificationsSettings } from './notifications-settings'
 import { UNTOUCHED_OPTIONS, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
 import { setNotificationRules } from '@/app/notifications/actions'
@@ -36,11 +36,11 @@ import { useHashLanding } from '@/components/company/use-hash-landing'
 import { useRouter } from 'next/navigation'
 import { decimalTyped } from '@/lib/format'
 import { withFrom } from '@/lib/nav'
-import { SETTINGS_MODULES, moduleLinks, settingsHref, type SettingsModule } from '@/lib/settings/modules'
-import { LEAD_SOURCES_HELP, UNTOUCHED_HELP, WHO_SEES_LEADS_MORE, leadsModuleHelp, quotesModuleHelp } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
+import { SETTINGS_MODULES, settingsHref, type SettingsModule } from '@/lib/settings/modules'
+import { FINANCE_PROFILE_POINTER, LEAD_SOURCES_HELP, RELATED_DOORS, UNTOUCHED_HELP, UNTOUCHED_LABEL, WHO_SEES_LEADS_MORE, leadsModuleHelp, quotesModuleHelp } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import type { ExpenseCategoriesData } from '@/components/finance/expense-categories-settings'
 import { ACCOUNTING, MARKETING, opensPath } from '@/lib/settings/roles'   // (pending modules S06) Accounting's Settings is Finance alone
-import { ModuleHead } from './module-head'
+import { ModuleHead, ModuleRelated } from './module-head'
 import { UnitsCard } from './units-card'   // (S44I — M9)
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { TRADES_FULL, TRADES_MAX, listedAs, listedMatch, mergeMessage, mergeTitle, mergedLine, type TradeMergeUndo, type TradeUsage } from '@/lib/settings/trades'   // (S44P, M14)
@@ -69,7 +69,7 @@ import { MeetingsSettings } from './meetings-settings'   // (pending modules S23
 import type { MeetingsSettingsData } from './meetings-actions'
 import styles from './settings.module.css'
 
-export function SettingsView({ leadStages, stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, tradeNotes = {}, units = [], unitsManaged = false, meName, section = 'studio', from, rules, team, leadSources, sourcesManaged, sourceCounts, leadVisibility, studioName, notificationRules, messageTemplates, leadReasons, reasonsManaged, reasonCounts, canManage, customFields, studio, quoteNumbers, newQuoteDefaults, projectNumbering, projectNumbers, projectUpdateReview = true, projectInvoices, projectEnding, projectStart = 'quote', projectUpdateReviewers = [], projectCosts, booksSettings, projectTickets, clientMessages, projectsI, contractRules, onlyBooks = false, onlyLeads = false, setup = null, meetings = null, costVisibility = DEFAULT_COST_VISIBILITY }: {
+export function SettingsView({ leadStages, stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, tradeNotes = {}, units = [], unitsManaged = false, meName, section = 'studio', from, rules, team, leadSources, sourceCounts, leadVisibility, studioName, notificationRules, messageTemplates, leadReasons, reasonCounts, canManage, customFields, studio, quoteNumbers, newQuoteDefaults, projectNumbering, projectNumbers, projectUpdateReview = true, projectInvoices, projectEnding, projectStart = 'quote', projectUpdateReviewers = [], projectCosts, booksSettings, projectTickets, clientMessages, projectsI, contractRules, onlyBooks = false, onlyLeads = false, setup = null, meetings = null, costVisibility = DEFAULT_COST_VISIBILITY }: {
   /** (REG-645, settings parity Q-01 · Q-02) The open module (`?section=`) and where the page was opened from (`?from=`, Back). */
   section?: SettingsModule; from?: string
   /** (pending modules S08) Settings › Studio's Set up your studio list for this member — null when it does not show for them */
@@ -149,38 +149,40 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
   const [tApproval, setTApproval] = useState<TemplateApproval>(templateApproval)
   const [seenT, setSeenT] = useState(templateApproval)
   if (seenT !== templateApproval) { setSeenT(templateApproval); setTApproval(templateApproval) }
-  const chooseTemplateApproval = async (next: TemplateApproval) => {
+  /* (the calm UI build 2026-10-27, 5-18 · T-10 — one way to save) a choice, a switch or a select saves as it changes and answers with Undo, which
+     puts the last value back through the same setter (and says nothing more, as the approvals card's rows do) */
+  const chooseTemplateApproval = async (next: TemplateApproval, undoing = false) => {
     if (next === tApproval) return
     const prev = tApproval
     setTApproval(next)
     try {
       await setTemplateApproval(next)
-      snackbar({ message: `Template approval set to ${TEMPLATE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}` })
+      if (!undoing) snackbar({ message: `Template approval set to ${TEMPLATE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}`, actionLabel: 'Undo', onAction: () => { void chooseTemplateApproval(prev, true) } })
     } catch {
       setTApproval(prev)
       snackbar({ message: 'Couldn’t save the setting — please try again' })
     }
   }
-  const chooseApproval = async (next: QuoteApproval) => {
+  const chooseApproval = async (next: QuoteApproval, undoing = false) => {
     if (next === approval) return
     const prev = approval
     setApproval(next)   // optimistic, as Stage movement
     try {
       await setQuoteApproval(next)
-      snackbar({ message: `Quote approval set to ${QUOTE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}` })
+      if (!undoing) snackbar({ message: `Quote approval set to ${QUOTE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}`, actionLabel: 'Undo', onAction: () => { void chooseApproval(prev, true) } })
     } catch {
       setApproval(prev)
       snackbar({ message: 'Couldn’t save the setting — please try again' })
     }
   }
 
-  const choose = async (next: StageMovement) => {
+  const choose = async (next: StageMovement, undoing = false) => {
     if (next === mode) return
     const prev = mode
     setMode(next)   // optimistic — the cards answer at once, the studio setting follows
     try {
       await setStageMovement(next)
-      snackbar({ message: `Stage movement set to ${STAGE_MOVEMENT_OPTIONS.find((o) => o.key === next)?.title ?? next}` })
+      if (!undoing) snackbar({ message: `Stage movement set to ${STAGE_MOVEMENT_OPTIONS.find((o) => o.key === next)?.title ?? next}`, actionLabel: 'Undo', onAction: () => { void choose(prev, true) } })
     } catch {
       setMode(prev)
       snackbar({ message: 'Couldn’t save the setting — please try again' })
@@ -209,10 +211,11 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
   }
   /* (REG-584 · 589 · 590) The studio's rules write at once, each with its own word. */
   const [rulesState, setRulesState] = useState<QuoteRules>(rules)
-  const writeRules = async (patch: Partial<QuoteRules>, done: string) => {
+  const writeRules = async (patch: Partial<QuoteRules>, done: string, undoing = false) => {
     const prev = rulesState
+    const back = Object.fromEntries(Object.keys(patch).map((k) => [k, prev[k as keyof QuoteRules]])) as Partial<QuoteRules>   // (the calm UI build, 5-18) what Undo writes back
     setRulesState((r) => ({ ...r, ...patch }))
-    try { const clean = await setQuoteRules(patch); setRulesState(clean); snackbar({ message: done }) }
+    try { const clean = await setQuoteRules(patch); setRulesState(clean); if (!undoing) snackbar({ message: done, actionLabel: 'Undo', onAction: () => { void writeRules(back, done, true) } }) }
     catch { setRulesState(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
   }
   const saveNumbering = async (): Promise<boolean> => {
@@ -237,11 +240,11 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
   const router = useRouter()
   /* (REG-601) Who sees leads: two choice cards, optimistic like Stage movement. */
   const [vis, setVis] = useState<LeadVisibility>(leadVisibility)
-  const chooseVis = async (next: LeadVisibility) => {
+  const chooseVis = async (next: LeadVisibility, undoing = false) => {
     if (next === vis) return
     const prev = vis
     setVis(next)
-    try { await setLeadVisibility(next); snackbar({ message: next === 'assigned' ? 'Designers now see only their own leads, and Managers their own and their team’s' : 'Everyone sees every lead again' }) }
+    try { await setLeadVisibility(next); if (!undoing) snackbar({ message: next === 'assigned' ? 'Designers now see only their own leads, and Managers their own and their team’s' : 'Everyone sees every lead again', actionLabel: 'Undo', onAction: () => { void chooseVis(prev, true) } }) }
     catch { setVis(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
   }
   /* (pending modules S41b-1) Who sees costs and margins: a switch per role, the Owner's alone — optimistic, put back when refused, one sentence
@@ -262,12 +265,13 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
   /* (UX audit S9) The untouched-lead delay is a response rule: it lives with the leads, not under the notification rows. It writes the same
      notification rule the bell reads (setNotificationRules), optimistic and put back when refused. */
   const [untouched, setUntouched] = useState(notificationRules.untouchedMinutes)
-  const chooseUntouched = async (label: string) => {
+  const chooseUntouched = async (label: string, undoing = false) => {
     const o = UNTOUCHED_OPTIONS.find((x) => x.label === label)
     if (!o || o.minutes === untouched) return
     const prev = untouched
+    const prevLabel = UNTOUCHED_OPTIONS.find((x) => x.minutes === prev)?.label
     setUntouched(o.minutes)
-    try { const next = await setNotificationRules({ untouchedMinutes: o.minutes }); setUntouched(next.untouchedMinutes); snackbar({ message: `Untouched leads raised after ${o.label}` }) }
+    try { const next = await setNotificationRules({ untouchedMinutes: o.minutes }); setUntouched(next.untouchedMinutes); if (!undoing) snackbar({ message: `New leads nobody has contacted are flagged after ${o.label}`, ...(prevLabel ? { actionLabel: 'Undo', onAction: () => { void chooseUntouched(prevLabel, true) } } : {}) }) }
     catch { setUntouched(prev); snackbar({ message: 'Couldn’t save the untouched-lead delay — please try again' }) }
   }
   /* (REG-599) Lead sources: add · retire · restore · remove — the whole list written at once, as the trades are. */
@@ -348,7 +352,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
   const guardQV = <T,>(fn: (v: T) => void) => (v: T) => { if (!canManage) { snackbar({ message: LOCKED_Q }); return } fn(v) }
   /* (REG-561) Trades: a managed list — add one, remove one — written at once. */
   const [list, setList] = useState<string[]>(trades)
-  const [managed, setManaged] = useState(tradesManaged)
+  const [, setManaged] = useState(tradesManaged)
   const [newTrade, setNewTrade] = useState('')
   /* (REG-617, parity Q-08) A trade's note: it prints under a section of that name when the quote writes none of its own. */
   const [notes, setNotes] = useState<Record<string, string>>(tradeNotes)
@@ -496,18 +500,20 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
             <FinanceSettings costs={projectCosts ?? null} books={booksSettings ?? null} studio={short} canManage={canManage} from={fromHere('finance')} linksOpen={onlyBooks ? (href) => !href.startsWith('/settings') && opensPath(ACCOUNTING, href) : undefined}
                              money={projectInvoices ? { invoices: projectInvoices.rules, paper: projectInvoices.paper ?? null, entities: projectInvoices.entities ?? [], payments: projectInvoices.payments ? { rules: projectInvoices.payments.rules, team: projectInvoices.payments.team } : null } : null}
                              numbers={documentNumbers} />
-          ) : section === 'meetings' && meetings ? (   /* (pending modules S23) the co-pilot's playbook — 1.0's Accounts › AI & Copilot */
+          ) : null}
+          {/* (the calm UI build, 5-17) Finance's Related line — after its section (finance-settings.tsx draws the section; its Profile door carries
+              the pointer the head used to say, FINANCE_PROFILE_POINTER) */}
+          {section === 'finance' ? (
+            <ModuleRelated section="finance" open={onlyBooks ? (path) => opensPath(ACCOUNTING, path) : undefined} tips={{ '/company/profile': { tip: FINANCE_PROFILE_POINTER, testId: 'finance-profile-pointer' } }} />
+          ) : null}
+          {section === 'studio' || section === 'projects' || section === 'finance' ? null : section === 'meetings' && meetings ? (   /* (pending modules S23) the co-pilot's playbook — 1.0's Accounts › AI & Copilot */
             <MeetingsSettings data={meetings} studio={short} canManage={canManage} from={fromHere('meetings')} />
           ) : section === 'notifications' ? (
             <NotificationsSettings rules={notificationRules} templates={messageTemplates} canManage={canManage} clientMessages={clientMessages} studio={short} />
           ) : section === 'leads' ? (
             <section className={styles.panel} aria-labelledby="settings-leads-title" data-testid="settings-leads">
-              {/* (pending modules S14) the head, then one line under it, as Projects' — who sees which leads is kept under Roles & access */}
-              <div className={styles.sectionHead}>
-                <ModuleHead id="settings-leads-title" title="Lead management" help={leadsModuleHelp(short)} readOnly={readOnly}
-                            links={moduleLinks('leads', fromHere('leads')).filter((l) => !onlyLeads || opensPath(MARKETING, l.href))} />   {/* (S44O — C6) Marketing's Kept in Company: Integrations */}
-                <span className={styles.settingHelp} data-testid="leads-visibility-pointer">{VISIBILITY_POINTER} {onlyLeads ? 'Roles & access › Who sees leads' : <HelpLink href={VISIBILITY_HREF} testId="leads-visibility-link">Roles &amp; access › Who sees leads</HelpLink>}.</span>   {/* (S44O — C6) Marketing's Settings is this module alone: the place is named, not linked */}
-              </div>
+              {/* (the calm UI build, 5-17) one help line; who sees which leads — kept under Roles & access — is a door on the module's Related line */}
+              <ModuleHead id="settings-leads-title" title="Lead management" help={leadsModuleHelp(short)} readOnly={readOnly} />
               <ReadOnlyScope readOnly={readOnly}>
               {/* (pending modules S05 — Manage Stages) The stages, what each step asks for, the leads in each, and how leads move — the card the
                   listing's stage menu › Manage Stages opens (#lead-stages). It absorbed the Stage movement card. */}
@@ -520,7 +526,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                   <span className={styles.settingHelp}>{UNTOUCHED_HELP}</span>
                 </div>
                 <div className={styles.numGrid}>
-                  <TextField label="Raise an untouched lead after" mode="select" options={UNTOUCHED_OPTIONS.map((o) => o.label)} value={UNTOUCHED_OPTIONS.find((o) => o.minutes === untouched)?.label ?? '30 minutes'}
+                  <TextField label={UNTOUCHED_LABEL} mode="select" options={UNTOUCHED_OPTIONS.map((o) => o.label)} value={UNTOUCHED_OPTIONS.find((o) => o.minutes === untouched)?.label ?? '30 minutes'}
                              onChange={(v) => { if (!canManage) { snackbar({ message: LOCKED }); return } void chooseUntouched(v) }} />
                 </div>
               </div>
@@ -528,7 +534,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
               <div className={styles.setting} id="lead-sources" data-testid="lead-sources">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Lead sources</span>
-                  <span className={styles.settingHelp}>{LEAD_SOURCES_HELP} {!sourcesManaged ? 'Not set yet — these are the defaults.' : JSON.stringify(sources) === JSON.stringify(DEFAULT_LEAD_SOURCES) ? 'These are the defaults.' : ''}</span>
+                  <span className={styles.settingHelp}>{LEAD_SOURCES_HELP}</span>   {/* (the calm UI build, W-281 · W-406) “Not set yet — these are the defaults.” read as an error; the list says itself */}
                 </div>
                 <ul className={styles.trades} aria-label="Lead sources">
                   {sources.map((s, i) => {
@@ -540,7 +546,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                         {!canManage ? null : s.retired ? (
                           <Tooltip label={`Restore ${s.name}`}><IconButton icon="undo" label={`Restore ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.map((x) => (x.name === s.name ? { ...x, retired: false } : x)), `${s.name} restored`) }} /></Tooltip>
                         ) : n > 0 ? (
-                          <Tooltip label={`Retire ${s.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Retire ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.map((x) => (x.name === s.name ? { ...x, retired: true } : x)), `${s.name} retired — its leads keep it`) }} /></Tooltip>
+                          <Tooltip label={`Stop offering ${s.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Stop offering ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.map((x) => (x.name === s.name ? { ...x, retired: true } : x)), `${s.name} is no longer offered — its leads keep it`) }} /></Tooltip>
                         ) : (
                           <Tooltip label={`Remove ${s.name}`}><IconButton icon="close" label={`Remove ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.filter((x) => x.name !== s.name), `${s.name} removed`, true) }} /></Tooltip>
                         )}
@@ -558,7 +564,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
               <div className={styles.setting} data-testid="lead-reasons">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Lost and On Hold reasons</span>   {/* (Dane UAT 2.21) the card names both lists */}
-                  <span className={styles.settingHelp}>What the Lost and On Hold dialogs offer. Retire a reason to keep the leads that carry it and stop offering it; a reason no lead carries can be removed. A Lost reason can expect logged contacts — the dialog then says how many there are. {!reasonsManaged ? 'Not set yet — these are the defaults.' : JSON.stringify(reasons) === JSON.stringify(DEFAULT_LEAD_REASONS) ? 'These are the defaults.' : ''}</span>
+                  <span className={styles.settingHelp}>What the Lost and On Hold dialogs offer. Stop offering a reason to keep the leads that carry it; a reason no lead carries can be removed. A Lost reason can expect logged contacts — the dialog then says how many there are.</span>
                 </div>
                 {(['lost', 'hold'] as const).map((kind) => {
                   const list = reasons[kind]
@@ -578,7 +584,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                               {!canManage ? null : r.retired ? (
                                 <Tooltip label={`Restore ${r.name}`}><IconButton icon="undo" label={`Restore ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.map((x) => (x.name === r.name ? { ...x, retired: false } : x)) }, `${r.name} restored`) }} /></Tooltip>
                               ) : n > 0 ? (
-                                <Tooltip label={`Retire ${r.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Retire ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.map((x) => (x.name === r.name ? { ...x, retired: true } : x)) }, `${r.name} retired — its leads keep it`) }} /></Tooltip>
+                                <Tooltip label={`Stop offering ${r.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Stop offering ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.map((x) => (x.name === r.name ? { ...x, retired: true } : x)) }, `${r.name} is no longer offered — its leads keep it`) }} /></Tooltip>
                               ) : (
                                 <Tooltip label={`Remove ${r.name}`}><IconButton icon="close" label={`Remove ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.filter((x) => x.name !== r.name) }, `${r.name} removed`, true) }} /></Tooltip>
                               )}
@@ -609,11 +615,13 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                                  : entryEdit?.entry.name === LOST_COMPETITOR ? 'Under this name the Lost dialog asks which firm the client went with; renamed, it no longer asks. A new name carries the leads that carry it.'
                                  : entryEdit?.entry.name === LOST_POSTPONED ? 'Under this name the Lost dialog asks when the project may restart; renamed, it no longer asks. A new name carries the leads that carry it.'
                                  : 'A new name carries the leads that carry it.'} />
+              {/* (the calm UI build, 5-17 · W-438) the module's doors at its end — Marketing's Integrations only, and Who sees leads named, not linked */}
+              <ModuleRelated section="leads" open={onlyLeads ? (path) => opensPath(MARKETING, path) : undefined}
+                             doors={[{ key: 'visibility', label: RELATED_DOORS.visibility.label, tip: RELATED_DOORS.visibility.tip, href: onlyLeads ? null : VISIBILITY_HREF, testId: 'leads-visibility-link', pointer: { testId: 'leads-visibility-pointer' } }]} />
             </section>
           ) : (
             <section className={styles.panel} aria-labelledby="settings-quotes-title" data-testid="settings-quotes">
-              <ModuleHead id="settings-quotes-title" title="Quotes & pricing" help={quotesModuleHelp(short)} readOnly={readOnly}
-                          links={moduleLinks('quotes', fromHere('quotes'))} />
+              <ModuleHead id="settings-quotes-title" title="Quotes & pricing" help={quotesModuleHelp(short)} readOnly={readOnly} />
               <ReadOnlyScope readOnly={readOnly}>
               {/* Quote approval (user 2026-08-30) and Template approval (REG-501) lived under Leads until this module was built (REG-561). */}
               <div className={styles.setting} id="quote-approval">   {/* (Dane UAT 2.23) Who may do what's rows land here */}
@@ -672,14 +680,14 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                 <div className={styles.example}><span className={styles.settingHelp}>Next quote:</span> <span className={styles.exampleNo} data-testid="number-example">{example}</span>{exampleCom ? <><span className={styles.settingHelp}>· commercial:</span> <span className={styles.exampleNo} data-testid="number-example-commercial">{exampleCom}</span></> : null}</div>
                 {readOnly ? null : <div className={styles.settingActions}>
                   <Button variant="secondary" appearance="outlined" onPress={() => setNum(savedNum)} isDisabled={!numDirty || numBusy}>Discard</Button>
-                  <Button onPress={guardQ(() => { void saveNumbering() })} isDisabled={!numDirty || numBusy}>{numBusy ? 'Saving…' : 'Save numbering'}</Button>
+                  <Button onPress={guardQ(() => { void saveNumbering() })} isDisabled={!numDirty || numBusy}>{numBusy ? 'Saving…' : 'Save'}</Button>   {/* (the calm UI build, 5-18 · W-017) one word for one verb */}
                 </div>}
               </div>
               {/* (REG-561) Trades — the Category column's list and what templates group by; free text on a quote is kept as its own label. */}
               <div className={styles.setting} id="trades" data-testid="trades">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Trades</span>
-                  <span className={styles.settingHelp}>The trades the Category column offers on every quote and the templates group by. Press a trade to rename it, move it or give it a note; the note prints under that trade’s section when a quote writes none of its own. {managed ? '' : 'Not set yet — these are the trades your quotes and My Items already use.'}</span>
+                  <span className={styles.settingHelp}>The trades a quote line is filed under and the templates group by. Press a trade to rename it, move it or give it a note; the note prints under that trade’s section when a quote writes none of its own.</span>   {/* (the calm UI build, T-01 Trade · W-574) */}
                 </div>
                 <ul className={styles.trades} aria-label="Trades">
                   {list.map((t, i) => (
@@ -734,7 +742,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                   {/* A rate takes one decimal (8.5 %): digits and one point, as typed — the amount filter keeps whole dollars only. */}
                   <TextField label="GST rate (%)" value={gstRate} inputMode="decimal" maxLength={4} onChange={(v) => setGstRate(decimalTyped(v, 1))} disabled={!gst.gstRegistered}
                              error={gstRate.trim() && !rateValid ? 'Between 0 and 30' : undefined} helper="A new line starts at this rate" />
-                  {readOnly ? null : <Button variant="secondary" appearance="outlined" onPress={guardQ(() => { void writeGst({ gstPct: rateValue }, `New lines start at ${Math.round(rateValue * 10) / 10}% GST`) })} isDisabled={!rateDirty || !gst.gstRegistered}>Save rate</Button>}
+                  {readOnly ? null : <Button variant="secondary" appearance="outlined" onPress={guardQ(() => { void writeGst({ gstPct: rateValue }, `New lines start at ${Math.round(rateValue * 10) / 10}% GST`) })} isDisabled={!rateDirty || !gst.gstRegistered}>Save</Button>}
                 </div>
               </div>
               {/* (one-home N-07) CaseTrust left this module: it is recorded once, with the studio's other registrations, on Company › Profile */}
@@ -742,7 +750,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
               <div className={styles.setting} data-testid="rounding">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Selling prices</span>
-                  <span className={styles.settingHelp}>Round every selling price to a step as it is typed or added from My Items. The cost never moves; the markup takes the difference. Round Prices on a quote still rounds the whole quote at once.</span>
+                  <span className={styles.settingHelp}>Round every selling price to a step as it is typed or added from the price book. The cost never moves; the markup takes the difference. Round Prices on a quote still rounds the whole quote at once.</span>
                 </div>
                 <div className={styles.numGrid}>
                   <TextField label="Round selling prices to" mode="select" value={ROUND_STEP_OPTIONS.find((o) => o.key === rulesState.roundStep)?.label ?? 'Not rounded'} options={ROUND_STEP_OPTIONS.map((o) => o.label)}
@@ -753,7 +761,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
               <div className={styles.setting} data-testid="payment-lock" id="payment-lock">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Who may change the payment schedule</span>
-                  <span className={styles.settingHelp}>Locked, everyone but Owners and Admins sees a quote’s milestones and cannot edit, reorder, add or replace them. The split a new quote starts with is under New quotes start with.</span>
+                  <span className={styles.settingHelp}>Locked, everyone but Owners and Admins sees a quote’s payments and cannot edit, reorder, add or replace them. The split a new quote starts with is under New quotes start with.</span>
                 </div>
                 <label className={styles.switchRow}><Switch size="sm" isSelected={rulesState.paymentLock} isDisabled={readOnly} onChange={guardQV((v: boolean) => { void writeRules({ paymentLock: v }, v ? 'Only Owners and Admins change the payment schedule now' : 'Every member can change the payment schedule') })} aria-label="Only Owners and Admins can change the payment schedule" /><span>Only Owners and Admins can change it</span></label>
               </div>
@@ -772,7 +780,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
               <div className={styles.setting} data-testid="prepared-by">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Prepared by</span>
-                  <span className={styles.settingHelp}>What a template’s {'{prepared_by}'} field prints on every quote: the member who prepared it, every member on the lead, or the studio’s name.</span>
+                  <span className={styles.settingHelp}>What prints as “Prepared by” on every quote: the member who prepared it, every member on the lead, or the studio’s name.</span>   {/* (the calm UI build, W-643 · 5-44) no field code */}
                 </div>
                 <div className={styles.numGrid}>
                   <TextField label="Prepared by prints" mode="select" value={PREPARED_BY_OPTIONS.find((o) => o.key === rulesState.preparedBy)?.label ?? PREPARED_BY_OPTIONS[0]!.label} options={PREPARED_BY_OPTIONS.map((o) => o.label)}
@@ -789,6 +797,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                 <label className={styles.switchRow}><Switch size="sm" isSelected={rulesState.clientPicksOptional} isDisabled={readOnly} onChange={guardQV((v: boolean) => { void writeRules({ clientPicksOptional: v }, v ? 'Clients can pick optional works as they confirm' : 'Clients see optional works and ask to add them') })} aria-label="Clients may pick optional items on the confirmation link" /><span>Clients may pick optional items on the confirmation link</span></label>
               </div>
               </ReadOnlyScope>
+              <ModuleRelated section="quotes" />   {/* (the calm UI build, 5-17) */}
             </section>
           )}
     </CompanyShell>
@@ -796,7 +805,8 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
 }
 
 /** (UX audit S4) "New quotes start with": the studio's default template's New quotes settings, as a new quote takes them (read the way
-    createQuote reads them), and the way to change them — the template editor on its New quotes tab, with Back to here. */
+    createQuote reads them), and the way to change them — the template editor on its New quotes tab, with Back to here. (the calm UI build
+    2026-10-27 — B4's request, W-274) that tab reads "Quote settings" now; its address keeps `?tab=new-quotes`. */
 function NewQuoteDefaultsCard({ d, gst, from }: { d: NewQuoteDefaults; gst: Studio; from: string }) {
   const router = useRouter()
   const split = d.split ? `${d.split.name} — ${d.split.rows.map((r) => `${r.name} ${r.pct}%`).join(' · ')}` : 'None'
@@ -808,10 +818,10 @@ function NewQuoteDefaultsCard({ d, gst, from }: { d: NewQuoteDefaults; gst: Stud
         <div className={styles.settingHead}>
           <span className={styles.settingTitle}>New quotes start with</span>
           <span className={styles.settingHelp}>{d.template
-            ? `What every new quote takes from the studio’s default template, ${d.template.name}. They are set on the template’s New quotes tab and reach new quotes once it is published; quotes you already have keep their own.`
+            ? `What every new quote takes from the studio’s default template, ${d.template.name}. They are set on the template’s Quote settings tab and reach new quotes once it is published; quotes you already have keep their own.`
             : <>No default quote template yet — a new quote starts with the house settings below. Pick a default under <HelpLink href="/company/templates/quotes">Company › Templates</HelpLink>.</>}</span>
         </div>
-        {d.template ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="edit" size={20} />} onPress={open} data-testid="new-quote-defaults-change">{`Change in ${d.template.name} › New quotes`}</Button> : null}
+        {d.template ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="edit" size={20} />} onPress={open} data-testid="new-quote-defaults-change">{`Change in ${d.template.name} › Quote settings`}</Button> : null}
       </div>
       <dl className={styles.defaults}>
         <dt>Valid for</dt><dd>{d.validityDays} {d.validityDays === 1 ? 'day' : 'days'}</dd>

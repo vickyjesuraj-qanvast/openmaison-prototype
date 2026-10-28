@@ -86,7 +86,7 @@ export function AskClientDialog({ open, leadName, onClose, onSend, questions, le
         open={open} onClose={onClose} title="Ask the client" width={400} size="modal"
         footer={<>
           <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-          <Button onPress={send} isDisabled={(!!listed && !picked?.length) || !target || !!block} data-testid="ask-send">Send via WhatsApp</Button>   {/* REG-288 (owner): was "Send Notification" */}
+          <Button onPress={send} isDisabled={(!!listed && !picked?.length) || !target || !!block} data-testid="ask-send">Send on WhatsApp</Button>   {/* REG-288 (owner): was "Send Notification" — (the calm UI build 2026-10-27, B6's request · W-058) one verb for every WhatsApp send */}
         </>}
       >
         <p className={styles.helper}>We’ll notify “{leadName}” in their portal and they can answer your questions there.</p>

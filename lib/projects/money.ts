@@ -506,7 +506,7 @@ export function amountSentence(stage: string, amountMinor: number, differs: bool
 export function variationLabel(v: Pick<MoneyVariation, 'status' | 'declinedAt'>): string {
   if (isApprovedVariation(v.status)) return 'Approved by the client'
   if (v.status === 'Sent to Client' && v.declinedAt) return 'Declined by the client'   // (gaps build D, item 2)
-  if (v.status === 'Sent to Client') return 'With the client'
+  if (v.status === 'Sent to Client') return 'With client'   // (the calm UI build 2026-10-27, 4-04 · W-441) the quotes' own word
   if (v.status === 'Sent for Approval') return 'Waiting for approval'
   if (v.status === 'Approved') return 'Approved — not sent'
   return 'Draft'

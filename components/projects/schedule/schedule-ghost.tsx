@@ -45,7 +45,7 @@ export function ScheduleGhost({ first = false }: { first?: boolean }) {
           <div className={styles.startForm}>
             <div><Line w={220} lh={28} h={18} /><Line w={phone ? 240 : 380} lh={24} h={12} /></div>
             <div className={styles.startDate}><Slot kind="field" w={280} /></div>
-            <div className={styles.sources}><Words className={styles.legendLabel}>Milestones come from</Words>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={68} r="var(--om-radius-2)" />)}</div>
+            <div className={styles.sources}><Words className={styles.legendLabel}>Build the schedule from</Words>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={68} r="var(--om-radius-2)" />)}</div>
             <div><Slot kind="btn" w={148} /></div>
           </div>
           <div className={styles.startAside}>
@@ -60,7 +60,8 @@ export function ScheduleGhost({ first = false }: { first?: boolean }) {
     <div className={styles.tab} aria-hidden>
       <section className={styles.summary}>
         <div className={styles.summaryInner}>
-        <div className={styles.summaryText}><Line w={phone ? 240 : 300} lh={phone ? 24 : 28} h={16} /><Line w={phone ? 160 : 280} lh={20} h={12} /></div>
+        {/* (the calm UI build 2026-10-27, 3-23) the headline with its paragraph folded in; on a desk the line of who sees it under it */}
+        <div className={styles.summaryText}><Line w={phone ? 240 : 300} lh={phone ? 24 : 28} h={16} /><Line w={phone ? 160 : 280} lh={20} h={12} />{phone ? null : <Line w={260} lh={28} h={10} />}</div>
         {phone ? null : (
           <dl className={styles.stats}>
             {['Done', 'To handover', 'Next payment'].map((l, i) => <div key={l} className={styles.stat}><Words>{l}</Words><Line w={cycle([44, 56, 92], i)} lh={24} h={14} /></div>)}
@@ -78,8 +79,8 @@ export function ScheduleGhost({ first = false }: { first?: boolean }) {
       ) : (
         <>
           <div className={styles.toolbar} data-rows={asRows || undefined}>
-            {asRows ? null : <div className={styles.toolStart}><Slot kind="btn" w={168} /><Slot kind="btn" w={64} /><Slot kind="icon" /></div>}
-            <div className={styles.toolEnd}><Line w={260} lh={20} h={10} />{share ? <Slot kind="btn" w={140} /> : null}<span className={styles.toolActs}><Slot kind="btn" w={140} /><Slot kind="icon" /></span></div>
+            {asRows ? null : <div className={styles.toolStart}><Slot kind="btn" w={168} /><Slot kind="btn" w={64} /><Slot kind="icon" /><Slot kind="icon" /></div>}
+            <div className={styles.toolEnd}>{share ? <Slot kind="btn" w={140} /> : null}<span className={styles.toolActs}><Slot kind="btn" w={140} /><Slot kind="icon" /></span></div>
           </div>
           {asRows ? phoneRows : (
           <section className={styles.frame}>

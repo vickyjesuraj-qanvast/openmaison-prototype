@@ -1,9 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -30,7 +33,7 @@ import own from './deleted-projects-sheet.module.css'   // (fix-E, E-26) the num
 function foreverWords(r: { removed: number; kept?: number }, o: { empty?: boolean } = {}): string {
   const kept = r.kept ?? 0
   const gone = r.removed === 0 ? '' : r.removed === 1 && !o.empty ? 'Project deleted forever' : `${r.removed} ${r.removed === 1 ? 'project' : 'projects'} deleted forever`
-  const stay = kept ? `${kept} ${kept === 1 ? 'project with money recorded stays' : 'projects with money recorded stay'} in Deleted Projects` : ''
+  const stay = kept ? `${kept} ${kept === 1 ? 'project with money recorded stays' : 'projects with money recorded stay'} in Deleted projects` : ''
   return gone && stay ? `${gone} — ${stay.charAt(0).toLowerCase()}${stay.slice(1)}` : gone || (stay ? `Nothing deleted — ${stay.charAt(0).toLowerCase()}${stay.slice(1)}` : 'Nothing deleted')
 }
 
@@ -42,9 +45,8 @@ export function DeletedProjectsSheet({ open, onClose, onChanged }: { open: boole
   const [confirm, setConfirm] = useState<{ kind: 'forever'; ids: string[] } | { kind: 'empty' } | null>(null)
   const [busy, setBusy] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [bannerOpen, setBannerOpen] = useState(true)   // (parity P-36) the Deleted Leads sheet's dismissible banner
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setRows(null); setFailed(false); setConfirm(null); setSelected(new Set()); setBannerOpen(true) } }
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setRows(null); setFailed(false); setConfirm(null); setSelected(new Set()) } }
   useEffect(() => {
     if (!open) return
     let live = true
@@ -74,22 +76,15 @@ export function DeletedProjectsSheet({ open, onClose, onChanged }: { open: boole
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
     <>
-      <Dialog open={open} onClose={onClose} title="Deleted Projects" eyebrow="Projects /" size="modal" width={1200} minHeight={480} phoneFull portal
-              actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Empty Trash</Button>}>
-        {/* (parity P-36 · Q-11) the mocked Deleted Leads sheet's banner, with the project's own retention: kept until deleted forever */}
-        {bannerOpen ? (
-          <div className={own.banner} role="status" data-testid="deleted-projects-banner">
-            <span>Deleted projects stay here until they are deleted forever.</span>
-            <Tooltip label="Dismiss">
-              <button type="button" className={own.bannerClose} aria-label="Dismiss" onClick={() => setBannerOpen(false)}><Icon name="close" size={20} /></button>
-            </Tooltip>
-          </div>
-        ) : null}
-        <div className={styles.table} role="table" aria-label="Deleted Projects" data-testid="deleted-projects" data-lead="" data-by="" data-select="">
+      {/* (the calm UI build 2026-10-27, 3-47 · 3-40 · W-170 · W-511 · T-04 · T-05) one line under the title says what Restore does and who may —
+          the banner and the foot note said the same twice; "Delete all forever" names what Empty Trash did; the client rides with the name */}
+      <Dialog open={open} onClose={onClose} title="Deleted projects" eyebrow="Projects /" size="modal" width={1200} minHeight={480} phoneFull portal
+              subtitle={<span data-testid="deleted-projects-banner">Restore brings back its schedule, updates and money. Only Owners and Admins can restore or delete.</span>}
+              actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Delete all forever</Button>}>
+        <div className={styles.table} role="table" aria-label="Deleted projects" data-testid="deleted-projects" data-by="" data-select="">
           <div className={styles.head} role="row">
             <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label="Select all deleted projects" /></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Project</span></span>
-            <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Client</span></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Stage</span></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Deleted</span></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Deleted by</span></span>
@@ -101,40 +96,54 @@ export function DeletedProjectsSheet({ open, onClose, onChanged }: { open: boole
             <div key={p.id} className={`${styles.row} ${own.phoneRow}`} role="row" data-testid="deleted-project" data-id={p.id} data-selected={selected.has(p.id) || undefined}>
               <span role="cell" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={selected.has(p.id)} isDisabled={!p.mine} onChange={() => toggle(p.id)} aria-label={`Select ${p.name}`} /></span>
               {/* (fix-E, E-26) the number under the name — Make the project again and Activity name a deleted project by it */}
-              <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="business_center" size={20} weight={300} /><span className={own.twoLine}><span className={own.name}>{p.name}</span><span className={own.number} data-testid="deleted-project-number">{p.number}</span></span></span>
-              <span role="cell" className={`${styles.cell} ${own.labelled}`} data-label="Client">{p.client}</span>
+              <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="business_center" size={20} weight={300} /><span className={own.twoLine}><span className={own.name}>{p.name}</span><span className={own.number}><span data-testid="deleted-project-number">{p.number}</span>{p.name.includes(p.client) ? null : ` · ${p.client}`}</span></span></span>
               <span role="cell" className={`${styles.cell} ${own.labelled}`} data-label="Stage">{isProjectStage(p.stage) ? STAGE_LABEL[p.stage] : p.stage}</span>
               <span role="cell" className={`${styles.cell} ${own.labelled}`} data-label="Deleted">{p.deletedAt ? displayDate(new Date(p.deletedAt)) : '--'}</span>
               <span role="cell" className={`${styles.cell} ${own.labelled}`} data-label="Deleted by">{p.deletedByName ?? '--'}</span>
-              {/* (parity P-36) the Deleted Leads sheet's row actions: Restore and Delete Forever as its text links (red for the forever) */}
+              {/* (parity P-36) the Deleted Leads sheet's row action — (the calm UI build 2026-10-27, 3-47 · T-02) Restore is the row's one verb;
+                  Delete forever is its ⋮'s row (red, refused in the row with its rule) */}
               <span role="cell" className={`${styles.cell} ${styles.actions} ${own.actions}`}>
                 <Tooltip label={p.mine ? (p.direct ? `Put it back, with ${p.client}’s details` : `Put it back on ${p.client}’s lead`) : RESTORE_RULE}>
                   <span><button type="button" className={own.link} disabled={busy || !p.mine} onClick={() => { void restore([p.id]) }} data-testid="deleted-project-restore">Restore</button></span>
                 </Tooltip>
-                <Tooltip label={p.mine ? 'Deletes the project for good' : DELETE_RULE}>
-                  <span><button type="button" className={own.link} data-danger disabled={busy || !p.mine} onClick={() => setConfirm({ kind: 'forever', ids: [p.id] })} data-testid="deleted-project-forever">Delete Forever</button></span>
-                </Tooltip>
+                <RowMenu name={p.name} mine={p.mine} busy={busy} onForever={() => setConfirm({ kind: 'forever', ids: [p.id] })} />
               </span>
             </div>
           ))}
         </div>
-        {/* (parity P-36) the note under the table, as the Deleted Leads sheet's */}
-        <span className={own.note}>Note: Deleted projects are hidden from the list and reports. Restore puts one back with its schedule, updates and money — a project made by hand brings its client’s details back with it. Only Owners and Admins restore or delete a project.</span>
         <DetailBulkBar inset count={live.length}
                        actions={[
                          { label: `Restore${mine.length !== live.length ? ` ${mine.length}` : ''}`, onClick: () => { const ids = mine; setSelected(new Set()); if (ids.length) void restore(ids) } },
-                         ...(mine.length ? [{ label: `Delete Forever${mine.length !== live.length ? ` ${mine.length}` : ''}`, tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: mine }) }] : []),
+                         ...(mine.length ? [{ label: `Delete forever${mine.length !== live.length ? ` ${mine.length}` : ''}`, tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: mine }) }] : []),
                        ]}
                        onClear={() => setSelected(new Set())} />
       </Dialog>
-      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" confirmLabel="Delete Forever"
+      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" confirmLabel="Delete forever"
                      message={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `These ${confirm.ids.length} projects will be deleted permanently, with their schedules, updates, choices and invoices. This action cannot be undone.` : 'This project will be deleted permanently, with its schedule, updates, choices and invoices. This action cannot be undone.'}
                      onCancel={() => setConfirm(null)}
                      onConfirm={() => { const c = confirm; setConfirm(null); if (c?.kind === 'forever') { setSelected(new Set()); void run(c.ids.length > 1 ? 'delete the projects forever' : 'delete the project forever', () => deleteProjectsForever(c.ids), (r) => foreverWords(r as { removed: number; kept?: number })) } }} />
-      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Empty the trash?" confirmLabel="Empty Trash"
+      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Delete all forever?" confirmLabel="Delete all forever"
                      message={`${emptiable} deleted ${emptiable === 1 ? 'project' : 'projects'} will be deleted permanently. This action cannot be undone.`}
                      onCancel={() => setConfirm(null)}
                      onConfirm={() => { setConfirm(null); setSelected(new Set()); void run('empty the trash', emptyProjectTrash, (r) => foreverWords(r as { removed: number; kept?: number }, { empty: true })) }} />
     </>
+  )
+}
+
+/** (the calm UI build 2026-10-27, 3-47 · T-02) A deleted project's ⋮ — Delete forever, the row's second action (it kept its test mark). */
+function RowMenu({ name, mine, busy, onForever }: { name: string; mine: boolean; busy: boolean; onForever: () => void }) {
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  return (
+    <span ref={anchor} className={own.menuWrap}>
+      <Tooltip label="More actions" disabled={open}>
+        <IconButton icon="more_vert" label={`More actions for ${name}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="deleted-project-more" />
+      </Tooltip>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={name}>
+        <span className={own.menuRow} data-testid="deleted-project-forever">
+          <DropdownItem tone="danger" disabled={busy || !mine} title={mine ? undefined : DELETE_RULE} onSelect={() => { setOpen(false); onForever() }}>Delete forever</DropdownItem>
+        </span>
+      </PortalMenu>
+    </span>
   )
 }

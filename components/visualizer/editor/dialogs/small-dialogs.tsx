@@ -76,7 +76,7 @@ export function SwatchDialog({ file, suggestedCategory, onClose, onSave, studioC
   if (file !== was) { setWas(file); if (file) { setName(file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').slice(0, 40)); const c = suggestedCategory && GENERIC_CATEGORIES.includes(suggestedCategory as never) ? suggestedCategory : 'Paints'; setCat(c); setFinish(finishFor(c)); setStudio(studioChoice) } }
   const save = async () => { if (!file || !name.trim()) return; setBusy(true); const ok = await onSave({ name: name.trim(), hex: file.hex, finish: finish as MaterialRef['finish'], imageUrl: file.url, category: cat }, studio); setBusy(false); if (ok) onClose() }
   return (
-    <Dialog open={!!file} onClose={onClose} title="Add a material" subtitle={studioChoice ? 'Use it in this design — and keep it for the studio’s next renders.' : 'Use it on this photo.'} size="form" width={400}
+    <Dialog open={!!file} onClose={onClose} title="Add a material" subtitle={studioChoice ? 'Use it in this design — and keep it for the studio’s next designs.' : 'Use it on this photo.'} size="form" width={400}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!name.trim() || busy} onPress={() => { void save() }}>{busy ? 'Saving…' : studio ? 'Save & use' : studioChoice ? 'Use in this design' : 'Use it'}</Button></>}>
       {file ? (
         <div className={styles.stack}>

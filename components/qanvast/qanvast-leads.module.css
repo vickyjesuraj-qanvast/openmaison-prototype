@@ -52,6 +52,8 @@
 .hLabel { composes: hLabel from '../om/table-core.module.css'; }   /* "NAME" 12/Medium secondary uppercase — the Leads listing head and the DS TableColumn */
 /* Sort is inert (coming soon) — the contracts / quotes table's sort-button look; unfold_more 16 on every head. */
 .hSort { composes: hSort from '../om/table-core.module.css'; }
+/* (the calm UI build 2026-10-27, 2-27) a window that has closed reads as the house stand-in, quiet */
+.muted { color: var(--om-color-on-surface-secondary); }
 /* Name head: the tune 16 icon at the right = Customise view — components/leads/table.module.css .hTools/.hTune verbatim. */
 .hTools { margin-left: auto; display: inline-flex; }
 .hTune { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }

@@ -99,7 +99,7 @@ export function useSheetFootLift(on: boolean, panel: RefObject<HTMLElement | nul
  * in on open and returns to the opener on close (components/om/surface.ts) — the same contract as Dialog.
  */
 export function Sheet({
-  open, onClose, onBack, title, subtitle, children, footer, headActions, role = 'dialog', label, bodyClassName,
+  open, onClose, onBack, title, subtitle, children, footer, headActions, role = 'dialog', label, bodyClassName, lift = 0,
 }: {
   open: boolean
   onClose: () => void
@@ -120,6 +120,9 @@ export function Sheet({
   /** Accessible name when there is no visible title. */
   label?: string
   bodyClassName?: string
+  /** (the Dashboard redesigned 2026-10-26, lane D4 — additive) How far above the screen's foot the sheet rests: an on-screen keyboard's height
+   *  (the docked Maison AI field's sheet follows `visualViewport`), so its pinned foot — the field — stays above the keys. 0 = as before. */
+  lift?: number
 }) {
   const panel = useRef<HTMLDivElement>(null)
   const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow only while the body scrolls under it
@@ -132,9 +135,11 @@ export function Sheet({
   return createPortal(
     <AnimatePresence>
       {open ? (
-        <motion.div className={styles.scrim} variants={overlayFade} initial="initial" animate="animate" exit="exit" onMouseDown={onScrim}>
+        <motion.div className={styles.scrim} variants={overlayFade} initial="initial" animate="animate" exit="exit" onMouseDown={onScrim}
+                    style={lift > 0 ? { paddingBottom: lift } : undefined}>
           <motion.div ref={panel} className={styles.sheet} variants={bottomSheet} initial="initial" animate="animate" exit="exit"
-                      role={role} aria-modal="true" aria-label={label ?? title} tabIndex={-1}>
+                      role={role} aria-modal="true" aria-label={label ?? title} tabIndex={-1}
+                      style={lift > 0 ? { maxHeight: `calc(min(88dvh, 100dvh - 56px) - ${Math.round(lift)}px)` } : undefined}>
             <span className={styles.grabber} aria-hidden />
             {/* (REG-725) the house head and foot, on the sheet's own 12 / 16 padding (REG-308 · REG-372) */}
             {title ? <SurfaceHead title={title} subtitle={subtitle} actions={headActions} onClose={onClose} className={styles.head}

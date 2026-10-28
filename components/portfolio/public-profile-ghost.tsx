@@ -21,15 +21,15 @@ export function PublicProfileGhost() {
         <div className={profile.layout}>
           <div className={profile.form}>
             <section className={profile.card}>
-              <div className={profile.cardHead}><Line w={88} lh={24} h={14} className={profile.cardTitle} /><Words as="p" className={profile.cardHelp}>Clients read it on their portal’s About page and on your studio’s Hangout pages.</Words></div>
+              <div className={profile.cardHead}><Line w={88} lh={24} h={14} className={profile.cardTitle} /><Words as="p" className={profile.cardHelp}>Clients read it on your client portal and your studio’s public pages.</Words></div>
               <div className={photo.photoRow}><Slot kind="avatar40" /><Slot kind="btn" w={138} /></div>
               <div className={styles.fields}>
                 <GhostField helper={180} />
                 <GhostField />
                 <div className={`${styles.wide} ${styles.ghostArea}`}><Bone w="100%" h={112} r={4} /><Line w={116} lh={16} h={10} className={styles.ghostCount} /></div>
               </div>
-              <GhostLines className={`${styles.line} ${styles.ghostLines}`} lines={[640, [280, 'phone'], [200, 'phone']]} />
-              <div className={styles.switchRow}><span className={styles.switchText}><Words className={styles.switchLabel}>Show on the About page</Words><Words className={profile.cardHelp}>The client portal’s About › Our team.</Words></span><Slot kind="switch" /></div>
+              <GhostLines className={`${styles.line} ${styles.ghostLines}`} lines={[640, [280, 'phone']]} />   {/* (closing regression, a bug fix) the reworded line is two lines on a phone, not three */}
+              <div className={styles.switchRow}><span className={styles.switchText}><Words className={styles.switchLabel}>Show on your client portal</Words><Words className={profile.cardHelp}>Clients see it under Our team.</Words></span><Slot kind="switch" /></div>
             </section>
             <section className={profile.card}>
               <div className={profile.cardHead}><Line w={88} lh={24} h={14} className={profile.cardTitle} /><GhostLines className={`${profile.cardHelp} ${styles.ghostLines}`} lh={16} h={10} lines={[520, 180, [120, 'phone']]} /></div>

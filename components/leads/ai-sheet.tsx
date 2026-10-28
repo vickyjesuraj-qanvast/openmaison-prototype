@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { duration, spring } from '@/lib/motion'
-import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
-import { prototypeStudioCount, resetPrototype } from '@/app/leads/actions'
+import { useResetPrototype } from '@/components/maison-ai/reset-prototype'
 import styles from './ai-sheet.module.css'
 
 /**
@@ -43,21 +42,8 @@ export function AiSheet({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   // Prototype-only: put everything back to the base state (user 2026-08-29) — leads, imports, tasks, settings and browser prefs.
-  const [confirmReset, setConfirmReset] = useState(false)
-  const [resetting, setResetting] = useState(false)
-  /* (S42 audit A-17) the studios started here go with a reset — the confirmation names them when there are any */
-  const [studios, setStudios] = useState(0)
-  const askReset = () => { setConfirmReset(true); void prototypeStudioCount().then(setStudios, () => setStudios(0)) }
-  const doReset = async () => {
-    setResetting(true)
-    try {
-      await resetPrototype()
-      try { Object.keys(localStorage).filter((k) => k.startsWith('om.')).forEach((k) => localStorage.removeItem(k)) } catch {}
-      /* (simplify S-13) Reports' remembered tab and Finance report live in two cookies — the base state forgets them too */
-      try { for (const c of ['om_reports_tab', 'om_reports_finance']) document.cookie = `${c}=; path=/company/reports; max-age=0` } catch {}
-      window.location.replace('/')   // (S42 audit A-04) the front door (the Dashboard; Finance for Accounting), as every other way in
-    } catch { setResetting(false); setConfirmReset(false) }
-  }
+  /* (the Dashboard redesigned 2026-10-26, lane D4) the reset and its confirm, shared with the docked field (components/maison-ai/reset-prototype.tsx) */
+  const { open: confirmReset, ask: askReset, dialog: confirm } = useResetPrototype()
   /* (S42 D-06 — reach for everyone) opened from the keyboard, the sheet takes focus to its first control (the Ask box, else the first
      suggestion) so Tab walks the sheet; when it closes with focus inside it, focus goes back to what opened it (the FAB, a menu's ⋮). A
      press with a mouse or a finger leaves focus where it was — a phone's keyboard never pops up unasked. */
@@ -100,11 +86,6 @@ export function AiSheet({
       <Icon name="restart_alt" size={18} />
       Reset prototype to base
     </button>
-  )
-  const confirm = (
-    <ConfirmDialog open={confirmReset} title="Reset the prototype?" tone="danger"
-                   message={`Leads, imports, tasks and settings go back to the base state${studios ? ` — and the ${studios === 1 ? 'studio' : `${studios} studios`} started here ${studios === 1 ? 'is' : 'are'} removed` : ''}. Anything you tried in this session is lost.`}
-                   confirmLabel={resetting ? 'Resetting…' : 'Reset'} onCancel={() => { if (!resetting) setConfirmReset(false) }} onConfirm={() => { if (!resetting) void doReset() }} />
   )
   /* (B-23) the phone: the house bottom sheet — its grabber, head and foot; the middle is the card's own middle */
   if (phone) {

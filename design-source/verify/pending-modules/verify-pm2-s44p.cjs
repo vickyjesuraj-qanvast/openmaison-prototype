@@ -117,15 +117,15 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       console.log('2 · row 319 — "New category…" at the foot of the item dialog\'s Category list')
       await go(p, '/company/price-book')
       const dlg = await openNew(p)
-      await dlg.getByRole('combobox', { name: 'Category' }).click(); await settle(p, 300)
+      await dlg.getByRole('combobox', { name: 'Trade' }).click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       const opts = await p.getByRole('option').allInnerTexts()
-      ok(/New category…/.test(opts[opts.length - 1] ?? '') && opts.includes('Carpentry'), `the list ends on "New category…" after the trades (${opts.slice(-2).join(' | ')})`)
+      ok(/New trade…/.test(opts[opts.length - 1] ?? '') && opts.includes('Carpentry'), `the list ends on "New category…" after the trades (${opts.slice(-2).join(' | ')})`)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       ok(await p.locator('[role="separator"]').count() >= 1, 'a rule sets it apart from the options')
       await p.keyboard.press('End'); await settle(p, 100)
-      ok(/New category…/.test(await p.evaluate(() => document.activeElement?.textContent ?? '')), 'End walks to it — the arrows reach it as an option')
+      ok(/New trade…/.test(await p.evaluate(() => document.activeElement?.textContent ?? '')), 'End walks to it — the arrows reach it as an option')   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       await shot(p, '02-new-category-row-1440')
       await p.getByTestId('new-category-row').click(); await settle(p, 500)
-      const nc = p.getByRole('dialog', { name: 'New category' })
+      const nc = p.getByRole('dialog', { name: 'New trade' })   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       ok(await nc.isVisible(), 'it opens the New category dialog over the item')
       await box(nc, 'Name').fill('carpentry'); await settle(p, 200)
       ok(/Already in the list as “Carpentry”/.test(await nc.innerText()) && await nc.getByRole('button', { name: 'Add', exact: true }).isDisabled(), 'a case variant says which entry it is, and Add waits')
@@ -135,7 +135,7 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       ok(/Probe Joinery S44P added to the trades/.test(await waitSnack(p, /added to the trades/)), 'the snackbar: "Probe Joinery S44P added to the trades"')
       await settle(p, 400)
       ok(!(await nc.isVisible()), 'the dialog closes once the trade is saved')
-      ok((await dlg.getByRole('combobox', { name: 'Category' }).innerText()).includes('Probe Joinery S44P'), 'the new trade is the item\'s Category')
+      ok((await dlg.getByRole('combobox', { name: 'Trade' }).innerText()).includes('Probe Joinery S44P'), 'the new trade is the item\'s Category')   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       ok((trades() ?? []).includes('Probe Joinery S44P'), 'it joined the studio\'s trades (settings.trades)')
       await itemDlg(p).getByRole('button', { name: 'Cancel' }).click(); await settle(p, 400)
       // bulk Set category: the sibling list carries it too
@@ -143,9 +143,9 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       const tick = p.getByRole('checkbox', { name: 'Select Electrical point, new' })
       if (await tick.count()) {
         await tick.click({ force: true }); await settle(p, 300)
-        await p.getByText('Set category', { exact: true }).click(); await settle(p, 400)
-        const bd = p.getByRole('dialog', { name: 'Set category' })
-        await bd.getByRole('combobox', { name: 'Category' }).click(); await settle(p, 300)
+        await p.getByText('Set trade', { exact: true }).click(); await settle(p, 400)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
+        const bd = p.getByRole('dialog', { name: 'Set trade' })   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
+        await bd.getByRole('combobox', { name: 'Trade' }).click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
         ok(await p.getByTestId('new-category-row').isVisible(), 'bulk Set category ends on "New category…" too')
         await shot(p, '03b-bulk-new-category-1440')
         await p.keyboard.press('Escape'); await settle(p, 200)
@@ -156,11 +156,11 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       const g = await page(await desk(), 'designer')
       await go(g, '/company/price-book')
       const gd = await openNew(g)
-      await gd.getByRole('combobox', { name: 'Category' }).click(); await settle(g, 300)
+      await gd.getByRole('combobox', { name: 'Trade' }).click(); await settle(g, 300)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       const row = g.getByTestId('new-category-row')
       ok(await row.getAttribute('aria-disabled') === 'true' && /Only an Owner or an Admin changes the studio’s trades/.test(await row.innerText()), 'a Designer sees "New category…" with the trades rule under it')
       await row.click({ force: true }); await settle(g, 300)
-      ok(await g.getByRole('dialog', { name: 'New category' }).count() === 0, 'and pressing it opens nothing')
+      ok(await g.getByRole('dialog', { name: 'New trade' }).count() === 0, 'and pressing it opens nothing')   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       await shot(g, '04-new-category-designer-1440')
       await g.close()
       as('dane')
@@ -203,12 +203,12 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       const elBtn = tradeChip(card, 'Electrical').getByRole('button').first()
       await elBtn.click(); const tdlg = p.getByTestId('trade-dialog'); await tdlg.waitFor()
       await tdlg.getByRole('textbox', { name: 'Note' }).fill('Probe S44P: every point tested before handover')
-      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await waitSnack(p, /Note saved for Electrical/)
+      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await waitSnack(p, /Note saved for Electrical/)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       ok(notes().electrical === 'Probe S44P: every point tested before handover', 'Electrical carries a note')
       // rename onto Electrical Works (typed in another case) → the question
       await elBtn.click(); await tdlg.waitFor()
       await tdlg.getByRole('textbox').first().fill('electrical works')
-      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)
+      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       const q = p.getByRole('dialog', { name: 'Merge Electrical into Electrical Works?' })
       ok(await q.isVisible(), 'renaming Electrical to "electrical works" asks "Merge Electrical into Electrical Works?"')
       const qt = await q.innerText()
@@ -219,10 +219,10 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       ok(sql(`select count(*) from quote_items where category = 'Electrical'`) === lines0 && trades().includes('Electrical'), 'and nothing moved')
       // a member who may not: the rule, on the field
       as('germaine')
-      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)
+      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       ok(/Only an Owner or an Admin changes the studio’s trades/.test(await tdlg.innerText()), 'a member who may not merge is told the rule on the Name field')
       as('dane')
-      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)
+      await p.getByRole('dialog', { name: 'Trade' }).getByRole('button', { name: 'Save' }).click(); await settle(p, 900)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       await p.getByRole('dialog', { name: 'Merge Electrical into Electrical Works?' }).getByRole('button', { name: 'Merge' }).click()
       const said = await waitSnack(p, /merged into/)
       ok(new RegExp(`Electrical merged into Electrical Works — ${items0} price book items? and ${lines0} quote lines? moved`).test(said), `the snackbar: "${said.slice(0, 120)}"`)
@@ -252,7 +252,7 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       await go(p, '/company/price-book'); await listView(p)
       await p.getByRole('button', { name: 'Filters', exact: true }).click()
       const f = p.getByTestId('library-facets'); await f.waitFor()
-      await f.getByRole('combobox', { name: 'Category' }).click(); await settle(p, 300)
+      await f.getByRole('combobox', { name: 'Trade' }).click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
       const opts = (await p.getByRole('option').allInnerTexts()).map((x) => x.trim())
       ok(opts.filter((o) => o.toLowerCase() === 'tiling').length === 1 && opts.includes('Tiling'), `one Tiling entry, the trades' spelling (${opts.join(' | ')})`)
       await p.getByRole('option', { name: 'Tiling', exact: true }).click(); await settle(p, 500)
@@ -276,10 +276,10 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
         ok(w < 768 ? new Set(tops).size === 3 : new Set(tops).size === 1, `${w}: the three price boxes ${w < 768 ? 'stack' : 'share a row'}`)
         ok(await inside(trio, w), `${w}: the prices sit inside the screen`)
         await shot(q, `09-item-prices-${w}`)
-        await dlg.getByRole('combobox', { name: 'Category' }).scrollIntoViewIfNeeded()
-        await dlg.getByRole('combobox', { name: 'Category' }).click(); await settle(q, 500)
+        await dlg.getByRole('combobox', { name: 'Trade' }).scrollIntoViewIfNeeded()   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
+        await dlg.getByRole('combobox', { name: 'Trade' }).click(); await settle(q, 500)   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
         await q.getByTestId('new-category-row').scrollIntoViewIfNeeded(); await q.getByTestId('new-category-row').click(); await settle(q, 700)
-        const nc = q.getByRole('dialog', { name: 'New category' })
+        const nc = q.getByRole('dialog', { name: 'New trade' })   // (the calm UI build 2026-10-27, a deliberate change) the field is Trade
         ok(await nc.isVisible() && await inside(nc, w), `${w}: New category opens inside the screen, over the item`)
         await shot(q, `10-new-category-${w}`)
         await nc.getByRole('button', { name: 'Cancel' }).click(); await settle(q, 400)

@@ -54,9 +54,9 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   await page.goto(`${B}/leads/${LEAD}/activity`); await page.waitForTimeout(1800)
   const act = await page.locator('body').innerText()
   check('Activity: the renders', act.includes('rendered V2 of “Living room”'))
-  check('Activity: the link sent', act.includes('shared 3 renders with Kevin Ng on WhatsApp'))
+  check('Activity: the link sent', act.includes('shared 3 versions with Kevin Ng on WhatsApp'))   // (the calm UI build 2026-10-27, a deliberate change) 6-07: "versions"
   check('Activity: the favourite', act.includes('as the favourite'))
-  check('Activity: the call back', act.includes('asked for a call back about the renders'))
+  check('Activity: the call back', act.includes('asked for a call back about the versions'))   // (the calm UI build 2026-10-27, a deliberate change) 6-07
   await shot('viz-12-activity')
 
   console.log('3 · the lead’s Files: renders kept, a site photo opens as its room')

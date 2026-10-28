@@ -60,7 +60,9 @@ export function ShareDialog({ open, onClose, name, client, portal, share, change
               <span className={styles.link} data-testid="planner-share-url">{url}</span>
               <Button variant="secondary" appearance="outlined" onPress={onCopy} iconStart={<Icon name="content_copy" size={20} weight={300} />} data-testid="planner-copy-link">Copy link</Button>
             </div>
-            {client?.phone ? <Button variant="secondary" appearance="outlined" onPress={onWhatsApp} iconStart={<Icon name="chat" size={20} weight={300} />} data-testid="planner-whatsapp">{`Send to ${first} on WhatsApp`}</Button> : null}
+            {/* (the calm UI build 2026-10-27, 6-19 · W-058) every send dialog's pattern: Send on WhatsApp filled (the subtitle names who), Copy link
+                outlined — outlined too while Share changes is the dialog's one job */}
+            {client?.phone ? <Button variant={changed ? 'secondary' : 'primary'} appearance={changed ? 'outlined' : 'filled'} onPress={onWhatsApp} iconStart={<Icon name="chat" size={20} weight={300} />} data-testid="planner-whatsapp">Send on WhatsApp</Button> : null}
             <ul className={styles.facts}>
               <li>{`Shared ${displayDate(new Date(share.sharedAt))}${share.updatedAt > share.sharedAt + 60_000 ? ` · changes shared ${displayDate(new Date(share.updatedAt))}` : ''}`}</li>
               <li>{share.firstViewedAt ? `Opened first on ${displayDate(new Date(share.firstViewedAt))} · ${share.viewCount} ${share.viewCount === 1 ? 'visit' : 'visits'}` : 'Not opened yet'}</li>

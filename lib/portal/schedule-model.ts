@@ -83,13 +83,14 @@ export function isPausedStage(row: Pick<ClientRow, 'state'> | null | undefined, 
 export function waitsForClient(row: Pick<ClientRow, 'state'> | null | undefined, live: LiveStage | null | undefined): boolean {
   return !!row && row.state === 'done' && !!live && !live.deleted && live.status === 'done' && live.askedAt !== null && !live.answer
 }
-/** Why a confirmation is refused, in the words the client reads — or null when it may be given. */
+/** Why a confirmation is refused, in the words the client reads — or null when it may be given. (the calm UI build 2026-10-27, 3-04 · T-01) The
+    client's word is "milestone", the studio's Schedule's — "stage" is a project's own (Setting up · In progress · Completed). */
 export function confirmBlock(row: Pick<ClientRow, 'state'> | null | undefined, live: LiveStage | null | undefined, readerId?: string | null): string | null {
-  if (!row || !live || live.deleted) return 'This stage isn’t on your schedule any more'
+  if (!row || !live || live.deleted) return 'This milestone isn’t on your schedule any more'
   /* (fix-F, F-03) someone else from the household answered: say who, never "You" */
-  if (live.answer) return live.answeredBy && live.answeredById && readerId && live.answeredById !== readerId ? `${live.answeredBy} has already answered for this stage` : 'You have already answered for this stage'
-  if (live.askedAt === null) return 'Your designer hasn’t asked you to confirm this stage'
-  if (row.state !== 'done' || live.status !== 'done') return 'This stage isn’t finished yet'
+  if (live.answer) return live.answeredBy && live.answeredById && readerId && live.answeredById !== readerId ? `${live.answeredBy} has already answered for this milestone` : 'You have already answered for this milestone'
+  if (live.askedAt === null) return 'Your designer hasn’t asked you to confirm this milestone'
+  if (row.state !== 'done' || live.status !== 'done') return 'This milestone isn’t finished yet'
   return null
 }
 
@@ -118,8 +119,11 @@ export function portalStages(snap: ScheduleSnapshot, live: Map<string, LiveStage
       mark: c && words ? { kind: c.was ? 'changed' : 'new', ...words, ...moveOf(c) } : null,
     }
   })
-  /* (gaps build D, item 4) "you are here": the first stage under way or paused, else the first still to come */
-  const here = stages.findIndex((s) => s.state === 'in_progress' || s.paused) >= 0 ? stages.findIndex((s) => s.state === 'in_progress' || s.paused) : stages.findIndex((s) => s.state === 'coming_up')
+  /* (gaps build D, item 4) "you are here" — (the calm UI build 2026-10-27, 3-52 · T-17) on the one milestone under way: never on a paused one
+     while another runs, none when two run at once (no single place to be); with none under way, the first paused, else the first still to come */
+  const running = stages.flatMap((s, i) => (s.state === 'in_progress' && !s.paused ? [i] : []))
+  const here = running.length === 1 ? running[0]! : running.length > 1 ? -1
+    : stages.findIndex((s) => s.paused) >= 0 ? stages.findIndex((s) => s.paused) : stages.findIndex((s) => s.state === 'coming_up')
   if (here >= 0) stages[here] = { ...stages[here]!, here: true }
   return { stages, removed: changes.filter((c) => !c.now).map((c) => ({ id: c.id, title: c.title })) }
 }
@@ -223,7 +227,7 @@ export function placeWord(propertyType: string | null | undefined): string {
 }
 /** Board 2: "Your designer marked this stage done on 2 Oct. Have a look when you are next at the flat, then tell us." */
 export const confirmAsk = (finishedOn: number, propertyType: string | null | undefined) =>
-  `Your designer marked this stage done on ${dayMonth(finishedOn)}. Have a look when you are next ${placeWord(propertyType)}, then tell us.`
+  `Your designer marked this milestone done on ${dayMonth(finishedOn)}. Have a look when you are next ${placeWord(propertyType)}, then tell us.`   // (the calm UI build 2026-10-27, 3-04)
 
 /** The state at the row's right — board 2's words, and the answer once given. */
 export function stateLabel(s: PortalStage): string {
@@ -241,7 +245,7 @@ export const datesOf = (s: Pick<PortalStage, 'start' | 'end'>) => rangeLabel(s.s
 
 /** "Handover is planned for Fri 13 Nov. Last updated 2 Oct." — board 2's lede. */
 export function scheduleLede(o: { handover: number | null; sharedAt: number | null; allDone: boolean }): string {
-  const head = o.allDone ? 'Every stage is done.' : o.handover !== null ? `Handover is planned for ${dayLabel(o.handover)}.` : ''
+  const head = o.allDone ? 'Every milestone is done.' : o.handover !== null ? `Handover is planned for ${dayLabel(o.handover)}.` : ''
   const tail = o.sharedAt ? `Last updated ${dayMonth(dayOf(new Date(o.sharedAt)))}.` : ''
   return [head, tail].filter(Boolean).join(' ')
 }
@@ -250,22 +254,23 @@ export function scheduleLede(o: { handover: number | null; sharedAt: number | nu
 export type ScheduleSummary = {
   done: number
   total: number
-  /** The stage under way — the earliest running one; else the next to start; null when all are done. (simplify S-25) `paused`: Blocked live. */
-  now: { title: string; state: ClientState; start: number; paused?: boolean } | null
+  /** The stage under way — the earliest running one; else the next to start; null when all are done. (simplify S-25) `paused`: Blocked live —
+      (the calm UI build 2026-10-27, 3-10) with the day the studio said it picks up again, so the home's line says what its card says */
+  now: { title: string; state: ClientState; start: number; paused?: boolean; resumeOn?: number | null } | null
   handover: number | null
   /** Each stage's dot (board 7's list) and its segment (board 1's bar). (simplify S-25) `paused`: Blocked live — the Schedule page's word. */
   stages: { id: string; title: string; start: number; end: number; state: ClientState; paused?: boolean }[]
   sharedAt: number
 }
 /** (simplify S-25) `live` — the milestones as they stand: a Blocked one reads paused here as on the Schedule page (`isPausedStage`). */
-export function summaryOf(snap: ScheduleSnapshot, sharedAt: number, live?: Map<string, Pick<LiveStage, 'status' | 'deleted'>>): ScheduleSummary {
+export function summaryOf(snap: ScheduleSnapshot, sharedAt: number, live?: Map<string, Pick<LiveStage, 'status' | 'deleted' | 'resumeOn'>>): ScheduleSummary {
   const stages = snap.rows.map((r) => ({ id: r.id, title: r.title, start: dayOfIso(r.start) ?? 0, end: dayOfIso(r.end) ?? 0, state: r.state, paused: isPausedStage(r, live?.get(r.id)) }))
   const running = stages.filter((s) => s.state === 'in_progress').sort((a, b) => a.start - b.start)[0]
   const next = stages.filter((s) => s.state === 'coming_up').sort((a, b) => a.start - b.start)[0]
   const n = running ?? next ?? null
   return {
     done: stages.filter((s) => s.state === 'done').length, total: stages.length,
-    now: n ? { title: n.title, state: n.state, start: n.start, paused: n.paused } : null,
+    now: n ? { title: n.title, state: n.state, start: n.start, paused: n.paused, resumeOn: n.paused ? live?.get(n.id)?.resumeOn ?? null : null } : null,
     handover: snap.handover ? dayOfIso(snap.handover) : null,
     stages, sharedAt,
   }
@@ -273,11 +278,13 @@ export function summaryOf(snap: ScheduleSnapshot, sharedAt: number, live?: Map<s
 /** Board 1's card title: "Carpentry is under way" · "Painting starts Mon 26 Oct" · "Every stage is done" — (simplify S-25) "Electrical &
     plumbing is paused" for a Blocked stage, as the Schedule page's row says Paused. */
 export function standsTitle(s: ScheduleSummary): string {
-  if (!s.now) return 'Every stage is done'
+  if (!s.now) return 'Every milestone is done'
   if (s.now.paused) return `${shortTitle(s.now.title)} is paused`   // (invented copy)
   return s.now.state === 'in_progress' ? `${shortTitle(s.now.title)} is under way` : `${shortTitle(s.now.title)} starts ${dayLabel(s.now.start)}`
 }
-/** Board 1's line: "3 of 7 stages done. Handover is planned for Fri 13 Nov." */
+/** Board 1's line: "3 of 7 milestones done. Handover is planned for Fri 13 Nov." — (the calm UI build 2026-10-27, 3-04 · W-030) milestones, the
+    studio's Schedule's word ("2 of 7 milestones"). */
+export const doneWords = (s: Pick<ScheduleSummary, 'done' | 'total'>) => `${s.done} of ${s.total} ${s.total === 1 ? 'milestone' : 'milestones'} done`
 export function standsLine(s: ScheduleSummary): string {
-  return [`${s.done} of ${s.total} ${s.total === 1 ? 'stage' : 'stages'} done.`, s.handover !== null && s.done < s.total ? `Handover is planned for ${dayLabel(s.handover)}.` : ''].filter(Boolean).join(' ')
+  return [`${doneWords(s)}.`, s.handover !== null && s.done < s.total ? `Handover is planned for ${dayLabel(s.handover)}.` : ''].filter(Boolean).join(' ')
 }

@@ -18,7 +18,7 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { inviteClient, readClientAccess, undoWithdraw, withdrawAccess } from '@/app/portal/studio-actions'
 import { copyText } from '@/lib/clipboard'
 import { isSgMobile, phoneDigits, phoneLocal } from '@/lib/format'
-import { PORTAL_ACCESS_RULE, agoText, inviteMessage, portalPath, remindMessage, shortDay, waLink } from '@/lib/portal/model'
+import { PORTAL_ACCESS_RULE, accessWhen, agoText, inviteMessage, portalPath, remindMessage, shortDay, waLink } from '@/lib/portal/model'
 import { recordReminder } from '@/app/portal/remind-actions'
 import { HouseholdRows } from './household-rows'
 import type { ClientAccessData } from '@/lib/portal/access'
@@ -59,9 +59,9 @@ export function ClientAccessPanel({ open, leadId, onClose }: { open: boolean; le
     let live = true
     readClientAccess(leadId).then((r) => {
       if (!live) return
-      if ('error' in r) { snackbar({ message: couldnt('open Invite to Portal', refusalOf(r.error)) }); close.current(); return }   // (one-home N-15) the panel's one name
+      if ('error' in r) { snackbar({ message: couldnt('open the client portal', refusalOf(r.error)) }); close.current(); return }   // (one-home N-15) the panel's one name — (the calm UI build 2026-10-27, 3-25) "Client portal"
       setData(r)
-    }, () => { if (live) { snackbar({ message: 'Couldn’t open Invite to Portal — please try again' }); close.current() } })
+    }, () => { if (live) { snackbar({ message: 'Couldn’t open the client portal — please try again' }); close.current() } })
     return () => { live = false }
   }, [open, leadId, rev, snackbar])
   const d = data && data.leadId === leadId ? data : null
@@ -121,11 +121,12 @@ export function ClientAccessPanel({ open, leadId, onClose }: { open: boolean; le
 
   const live = state === 'invited' || state === 'opened'
   return (
-    /* (one-home N-15) one name for this panel wherever it opens — "Invite to Portal", the lead ⋮'s (mock 931:49039) — not "Client access" */
-    <Drawer open={open && !!leadId} title="Invite to Portal" onClose={onClose} width="widest"
+    /* (one-home N-15) one name for this panel wherever it opens — not "Client access". (the calm UI build 2026-10-27, 3-25 · W-218) that name is
+       "Client portal", Company's: the panel stays the client's page once they have opened it, not an invitation; its button still invites */
+    <Drawer open={open && !!leadId} title="Client portal" onClose={onClose} width="widest"
             footer={d ? <Button variant="secondary" appearance="outlined" onPress={onClose}>Done</Button> : undefined}>
       {!d ? (
-        <div className={styles.loading} aria-busy aria-label="Loading Invite to Portal"><Line w={180} /><Line w="100%" lh={60} h={60} /><Line w={220} /><Line w="100%" lh={120} h={120} /></div>
+        <div className={styles.loading} aria-busy aria-label="Loading the client portal"><Line w={180} /><Line w="100%" lh={60} h={60} /><Line w={220} /><Line w="100%" lh={120} h={120} /></div>
       ) : (
         <>
           <section className={styles.section} data-testid="client-access" data-state={state}>
@@ -136,7 +137,7 @@ export function ClientAccessPanel({ open, leadId, onClose }: { open: boolean; le
                 <span className={styles.initials} aria-hidden>{initialsOf(d.client.name)}</span>
                 <span className={styles.text}>
                   <span className={styles.name}>{d.client.name}</span>
-                  <span className={styles.meta}>{personLine(d)}</span>
+                  <span className={styles.meta}>{personLine(d, d.now)}</span>
                 </span>
                 <span className={styles.chip} data-testid="access-chip"><MetaChip color={d.chip.tone}>{d.chip.label}</MetaChip></span>
                 {d.mayAct ? (
@@ -212,14 +213,14 @@ export function ClientAccessPanel({ open, leadId, onClose }: { open: boolean; le
   )
 }
 
-/** "9123 4567 · Invited 8 Aug by Germaine · sent again 6 Oct" — the board's second line, with who did what (fix-G, G-08: the first invite
-    stays; a later send is its own words). */
-function personLine(d: ClientAccessData): string {
+/** "9123 4567 · Sent 8 Aug by Germaine · sent again 6 Oct · opened 2 hours ago" (withdrawn: "9123 4567 · 3 Oct by Hui Min") — the board's second line, with who did what (fix-G, G-08: the
+    first invite stays; a later send is its own words). (the calm UI build 2026-10-27, 2-40 · 3-25 · T-04) The state is the chip's alone — the line
+    says when and by whom ("Sent", never "Invited" or "Not invited yet" beside a chip saying it), and the opened time that left the chip (5-42). */
+function personLine(d: ClientAccessData, now: number): string {
   const s = d.stamps
   const bits = [phoneLocal(d.client.phone)]
-  if (d.chip.state === 'withdrawn' && s?.withdrawnAt) bits.push(`Withdrawn ${shortDay(s.withdrawnAt)}${d.withdrawnBy ? ` by ${d.withdrawnBy}` : ''}`)
-  else if (s?.invitedAt) bits.push(`Invited ${shortDay(s.invitedAt)}${d.invitedBy ? ` by ${d.invitedBy}` : ''}${d.resent ? ` · sent again ${shortDay(d.resent.at)}` : ''}`)
-  else bits.push('Not invited yet')
+  if (d.chip.state === 'withdrawn' && s?.withdrawnAt) bits.push(`${shortDay(s.withdrawnAt)}${d.withdrawnBy ? ` by ${d.withdrawnBy}` : ''}`)   // the chip says Withdrawn
+  else if (s?.invitedAt) bits.push(`Sent ${shortDay(s.invitedAt)}${d.invitedBy ? ` by ${d.invitedBy}` : ''}${d.resent ? ` · sent again ${shortDay(d.resent.at)}` : ''}${d.chip.state === 'opened' ? ` · ${accessWhen(s, now)}` : ''}`)
   return bits.join(' · ')
 }
 /** The studio's name as the WhatsApp drafts say it — the portal's own words, never "OpenMaison". */

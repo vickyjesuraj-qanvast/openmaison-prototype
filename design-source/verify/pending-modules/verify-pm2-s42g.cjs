@@ -95,7 +95,7 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
     }
     await d.getByTestId('writeup-notes').locator('textarea').first().fill(notes).catch(async () => { await d.getByTestId('writeup-notes').fill(notes) })
     await p.getByTestId('writeup-save').click()
-    return waitSnack(p, /Brief made/, 15000)
+    return waitSnack(p, /Summary made/, 15000)   // (the calm UI build 2026-10-27, a deliberate change — W-127) "summary", not "brief"
   }
   const refused = async (p) => /Complete Contacted first|Complete .* first|Resume at .* first|Assign a member first/.test(await snackText(p))
 
@@ -119,7 +119,8 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
       await p.getByTestId('room-move-step').click()
       await p.waitForURL(new RegExp(`/leads/${KELVIN}`), { timeout: 10000 }).catch(() => {}); await settle(p, 2200)
       const wt = await text(win(p))
-      ok(await win(p).isVisible() && /Contacted$/.test(await winStep(p)) && /In person/.test(wt) && /Connected/.test(wt), '…the press lands on the Move stage window at Contacted, the meeting as its first contact log (In person, Connected)', { step: await winStep(p), wt: wt.slice(0, 200) })
+      const picked = async (g) => (await win(p).getByRole('radiogroup', { name: g, exact: true }).getByRole('radio', { checked: true }).allInnerTexts()).join('|').trim()
+      ok(await win(p).isVisible() && /Contacted$/.test(await winStep(p)) && (await picked('How')) === 'Visit' && (await picked('How it went')) === 'Connected', '…the press lands on the Move stage window at Contacted, the meeting as its first contact log (Visit — stored In person — Connected; the calm UI build 2026-10-27, a deliberate change)', { step: await winStep(p), wt: wt.slice(0, 200) })
       ok(!(await refused(p)), '…and never on a refusal ("Complete Contacted first")', await snackText(p))
       await shot(p, '02-window-contacted-1440')
       ok(!/[?&](move|meeting)=/.test(p.url()), '…the hand-off leaves the address', p.url())
@@ -131,7 +132,7 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
     {
       const ctx = await desk(); const p = await page(ctx, 'olivia')
       const s = await writeUp(p, OLIVIA, 'Client: We would like a Scandinavian look, budget around 45k.\nClient: The kitchen and the living room first.')
-      ok(/Brief made from the notes/.test(s) && /Move to Contacted/.test(s) && !/Move to Met/.test(s), 'Brief made — the snackbar offers "Move to Contacted", not a Met the rule refuses (G-01)', s)
+      ok(/Summary made from your notes/.test(s) && /Move to Contacted/.test(s) && !/Move to Met/.test(s), 'Brief made — the snackbar offers "Move to Contacted", not a Met the rule refuses (G-01)', s)
       await shot(p, '03-writeup-snackbar-1440')
       await snackAction(p, 'Move to Contacted').click()
       await p.waitForURL(new RegExp(`/leads/${OLIVIA}\\b`), { timeout: 10000 }).catch(() => {}); await settle(p, 2200)
@@ -172,7 +173,8 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
       await go(p, `/leads/${KELVIN}`, 2000)
       const brief = p.locator('section[aria-label="Maison AI brief"]')
       const bt = await text(brief)
-      ok(/Met already · log the meeting/i.test(bt) && /Move the lead to Met/.test(bt) && /becomes its Met log/.test(bt) && !/book the meet|Propose two slots/i.test(bt), 'the Contacted brief: "Met already · log the meeting — Move the lead to Met", not "book the meet" (G-05)', bt.slice(0, 260))
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-01) no CAPS tag on the brief: the record's fact and the move say it */
+      ok(/Met in person on/.test(bt) && /Move the lead to Met/.test(bt) && /becomes its Met log/.test(bt) && !/book the meet|Propose two slots/i.test(bt), 'the Contacted brief: met already — "Move the lead to Met", not "book the meet" (G-05)', bt.slice(0, 260))
       await shot(p, '04-contacted-brief-1440')
       await brief.getByRole('button', { name: 'Log the meeting' }).first().click(); await settle(p, 1600)
       ok(await win(p).isVisible() && /Met$/.test(await winStep(p)) && /In person/.test(await text(win(p))), '…Log the meeting opens the window at Met with the meeting as its log', await winStep(p))
@@ -241,7 +243,7 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
     {
       const ctx = await desk(); const p = await page(ctx, 'parked')
       const s = await writeUp(p, MEILING, 'Client: We are ready to start again — the budget is now around 70k.')
-      ok(/Brief made from the notes/.test(s) && /Resume at Met/.test(s), 'a write-up on a lead on hold offers "Resume at Met" (G-03)', s)
+      ok(/Summary made from your notes/.test(s) && /Resume at Met/.test(s), 'a write-up on a lead on hold offers "Resume at Met" (G-03)', s)
       await snackAction(p, 'Resume at Met').click()
       await p.waitForURL(new RegExp(`/leads/${MEILING}`), { timeout: 10000 }).catch(() => {}); await settle(p, 2200)
       const conf = p.getByRole('alertdialog').or(p.getByRole('dialog')).filter({ hasText: 'Resume at Met?' })
@@ -258,7 +260,7 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
       await shot(p, '07-room-on-hold-1440')
       /* lost: Met lies past where it stopped — the rule refuses it, so nothing is offered */
       const s2 = await writeUp(p, DAVID, 'Client: Just checking in on prices, nothing planned.')
-      ok(/Brief made from the notes/.test(s2) && !/Move to|Resume at/.test(s2), 'a write-up on a lost lead offers no stage (Open instead)', s2)
+      ok(/Summary made from your notes/.test(s2) && !/Move to|Resume at/.test(s2), 'a write-up on a lost lead offers no stage (Open instead)', s2)
       const dm = heldOn(DAVID)
       await go(p, `/meetings/${dm}`, 1600)
       ok(!(await offerOf(p)), '…and its meeting page has no stage offer')

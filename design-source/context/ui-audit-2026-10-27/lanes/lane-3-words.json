@@ -1,0 +1,1018 @@
+[
+  {
+    "now": "Money",
+    "proposed": "Payments",
+    "where": [
+      "/projects/[id]/money tab + page title",
+      "lib/projects/tabs.ts:21",
+      "lib/projects/tabs.ts:56",
+      "components/projects/money/project-money.tsx:59"
+    ],
+    "why": "The owner’s word; studios say payments (from the client) and costs (to suppliers).",
+    "kind": "name",
+    "otherModules": "Portal tab “Money” (lib/portal/model.ts:127); Finance “Money in / Money out”; Activity chip “Money” (lib/projects/tabs.ts:85)."
+  },
+  {
+    "now": "Money (portal tab)",
+    "proposed": "Payments",
+    "where": [
+      "/my/[slug]/money",
+      "lib/portal/model.ts:127",
+      "components/portal/money/portal-money.tsx"
+    ],
+    "why": "Same record as the studio’s tab — one name.",
+    "kind": "name"
+  },
+  {
+    "now": "Billing",
+    "proposed": "Client payments",
+    "where": [
+      "/projects/[id]/money region",
+      "components/projects/money/billing-section.tsx:252"
+    ],
+    "why": "“Billing” is an accountant’s word; it holds the client’s stages, invoices and receipts.",
+    "kind": "heading",
+    "otherModules": "Finance › “Money in” holds the same records; CLAUDE.md one-home words already use “Client payments”."
+  },
+  {
+    "now": "Money in / Money out",
+    "proposed": "Client payments / Costs",
+    "where": [
+      "/company/finance tabs",
+      "lib/finance/sections.ts:27",
+      "lib/finance/sections.ts:29"
+    ],
+    "why": "Match the project’s two regions so one record has one name.",
+    "kind": "name",
+    "otherModules": "Project Money tab: Billing / Costs; Dashboard: Owed to you / You owe."
+  },
+  {
+    "now": "Changes to the contract",
+    "proposed": "Variation orders",
+    "where": [
+      "/projects/[id]/money region title",
+      "components/projects/money/billing-section.tsx:258"
+    ],
+    "why": "The table head and its link already say “Variation order”; studios say VO.",
+    "kind": "heading"
+  },
+  {
+    "now": "Variation orders — {client} approves each on its link; once approved, the contract moves and the unsent invoices follow.",
+    "proposed": "(cut — a “How variation orders work” help link)",
+    "where": [
+      "components/projects/money/billing-section.tsx:260"
+    ],
+    "why": "A sentence under every heading is reading the owner skips.",
+    "kind": "helper"
+  },
+  {
+    "now": "From OM-10004’s payment schedule — each stage bills its share of the contract value, GST included.",
+    "proposed": "(cut — tooltip on the heading)",
+    "where": [
+      "components/projects/money/billing-section.tsx:92"
+    ],
+    "why": "Explains the table instead of letting it speak.",
+    "kind": "helper"
+  },
+  {
+    "now": "What the project costs the studio — purchase orders, bills and the team’s expenses. Over S$5,000.00, or with an advance, a PO waits for an Owner or an Admin.",
+    "proposed": "(cut — the PO rule shows on the row that waits)",
+    "where": [
+      "components/finance/project-costs.tsx:136"
+    ],
+    "why": "A rule shown where it bites, not as a paragraph.",
+    "kind": "helper"
+  },
+  {
+    "now": "Outstanding",
+    "proposed": "To collect",
+    "where": [
+      "/projects/[id] Overview Money card",
+      "components/projects/overview/money-card.tsx:50"
+    ],
+    "why": "The Money tile next door calls the same figure “To collect”.",
+    "kind": "label",
+    "otherModules": "Dashboard “Owed to you”; invoice “Balance due”; receipt “Still owed”; invoice panel “To pay”."
+  },
+  {
+    "now": "Owed to you",
+    "proposed": "To collect",
+    "where": [
+      "/dashboard Pulse",
+      "lib/dashboard/pulse.ts:79"
+    ],
+    "why": "One studio word for money the client still owes.",
+    "kind": "label",
+    "otherModules": "Projects “To collect”, Finance To do “To collect”."
+  },
+  {
+    "now": "You owe",
+    "proposed": "To pay",
+    "where": [
+      "/dashboard Pulse",
+      "lib/dashboard/pulse.ts:80"
+    ],
+    "why": "The project tile and Finance say “To pay”.",
+    "kind": "label"
+  },
+  {
+    "now": "To pay (invoice panel totals — what the client still owes)",
+    "proposed": "To collect",
+    "where": [
+      "/projects/[id]/money → invoice panel",
+      "components/projects/money/invoice-panel.tsx:88",
+      "components/projects/money/invoice-panel.tsx:92"
+    ],
+    "why": "On the Money tile beside it “To pay” means what the studio owes suppliers.",
+    "kind": "label"
+  },
+  {
+    "now": "Still owed",
+    "proposed": "Balance due",
+    "where": [
+      "/receipt/[token]",
+      "components/projects/money/payments-receipt.tsx"
+    ],
+    "why": "The invoice paper says “Balance due” for the same figure.",
+    "kind": "label"
+  },
+  {
+    "now": "Collected 22% · work 29%",
+    "proposed": "Collected 22% · 29% of the work done",
+    "where": [
+      "components/projects/overview/money-card.tsx:48"
+    ],
+    "why": "“work 29%” is a riddle.",
+    "kind": "label"
+  },
+  {
+    "now": "Cash so far",
+    "proposed": "Cash in hand",
+    "where": [
+      "/projects/[id]/money Profit tile",
+      "components/finance/books/project-profit.tsx:29"
+    ],
+    "why": "Say what it is (collected − paid out) — the sum in the tooltip.",
+    "kind": "label"
+  },
+  {
+    "now": "Payment stages · 4",
+    "proposed": "Payments · 4",
+    "where": [
+      "/projects/[id] Overview Money card",
+      "components/projects/overview/money-card.tsx:62"
+    ],
+    "why": "“Stage” is the project’s lifecycle word (Stage: In progress).",
+    "kind": "label",
+    "otherModules": "Company › Templates “Payment schedules”; New project “Payment split”."
+  },
+  {
+    "now": "Stage (Billing column head)",
+    "proposed": "Payment",
+    "where": [
+      "/projects/[id]/money",
+      "components/projects/money/billing-section.tsx"
+    ],
+    "why": "Same collision with the lifecycle stage.",
+    "kind": "label"
+  },
+  {
+    "now": "2 of 7 stages done",
+    "proposed": "2 of 7 milestones done (or “steps”, on both sides)",
+    "where": [
+      "/my/[slug] home",
+      "lib/portal/schedule-model.ts:280",
+      "components/portal/project/home-cards.tsx"
+    ],
+    "why": "The studio’s Schedule says “2 of 7 milestones”; “stage” means two other things on the project.",
+    "kind": "label"
+  },
+  {
+    "now": "The stages ahead and when each is planned",
+    "proposed": "The milestones ahead and when each is planned",
+    "where": [
+      "/my/[slug] bell",
+      "lib/portal/notifications-model.ts"
+    ],
+    "why": "Same as above.",
+    "kind": "helper"
+  },
+  {
+    "now": "Needs you",
+    "proposed": "Needs your attention",
+    "where": [
+      "/projects/[id] Overview card",
+      "components/projects/overview/needs-card.tsx:77",
+      "/projects/[id]/money",
+      "components/projects/money/needs-list.tsx:218"
+    ],
+    "why": "The owner’s example (“Needs you 51” → “Needs your attention”).",
+    "kind": "heading",
+    "otherModules": "Dashboard “Needs you”; Finance To do."
+  },
+  {
+    "now": "Needs your OK",
+    "proposed": "Waiting for your approval",
+    "where": [
+      "components/projects/overview/needs-card.tsx:83"
+    ],
+    "why": "Plain, and matches the Approve verb in the row.",
+    "kind": "heading",
+    "otherModules": "Dashboard “Needs your OK”; Tasks approvals line."
+  },
+  {
+    "now": "Needs you 4 (no separator)",
+    "proposed": "Needs your attention · 4",
+    "where": [
+      "components/projects/money/needs-list.tsx:219"
+    ],
+    "why": "One count format.",
+    "kind": "heading"
+  },
+  {
+    "now": "Before work starts",
+    "proposed": "Before work starts (keep) — drop the meta “Setting up for 12 days”",
+    "where": [
+      "components/projects/overview/needs-card.tsx:78"
+    ],
+    "why": "The stage button and Progress already say it.",
+    "kind": "heading"
+  },
+  {
+    "now": "Collaborators",
+    "proposed": "Members",
+    "where": [
+      "/projects/[id] · /leads/[id] info column",
+      "components/leads/detail/info-column.tsx:66"
+    ],
+    "why": "The listing column and Workload say “Members”.",
+    "kind": "heading",
+    "otherModules": "Portal “Team”; Workload “Members · Contractors”."
+  },
+  {
+    "now": "Owner (info column row)",
+    "proposed": "In charge",
+    "where": [
+      "components/leads/detail/info-column.tsx:297"
+    ],
+    "why": "“Owner” is the studio’s top role (Dane); here it names the lead’s Designer.",
+    "kind": "label",
+    "otherModules": "Settings › Roles & access “Owner”."
+  },
+  {
+    "now": "Client (tab) holding Messages › Team",
+    "proposed": "Client — client conversation only; Team chat opens from the info column",
+    "where": [
+      "lib/projects/tabs.ts:53",
+      "components/projects/messages/send-render.tsx:63"
+    ],
+    "why": "A private team chat filed under Client.",
+    "kind": "name"
+  },
+  {
+    "now": "CLIENT (tag on each message)",
+    "proposed": "(none in a client-only thread)",
+    "where": [
+      "/projects/[id]/messages"
+    ],
+    "why": "The thread is with the client; the tag repeats it on every message.",
+    "kind": "status"
+  },
+  {
+    "now": "Logged at Met",
+    "proposed": "From the lead, before the project began",
+    "where": [
+      "/projects/[id]/meetings",
+      "components/meetings/meetings-table.tsx:50"
+    ],
+    "why": "“Met” is a lead stage name.",
+    "kind": "label"
+  },
+  {
+    "now": "Meeting (row name)",
+    "proposed": "First meeting with {client}",
+    "where": [
+      "components/meetings/meetings-table.tsx"
+    ],
+    "why": "Say which meeting.",
+    "kind": "label"
+  },
+  {
+    "now": "Deal score",
+    "proposed": "(hidden on a project)",
+    "where": [
+      "components/meetings/meetings-table.tsx:41"
+    ],
+    "why": "A sales measure after the contract is signed.",
+    "kind": "label"
+  },
+  {
+    "now": "Added during stage movement — view only",
+    "proposed": "From the lead’s Met step — read only",
+    "where": [
+      "/projects/[id]/notes",
+      "components/leads/notes/lead-notes.tsx:582"
+    ],
+    "why": "“Stage movement” is the build’s word.",
+    "kind": "helper"
+  },
+  {
+    "now": "Contact Log",
+    "proposed": "Contact log",
+    "where": [
+      "components/leads/detail/quick-links.tsx:61",
+      "components/leads/detail/quick-links.tsx:78",
+      "Notes chips"
+    ],
+    "why": "The list titles already say “Contact log”.",
+    "kind": "label"
+  },
+  {
+    "now": "Date & Time",
+    "proposed": "Date and time",
+    "where": [
+      "components/leads/notes/contact-editor.tsx:59",
+      "components/leads/notes/contact-editor.tsx:101"
+    ],
+    "why": "House sentence style.",
+    "kind": "label"
+  },
+  {
+    "now": "Counting 4 running projects the list shows · a person can run 4 unless set otherwise",
+    "proposed": "Each person runs up to 4 projects",
+    "where": [
+      "/projects?view=workload",
+      "components/projects/workload/workload-view.tsx:39"
+    ],
+    "why": "Insider sentence.",
+    "kind": "helper"
+  },
+  {
+    "now": "1 of 4 · studio default",
+    "proposed": "1 of 4",
+    "where": [
+      "/projects?view=workload"
+    ],
+    "why": "The owner’s own example of insider copy.",
+    "kind": "label"
+  },
+  {
+    "now": "FULL / ROOM FOR 3 MORE",
+    "proposed": "Full / 3 free slots",
+    "where": [
+      "/projects?view=workload"
+    ],
+    "why": "Sentence case; “room for” reads oddly.",
+    "kind": "status"
+  },
+  {
+    "now": "7 contractors · every running site counts",
+    "proposed": "7 contractors this week",
+    "where": [
+      "components/projects/contractors/contractors-view.tsx:81"
+    ],
+    "why": "“every running site counts” is a rule note.",
+    "kind": "helper"
+  },
+  {
+    "now": "Put on a site",
+    "proposed": "Assign to a project",
+    "where": [
+      "components/projects/contractors/contractors-view.tsx:162"
+    ],
+    "why": "Plain verb; “site” vs “project” is a second word for one thing.",
+    "kind": "label"
+  },
+  {
+    "now": "Leader checked by Hui Min",
+    "proposed": "Checked by Hui Min",
+    "where": [
+      "components/projects/contractors/crew-list.tsx:50",
+      "lib/settings/permissions.ts:375"
+    ],
+    "why": "“Leader checked” is jargon.",
+    "kind": "label"
+  },
+  {
+    "now": "Fittings · CV / Painting · CP",
+    "proposed": "Fittings / Painting",
+    "where": [
+      "/projects?view=workload&of=contractors"
+    ],
+    "why": "Two-letter vendor codes mean nothing on this screen.",
+    "kind": "label"
+  },
+  {
+    "now": "Defer",
+    "proposed": "Leave for after handover",
+    "where": [
+      "Complete handover sheet",
+      "components/projects/ending/handover-dialog.tsx:257"
+    ],
+    "why": "Not a studio word.",
+    "kind": "label"
+  },
+  {
+    "now": "Complete anyway",
+    "proposed": "Hand over anyway",
+    "where": [
+      "components/projects/ending/handover-dialog.tsx:219"
+    ],
+    "why": "The sheet is “Complete handover”; the verb should match the moment.",
+    "kind": "label"
+  },
+  {
+    "now": "Margin 79% — 79 points over the expected 0%",
+    "proposed": "Margin 79% — the quote planned 24% (shown only when a plan exists)",
+    "where": [
+      "/projects/[id] closing summary · handover sheet",
+      "lib/finance/profit.ts:215"
+    ],
+    "why": "Accounting jargon; meaningless at 0%.",
+    "kind": "helper"
+  },
+  {
+    "now": "Completed · took 293 days",
+    "proposed": "Completed · 50 days on site",
+    "where": [
+      "/projects/[id] brief tag",
+      "lib/projects/briefs.ts:116"
+    ],
+    "why": "Counts from Won (incl. 243 days of setting up) — reads as ten months late.",
+    "kind": "status"
+  },
+  {
+    "now": "Carpentry fabrication runs to 21 Oct ’26. Carpentry fabrication is the last one running.",
+    "proposed": "Carpentry is 6 days late — Michelle asks to finish Wed 28 Oct.",
+    "where": [
+      "/projects/[id] brief",
+      "lib/projects/briefs.ts:84",
+      "lib/projects/briefs.ts:92"
+    ],
+    "why": "Stale date; the milestone named twice.",
+    "kind": "helper"
+  },
+  {
+    "now": "THIS WEEK (brief tag)",
+    "proposed": "(none)",
+    "where": [
+      "lib/projects/briefs.ts:95"
+    ],
+    "why": "The brief is always this week.",
+    "kind": "status"
+  },
+  {
+    "now": "Invite to Portal (panel title / ⋮ row)",
+    "proposed": "Client portal",
+    "where": [
+      "components/portal/client-access-panel.tsx:125",
+      "components/projects/project-menu.tsx:85"
+    ],
+    "why": "Stays “Invite” after the client opened it; Company calls it “Client portal”.",
+    "kind": "name",
+    "otherModules": "Company › Client portal; With {client} “Portal opened 16 Oct”."
+  },
+  {
+    "now": "1 said no to",
+    "proposed": "1 turned down",
+    "where": [
+      "Client portal panel › Choices",
+      "lib/portal/needs.ts:273"
+    ],
+    "why": "Dangling sentence.",
+    "kind": "label"
+  },
+  {
+    "now": "None of 10 shown",
+    "proposed": "10 files, none shared yet",
+    "where": [
+      "Client portal panel › Files"
+    ],
+    "why": "Clearer.",
+    "kind": "label"
+  },
+  {
+    "now": "Copy the no-login link",
+    "proposed": "Copy the client’s link",
+    "where": [
+      "components/projects/money/invoice-panel.tsx:99"
+    ],
+    "why": "“No-login” is technical.",
+    "kind": "label"
+  },
+  {
+    "now": "None — Issue a credit note takes money off it.",
+    "proposed": "No credit notes. Issue one to take money off this invoice.",
+    "where": [
+      "components/projects/money/invoice-panel.tsx:121"
+    ],
+    "why": "Doesn’t parse.",
+    "kind": "empty"
+  },
+  {
+    "now": "System uploaded the file …",
+    "proposed": "{client}’s bank slip was added: …",
+    "where": [
+      "/projects/[id]/activity",
+      "lib/leads/activity.ts:174"
+    ],
+    "why": "“System” is not a person.",
+    "kind": "label"
+  },
+  {
+    "now": "Michelle asked for 5% of what the client pays on the project",
+    "proposed": "Michelle asked for a 5% commission on this project",
+    "where": [
+      "/projects/[id]/activity"
+    ],
+    "why": "Riddle form.",
+    "kind": "label"
+  },
+  {
+    "now": "The studio’s question bank has 11 questions ready for this project.",
+    "proposed": "Your studio has 11 questions ready.",
+    "where": [
+      "components/leads/questionnaire/questionnaire-empty.tsx:23"
+    ],
+    "why": "“Question bank” is our word.",
+    "kind": "empty"
+  },
+  {
+    "now": "Add the studio’s questions",
+    "proposed": "Add them",
+    "where": [
+      "/projects/[id]/questionnaire empty state"
+    ],
+    "why": "Shorter, and outlined.",
+    "kind": "label"
+  },
+  {
+    "now": "Ask Client",
+    "proposed": "Ask the client",
+    "where": [
+      "components/leads/questionnaire/lead-questionnaire.tsx:114",
+      "components/leads/detail/questionnaire-card.tsx:28"
+    ],
+    "why": "Sentence case; disabled needs a reason.",
+    "kind": "label"
+  },
+  {
+    "now": "Add Task",
+    "proposed": "New task",
+    "where": [
+      "components/leads/tasks/tasks-toolbar.tsx:79",
+      "components/leads/tasks/tasks-table.tsx:226"
+    ],
+    "why": "One create grammar across tabs.",
+    "kind": "label",
+    "otherModules": "Leads tabs share it."
+  },
+  {
+    "now": "Add milestone",
+    "proposed": "New milestone",
+    "where": [
+      "components/projects/schedule/project-schedule.tsx:684"
+    ],
+    "why": "Same.",
+    "kind": "label"
+  },
+  {
+    "now": "Post an update",
+    "proposed": "New update",
+    "where": [
+      "components/projects/updates/project-updates.tsx:225"
+    ],
+    "why": "Same.",
+    "kind": "label"
+  },
+  {
+    "now": "New Meeting",
+    "proposed": "New meeting",
+    "where": [
+      "/projects/[id]/meetings toolbar"
+    ],
+    "why": "Sentence case.",
+    "kind": "label"
+  },
+  {
+    "now": "Add a choice",
+    "proposed": "New choice",
+    "where": [
+      "components/projects/choices/project-choices.tsx:175"
+    ],
+    "why": "Same.",
+    "kind": "label"
+  },
+  {
+    "now": "Add a plan",
+    "proposed": "New plan",
+    "where": [
+      "components/projects/floor-plan/add-plan-dialog.tsx:48"
+    ],
+    "why": "Same.",
+    "kind": "label"
+  },
+  {
+    "now": "New File",
+    "proposed": "New file",
+    "where": [
+      "components/leads/files/files-toolbar.tsx:155"
+    ],
+    "why": "Sentence case.",
+    "kind": "label"
+  },
+  {
+    "now": "Copy Link",
+    "proposed": "Copy link",
+    "where": [
+      "components/projects/project-menu.tsx:92",
+      "components/leads/quotes/quotes-table.tsx:403"
+    ],
+    "why": "Sentence case.",
+    "kind": "label"
+  },
+  {
+    "now": "Deleted Projects",
+    "proposed": "Deleted projects",
+    "where": [
+      "components/projects/deleted-projects-sheet.tsx:77",
+      "components/projects/projects-workspace.tsx"
+    ],
+    "why": "Sentence case.",
+    "kind": "heading"
+  },
+  {
+    "now": "Projects Settings",
+    "proposed": "Project settings",
+    "where": [
+      "components/projects/projects-workspace.tsx:324"
+    ],
+    "why": "Sentence case and grammar.",
+    "kind": "label"
+  },
+  {
+    "now": "Clear All",
+    "proposed": "Clear all",
+    "where": [
+      "Projects › Filters"
+    ],
+    "why": "Sentence case.",
+    "kind": "label"
+  },
+  {
+    "now": "Empty Trash",
+    "proposed": "Delete all forever",
+    "where": [
+      "components/leads/quotes/deleted-quotes-sheet.tsx:69",
+      "Deleted projects"
+    ],
+    "why": "“Trash” is a second name for “Deleted”.",
+    "kind": "label"
+  },
+  {
+    "now": "Delete Forever",
+    "proposed": "Delete forever",
+    "where": [
+      "components/leads/quotes/deleted-quotes-sheet.tsx:96",
+      "Deleted projects"
+    ],
+    "why": "Sentence case.",
+    "kind": "label"
+  },
+  {
+    "now": "View Client Info",
+    "proposed": "Client details",
+    "where": [
+      "/projects/[id] at 390"
+    ],
+    "why": "Sentence case, plainer.",
+    "kind": "label"
+  },
+  {
+    "now": "Open projects (4)",
+    "proposed": "Open projects · 4",
+    "where": [
+      "/projects scope pill"
+    ],
+    "why": "One count format.",
+    "kind": "label"
+  },
+  {
+    "now": "Open (1) · Resolved and closed (0) · All (1)",
+    "proposed": "Open · 1 · Resolved · All",
+    "where": [
+      "/projects/[id]/tickets"
+    ],
+    "why": "No zero counts; one format.",
+    "kind": "label"
+  },
+  {
+    "now": "Needs attention — Overdue tasks, milestones, choices or payments; a client who says something is not right; a long wait; no recent update; a set-up that stalled",
+    "proposed": "Needs attention — late, stuck or quiet",
+    "where": [
+      "components/projects/scopes.ts:23"
+    ],
+    "why": "A menu row, not a paragraph.",
+    "kind": "helper"
+  },
+  {
+    "now": "Waiting on client — A quote, contract, variation order, invoice, stage or choice for them to answer; …",
+    "proposed": "Waiting on client — something for them to answer",
+    "where": [
+      "components/projects/scopes.ts:24"
+    ],
+    "why": "Same.",
+    "kind": "helper"
+  },
+  {
+    "now": "Needs my review — Updates, invoices, handovers, schedule asks, purchase orders and expenses waiting for your approval, and payments to confirm",
+    "proposed": "Needs my review — waiting for your approval",
+    "where": [
+      "components/projects/scopes.ts:28"
+    ],
+    "why": "Same.",
+    "kind": "helper"
+  },
+  {
+    "now": "ACTIVE / INACTIVE / TO DO (menu groups)",
+    "proposed": "Active / Inactive / To do",
+    "where": [
+      "/projects scope menu",
+      "Stage menu"
+    ],
+    "why": "Caps where nothing is a status.",
+    "kind": "label"
+  },
+  {
+    "now": "Setting up · Started 21 Aug ’26 (stage menu)",
+    "proposed": "Setting up · done 21 Aug",
+    "where": [
+      "components/projects/stage-menu.tsx"
+    ],
+    "why": "Reads as the setting-up start.",
+    "kind": "label"
+  },
+  {
+    "now": "The line marks today, Tue 27 Oct. Shaded columns are weekends. A diamond is a payment from the quote’s schedule. A line joins a milestone to what it waits on — red when it started before that one allows.",
+    "proposed": "(a “?” tooltip on the chart head)",
+    "where": [
+      "components/projects/schedule/project-schedule.tsx:581"
+    ],
+    "why": "A legend paragraph under the chart.",
+    "kind": "helper"
+  },
+  {
+    "now": "Next payment · 30% · payment to confirm",
+    "proposed": "Next payment · S$13,370 to confirm",
+    "where": [
+      "components/projects/schedule/project-schedule.tsx:628"
+    ],
+    "why": "Say how much.",
+    "kind": "label"
+  },
+  {
+    "now": "Michelle asks for more time on Carpentry fabrication. · Open it",
+    "proposed": "(removed — the row and panel carry it)",
+    "where": [
+      "components/projects/schedule/project-schedule.tsx:652"
+    ],
+    "why": "Third copy of the same ask.",
+    "kind": "label"
+  },
+  {
+    "now": "30% · 21 AUG (payment pill)",
+    "proposed": "30% · 21 Aug",
+    "where": [
+      "/projects/[id]/schedule"
+    ],
+    "why": "Caps on a date.",
+    "kind": "label"
+  },
+  {
+    "now": "6 of 10 items answered · 4 mandatory items still to do · While the works run on site · the phase this project is in",
+    "proposed": "Execution (now): 4 of 6 done · 4 required left",
+    "where": [
+      "components/projects/compliance/project-compliance.tsx:120"
+    ],
+    "why": "Unparseable.",
+    "kind": "helper"
+  },
+  {
+    "now": "ITEM (compliance table head)",
+    "proposed": "(none)",
+    "where": [
+      "components/projects/compliance/item-row.tsx:102"
+    ],
+    "why": "A head over one column.",
+    "kind": "label"
+  },
+  {
+    "now": "Condo · 4 items to do this phase",
+    "proposed": "Executive Condo · 4 to do now",
+    "where": [
+      "/projects/[id]/compliance"
+    ],
+    "why": "Use the record’s property type.",
+    "kind": "label"
+  },
+  {
+    "now": "Details ▾ (on every compliance row)",
+    "proposed": "(the row opens on press)",
+    "where": [
+      "components/projects/compliance/item-row.tsx:56"
+    ],
+    "why": "A purple link on every row.",
+    "kind": "label"
+  },
+  {
+    "now": "Milestones come from",
+    "proposed": "Build the schedule from",
+    "where": [
+      "components/projects/schedule/source-picker.tsx:155"
+    ],
+    "why": "Verb-first, plainer.",
+    "kind": "label"
+  },
+  {
+    "now": "Electrical is under way; handover is planned for Fri 13 Nov.",
+    "proposed": "Electrical is paused — resuming around 27 Oct. Handover is planned for Fri 13 Nov.",
+    "where": [
+      "/my/[slug] home lede",
+      "components/portal/portal-home.tsx:112"
+    ],
+    "why": "Contradicts the card beneath.",
+    "kind": "helper"
+  },
+  {
+    "now": "A change to your contract to approve (after the client approved/declined)",
+    "proposed": "You approved VO-1 · +S$3,455.30 / You declined VO-2",
+    "where": [
+      "/my/[slug] bell",
+      "lib/portal/notifications-model.ts:159"
+    ],
+    "why": "An ask that is already answered.",
+    "kind": "label"
+  },
+  {
+    "now": "Demo Studio has your answers.",
+    "proposed": "Your designer is finding other options for the bathroom tiles.",
+    "where": [
+      "/my/[slug]/choices",
+      "components/portal/choices/portal-choices.tsx:88"
+    ],
+    "why": "Reads as done while the client is waiting.",
+    "kind": "helper"
+  },
+  {
+    "now": "WITH YOUR DESIGNER (tag under the “With your designer” heading)",
+    "proposed": "(none)",
+    "where": [
+      "components/portal/choices/choice-board.tsx:93"
+    ],
+    "why": "Repeats the heading.",
+    "kind": "status"
+  },
+  {
+    "now": "YOU ARE HERE (on a paused milestone)",
+    "proposed": "You are here (on the milestone under way)",
+    "where": [
+      "components/portal/project/portal-schedule.tsx:208"
+    ],
+    "why": "Two current steps, the flag on the paused one.",
+    "kind": "status"
+  },
+  {
+    "now": "Agreements (portal Files group)",
+    "proposed": "Contract",
+    "where": [
+      "/my/[slug]/files"
+    ],
+    "why": "Studio says “Contract” (folder “Contract & VOs”).",
+    "kind": "heading"
+  },
+  {
+    "now": "Issues (portal) / Tickets (studio)",
+    "proposed": "Issues — on both sides (rail, tab, “New issue”)",
+    "where": [
+      "lib/portal/model.ts:135",
+      "lib/projects/tabs.ts:26",
+      "/tickets"
+    ],
+    "why": "One record, two names; Activity already writes “reported an issue … T-2026-003”. (REG H-Q2 decided two names.)",
+    "kind": "name"
+  },
+  {
+    "now": "IN PROGRESS (ticket status)",
+    "proposed": "Being fixed",
+    "where": [
+      "/projects/[id]/tickets",
+      "/my/[slug]/issues"
+    ],
+    "why": "Same word as the project’s stage.",
+    "kind": "status"
+  },
+  {
+    "now": "Mid-Project",
+    "proposed": "Mid-project",
+    "where": [
+      "lib/leads/stage-data.ts:79",
+      "/projects/[id]/money"
+    ],
+    "why": "The portal already sentence-cases it; one spelling.",
+    "kind": "label"
+  },
+  {
+    "now": "Mark done (Schedule) / Done (Schedule phone) / ✓ Mark done (Compliance)",
+    "proposed": "Mark done — one look",
+    "where": [
+      "components/projects/schedule/schedule-phone.tsx:67",
+      "components/projects/compliance/item-row.tsx:65"
+    ],
+    "why": "One verb, one look.",
+    "kind": "label"
+  },
+  {
+    "now": "Show resolved marks",
+    "proposed": "Show fixed marks",
+    "where": [
+      "components/projects/floor-plan/project-floor-plan.tsx:388",
+      "components/portal/floor-plan/portal-floor-plan.tsx:223"
+    ],
+    "why": "Plainer for homeowners.",
+    "kind": "label"
+  },
+  {
+    "now": "Bar colour: By status · Blue · Green · Amber · Brown · Navy · Pink · Teal · Purple",
+    "proposed": "(under “More options”)",
+    "where": [
+      "components/projects/schedule/milestone-panel.tsx:389"
+    ],
+    "why": "Rare setting taking two rows.",
+    "kind": "label"
+  },
+  {
+    "now": "Deleted projects stay here until they are deleted forever. + Note: Deleted projects are hidden from the list and reports. Restore puts one back …",
+    "proposed": "Restore brings back its schedule, updates and money. Only Owners and Admins can restore or delete.",
+    "where": [
+      "components/projects/deleted-projects-sheet.tsx:82"
+    ],
+    "why": "Two notices saying one thing.",
+    "kind": "helper"
+  },
+  {
+    "now": "For a client who came straight to you. Their details stay with the project — they never join your leads.",
+    "proposed": "For a client who came to you directly — they won’t appear in Leads.",
+    "where": [
+      "/projects → New project",
+      "components/projects/new-project-dialog.tsx"
+    ],
+    "why": "Shorter.",
+    "kind": "helper"
+  },
+  {
+    "now": "From Company › Templates › Payment schedules — each stage bills its share of the value",
+    "proposed": "(cut)",
+    "where": [
+      "components/projects/new-project-dialog.tsx:153"
+    ],
+    "why": "The split’s name says it.",
+    "kind": "helper"
+  },
+  {
+    "now": "Assign member",
+    "proposed": "Members",
+    "where": [
+      "New project dialog"
+    ],
+    "why": "The field takes several; matches the listing.",
+    "kind": "label"
+  },
+  {
+    "now": "Put on hold · No date yet · 1 month · 3 months · 6 months · Custom",
+    "proposed": "Same set as the lead’s On Hold (decide once)",
+    "where": [
+      "components/projects/project-record-dialogs.tsx:36",
+      "components/leads/move-stage/dialogs.tsx:149"
+    ],
+    "why": "Two chip sets for one dialog.",
+    "kind": "label"
+  },
+  {
+    "now": "Tell {client} about this week · Draft it",
+    "proposed": "Send {client} this week’s update · Write it",
+    "where": [
+      "/projects/[id] Needs you"
+    ],
+    "why": "Clearer verb.",
+    "kind": "label"
+  },
+  {
+    "now": "Last told Ryan 27 days ago",
+    "proposed": "Last update to Ryan: 27 days ago",
+    "where": [
+      "components/projects/overview/with-client-card.tsx:75"
+    ],
+    "why": "“Last told” is clipped.",
+    "kind": "label"
+  }
+]

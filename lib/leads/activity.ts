@@ -10,7 +10,6 @@ import { contracts, fileComments, leadAssignees, leadEvents, leadFileRenders, le
 import { descriptor } from '@/lib/visualizer/model'
 import { parseComments, parseSnapshot, parseVariants } from '@/lib/visualizer/queries'
 import { SHARE_DAYS } from '@/lib/visualizer/policy'
-import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID, withYou } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 import { displayDate, displayDateTimeDot, maskNric, parseInputDateTime, phoneLocal } from '@/lib/format'
@@ -84,8 +83,24 @@ export type ActivityGroup = 'tasks' | 'files' | 'notes' | 'stage'
   | 'tickets' | 'messages'   // (gaps build H, H-Q24) tickets' lines and the days of messages
   | 'compliance'   // (gaps build I) the compliance checklist's lines
   | 'layouts'   // (gaps build J, J-Q17) the 3D Space Planner's lines
+  | 'quotes'   // (the calm UI build 2026-10-27 — 2-50) the quotes', contracts' and Quote X-Ray's lines, for the lead's Quotes chip
 
 export type LeadActivityData = { events: ActivityEvent[]; now: number }
+
+/** (the calm UI build 2026-10-27 — 2-50) A quote's payment schedule in words — "10% deposit, then 30 / 30 / 30" — where "10/30/30/30" was the
+    schedule's own shorthand; a fixed-fee row reads its amount ("S$2,000 design fee, then 30 / 40 / 30"). */
+function payWords(rows: { position: number; name: string; pct: number; fixedMinor?: number | null }[]): string {
+  const sorted = [...rows].sort((a, b) => a.position - b.position)
+  const n = (p: number) => (Number.isInteger(p) ? String(p) : p.toFixed(1).replace(/\.0$/, ''))
+  const part = (r: (typeof sorted)[number], unit: boolean) => (r.fixedMinor != null ? `S$${(r.fixedMinor / 100).toLocaleString('en-SG', { maximumFractionDigits: 0 })}` : `${n(r.pct)}${unit ? '%' : ''}`)
+  const [head, ...rest] = sorted
+  if (!head) return 'none'
+  const first = `${part(head, true)} ${head.name.trim().toLowerCase()}`
+  return rest.length ? `${first}, then ${rest.map((r) => part(r, false)).join(' / ')}` : first
+}
+/** (the calm UI build 2026-10-27 — 2-08) A contact log in the log's own words — "logged a call — callback requested", never "via In person". */
+const loggedWhat = (channel: string | null | undefined): string =>
+  channel === 'Call' ? 'a call' : channel === 'WhatsApp' ? 'a WhatsApp chat' : channel === 'In person' ? 'a visit' : channel === 'Email' ? 'an email' : channel === 'SMS' ? 'an SMS' : 'a contact'
 
 /**
  * (REG-286) The signed-in member, defined once in lib/db/session.ts. It shapes the SENTENCES below, not just a
@@ -175,6 +190,8 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
   const base = `/leads/${leadId}`
   const ev: ActivityEvent[] = []
   const push = (e: Omit<ActivityEvent, 'id'> & { id: string }) => ev.push(e)
+  /** (2-50) a quote's, a contract's or a reading's line — the Quotes chip keeps them (a variation order stays Money's) */
+  const pushDoc = (e: Omit<ActivityEvent, 'id'> & { id: string }) => push({ group: 'quotes', ...e })
   const q = (s: string) => `“${s}”`
 
   // Lead — Qanvast leads come from the system, the rest from you (the overview card's "Lead created from <source>"); an
@@ -276,9 +293,9 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
   /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
   for (const c of cmps) {
     const seeIt = { label: 'See comparison', href: `/quote-x-ray/${c.id}?from=${encodeURIComponent(`${base}/activity`)}` }
-    push({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: seeIt, actor: who(c.createdBy) })
+    pushDoc({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: seeIt, actor: who(c.createdBy) })
     /* (REG-640, X-Ray parity Q-16) what went to the client — the last send the reading keeps */
-    if (c.sentAt) push({ id: `xray-sent-${c.id}`, at: c.sentAt, icon: 'send', text: c.sentVia === 'copy' ? `${who(c.sentBy ?? c.createdBy)} copied the comparison with ${c.otherStudio}'s quote to send to the client.` : `${who(c.sentBy ?? c.createdBy)} sent the comparison with ${c.otherStudio}'s quote to the client on WhatsApp.`, link: seeIt, actor: who(c.sentBy ?? c.createdBy) })
+    if (c.sentAt) pushDoc({ id: `xray-sent-${c.id}`, at: c.sentAt, icon: 'send', text: c.sentVia === 'copy' ? `${who(c.sentBy ?? c.createdBy)} copied the comparison with ${c.otherStudio}'s quote to send to the client.` : `${who(c.sentBy ?? c.createdBy)} sent the comparison with ${c.otherStudio}'s quote to the client on WhatsApp.`, link: seeIt, actor: who(c.sentBy ?? c.createdBy) })
   }
   /* (pending modules S23) Meetings: planned, held with the co-pilot or written up, its brief saved to the lead, its notes shared, the client's answer to
      the invitation, cancelled. A meeting the Met log holds also has the stage's own line — this one says what the meeting record adds. */
@@ -291,11 +308,11 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       const open = { label: 'See meeting', href: `/meetings/${m.id}?from=${encodeURIComponent(`${base}/activity`)}` }
       const when = displayDateTimeDot(m.startsAt)
       push({ id: `meeting-${m.id}`, at: m.createdAt, icon: 'event', text: m.source && m.status === 'held' && !m.startedAt ? `${who(m.createdBy)} wrote up ${what} with ${lead.name} on ${when}${m.source === 'recording' ? ', from a recording' : ''}.` : `${who(m.createdBy)} planned ${what} with ${lead.name} for ${when}.`, link: open, actor: who(m.createdBy), origin: true })
-      if (m.startedAt) push({ id: `meeting-start-${m.id}`, at: m.startedAt, icon: 'mic', text: `${who(m.startedBy)} started ${what} with the co-pilot — ${lead.name} was told about it.`, link: open, actor: who(m.startedBy) })
-      if (m.endedAt) push({ id: `meeting-end-${m.id}`, at: m.endedAt, icon: 'event', text: `${who(m.startedBy)} held ${what} with ${lead.name}${m.blocks ? ` — the co-pilot on for ${heldOf({ startedAt: m.startedAt?.getTime() ?? null, endedAt: m.endedAt.getTime(), blocks: m.blocks })} minutes` : ''}; its brief is ready.`, link: open, actor: who(m.startedBy) })
+      if (m.startedAt) push({ id: `meeting-start-${m.id}`, at: m.startedAt, icon: 'mic', text: `${who(m.startedBy)} started ${what} with Meeting Copilot — ${lead.name} was told about it.`, link: open, actor: who(m.startedBy) })
+      if (m.endedAt) push({ id: `meeting-end-${m.id}`, at: m.endedAt, icon: 'event', text: `${who(m.startedBy)} held ${what} with ${lead.name}${m.blocks ? ` — Meeting Copilot on for ${heldOf({ startedAt: m.startedAt?.getTime() ?? null, endedAt: m.endedAt.getTime(), blocks: m.blocks })} minutes` : ''}; its summary is ready.`, link: open, actor: who(m.startedBy) })
       if (m.briefSavedAt) {
         const b = briefOf(m.briefJson)
-        push({ id: `meeting-saved-${m.id}`, at: m.briefSavedAt, icon: 'task_alt', text: `${who(m.briefSavedBy)} saved the meeting’s brief to the ${recordAt(m.briefSavedAt)}${b?.actions[0] ? ` — next: ${q(b.actions[0])}` : ''}.`, link: open, actor: who(m.briefSavedBy) })
+        push({ id: `meeting-saved-${m.id}`, at: m.briefSavedAt, icon: 'task_alt', text: `${who(m.briefSavedBy)} saved the meeting’s summary to the ${recordAt(m.briefSavedAt)}${b?.actions[0] ? ` — next: ${q(b.actions[0])}` : ''}.`, link: open, actor: who(m.briefSavedBy) })
       }
       if (m.invitedAt) push({ id: `meeting-invite-${m.id}`, at: m.invitedAt, icon: 'send', text: `The invitation to ${what} went to ${lead.name}${m.invitedVia === 'email' ? ' by email' : m.invitedVia === 'whatsapp' ? ' on WhatsApp' : ''}.`, link: open, actor: 'System' })
       if (m.clientAnswerAt && m.clientAnswer) push({ id: `meeting-answer-${m.id}`, at: m.clientAnswerAt, icon: m.clientAnswer === 'yes' ? 'check_circle' : 'info', text: m.clientAnswer === 'yes' ? `${lead.name} said they’ll be at ${what.replace(/^a /, 'the ')}.` : `${lead.name} said the time of ${what.replace(/^a /, 'the ')} doesn’t suit${m.clientAnswerNote ? ` — ${q(m.clientAnswerNote)}` : ''}.`, link: open, actor: lead.name })
@@ -320,7 +337,8 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       }
     }
   }
-  /* (REG-675, AI Visualizer Q-34) The AI Visualizer: rooms added, versions rendered, renders shared, and the client's answers. */
+  /* (REG-675, AI Visualizer Q-34) The AI Visualizer: rooms added, versions rendered, versions shared, and the client's answers. (the calm UI build
+     2026-10-27 — B6's request, 6-07 · §2) the pictures are "versions" in every line, as the AI Visualizer says them; "rendered" stays the verb */
   const vizStops = new Set(events.filter((e) => e.kind === 'share_stopped').map((e) => (e.detail as LeadEventDetail | null)?.id).filter(Boolean))
   /* (audit 2026-09-26, F098) a line about a version opens the design on its room and version — on the pin itself for a pin */
   const viz = (roomId?: string | null, key?: string | null, pinId?: string | null) => {
@@ -345,30 +363,30 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     for (const sl of vShares) {
       /* (pending modules S02) a render shown to the client from Files is on their Designs through a link of its own — the file's "showed …"
          and "stopped showing …" lines say it; only the client's opening of it is the link's own line */
-      if (sl.fileId) { if (sl.lastViewedAt) push({ id: `viz-view-${sl.id}`, at: sl.lastViewedAt, icon: 'visibility', text: `${lead.name} opened the shared renders${sl.viewCount > 1 ? ` (${sl.viewCount} times)` : ''}.`, link: viz(null), actor: lead.name }); continue }
+      if (sl.fileId) { if (sl.lastViewedAt) push({ id: `viz-view-${sl.id}`, at: sl.lastViewedAt, icon: 'visibility', text: `${lead.name} opened the shared versions${sl.viewCount > 1 ? ` (${sl.viewCount} times)` : ''}.`, link: viz(null), actor: lead.name }); continue }
       const n = parseSnapshot(sl.snapshot).versions.length
-      push({ id: `viz-share-${sl.id}`, at: sl.createdAt, icon: 'send', text: `${who(sl.createdBy)} shared ${n} ${n === 1 ? 'render' : 'renders'} with ${lead.name}${sl.sentVia === 'whatsapp' ? ' on WhatsApp' : ''}.`, link: viz(null), actor: who(sl.createdBy) })
-      if (sl.lastViewedAt) push({ id: `viz-view-${sl.id}`, at: sl.lastViewedAt, icon: 'visibility', text: `${lead.name} opened the shared renders${sl.viewCount > 1 ? ` (${sl.viewCount} times)` : ''}.`, link: viz(null), actor: lead.name })
+      push({ id: `viz-share-${sl.id}`, at: sl.createdAt, icon: 'send', text: `${who(sl.createdBy)} shared ${n} ${n === 1 ? 'version' : 'versions'} with ${lead.name}${sl.sentVia === 'whatsapp' ? ' on WhatsApp' : ''}.`, link: viz(null), actor: who(sl.createdBy) })
+      if (sl.lastViewedAt) push({ id: `viz-view-${sl.id}`, at: sl.lastViewedAt, icon: 'visibility', text: `${lead.name} opened the shared versions${sl.viewCount > 1 ? ` (${sl.viewCount} times)` : ''}.`, link: viz(null), actor: lead.name })
       /* (F106 · F207) a stop names whoever stopped it — the event log's line below; a link stopped before the log keeps a line that names nobody */
-      if (sl.revokedAt && !vizStops.has(sl.id)) push({ id: `viz-stop-${sl.id}`, at: sl.revokedAt, icon: 'link_off', text: 'The renders’ link was stopped.', link: viz(null), actor: 'System' })
+      if (sl.revokedAt && !vizStops.has(sl.id)) push({ id: `viz-stop-${sl.id}`, at: sl.revokedAt, icon: 'link_off', text: 'The versions’ link was stopped.', link: viz(null), actor: 'System' })
     }
     for (const a of vAsks) {
       const v = on(a.versionKey)
       const name = a.clientName ?? lead.name
-      const text = a.kind === 'favourite' ? `${name} picked ${v ?? 'a render'} as the favourite.`
-        : a.kind === 'call_back' ? `${name} asked for a call back about the renders.`
-        : a.kind === 'reply' ? `${name} answered ${lead.name}’s note on ${v ?? 'the renders'}: ${q(a.message ?? '')}`   // (UX audit V1) the studio's reply, `client_name` its writer
-        : `${name} left a note on ${v ?? 'the renders'}: ${q(a.message ?? '')}`
+      const text = a.kind === 'favourite' ? `${name} picked ${v ?? 'a version'} as the favourite.`
+        : a.kind === 'call_back' ? `${name} asked for a call back about the versions.`
+        : a.kind === 'reply' ? `${name} answered ${lead.name}’s note on ${v ?? 'the versions'}: ${q(a.message ?? '')}`   // (UX audit V1) the studio's reply, `client_name` its writer
+        : `${name} left a note on ${v ?? 'the versions'}: ${q(a.message ?? '')}`
       push({ id: `viz-ask-${a.id}`, at: a.createdAt, icon: a.kind === 'favourite' ? 'star' : a.kind === 'call_back' ? 'call' : 'comment', text, link: a.kind === 'call_back' && a.taskId ? { label: 'See Task', href: `${base}/tasks?open=${a.taskId}` } : at(a.versionKey), actor: name })
     }
     for (const p of vPins) {
       const key = `${p.jobId}:${p.variantId}`
       const actor = p.authorRole === 'client' ? p.authorName : who(p.authorMemberId)
-      push({ id: `viz-pin-${p.id}`, at: p.createdAt, icon: 'push_pin', text: `${actor} pinned a note on ${on(key) ?? 'a render'}: ${q(p.body)}`, link: at(key, p.id), actor })
+      push({ id: `viz-pin-${p.id}`, at: p.createdAt, icon: 'push_pin', text: `${actor} pinned a note on ${on(key) ?? 'a version'}: ${q(p.body)}`, link: at(key, p.id), actor })
       /* (F106) every reply on the pin, the client's and the studio's */
       for (const c of parseComments(p.commentsJson)) {
         const by = c.authorRole === 'client' ? c.authorName : who((c as { authorMemberId?: string | null }).authorMemberId ?? null)
-        push({ id: `viz-pin-${p.id}-${c.id}`, at: new Date(c.createdAt), icon: 'comment', text: `${by} replied on ${on(key) ?? 'a render'}: ${q(c.body)}`, link: at(key, p.id), actor: by })
+        push({ id: `viz-pin-${p.id}-${c.id}`, at: new Date(c.createdAt), icon: 'comment', text: `${by} replied on ${on(key) ?? 'a version'}: ${q(c.body)}`, link: at(key, p.id), actor: by })
       }
     }
   }
@@ -544,7 +562,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : null
       const icon = e.kind.startsWith('project_po_') ? (e.kind === 'project_po_removed' || e.kind === 'project_po_cancelled' ? 'delete' : 'local_shipping') : e.kind.startsWith('project_bill_') ? 'receipt_long' : e.kind.startsWith('project_expense_') ? 'shopping_cart' : 'payments'
       const href = e.projectId ? `/projects/${e.projectId}/money${md.id && !/_removed$/.test(e.kind) && !e.kind.startsWith('project_payout_') ? `?open=${encodeURIComponent(md.id)}` : ''}` : null
-      if (text) push({ id: `ev-${e.id}`, at: e.at, icon, text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor: vendorLine ? v : actor })
+      if (text) push({ id: `ev-${e.id}`, at: e.at, icon, text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor: vendorLine ? v : actor })
       continue
     }
     /* (gaps build F2 — F2-Q9) A credit note: issued against its invoice, void with a reason, its refund paid. Money lines (`isMoneyEventKind`);
@@ -563,7 +581,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : null
       const opens = e.kind === 'project_credit_used' ? (cd2 as { invoice?: string }).invoice ?? cd2.id : cd2.id   // (pending modules S07) a credit's use opens the invoice it went on
       const href = e.projectId ? `/projects/${e.projectId}/money${opens ? `?open=${encodeURIComponent(opens)}` : ''}` : null
-      if (text) push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'project_credit_voided' ? 'cancel' : 'receipt_long', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor })
+      if (text) push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'project_credit_voided' ? 'cancel' : 'receipt_long', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor })
       continue
     }
     /* (gaps build F2 — F2-Q6 · Q8) Commission paid to a member, or that payment reversed — a money line, and only the member's own besides
@@ -594,7 +612,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : `${actor} reminded ${client} on WhatsApp about ${inv} — ${pd.to ?? ''}${pd.due ? `, due ${pd.due}` : ''}.`
       const href = e.projectId ? `/projects/${e.projectId}/money${pd.id ? `?open=${encodeURIComponent(pd.id)}` : ''}` : null
       push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'project_payment_not_received' || e.kind === 'project_payment_reversed' ? 'error' : e.kind === 'project_invoice_reminded' ? 'chat' : 'payments',
-             text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor: e.kind === 'project_payment_submitted' ? (pd.person ?? client) : actor })
+             text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor: e.kind === 'project_payment_submitted' ? (pd.person ?? client) : actor })
       continue
     }
     /* (gaps build B) Money in, complete: a one-off or a variation order's own invoice made, a Draft of theirs removed, an invoice recorded from
@@ -614,7 +632,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : `${actor} voided ${inv}${bd.title ? ` ${q(bd.title)}` : ''}${bd.reason ? ` — ${q(bd.reason.replace(/[.!?]+$/, ''))}` : ''}.`
       const href = e.projectId ? `/projects/${e.projectId}/money${bd.id && e.kind !== 'project_invoice_removed' && e.kind !== 'project_split_set' ? `?open=${encodeURIComponent(bd.id)}` : ''}` : null
       push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'project_invoice_approver_reminded' ? 'notifications' : e.kind === 'project_invoice_removed' ? 'delete' : 'payments',
-             text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor })
+             text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor })
       continue
     }
     /* (Projects round 5) Money in: a variation order made and approved, the rebalance that followed, an invoice's every step — each line
@@ -641,7 +659,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : e.kind === 'project_invoice_edited' ? `${actor} changed ${stage} from ${md.from ?? ''} to ${md.to ?? ''}${md.reason ? ` — ${q(md.reason.replace(/[.!?]+$/, ''))}` : ''}.`
         : null
       const href = e.projectId ? `/projects/${e.projectId}/money${e.kind.startsWith('project_invoice_') && md.id ? `?open=${encodeURIComponent(md.id)}` : ''}` : null
-      if (text) push({ id: `ev-${e.id}`, at: e.at, icon: e.kind.startsWith('project_vo_') ? 'request_quote' : 'payments', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor: fromPick ? lead.name : e.kind === 'project_vo_approved' && md.via === 'link' ? (md.name ?? lead.name) : e.kind === 'project_vo_declined' ? ((md as { person?: string }).person ?? lead.name) : actor,
+      if (text) push({ id: `ev-${e.id}`, at: e.at, icon: e.kind.startsWith('project_vo_') ? 'request_quote' : 'payments', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor: fromPick ? lead.name : e.kind === 'project_vo_approved' && md.via === 'link' ? (md.name ?? lead.name) : e.kind === 'project_vo_declined' ? ((md as { person?: string }).person ?? lead.name) : actor,
         ...(e.kind === 'project_vo_created' && md.id && askVos.has(md.id) ? { twin: true } : {}) })   // (simplify round 2) the ask's line says it under All
       continue
     }
@@ -661,7 +679,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
         : e.kind === 'parity_b_po_unrecorded' ? `${actor} removed the record of the purchase order ${t} (${bd.to ?? ''}).`
         : `${actor} marked the purchase order ${t} delivered by ${v}${bd.due ? ` — it was expected ${bd.due}` : ''}.`
       const href = e.projectId ? `/projects/${e.projectId}/money${bd.id && e.kind !== 'parity_b_po_unrecorded' ? `?open=${encodeURIComponent(bd.id)}` : ''}` : null
-      push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'parity_b_po_unrecorded' ? 'delete' : 'local_shipping', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Money', href } : overview, actor })
+      push({ id: `ev-${e.id}`, at: e.at, icon: e.kind === 'parity_b_po_unrecorded' ? 'delete' : 'local_shipping', text: text.replace(/\s+/g, ' ').replace(' .', '.'), link: href ? { label: 'See Payments', href } : overview, actor })
       continue
     }
     /* end P-B */
@@ -677,11 +695,13 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       const whom = cd.memberId ? (cd.memberId === meId ? 'you' : cd.title ?? 'a member') : null
       const why = (x: string | null | undefined) => (x ? ` — ${q(x.replace(/[.!?]+$/, ''))}` : '')
       const low = (x: string | null | undefined) => (x ? x.charAt(0).toLowerCase() + x.slice(1) : '')
+      /** (3-45) an ask in words: "a 5% commission" where the rate leads, else "a commission of …" */
+      const askOf = (x: string | null | undefined) => { const m = /^(\d+(?:\.\d+)?%)/.exec(x ?? ''); return m ? `a ${m[1]} commission` : `a commission of ${low(x)}` }
       const text = e.kind === 'parity_c_commission_rule'
         ? (cd.removed
           ? (whom ? `${actor} removed ${whom === 'you' ? 'your' : `${whom}’s`} rate on the project (${low(cd.from)}) — the next rule up applies.` : `${actor} set the project back to the studio’s rule — it was ${low(cd.from)}.`)
           : (whom ? `${actor} set ${whom === 'you' ? 'your' : `${whom}’s`} commission on the project to ${low(cd.to)}${cd.from ? ` (was ${low(cd.from)})` : ''}.` : `${actor} set the project’s commission to ${low(cd.to)}${cd.from ? ` (was ${low(cd.from)})` : ''}.`))
-        : e.kind === 'parity_c_commission_asked' ? `${actor} asked for ${low(cd.to)} on the project${why(cd.reason)}.`
+        : e.kind === 'parity_c_commission_asked' ? `${actor} asked for ${askOf(cd.to)} on this project${why(cd.reason)}.`   // (the calm UI build 2026-10-27 — 3-45) "a 5% commission", never "5% of what the client pays on the project"
         : e.kind === 'parity_c_commission_answered' ? `${actor} ${cd.answer === 'approved' ? 'approved' : 'declined'} ${whom === 'you' ? 'your' : `${whom ?? 'a member'}’s`} ask for ${low(cd.to)}${why(cd.note)}.`
         : e.kind === 'parity_c_commission_withdrawn' ? `${actor} took back the ask for ${low(cd.to)}.`
         : null
@@ -824,17 +844,17 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       const td = d as LeadEventDetail & { by?: 'client' | 'studio'; person?: string; to?: string; note?: string; kind?: string }
       const client = td.person ?? lead.name
       const by = td.by === 'client' ? client : actor
-      const what = `${td.kind ?? 'a ticket'}${td.title ? ` — ${q(td.title)}` : ''}`
+      const what = `${td.kind ?? 'an issue'}${td.title ? ` — ${q(td.title)}` : ''}`
       const text = e.kind === 'project_ticket_raised' ? (td.by === 'client' ? `${client} reported an issue on their portal: ${what}.` : `${actor} raised ${what} for ${lead.name}.`)
-        : e.kind === 'project_ticket_assigned' ? (td.to ? `${actor} gave ${td.kind ?? 'a ticket'} to ${td.to}.` : `${actor} took ${td.kind ?? 'a ticket'} off whoever looked after it.`)
-        : e.kind === 'project_ticket_escalated' ? `${actor} escalated ${what}${td.note ? ` — ${q(td.note.replace(/[.!?]+$/, ''))}` : ''}.`
+        : e.kind === 'project_ticket_assigned' ? (td.to ? `${actor} gave ${td.kind ?? 'an issue'} to ${td.to}.` : `${actor} took ${td.kind ?? 'an issue'} off whoever looked after it.`)
+        : e.kind === 'project_ticket_escalated' ? `${actor} flagged ${what} to the Owner${td.note ? ` — ${q(td.note.replace(/[.!?]+$/, ''))}` : ''}.`
         : e.kind === 'project_ticket_resolved' ? `${actor} marked ${what} resolved.`
         : e.kind === 'project_ticket_reopened' ? `${by} reopened ${what}.`
         : e.kind === 'project_ticket_closed' ? `${client} closed ${what} on their portal.`
         : null
       const icon = e.kind === 'project_ticket_resolved' ? 'check_circle' : e.kind === 'project_ticket_escalated' ? 'flag' : e.kind === 'project_ticket_assigned' ? 'person' : e.kind === 'project_ticket_closed' ? 'lock' : 'handyman'
       const href = e.projectId ? `/projects/${e.projectId}/tickets${td.id ? `?open=${encodeURIComponent(td.id)}` : ''}` : null
-      if (text) push({ id: `ev-${e.id}`, at: e.at, icon, text, link: href ? { label: 'See Ticket', href } : overview,
+      if (text) push({ id: `ev-${e.id}`, at: e.at, icon, text, link: href ? { label: 'See Issue', href } : overview,
                        actor: td.by === 'client' ? client : actor, group: 'tickets' })
       continue
     }
@@ -847,11 +867,11 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       if (!e.projectId || !ad.ref || (e.kind === 'project_ask_vo' && !seesMoney)) continue
       const tk = ad.source === 'ticket' ? askTickets.find((x) => x.id === ad.ref) : undefined
       const client = ad.source === 'ticket' ? (tk?.kind === 'client' ? tk.name : lead.name) : askMsgs.find((x) => x.id === ad.ref)?.name ?? lead.name
-      const from = ad.source === 'ticket' ? `${client}’s ticket${tk?.number ? ` ${tk.number}` : ''}` : `${client}’s message`
+      const from = ad.source === 'ticket' ? `${client}’s issue${tk?.number ? ` ${tk.number}` : ''}` : `${client}’s message`
       const said = ad.title ? ` — ${q(ad.title)}` : ''
       const vo = e.kind === 'project_ask_vo' ? qs.find((x) => x.id === ad.id) : undefined
       const text = e.kind === 'project_ask_task' ? `${actor} made a task from ${from}${said}.` : `${actor} raised ${vo?.number ?? ad.number ?? 'a variation order'} from ${from}${said}.`
-      const source = ad.source === 'ticket' ? { label: 'See Ticket', href: `/projects/${e.projectId}/tickets?open=${encodeURIComponent(ad.ref)}` } : { label: 'See Messages', href: `/projects/${e.projectId}/messages` }
+      const source = ad.source === 'ticket' ? { label: 'See Issue', href: `/projects/${e.projectId}/tickets?open=${encodeURIComponent(ad.ref)}` } : { label: 'See Messages', href: `/projects/${e.projectId}/messages` }
       const link = e.kind === 'project_ask_task'
         ? (ad.id && tasks.some((t) => t.id === ad.id) ? { label: 'See Task', href: `${base}/tasks?open=${ad.id}` } : source)
         : (vo && !vo.deletedAt ? { label: `Open ${vo.number}`, href: `/quotes/${vo.id}` } : source)   // (invented copy) the ask menu's "Open VO-n"
@@ -991,14 +1011,14 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       /* (audit 2026-09-26, F093 · F106 · F207) the AI Visualizer's removals and its link's stops and renewals */
       : e.kind === 'design_deleted' ? `${actor} deleted the AI Visualizer design ${q(d.name ?? lead.name)}.`
       : e.kind === 'design_restored' ? `${actor} brought back the AI Visualizer design ${q(d.name ?? lead.name)}.`
-      : e.kind === 'design_purged' ? `${actor} deleted the AI Visualizer design ${q(d.name ?? lead.name)} for good — the renders saved to Files stay.`
+      : e.kind === 'design_purged' ? `${actor} deleted the AI Visualizer design ${q(d.name ?? lead.name)} for good — the versions saved to Files stay.`
       : e.kind === 'room_deleted' ? `${actor} deleted the room ${q(d.room ?? '')} from the AI Visualizer.`
       : e.kind === 'room_restored' ? `${actor} brought back the room ${q(d.room ?? '')} in the AI Visualizer.`
       : e.kind === 'version_deleted' ? `${actor} deleted V${d.n ?? '?'} of ${q(d.room ?? '')} in the AI Visualizer.`
       : e.kind === 'version_restored' ? `${actor} brought back V${d.n ?? '?'} of ${q(d.room ?? '')} in the AI Visualizer.`
-      : e.kind === 'share_stopped' ? `${actor} stopped sharing the renders’ link.`
-      : e.kind === 'share_renewed' ? `${actor} renewed the renders’ link for ${d.n ?? SHARE_DAYS} days.`
-      : e.kind === 'share_reopened' ? `${actor} reopened the renders’ link.`
+      : e.kind === 'share_stopped' ? `${actor} stopped sharing the versions’ link.`
+      : e.kind === 'share_renewed' ? `${actor} renewed the versions’ link for ${d.n ?? SHARE_DAYS} days.`
+      : e.kind === 'share_reopened' ? `${actor} reopened the versions’ link.`
       /* (UX audit 2026-09-30, T10) a task's changes, by whoever made them */
       : e.kind === 'task_completed' ? `${actor} completed the task ${q(d.title ?? '')}.`
       : e.kind === 'task_reopened' ? `${actor} reopened the task ${q(d.title ?? '')}.`
@@ -1041,7 +1061,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
   for (const c of qComments) {
     const x = qs.find((qq) => qq.id === c.quoteId); if (!x) continue
     const line = qLines.find((l) => l.id === c.itemId)
-    push({ id: `qc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on ${line ? `“${line.name}” in ` : ''}the quote ${q(x.number)}.`, link: { label: 'Open Quote', href: `/quotes/${x.id}` }, actor: who(c.authorId) })
+    pushDoc({ id: `qc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on ${line ? `“${line.name}” in ` : ''}the quote ${q(x.number)}.`, link: { label: 'Open Quote', href: `/quotes/${x.id}` }, actor: who(c.authorId) })
   }
   for (const c of tComments) { const t = tasks.find((x) => x.id === c.taskId); if (t) push({ id: `tc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the task ${q(t.title)}.`, link: { label: 'See Task', href: `${base}/tasks?open=${t.id}&panel=comments` }, actor: who(c.authorId), group: 'tasks' }) }
 
@@ -1051,27 +1071,27 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
        its send to the client is the quote's own stamp. */
     if (x.kind === 'variation') {
       /* (fix-D, D-42) who sent it isn't recorded — the line says what went, never "You" to every reader */
-      if (x.clientSentAt) push({ id: `vo-s-${x.id}`, at: x.clientSentAt, icon: 'request_quote', text: `The variation order ${q(x.number)} went to ${lead.name} for approval.`, link: x.projectId ? { label: 'See Money', href: `/projects/${x.projectId}/money` } : { label: 'Open', href: `/quotes/${x.id}` }, actor: 'The studio' })
-      if (x.clientLastViewedAt) push({ id: `vo-v-${x.id}`, at: x.clientLastViewedAt, icon: 'visibility', text: `${lead.name} opened the variation order ${q(x.number)}${x.clientViewCount > 1 ? ` (${x.clientViewCount} times)` : ''}.`, link: x.projectId ? { label: 'See Money', href: `/projects/${x.projectId}/money` } : { label: 'Open', href: `/quotes/${x.id}` }, actor: lead.name })   // (pending modules S04)
+      if (x.clientSentAt) push({ id: `vo-s-${x.id}`, at: x.clientSentAt, icon: 'request_quote', text: `The variation order ${q(x.number)} went to ${lead.name} for approval.`, link: x.projectId ? { label: 'See Payments', href: `/projects/${x.projectId}/money` } : { label: 'Open', href: `/quotes/${x.id}` }, actor: 'The studio' })
+      if (x.clientLastViewedAt) push({ id: `vo-v-${x.id}`, at: x.clientLastViewedAt, icon: 'visibility', text: `${lead.name} opened the variation order ${q(x.number)}${x.clientViewCount > 1 ? ` (${x.clientViewCount} times)` : ''}.`, link: x.projectId ? { label: 'See Payments', href: `/projects/${x.projectId}/money` } : { label: 'Open', href: `/quotes/${x.id}` }, actor: lead.name })   // (pending modules S04)
       continue
     }
     const link = { label: 'See Quote', href: `${base}/quotes` }
-    push({ id: `quote-${x.id}`, at: x.createdAt, icon: 'docs', text: x.draftBrief ? `You drafted the quote ${q(x.number)} with Maison AI, from the brief “${x.draftBrief.length > 80 ? `${x.draftBrief.slice(0, 79).trimEnd()}…` : x.draftBrief}”.` : `You created the quote ${q(x.number)}.`, link, actor: 'You', origin: true })   // (pending modules S04) Draft with Maison AI
+    pushDoc({ id: `quote-${x.id}`, at: x.createdAt, icon: 'docs', text: x.draftBrief ? `You drafted the quote ${q(x.number)} with Maison AI, from the brief “${x.draftBrief.length > 80 ? `${x.draftBrief.slice(0, 79).trimEnd()}…` : x.draftBrief}”.` : `You created the quote ${q(x.number)}.`, link, actor: 'You', origin: true })   // (pending modules S04) Draft with Maison AI
     /* (REG-624) Approval on the record: who sent it for approval, who asked for changes (the latest note), who approved it, when it went to
        the client. A quote from before the stamps keeps its one "sent" row. */
-    if (x.submittedAt) push({ id: `quote-sub-${x.id}`, at: x.submittedAt, icon: 'docs', text: `${who(x.submittedBy)} sent the quote ${q(x.number)} for approval.`, link, actor: who(x.submittedBy) })
-    if (x.reviewedAt && x.reviewNote) push({ id: `quote-rev-${x.id}`, at: x.reviewedAt, icon: 'docs', text: `${who(x.reviewedBy)} asked for changes on the quote ${q(x.number)}: “${x.reviewNote}”`, link, actor: who(x.reviewedBy) })
-    if (x.clientSentAt) push({ id: `quote-s-${x.id}`, at: x.clientSentAt, icon: 'docs', text: `You sent the quote ${q(x.number)} to the client.`, link, actor: 'You' })
-    else if (x.sentAt && !x.submittedAt) push({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
-    if (x.approvedAt) push({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `${x.approvedBy ? who(x.approvedBy) : 'You'} approved the quote ${q(x.number)}.`, link, actor: x.approvedBy ? who(x.approvedBy) : 'You' })   // fixed copy: the status can move on after the stamp
+    if (x.submittedAt) pushDoc({ id: `quote-sub-${x.id}`, at: x.submittedAt, icon: 'docs', text: `${who(x.submittedBy)} sent the quote ${q(x.number)} for approval.`, link, actor: who(x.submittedBy) })
+    if (x.reviewedAt && x.reviewNote) pushDoc({ id: `quote-rev-${x.id}`, at: x.reviewedAt, icon: 'docs', text: `${who(x.reviewedBy)} asked for changes on the quote ${q(x.number)}: “${x.reviewNote}”`, link, actor: who(x.reviewedBy) })
+    if (x.clientSentAt) pushDoc({ id: `quote-s-${x.id}`, at: x.clientSentAt, icon: 'docs', text: `You sent the quote ${q(x.number)} to the client.`, link, actor: 'You' })
+    else if (x.sentAt && !x.submittedAt) pushDoc({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
+    if (x.approvedAt) pushDoc({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `${x.approvedBy ? who(x.approvedBy) : 'You'} approved the quote ${q(x.number)}.`, link, actor: x.approvedBy ? who(x.approvedBy) : 'You' })   // fixed copy: the status can move on after the stamp
     /* (pending modules S04 — 1.0's view count) the client opened it on its link: the last time, and how many times */
-    if (x.clientLastViewedAt) push({ id: `quote-v-${x.id}`, at: x.clientLastViewedAt, icon: 'visibility', text: `${lead.name} opened the quote ${q(x.number)}${x.clientViewCount > 1 ? ` (${x.clientViewCount} times)` : ''}.`, link, actor: lead.name })
-    if (x.confirmedAt) push(x.confirmedVia === 'marked'   // (S44F — NB-04) marked by hand: who marked it, as a variation order says
+    if (x.clientLastViewedAt) pushDoc({ id: `quote-v-${x.id}`, at: x.clientLastViewedAt, icon: 'visibility', text: `${lead.name} opened the quote ${q(x.number)}${x.clientViewCount > 1 ? ` (${x.clientViewCount} times)` : ''}.`, link, actor: lead.name })
+    if (x.confirmedAt) pushDoc(x.confirmedVia === 'marked'   // (S44F — NB-04) marked by hand: who marked it, as a variation order says
       ? { id: `quote-c-${x.id}`, at: x.confirmedAt, icon: 'docs', text: `${x.confirmedMarkedBy ? who(x.confirmedMarkedBy) : 'You'} marked the quote ${q(x.number)} as confirmed.`, link, actor: x.confirmedMarkedBy ? who(x.confirmedMarkedBy) : 'You' }
       : { id: `quote-c-${x.id}`, at: x.confirmedAt, icon: 'docs', text: `${x.confirmedBy ?? 'The client'} confirmed the quote ${q(x.number)} on its link.`, link, actor: x.confirmedBy ?? 'Client' })   // (REG-587)
     /* (REG-626, parity Q-31) (REG-634, contracts parity E-128) who signed it: the name typed on its contract, else whoever marked that contract signed */
-    if (x.signedAt) { const sc = cs.find((c) => c.fromQuoteId === x.id && c.status === 'Signed'); push({ id: `quote-g-${x.id}`, at: x.signedAt, icon: 'docs', text: sc?.signedBy ? `${sc.signedBy} signed the quote ${q(x.number)} with its contract.` : `The quote ${q(x.number)} was signed.`, link, actor: sc?.signedBy ?? (sc?.markedBy ? who(sc.markedBy) : sc ? 'You' : 'Client') }) }
-    if (x.deletedAt) push({ id: `quote-d-${x.id}`, at: x.deletedAt, icon: 'docs', text: `You deleted the quote ${q(x.number)}.`, link, actor: 'You' })
+    if (x.signedAt) { const sc = cs.find((c) => c.fromQuoteId === x.id && c.status === 'Signed'); pushDoc({ id: `quote-g-${x.id}`, at: x.signedAt, icon: 'docs', text: sc?.signedBy ? `${sc.signedBy} signed the quote ${q(x.number)} with its contract.` : `The quote ${q(x.number)} was signed.`, link, actor: sc?.signedBy ?? (sc?.markedBy ? who(sc.markedBy) : sc ? 'You' : 'Client') }) }
+    if (x.deletedAt) pushDoc({ id: `quote-d-${x.id}`, at: x.deletedAt, icon: 'docs', text: `You deleted the quote ${q(x.number)}.`, link, actor: 'You' })
     // The editor's own records (REG-343: a new record type gets its Activity branch): the lines written (REG-415) and the
     // payment schedule set (REG-418) — dated by the records themselves, linked to the editor.
     const editor = { label: 'Open Quote', href: `/quotes/${x.id}` }
@@ -1083,12 +1103,12 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       const cur = sittings[sittings.length - 1], prev = cur?.[cur.length - 1]
       if (cur && prev && l.createdAt.getTime() - prev.createdAt.getTime() <= 5 * 60_000) cur.push(l); else sittings.push([l])
     }
-    sittings.forEach((g, k) => push({ id: `quote-i-${x.id}${k ? `-${k}` : ''}`, at: g[0]!.createdAt, icon: 'docs', text: `You added ${g.length} ${g.length === 1 ? 'item' : 'items'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' }))
+    sittings.forEach((g, k) => pushDoc({ id: `quote-i-${x.id}${k ? `-${k}` : ''}`, at: g[0]!.createdAt, icon: 'docs', text: `You added ${g.length} ${g.length === 1 ? 'item' : 'items'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' }))
     const pays = qPays.filter((p) => p.quoteId === x.id)
-    if (pays.length) push({ id: `quote-p-${x.id}`, at: new Date(Math.max(...pays.map((p) => (p.updatedAt ?? p.createdAt).getTime()))), icon: 'docs', text: `You set the payment schedule of the quote ${q(x.number)} to ${presetLabel(presetOf(pays)).replace('Default: ', '')}.`, link: editor, actor: 'You' })
-    for (const v of qVersions.filter((v) => v.quoteId === x.id)) push({ id: `quote-v-${v.id}`, at: v.createdAt, icon: 'docs', text: `${who(v.createdBy)} revised the quote ${q(x.number)} — version ${v.version} kept, version ${v.version + 1} started.`, link: editor, actor: who(v.createdBy) })   // (REG-565)
+    if (pays.length) pushDoc({ id: `quote-p-${x.id}`, at: new Date(Math.max(...pays.map((p) => (p.updatedAt ?? p.createdAt).getTime()))), icon: 'docs', text: `You set ${x.number}’s payments: ${payWords(pays)}.`, link: editor, actor: 'You' })
+    for (const v of qVersions.filter((v) => v.quoteId === x.id)) pushDoc({ id: `quote-v-${v.id}`, at: v.createdAt, icon: 'docs', text: `${who(v.createdBy)} revised the quote ${q(x.number)} — version ${v.version} kept, version ${v.version + 1} started.`, link: editor, actor: who(v.createdBy) })   // (REG-565)
     const attached = qFiles.filter((f) => f.quoteId === x.id)
-    if (attached.length) push({ id: `quote-f-${x.id}`, at: new Date(Math.max(...attached.map((f) => f.createdAt.getTime()))), icon: 'docs', text: `You attached ${attached.length} ${attached.length === 1 ? 'file' : 'files'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
+    if (attached.length) pushDoc({ id: `quote-f-${x.id}`, at: new Date(Math.max(...attached.map((f) => f.createdAt.getTime()))), icon: 'docs', text: `You attached ${attached.length} ${attached.length === 1 ? 'file' : 'files'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
   }
   for (const x of cs) {
     /* (REG-534) The editor's records: an uploaded PDF, the WhatsApp signing link, the client signing online. Rows open the editor. */
@@ -1096,14 +1116,14 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     const link = x.deletedAt ? { label: 'See Contracts', href: `${base}/contracts` } : { label: 'Open Contract', href: `/contracts/${x.id}?from=${encodeURIComponent(`${base}/contracts`)}` }
     const by = x.createdBy ? who(x.createdBy) : 'You'
     const sentBy = x.sentBy ? who(x.sentBy) : by, markedBy = x.markedBy ? who(x.markedBy) : by, deletedBy = x.deletedBy ? who(x.deletedBy) : by
-    push({ id: `contract-${x.id}`, at: x.createdAt, icon: 'contract', text: x.purpose === 'handover' ? `${by} made the completion letter ${q(x.title)} at the handover${x.defectsMonths ? `, with a ${x.defectsMonths}-month defects period` : ''}.`   /* (S44R, C9; invented copy) */
+    pushDoc({ id: `contract-${x.id}`, at: x.createdAt, icon: 'contract', text: x.purpose === 'handover' ? `${by} made the completion letter ${q(x.title)} at the handover${x.defectsMonths ? `, with a ${x.defectsMonths}-month defects period` : ''}.`   /* (S44R, C9; invented copy) */
       : x.source === 'uploaded' ? `${by} uploaded the contract ${q(x.title)}${x.fileName ? ` (${x.fileName})` : ''}.` : `${by} created the contract ${q(x.title)}${x.templateId ? ' from a template' : ''}.`, link, actor: by, origin: true })
     /* never sent, only marked signed: its sent date is the signing date and nobody sent it — no "sent" line */
-    if (x.sentAt && (x.sentBy || !(x.signedAt && !x.signedBy && x.sentAt.getTime() === x.signedAt.getTime()))) push({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'contract', text: x.toRead ? `${sentBy} sent ${q(x.title)} to ${x.recipientName ?? 'the client'} to read and keep.` : `${sentBy} sent the contract ${q(x.title)} to ${x.recipientName ?? 'the client'} for signature.`, link, actor: sentBy })   // (S44R, C9) a letter to keep
+    if (x.sentAt && (x.sentBy || !(x.signedAt && !x.signedBy && x.sentAt.getTime() === x.signedAt.getTime()))) pushDoc({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'contract', text: x.toRead ? `${sentBy} sent ${q(x.title)} to ${x.recipientName ?? 'the client'} to read and keep.` : `${sentBy} sent the contract ${q(x.title)} to ${x.recipientName ?? 'the client'} for signature.`, link, actor: sentBy })   // (S44R, C9) a letter to keep
     /* (REG-633, contracts parity Q-17) the client's first open of the signing link */
-    if (x.viewedAt) push({ id: `contract-v-${x.id}`, at: x.viewedAt, icon: 'contract', text: `${x.recipientName ?? 'The client'} opened the contract ${q(x.title)}.`, link, actor: x.recipientName ?? 'Client' })
-    if (x.signedAt) push({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'contract', text: x.signedBy ? `${x.signedBy} signed the contract ${q(x.title)} online${x.signatureKind === 'draw' ? ', drawing the signature' : ''}.` : `${markedBy} marked the contract ${q(x.title)} as signed${x.signedCopy ? ` (${x.signedCopy})` : ''}.`, link, actor: x.signedBy ?? markedBy })
-    if (x.deletedAt) push({ id: `contract-d-${x.id}`, at: x.deletedAt, icon: 'contract', text: `${deletedBy} deleted the contract ${q(x.title)}.`, link: { label: 'See Contracts', href: `${base}/contracts` }, actor: deletedBy })
+    if (x.viewedAt) pushDoc({ id: `contract-v-${x.id}`, at: x.viewedAt, icon: 'contract', text: `${x.recipientName ?? 'The client'} opened the contract ${q(x.title)}.`, link, actor: x.recipientName ?? 'Client' })
+    if (x.signedAt) pushDoc({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'contract', text: x.signedBy ? `${x.signedBy} signed the contract ${q(x.title)} online${x.signatureKind === 'draw' ? ', drawing the signature' : ''}.` : `${markedBy} marked the contract ${q(x.title)} as signed${x.signedCopy ? ` (${x.signedCopy})` : ''}.`, link, actor: x.signedBy ?? markedBy })
+    if (x.deletedAt) pushDoc({ id: `contract-d-${x.id}`, at: x.deletedAt, icon: 'contract', text: `${deletedBy} deleted the contract ${q(x.title)}.`, link: { label: 'See Contracts', href: `${base}/contracts` }, actor: deletedBy })
   }
 
   // Files, notes, questions, file comments. A trashed file (or anything inside a trashed folder) has no viewer route — its rows
@@ -1128,16 +1148,19 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     const actor = who(f.ownerId)
     const render = filedRender.has(f.id)
     const rendersFolder = f.kind === 'folder' && filedRender.has(firstChild(f.id)?.id ?? '')
+    /* (the calm UI build 2026-10-27 — 3-45) "System" is not a person: a file no member added (a client's upload on their portal, a paper the studio's
+       records filed) reads in the passive — the record keeps no one else to name */
+    const nobody = actor === 'System'
     // The glyph follows the record's kind (the mock's files were all images, so "image" was written in).
     push({ id: `file-${f.id}`, at: f.createdAt, icon: render ? 'wand_shine' : fileGlyph(f),   // (gaps build E, item 1) every kind its own glyph
-      text: rendersFolder ? `${actor} created the folder ${q(f.name)} for renders from the AI Visualizer.` : f.kind === 'folder' ? `${actor} created the folder ${q(f.name)}.` : render ? `${actor} saved ${q(f.name)} from the AI Visualizer to Files.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor, group: 'files' })
-    if (f.deletedAt) push({ id: `file-d-${f.id}`, at: f.deletedAt, icon: 'delete', text: `${actor} moved ${q(f.name)} to the Trash Folder.`, link: { label: 'See Files', href: `${base}/files` }, actor, group: 'files' })
+      text: rendersFolder ? `${actor} created the folder ${q(f.name)} for versions from the AI Visualizer.` : f.kind === 'folder' ? (nobody ? `The folder ${q(f.name)} was created.` : `${actor} created the folder ${q(f.name)}.`) : render ? `${actor} saved ${q(f.name)} from the AI Visualizer to Files.` : nobody ? `The file ${q(f.name)} was added to Files.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor, group: 'files' })
+    if (f.deletedAt) push({ id: `file-d-${f.id}`, at: f.deletedAt, icon: 'delete', text: nobody ? `${q(f.name)} was moved to the Trash Folder.` : `${actor} moved ${q(f.name)} to the Trash Folder.`, link: { label: 'See Files', href: `${base}/files` }, actor, group: 'files' })
   }
   for (const c of fComments) { const f = files.find((x) => x.id === c.fileId); if (f) push({ id: `fc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the file ${q(f.name)}.`, link: f.deletedAt || f.kind === 'folder' ? fileLink(f) : { label: 'See File', href: `${base}/files/${f.id}?panel=comments` }, actor: who(c.authorId), group: 'files' }) }
   for (const n of notes) {
     const actor = who(n.authorId)
     const link = { label: 'See Note', href: `${base}/notes` }
-    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'call_log' : 'sticky_note_2'   /* one mark for a contact log everywhere (REG-278) */, text: n.kind === 'contact' ? `${actor} logged a contact${n.channel ? ` via ${n.channel}` : ''}${n.outcome ? ` — ${n.outcome}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor, group: 'notes' })
+    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'call_log' : 'sticky_note_2'   /* one mark for a contact log everywhere (REG-278) */, text: n.kind === 'contact' ? `${actor} logged ${loggedWhat(n.channel)}${n.outcome ? ` — ${n.outcome.toLowerCase()}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor, group: 'notes' })
   }
   /* (gaps build D, item 9) an answer changed after it was first given: its own line, from what to what — the latest change stands in for
      the "answered" line it would repeat */

@@ -5,7 +5,6 @@ import { Button, TextArea } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -117,7 +116,8 @@ export function ThreadLines({ items, me, readAt = null, now, clientChip = false,
   /** the reader's read mark before this visit — the New rule sits before the first line after it written by the other side */
   readAt?: number | null
   now: number
-  /** the studio's side marks the client's lines with a Client chip */
+  /** the studio's side marks the client's lines "Client" — (the calm UI build 2026-10-27, 3-13) only where threads mix (/chat, a ticket); a
+      project's client-only conversation passes false */
   clientChip?: boolean
   /** a state line's words (tickets) */
   eventText?: (item: ThreadItem) => { text: string; icon: string; tone?: 'green' } | null
@@ -162,8 +162,10 @@ export function ThreadLines({ items, me, readAt = null, now, clientChip = false,
             <div className={styles.col}>
               <div className={styles.meta}>
                 <span className={styles.author}>{own ? 'You' : i.authorName}</span>
-                {clientChip && i.authorKind === 'client' ? <MetaChip>Client</MetaChip> : null}
-                {i.internal ? <MetaChip icon="lock">Internal note</MetaChip> : null}
+                {/* (the calm UI build 2026-10-27, 1-22 · 3-13 · T-06) who wrote it is sentence-case secondary words, never a caps tag (caps are for a
+                    status): "Client" where threads mix, the team's own note "Note · team only" with its lock */}
+                {clientChip && i.authorKind === 'client' ? <span className={styles.whoTag}>· Client</span> : null}
+                {i.internal ? <span className={styles.whoTag} data-testid="thread-note-tag"><Icon name="lock" size={14} weight={300} />Note · team only</span> : null}
                 <span className={styles.time}>{relativeTime(new Date(i.at), new Date(now))}</span>
                 {own && onRemove && !i.removed ? (
                   <div className={styles.kebabWrap}>

@@ -104,6 +104,9 @@ export function MeetingsView({ data }: { data: HangoutView }) {
     try { await navigator.clipboard.writeText(`${window.location.origin}${path}`); snackbar({ message: 'Booking link copied — everyone who books arrives as a lead' }) } catch { snackbar({ message: couldnt('copy the link') }) }
   }
   const mayWalkIn = walkInAllowed(data)
+  /* (the calm UI build 2026-10-27, 2-26 · T-03) one filled button on the screen: the next chat's Start (or the chat on now's End) — every other
+     chat's press is outlined */
+  const nextId = list.find((r) => { const k = chatPress(r, data)?.kind; return k === 'start' || k === 'end' })?.id ?? null
 
   return (
     <div className={styles.section} data-testid="hangout-chats">
@@ -133,7 +136,7 @@ export function MeetingsView({ data }: { data: HangoutView }) {
           {today && !data.viewer.runs && !data.viewer.shiftsToday.length ? <p className={styles.help} data-testid="hangout-chats-why">Only the designers on today’s shifts, an Owner or an Admin start and end the chats — an Owner or an Admin adds you on the Plan.</p> : null}
           {list.length === 0 ? <p className={styles.help}>{scope === 'mine' ? 'No chats are yours here.' : 'Nothing here right now.'}</p> : (
             <div className={own.list} data-kb-list="hangout-chat" data-testid="hangout-chat-list">
-              {list.map((r) => <ChatCard key={r.id} r={r} data={data} here={here} busy={busy === r.id} onStart={() => start(r)} onEnd={() => setEnding({ row: r, edit: false })} onEdit={() => setEnding({ row: r, edit: true })}
+              {list.map((r) => <ChatCard key={r.id} r={r} data={data} here={here} busy={busy === r.id} next={r.id === nextId} scope={scope} onStart={() => start(r)} onEnd={() => setEnding({ row: r, edit: false })} onEdit={() => setEnding({ row: r, edit: true })}
                                          onTake={() => take(r)} onGive={(id, name) => give(r, id, name)} onCancel={() => { void cancel(r) }} />)}
             </div>
           )}
@@ -150,8 +153,12 @@ export function MeetingsView({ data }: { data: HangoutView }) {
   )
 }
 
-function ChatCard({ r, data, here, busy, onStart, onEnd, onEdit, onTake, onGive, onCancel }: {
+function ChatCard({ r, data, here, busy, next, scope, onStart, onEnd, onEdit, onTake, onGive, onCancel }: {
   r: HangoutMeetingRow; data: HangoutView; here: string; busy: boolean; onStart: () => void; onEnd: () => void; onEdit: () => void; onTake: () => void; onGive: (memberId: string, name: string) => void; onCancel: () => void
+  /** (the calm UI build 2026-10-27, 2-26) the screen's one filled press */
+  next: boolean
+  /** the chip the list is filtered by — a card doesn't repeat it as its tag */
+  scope: ChatScope
 }) {
   const router = useRouter()
   const [menu, setMenu] = useState(false)
@@ -168,8 +175,9 @@ function ChatCard({ r, data, here, busy, onStart, onEnd, onEdit, onTake, onGive,
   const leadHref = withFrom(`/leads/${r.leadId}`, here)
   const notesHref = r.meetingId ? withFrom(`/meetings/${r.meetingId}`, here) : null
   const press = chatPress(r, data)
-  const primary = press?.kind === 'start' ? <Button onPress={onStart} isDisabled={busy} data-testid="chat-start">{press.label}</Button>
-    : press?.kind === 'end' ? <Button onPress={onEnd} isDisabled={busy} data-testid="chat-end">{press.label}</Button>
+  const look = next ? 'filled' : 'outlined'
+  const primary = press?.kind === 'start' ? <Button variant="primary" appearance={look} onPress={onStart} isDisabled={busy} data-testid="chat-start">{press.label}</Button>
+    : press?.kind === 'end' ? <Button variant="primary" appearance={look} onPress={onEnd} isDisabled={busy} data-testid="chat-end">{press.label}</Button>
     : press?.kind === 'take' ? <Button variant="secondary" appearance="outlined" onPress={onTake} isDisabled={busy} data-testid="chat-take">{press.label}</Button>
     : press?.kind === 'notes' && notesHref ? <Link href={notesHref} className={own.textLink} data-testid="chat-notes">{press.label}</Link> : null
   return (
@@ -182,7 +190,8 @@ function ChatCard({ r, data, here, busy, onStart, onEnd, onEdit, onTake, onGive,
             <span className={styles.whoText}>
               <span className={styles.nameRow}>
                 {r.canOpen ? <Link href={leadHref} className={`${styles.nameLink} ${own.name}`} data-kb-open data-testid="chat-name">{r.leadName}</Link> : <span className={own.name} data-testid="chat-name">{r.leadName}</span>}
-                <MetaChip color={tone}>{r.word}</MetaChip>
+                {/* (the calm UI build 2026-10-27, 2-26 · T-04) the chip above already says Waiting / On now / Done — no tag that repeats it */}
+                {scope === 'waiting' || scope === 'on' || scope === 'done' ? null : <MetaChip color={tone}>{r.word}</MetaChip>}
               </span>
               <span className={styles.whoLine} data-testid="chat-facts">{facts}</span>
             </span>
@@ -194,7 +203,7 @@ function ChatCard({ r, data, here, busy, onStart, onEnd, onEdit, onTake, onGive,
               <PortalMenu open={menu} anchor={kebab} onClose={() => setMenu(false)} align="right" width={MENU_WIDTH.detail} role="menu" sheetTitle={`${r.leadName}’s chat`}>
                 {r.canOpen ? <DropdownItem onSelect={() => { setMenu(false); router.push(leadHref) }}>Open the lead</DropdownItem> : null}
                 <DropdownItem help={phoneLocal(r.phone)} onSelect={() => { setMenu(false); window.open(`https://wa.me/65${phoneDigits(r.phone)}`, '_blank', 'noopener') }}>Message on WhatsApp</DropdownItem>
-                {notesHref ? <DropdownItem help="The lead’s meeting — its notes, its brief and a recording" onSelect={() => { setMenu(false); router.push(notesHref) }}>Notes and recording</DropdownItem> : null}
+                {notesHref ? <DropdownItem help="The lead’s meeting — its notes, its summary and a recording" onSelect={() => { setMenu(false); router.push(notesHref) }}>Notes and recording</DropdownItem> : null}
                 {r.status === 'completed' && may ? <DropdownItem onSelect={() => { setMenu(false); onEdit() }}>Change the outcome</DropdownItem> : null}
                 {r.status === 'scheduled' && data.viewer.runs && givable.length ? <DropdownDivider /> : null}
                 {r.status === 'scheduled' && data.viewer.runs ? givable.map((d) => <DropdownItem key={d.memberId} help={d.onBreak ? 'On a break' : undefined} onSelect={() => { setMenu(false); onGive(d.memberId, d.name) }}>{`Give to ${d.name}`}</DropdownItem>) : null}
@@ -280,7 +289,7 @@ function EndDialog({ open, onClose, onDone }: { open: { row: HangoutMeetingRow; 
           </div>
         ) : null}
         <TextField label="The work in a line" value={scope} maxLength={160} onChange={setScope} helper="e.g. A full renovation of a 4-room resale flat" />
-        <TextArea label="What was said" value={notes} onChange={(v: string) => setNotes(v)} description="Type or paste your notes — the lead’s meeting keeps them, and a brief is made from them." />
+        <TextArea label="What was said" value={notes} onChange={(v: string) => setNotes(v)} description="Type or paste your notes — the lead’s meeting keeps them, and a summary is made from them." />
         {offer ? (
           <div className={own.follow} data-testid="end-follow" data-step={offer.step}>
             <Checkbox isSelected={follow} onChange={(on: boolean) => setFollow(on)}>{offer.label}</Checkbox>

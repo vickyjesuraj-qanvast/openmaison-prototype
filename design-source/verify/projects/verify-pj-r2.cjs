@@ -321,6 +321,8 @@ const msDay = (col, title, num) => noOfIso(day(col, title, num))
     sql(`update members set is_you = case when id='michelle' then 1 else 0 end`)
     await go('/projects')
     await p.locator('[data-notifications-tile]').click(); await p.waitForTimeout(1200)
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-20) what is due rests under the bell's last line, "Due · n · Show": opened first */
+    { const fold = p.getByTestId('notifications-due-fold'); if (await fold.count() && (await fold.getAttribute('aria-expanded')) !== 'true') { await fold.click(); await p.waitForTimeout(400) } }
     const bell = await p.locator('[data-testid="notifications-panel"]').innerText()
     ok(/Overdue: Electrical & plumbing/.test(bell), 'the bell: "Overdue: Electrical & plumbing"')
     /* (REG-1072) one day count for the bell and the row: the bell's "N days late" is the row's "N days late" (fix-B, B-22), at any hour */
@@ -344,11 +346,14 @@ const msDay = (col, title, num) => noOfIso(day(col, title, num))
     await q.goto(`${BASE}/projects/${ryan}/schedule`, { waitUntil: 'networkidle' }); await q.waitForTimeout(1200)
     ok(await q.locator('[data-testid="phone-milestone"]').count() === 7, 'a phone: the same seven rows')
     ok(/days to go · 2 of 7 done/.test(await q.locator('[data-testid="schedule-summary"]').innerText()), 'the summary\'s two lines')
-    ok(await q.locator('[data-testid="add-milestone"]').isVisible(), 'Add milestone docked at the foot')
+    ok(await q.locator('[data-testid="add-milestone"]').isVisible(), 'New milestone docked at the foot')   // (the calm UI build 2026-10-27, a deliberate change) was Add milestone
     ok(await q.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'no sideways scroll at 390')
     await q.screenshot({ path: path.join(dir, 'phone-390.png') })
-    /* (simplify S-25 (4)) a phone row not done carries its Done — the Mark done sheet, two presses from the schedule */
-    ok(await q.locator('[data-testid="phone-done"]').count() >= 1, 'a phone row not done has its Done')
+    /* (simplify S-25 (4)) a phone row not done carries its Done — the Mark done sheet, two presses from the schedule. (the calm UI build 2026-10-27,
+       a deliberate change — 3-19) one Mark done look in every list: the outlined "Mark done", on a running row only (in progress or blocked) */
+    { const n = await q.locator('[data-testid="phone-done"]').count()
+      const running = Number(sql(`select count(*) from project_milestones where project_id='${ryan}' and status in ('in_progress','blocked') and deleted_at is null`))
+      ok(n >= 1 && n <= running && /^Mark done$/.test((await q.locator('[data-testid="phone-done"]').first().innerText()).trim()), `a running phone row has its Mark done (${n} of ${running} running)`) }
     await q.locator('[data-testid="phone-done"]').first().tap(); await q.waitForTimeout(1500)
     ok(await q.locator('[data-testid="done-sheet"]').isVisible(), '…which opens the Mark done sheet')
     await q.getByRole('button', { name: 'Cancel' }).last().tap(); await q.waitForTimeout(600)

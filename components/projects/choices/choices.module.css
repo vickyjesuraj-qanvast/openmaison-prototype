@@ -55,6 +55,12 @@
 .pickMark { position: absolute; top: var(--om-spacing-2); left: var(--om-spacing-2); z-index: 1; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
 .optionMenu { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); z-index: 2; display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
 .optionName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (the calm UI build 2026-10-27, 3-27 · T-12) an option's name is what the client picks by — two lines under its square at every width, not cut */
+.optionName.optionName { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+/* (the calm UI build 2026-10-27, 3-27) the card's facts as words; the day it's needed by in the late tone when it has passed */
+.metaWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.neededWord[data-alert] { color: var(--om-color-tertiary-red-default); }
+.menuRow { display: contents; }
 .optionPrice { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
 .optionPrice[data-none] { color: var(--om-color-on-surface-secondary); }
 .optionSource { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

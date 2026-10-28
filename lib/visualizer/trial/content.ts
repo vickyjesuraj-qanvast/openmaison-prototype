@@ -64,26 +64,28 @@ export const TRIAL_CARDS: Record<TrialTool, { before: string; after: string; bef
 export const HERO_COMPARE = { before: room(WELCOME_AFTER.sample).original, after: WELCOME_AFTER.image, caption: `Sample · ${room(WELCOME_AFTER.sample).name}: ${WELCOME_AFTER.label} — drag to compare`, sample: WELCOME_AFTER.sample }
 
 /* ── the editor's own lines ── */
+/* (the calm UI build 2026-10-27, 6-07 · W-463) inside the trial's editor a picture Generate makes is a *version*, as in the studio's editor and
+   on its allowance line (1.0 said "renders"); "render" stays the verb, and the landing pages below keep marketing's "renders". */
 export const TRIAL_WORDS = {
   chip: 'Free trial',
   startOver: 'Start over',
   /* 1.0's exit confirm, word for word */
   leaveTitle: 'Leave this room?',
-  leaveText: 'Your renders aren’t saved in the free trial. Download the ones you want to keep first.',
+  leaveText: 'Your versions aren’t saved in the free trial. Download the ones you want to keep first.',
   stay: 'Stay', leave: 'Leave',
   /* 1.0's soft sign-up after the first render; "Sign up free" is S31's door, Start your studio; "render as much as you like" was never true of Free */
-  soft: `That’s one of your ${TRIAL_LIMIT} free renders. Start your studio free to keep working on this room, download without the watermark, and keep rendering.`,
+  soft: `That’s one of your ${TRIAL_LIMIT} free versions. Start your studio free to keep working on this room, download without the watermark, and keep rendering.`,
   start: 'Start your studio',
   bookDemo: 'Book a demo',
   /* 1.0's gate */
-  gateTitle: `You’ve used all ${TRIAL_LIMIT} free renders`,
+  gateTitle: `You’ve used all ${TRIAL_LIMIT} free versions`,
   gateText: 'Start your studio free to keep rendering, save your designs, and unlock the full editing suite.',
   carried: 'Your room photo comes with you.',
-  downloaded: 'Downloaded — free renders carry a small watermark',
+  downloaded: 'Downloaded — free versions carry a small watermark',
   notASketch: 'Render from sketch works on the sample sketch here — your picture opens as a photo: pick finishes, a style or a light.',
   openSketch: 'Open the sample sketch',
   loadFailed: 'Couldn’t load that sample — try uploading a photo instead.',
-  stampFailed: 'Couldn’t finish this render — please try again.',
+  stampFailed: 'Couldn’t finish this version — please try again.',
 } as const
 
 /* ── the six landing pages (1.0's trial-tool-content.ts) ── */

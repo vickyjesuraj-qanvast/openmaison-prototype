@@ -39,7 +39,7 @@ export const isEmpty = (p: SummaryParts) => !p.notices.length && !p.due.length
 
 /** "3 notices, 2 due" · "1 notice" · "2 due" (invented copy) */
 export function countWords(n: number, d: number): string {
-  return [n ? `${n} ${n === 1 ? 'notice' : 'notices'}` : '', d ? `${d} due` : ''].filter(Boolean).join(', ') || 'nothing new'
+  return [n ? `${n} ${n === 1 ? 'notification' : 'notifications'}` : '', d ? `${d} due` : ''].filter(Boolean).join(', ') || 'nothing new'
 }
 
 /**
@@ -57,10 +57,10 @@ export function composeSummary(o: { member: string; studio: string; parts: Summa
     const more = list.length - shown.length
     return `${head} (${list.length})\n${shown.join('\n')}${more > 0 ? `\n…and ${more} more in the bell` : ''}`
   }
-  const parts = [part('Notices', notices), part('Due', due, (r) => dueLine(r, o.now))].filter(Boolean)
+  const parts = [part('Notifications', notices), part('Due', due, (r) => dueLine(r, o.now))].filter(Boolean)
   const lede = notices.length && due.length ? `Here is what came in ${since}, and what is due.` : notices.length ? `Here is what came in ${since}.` : 'Nothing new came in — here is what is due.'
   return {
     subject: `Your summary from ${o.studio} — ${countWords(notices.length, due.length)}`,
-    body: `Hi ${first},\n\n${lede}\n\n${parts.join('\n\n')}\n\nMute a notice, or have your emails come as they happen: ${o.settings}\n\n${o.studio}`,
+    body: `Hi ${first},\n\n${lede}\n\n${parts.join('\n\n')}\n\nMute a notification, or have your emails come as they happen: ${o.settings}\n\n${o.studio}`,
   }
 }

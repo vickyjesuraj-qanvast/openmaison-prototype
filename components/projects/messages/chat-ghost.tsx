@@ -10,9 +10,10 @@ import empty from '@/components/om/empty-state.module.css'
 import thread from '../threads/thread.module.css'
 import styles from './messages.module.css'
 
-/** (S42 audit C-25) The empty pane's words — the page and its ghost read the same ones. *(invented copy)* */
+/** (S42 audit C-25) The empty pane's words — the page and its ghost read the same ones. *(invented copy)* (the calm UI build 2026-10-27, 1-21 ·
+    W-314 · T-05) the title alone: its old help line ("Its messages open here. A client reads theirs on their page; Team, Direct, Group and Studio
+    ones stay in the studio.") explained the system's kinds — each row's title and the composer's line say who reads a conversation now. */
 export const PICK_TITLE = 'Pick a conversation'
-export const PICK_HELP = 'Its messages open here. A client reads theirs on their page; Team, Direct, Group and Studio ones stay in the studio.'
 
 /** (REG-708, gaps build H) The rail's Messages ghost: the header, the search over the list of conversations and the pane beside it (one
     column ≤1024, the list alone). The route's `loading.tsx` and the page's PageReveal draw this same one.
@@ -53,7 +54,6 @@ export function ChatInboxGhost() {
               <div className={empty.empty} data-tone="plain">
                 <span className={empty.glyph}><Bone w={40} h={40} r="50%" /></span>
                 <Words as="h3" className={empty.title}>{PICK_TITLE}</Words>
-                <Words as="p" className={empty.help}>{PICK_HELP}</Words>
               </div>
             )}
           </div>

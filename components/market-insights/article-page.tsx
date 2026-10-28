@@ -42,13 +42,14 @@ export function ArticlePage({ data, from }: { data: ArticleData; from?: string }
   return (
     <PageReveal skeleton={<ArticleGhost />}>
       <div className={pageStyles.body} data-testid="insight-article" data-article={a.id}>
-        <PageHeaderL2 backHref={back} crumbs={[{ label: 'Market Insights', href: '/market-insights' }]} title={a.title} backLabel={backName ? `Back to ${backName}` : undefined}
+        {/* (the calm UI build 2026-10-27, 6-34) the header is the crumb alone — the article's own h1 below names it, once */}
+        <PageHeaderL2 backHref={back} crumbs={[{ label: 'Market Insights', href: '/market-insights' }]} backLabel={backName ? `Back to ${backName}` : undefined}
                       chips={a.featured ? <MetaChip icon="star">Featured</MetaChip> : undefined} />
         <div className={styles.content}>
           <article className={styles.article}>
             <header className={styles.head}>
               <span className={styles.eyebrow} data-testid="insight-article-eyebrow">{eyebrowOf(a)}</span>
-              <p className={styles.headline}>{a.title}</p>
+              <h1 className={styles.headline}>{a.title}</h1>
               {a.excerpt ? <p className={styles.standfirst}>{a.excerpt}</p> : null}
               <div className={styles.byline}>
                 <Avatar name={a.author} color="var(--om-color-primary-default)" size={36} tooltip={false} />

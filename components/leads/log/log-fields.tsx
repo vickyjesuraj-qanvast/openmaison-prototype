@@ -10,7 +10,7 @@ import { useReadOnly } from '@/components/om/read-only'
 import { PhotoOrFile } from '@/components/contracts/photo-or-file'
 import photoStyles from '@/components/contracts/photo-or-file.module.css'
 import { DuePresetChips } from '@/components/leads/tasks/due-presets'
-import { OUTCOMES } from '@/lib/leads/enums'
+import { OUTCOMES, channelLabel } from '@/lib/leads/enums'
 import { calendarDaysBetween, displayDate, displayTime, formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import { defaultMode, firstName, MORE_CHANNELS, nextLabel, asksNext, SHEET_CHANNELS, VISIT_PLACES, type SheetChannel } from './log-plan'
 import styles from './log.module.css'
@@ -53,7 +53,7 @@ export function ChannelChips({ value, onChange, withNote = true, error }: { valu
       <span className={styles.label}>How</span>
       <ChipsWithMore label="How you were in touch" testId="log-channel" value={value}
                      primary={withNote ? SHEET_CHANNELS : SHEET_CHANNELS.filter((c) => c !== 'Note')} more={MORE_CHANNELS}
-                     render={(c) => (c === 'Visit' ? 'Site visit' : c)}
+                     render={channelLabel}   /* (the calm UI build 2026-10-27 — T-01 · 2-08) one vocabulary: Visit · Other */
                      onChange={(c) => onChange(c as SheetChannel)} />
       {error ? <span className={styles.error} role="alert">{error}</span> : null}
     </div>
@@ -127,8 +127,8 @@ export function NextStep({ outcome, when, mode, channel, onChange, now, required
       <DuePresetChips value={due} now={now} label={label}
                       onChange={(d) => onChange({ nextStepWhen: d ? formatInputDateTime(d) : '', nextStepMode: d ? (mode || defaultMode(outcome, channel)) : '' })} />
       {due ? (
-        <ChipsWithMore label="How you’ll follow up" testId="log-next-mode" value={mode || defaultMode(outcome, channel)}
-                       primary={['Call', 'WhatsApp', 'In person']} more={['Email', 'SMS', 'Others']}
+        <ChipsWithMore label="Call back by" testId="log-next-mode" value={mode || defaultMode(outcome, channel)}
+                       primary={['Call', 'WhatsApp', 'In person']} more={['Email', 'SMS', 'Others']} render={channelLabel}
                        onChange={(m) => onChange({ nextStepWhen: when, nextStepMode: m })} />
       ) : null}
       {error ? <span className={styles.error} role="alert">{error}</span> : null}

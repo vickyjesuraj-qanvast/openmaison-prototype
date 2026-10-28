@@ -75,7 +75,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
         <div className={styles.listHead}>
           <span className={styles.count}>{data.templates.length} template{data.templates.length === 1 ? '' : 's'}</span>
           {/* (REG-528) Manage Templates: Company › Templates › Quotes, with this page as the way back (REG-465). */}
-          <Button appearance="text" iconStart={<Icon name="style" size={20} weight={300} />} onPress={manage}>Manage Templates</Button>
+          <Button appearance="text" iconStart={<Icon name="style" size={20} weight={300} />} onPress={manage}>Manage templates</Button>   {/* (the calm UI build 2026-10-27, T-13 · W-250) sentence case */}
           <span className={styles.headEnd}>
             <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search templates" label="Search templates" />
             <SegmentedIconToggle label="View" value={listView ? 'list' : 'grid'}
@@ -105,7 +105,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
               <button key={t.id} type="button" role="option" aria-selected={picked === t.id} className={styles.rowTile} data-on={picked === t.id || undefined} onClick={() => onPick(t.id)} onDoubleClick={() => onUse(t.id)}>
                 <span className={styles.rowThumb}><TemplateThumb design={t.design} brand={data.brand} data={data.sample} width={26} /></span>
                 <span className={styles.rowName}>{t.name}</span>
-                {t.isDefault ? <MetaChip>Default</MetaChip> : null}
+                {t.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}
                 <span className={styles.rowMeta}>{where(t)}v{t.version}{currentId === t.id ? ' · on this quote' : t.lastUsedAt ? ` · used ${ago(t.lastUsedAt, now)}` : ''}</span>
               </button>
             ))}
@@ -130,7 +130,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
             {shown.map((t) => (
               <button key={t.id} type="button" role="option" aria-selected={picked === t.id} className={styles.tile} data-on={picked === t.id || undefined} onClick={() => onPick(t.id)} onDoubleClick={() => onUse(t.id)}>
                 <span className={styles.well}><span className={styles.page}><TemplateThumb design={t.design} brand={data.brand} data={data.sample} width={116} /></span></span>
-                <span className={styles.nameRow}><span className={styles.name}>{t.name}</span>{t.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
+                <span className={styles.nameRow}><span className={styles.name}>{t.name}</span>{t.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}</span>
                 {blank ? <span className={styles.meta} data-testid="template-starts">{startsLine(t)}</span> : null}   {/* (UX audit Q8) where a quote is being started: what it gets */}
                 <span className={styles.meta}>{where(t)}v{t.version}{currentId === t.id ? ' · on this quote' : t.lastUsedAt ? ` · used ${ago(t.lastUsedAt, now)}` : ''}</span>
               </button>
@@ -145,7 +145,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
           <>
             <div className={styles.detailHead}>
               <span className={styles.detailName}>{sel.name}</span>
-              <span className={styles.detailChips}><MetaChip>v{sel.version}</MetaChip><MetaChip>{sel.paper}</MetaChip>{sel.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
+              <span className={styles.detailChips}><MetaChip kind="fact">v{sel.version}</MetaChip><MetaChip kind="fact">{sel.paper}</MetaChip>{sel.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}</span>
             </div>
             <div className={styles.pages}><TemplateDocument design={sel.design} brand={data.brand} data={data.sample} zoom={0.42} /></div>
             <dl className={styles.facts}>

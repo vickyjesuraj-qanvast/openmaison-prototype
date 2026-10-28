@@ -47,9 +47,20 @@ export function useRailPopover({ open, anchor, onClose, sheet, align = 'top' }: 
     el.style.transformOrigin = top < r.top ? 'bottom left' : 'top left'
   }, [align])
 
+  /* (the calm UI build 2026-10-27) a popover that changes its height while open (View as's Demo fold opening) is placed again, so it never
+     runs past the viewport's foot — the placement read its height once, at mount */
+  useEffect(() => {
+    if (!open || sheet || typeof ResizeObserver === 'undefined') return
+    const el = menuRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => place(menuRef.current))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [open, sheet, place])
+
   useEffect(() => {
     if (!open || sheet) return
-    const onDown = (e: MouseEvent) => { const t = e.target as Node; if (anchor?.current?.contains(t) || menuRef.current?.contains(t)) return; onClose() }
+    const onDown =(e: MouseEvent) => { const t = e.target as Node; if (anchor?.current?.contains(t) || menuRef.current?.contains(t)) return; onClose() }
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }
     let lastW = window.innerWidth
     const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; onClose() } }

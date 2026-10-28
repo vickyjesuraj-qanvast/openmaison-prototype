@@ -264,17 +264,17 @@ export function LineFields({ item, labels, onPatch, onAddLabel, onNote, onUpload
     </div>
   )
   const room = select('Room', item.room, labels.rooms, (v) => onPatch({ room: v }), () => onAddLabel('room', item.id))
-  const category = select('Category', item.category, labels.categories, (v) => onPatch({ category: v }), () => onAddLabel('category', item.id))
-  const sectionLabel = select('Section label', item.section, labels.sections, (v) => onPatch({ section: v }), () => onAddLabel('section', item.id))
+  const category = select('Trade', item.category, labels.categories, (v) => onPatch({ category: v }), () => onAddLabel('category', item.id))
+  const sectionLabel = select('Print group', item.section, labels.sections, (v) => onPatch({ section: v }), () => onAddLabel('section', item.id))
   /* (REG-623, parity Q-08 · Q-09) who supplies the line, and its product or spec page — never printed · (one-home N-16) Company › Finance › Vendors, type-ahead */
-  const vendor = select('Vendor/Sub', item.vendor, labels.vendors, (v) => onPatch({ vendor: v }), () => onAddLabel('vendor', item.id), true)
+  const vendor = select('Vendor', item.vendor, labels.vendors, (v) => onPatch({ vendor: v }), () => onAddLabel('vendor', item.id), true)
   const link = field('Website Link', item.link ?? '', (v) => { const u = cleanLink(v); if (u === undefined) onNote('Not a web address — a link starts with https://'); else onPatch({ link: u }) }, { helper: 'A product or spec page — never printed' })
   const image = <Button key="image" variant="secondary" appearance="outlined" iconStart={<Icon name="add_photo_alternate" size={20} />} onPress={onUploadImage}>{item.thumb ? 'Change image' : 'Add an image'}</Button>
   /* the two layers, by what the screen is for */
   const first: ReactNode[] = isGroup ? [nameField, descRow] : mode === 'rest' ? [nameField, descRow, costMarkup, kindSel, room, category] : [nameField, qtyUnit, priceTotal, kindSel]
-  const rest: { node: ReactNode; words: string }[] = isGroup ? [{ node: room, words: 'room' }, { node: category, words: 'category' }, { node: sectionLabel, words: 'section label' }]
-    : mode === 'rest' ? [{ node: discGst, words: 'discount and GST' }, { node: sectionLabel, words: 'section label' }, { node: vendor, words: 'vendor' }, { node: link, words: 'link' }, { node: image, words: 'image' }]
-    : [{ node: descRow, words: 'description' }, ...(costMarkup ? [{ node: costMarkup, words: 'cost and markup' }] : []), { node: discGst, words: 'discount and GST' }, { node: room, words: 'room' }, { node: category, words: 'category' }, { node: sectionLabel, words: 'section label' }, { node: vendor, words: 'vendor' }, { node: link, words: 'link' }, { node: image, words: 'image' }]
+  const rest: { node: ReactNode; words: string }[] = isGroup ? [{ node: room, words: 'room' }, { node: category, words: 'trade' }, { node: sectionLabel, words: 'print group' }]
+    : mode === 'rest' ? [{ node: discGst, words: 'discount and GST' }, { node: sectionLabel, words: 'print group' }, { node: vendor, words: 'vendor' }, { node: link, words: 'link' }, { node: image, words: 'image' }]
+    : [{ node: descRow, words: 'description' }, ...(costMarkup ? [{ node: costMarkup, words: 'cost and markup' }] : []), { node: discGst, words: 'discount and GST' }, { node: room, words: 'room' }, { node: category, words: 'trade' }, { node: sectionLabel, words: 'print group' }, { node: vendor, words: 'vendor' }, { node: link, words: 'link' }, { node: image, words: 'image' }]
   const moreWords = rest.map((r) => r.words).slice(0, 4).join(', ') + (rest.length > 4 ? '…' : '')
   return (
     <div className={styles.fields} data-testid="line-fields" data-mode={mode}>

@@ -85,18 +85,18 @@ export function InvoicePanel({ focus, data, inv, payments, cn, onClose }: {
     ...(i.creditedMinor ? [{ label: 'Credited', amount: i.creditedMinor }] : []),
     ...(sent ? [{ label: 'Paid', amount: i.paidMinor }] : []),
     ...(i.toConfirmMinor ? [{ label: 'To confirm', amount: i.toConfirmMinor }] : []),
-    ...(sent && i.status !== 'void' ? [{ label: 'To pay', amount: owed, grand: true }] : []),
+    ...(sent && i.status !== 'void' ? [{ label: 'To collect', amount: owed, grand: true }] : []),   // (the calm UI build 2026-10-27, 3-03 · W-064) what the client still owes is "To collect"
   ]
   const lines = i.lines?.length ? i.lines.map((l) => ({ key: l.id, text: l.description, sub: `${l.qty} × ${money2(l.unitMinor)}`, amount: lineAmount(l) })) : undefined
   const totals = i.lines?.length ? [{ label: 'Subtotal', amount: i.subtotalMinor }, ...(i.gstMinor ? [{ label: 'GST', amount: i.gstMinor }] : []), { label: 'Total', amount: i.amountMinor, grand: true },
-    ...(sent ? [{ label: 'Paid', amount: i.paidMinor }, { label: 'To pay', amount: owed }] : [])] : undefined
+    ...(sent ? [{ label: 'Paid', amount: i.paidMinor }, { label: 'To collect', amount: owed }] : [])] : undefined
 
   /* the paper: Preview · Download PDF · Copy the no-login link */
   const page = inv.invoiceHref(i)
   const links = [
     { label: sent ? 'Open the invoice' : 'Preview', icon: 'visibility', run: () => router.push(page), testId: 'invoice-panel-preview' },
     { label: 'Download PDF', icon: 'download', run: () => router.push(`${page}&print=1`), testId: 'invoice-panel-download' },
-    ...(sent && i.shareToken && i.kind !== 'external' ? [{ label: 'Copy the no-login link', icon: 'link', run: () => inv.copyLink(i), testId: 'invoice-panel-link' }] : []),
+    ...(sent && i.shareToken && i.kind !== 'external' ? [{ label: 'Copy the client’s link', icon: 'link', /* (the calm UI build 2026-10-27, 3-44 · W-505) */ run: () => inv.copyLink(i), testId: 'invoice-panel-link' }] : []),
   ]
 
   /* its payments and its credit notes, each with its ⋮ */
@@ -118,7 +118,7 @@ export function InvoicePanel({ focus, data, inv, payments, cn, onClose }: {
     }),
   })
   if (credits.length || cn.canIssue(i)) lists.push({
-    title: 'Credit notes', testId: 'invoice-panel-credits', empty: 'None — Issue a credit note takes money off it.',
+    title: 'Credit notes', testId: 'invoice-panel-credits', empty: 'No credit notes. Issue one to take money off this invoice.',   // (the calm UI build 2026-10-27, 3-44 · W-573)
     rows: credits.map((c) => ({
       id: c.id, amount: c.amountMinor, void: c.status === 'void', lit: focus?.line === c.id, menu: cn.menuItems(c), menuTitle: c.number,
       /* (pending modules S07 — D-14) the overpayment held as the client's credit says what is left of it, what was used and refunded */

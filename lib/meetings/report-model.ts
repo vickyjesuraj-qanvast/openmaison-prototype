@@ -23,7 +23,7 @@
  *   - By team member — a meeting is its starter's (`started_by`, else `created_by`, else its first member): meetings · went ahead · average
  *     score · checklist covered (the mean of done ÷ total over the meetings with a checklist) · tips acted on; sorted by meetings.
  *   - Coaching — 1.0's rule kept: a member with 2 or more meetings whose went-ahead share is under 0.8 × the studio's → "Confirm the next step
- *     before you end the meeting" ("Yours: n% · studio: m% · best: k%", best = the highest share among members with 2 or more meetings). New by
+ *     before you end the meeting" ("Dane 0% · studio 25%" since the calm UI build 2026-10-27 — 1.0's "best" share is the By member table's, on the same page). New by
  *     rule: the must-ask item a member most often leaves out (`brief.checklist.missed`), left out at least twice → "Ask about {item}".
  *   - Deal score check — 1.0's calibration: the meetings held that carry a score, each tier expected to turn out its way
  *     (Hot ≥ 80 → went ahead · Warm ≥ 60 → still open, the follow-up · Cool / Cold → not going ahead); the share that did, overall and per tier,
@@ -34,7 +34,7 @@
 import { mean, RANGES, DEFAULT_RANGE, rangeLabel, type Range } from '@/lib/leads/tat'
 import { BLANK } from '@/lib/leads/row-text'
 import { displayDate, durationWords } from '@/lib/format'
-import { DIMENSIONS, tierOf, type DimKey, type Tier } from './model'
+import { DIMENSIONS, TIER_LABEL, tierOf, type DimKey, type Tier } from './model'
 import { OBJECTION_KINDS, kindLabel } from './objections'
 
 export { RANGES, DEFAULT_RANGE, rangeLabel }
@@ -44,7 +44,8 @@ const DAY = 86_400_000
 /* ── the outcome — derived from the lead's records, never a field someone sets ── */
 export type Outcome = 'ahead' | 'lost' | 'open'
 /** (pending modules S23) (invented copy) the outcome's words — the tile's, the filter's, the table's */
-export const OUTCOME_LABEL: Record<Outcome, string> = { ahead: 'Went ahead', lost: 'Not going ahead', open: 'Open' }
+/* (the calm UI build 2026-10-27, 5-09 · W-430) "Went ahead" → "Won after" — what the rule counts: the lead was won after the meeting */
+export const OUTCOME_LABEL: Record<Outcome, string> = { ahead: 'Won after', lost: 'Not going ahead', open: 'Open' }
 export const OUTCOMES: readonly Outcome[] = ['ahead', 'lost', 'open']
 /** The outcome of a meeting held at `at` on a lead: Won now, a project, or a Won move after the meeting → went ahead; Lost now → not going ahead. */
 export function outcomeOf(lead: { stage: string; hasProject: boolean; wonAt: readonly number[] }, at: number): Outcome {
@@ -158,13 +159,12 @@ export function meetingsReport(facts: readonly MeetingFact[], objections: readon
 
   /* Coaching — 1.0's rule (0.8 × the studio's), then the item left out most */
   const eligible = members.filter((m) => m.meetings >= 2)
-  const best = eligible.length ? Math.max(...eligible.map((m) => m.aheadShare ?? 0)) : null
   const coaching: CoachRow[] = []
   if (studioShare !== null && studioShare > 0) {
     for (const m of eligible.filter((x) => x.aheadShare !== null && x.aheadShare < 0.8 * studioShare).sort((a, b) => (a.aheadShare ?? 0) - (b.aheadShare ?? 0))) {
       /* (pending modules S23) (invented copy) 1.0's suggestion, plain: "Focus on confirming next steps before ending meetings" */
       coaching.push({ key: `next:${m.id}`, memberId: m.id, name: m.name, color: m.color, kind: 'next-step', text: 'Confirm the next step before you end the meeting',
-        evidence: `Yours: ${pctText(m.aheadShare)} · studio: ${pctText(studioShare)} · best: ${pctText(best)}` })
+        evidence: `${m.name.trim().split(/\s+/)[0] ?? m.name} ${pctText(m.aheadShare)} · studio ${pctText(studioShare)}` })   // (the calm UI build 2026-10-27, 5-09 · W-649 — B5's request) the member by name against the studio; every member's own share is the By member table's Won after, on the same page (T-04)
     }
   }
   const asks: (CoachRow & { n: number })[] = []
@@ -219,19 +219,21 @@ export function meetingsReport(facts: readonly MeetingFact[], objections: readon
 export const scoreText = (s: number | null): string => (s === null ? BLANK : String(Math.round(s)))
 
 /* ── (pending modules S23) (invented copy) the page's fixed words — the page and its ghost read the same ones ── */
-export const TILE_LABELS = ['Meetings held', 'Went ahead', 'Average deal score', 'Average length', 'Tips acted on'] as const
-export const OBJECTION_TILE_LABELS = ['Total objections', 'Most common', 'Went ahead after'] as const
-export const MEMBERS_HELP = 'A meeting counts for whoever started or logged it · went ahead when its lead was won after it'   // (S42 C-02) a Met log is whoever logged it
-export const OBJECTIONS_TITLE = 'Objections'
+/* (the calm UI build 2026-10-27, 5-09 · 5-45 · W-430 · W-578) a studio's words: "Won after", "Tips used", the client's concerns (the meeting page's
+   word), Meeting Copilot spelled once */
+export const TILE_LABELS = ['Meetings held', 'Won after', 'Average deal score', 'Average length', 'Tips used'] as const
+export const OBJECTION_TILE_LABELS = ['Concerns raised', 'Most common', 'Won after'] as const
+export const MEMBERS_HELP = 'A meeting counts for whoever started or logged it — “Won after” means its lead was won after it'   // (S42 C-02) a Met log is whoever logged it
+export const OBJECTIONS_TITLE = 'Concerns'
 export const OBJECTIONS_HELP = 'What clients pushed back on in the meetings, your studio’s answer, and what happened after'
 /* (S42 audit C-02, call C·1) every meeting held counts — with a brief, or logged at Met — and the figures that need a brief say how many have one */
-export const FOOT_NOTE = 'Every meeting held counts — one with a brief, and one logged at Met. A meeting went ahead when its lead was won after it, and is not going ahead when its lead is lost; any other meeting is still open. Scores come from the meetings with a brief; lengths and tips from those held with the co-pilot on.'
+export const FOOT_NOTE = 'Every meeting held counts — one with a summary, and one from the Met step. “Won after” means its lead was won after the meeting, “Not going ahead” that it was lost; any other meeting is still open. Scores come from the meetings with a summary; lengths and tips from those held with Meeting Copilot on.'
 export const COACHING_TITLE = 'Coaching'
-export const CHECK_TITLE = 'Deal score check'
+export const CHECK_TITLE = 'Is the deal score right?'
 /* the page's empty lines — the page and its ghost read the same words */
 export const MEMBERS_EMPTY = 'No meetings held in this period'
 export const COACHING_EMPTY = 'Nothing to suggest for this period'
-export const OBJECTIONS_EMPTY = 'No objections recorded in this period'
+export const OBJECTIONS_EMPTY = 'No concerns recorded in this period'
 /** (REG-708 · REG-817) what the page drew on its default range last time, per browser — the ghost draws the same blocks (a table or its line) */
 export const SHAPE = {
   members: 'om.shape.meeting-reports.members',
@@ -246,10 +248,10 @@ export function tileFigures(r: MeetingsReport): { label: string; value: string; 
   return [
     /* (pending modules S23) (invented copy) the tiles' help lines */
     /* (S42 C-02, call C·1) "n of m with the co-pilot" — a Met log counts as held, without the co-pilot */
-    { label: TILE_LABELS[0], value: String(r.held), help: r.held ? (r.live === r.held ? 'All with the co-pilot on' : `${r.live} of ${r.held} with the co-pilot on`) : span },
+    { label: TILE_LABELS[0], value: String(r.held), help: r.held ? (r.live === r.held ? 'All with Meeting Copilot on' : `${r.live} of ${r.held} with Meeting Copilot on`) : span },
     { label: TILE_LABELS[1], value: pctText(r.aheadShare), help: r.held ? `${r.ahead} of ${r.held} · ${r.open} still open` : 'No meeting held in this range' },
-    { label: TILE_LABELS[2], value: scoreText(r.score), help: r.scored ? `${tierOf(r.score!)} · ${r.scored} of ${plural(r.held, 'meeting')} scored` : 'No meeting scored in this range' },
-    { label: TILE_LABELS[3], value: durationWords(r.lengthMs), help: r.timed ? `${plural(r.timed, 'meeting')} with the co-pilot on` : 'No meeting with the co-pilot on' },
+    { label: TILE_LABELS[2], value: scoreText(r.score), help: r.scored ? `${TIER_LABEL[tierOf(r.score!)]} · ${r.scored} of ${plural(r.held, 'meeting')} scored` : 'No meeting scored in this range' },
+    { label: TILE_LABELS[3], value: durationWords(r.lengthMs), help: r.timed ? `${plural(r.timed, 'meeting')} with Meeting Copilot on` : 'No meeting with Meeting Copilot on' },
     { label: TILE_LABELS[4], value: pctText(r.tipsShare), help: r.tipsSeen ? `${r.tipsActed} of ${plural(r.tipsSeen, 'tip')} shown` : 'No tips shown in this range' },
   ]
 }
@@ -258,16 +260,16 @@ export function tileFigures(r: MeetingsReport): { label: string; value: string; 
 export function meetingsSheet(r: MeetingsReport, nameOf: (id: string | null) => string): { head: string[]; body: string[][] } {
   const body: string[][] = [['Meetings'], ['Figure', 'Value', 'Detail']]
   for (const t of tileFigures(r)) body.push([t.label, t.value, t.help])
-  body.push([], ['By team member'], ['Member', 'Role', 'Meetings', 'Went ahead', 'Average deal score', 'Checklist covered', 'Tips acted on'])
+  body.push([], ['By member'], ['Member', 'Role', 'Meetings', 'Won after', 'Average deal score', 'Checklist covered', 'Tips used'])
   for (const m of r.members) body.push([m.name, m.role, String(m.meetings), `${pctText(m.aheadShare)} · ${m.ahead} of ${m.meetings}`, scoreText(m.score), pctText(m.checklist), m.tipsSeen ? `${pctText(m.tipsShare)} · ${m.tipsActed} of ${m.tipsSeen}` : BLANK])
   body.push([], [COACHING_TITLE], ['Member', 'Suggestion', 'Evidence'])
   for (const c of r.coaching) body.push([c.name, c.text, c.evidence])
   body.push([], [CHECK_TITLE])
   if (r.check) {
     body.push(['Tier', 'Meetings', 'Turned out as scored', 'Share'], ['All', String(r.check.meetings), String(r.check.matched), pctText(r.check.share)])
-    for (const t of r.check.tiers) body.push([`${t.tier} · ${TIER_WORDS[t.tier].band}`, String(t.meetings), String(t.matched), pctText(t.share)])
+    for (const t of r.check.tiers) body.push([`${TIER_LABEL[t.tier]} · ${TIER_WORDS[t.tier].band}`, String(t.meetings), String(t.matched), pctText(t.share)])
   } else body.push([checkWaitLine(r.scoredForCheck)])
-  body.push([], [OBJECTIONS_TITLE], ['Date', 'Lead', 'Member', 'Kind', 'What they said', 'Competitor', 'Your answer', 'Outcome'])
+  body.push([], [OBJECTIONS_TITLE], ['Date', 'Lead', 'Member', 'Kind', 'What they said', 'Competitor', 'Our answer', 'Outcome'])
   for (const o of r.objections.rows) body.push([displayDate(new Date(o.at)), o.leadName, nameOf(o.memberId), kindLabel(o.kind), o.said, o.competitor ?? BLANK, o.answer ?? BLANK, OUTCOME_LABEL[o.outcome]])
   return { head: [`Meetings · ${rangeLabel(r.range)} · ${plural(r.held, 'meeting')} held`], body }
 }

@@ -243,6 +243,10 @@ export async function markConversationRead(key: string): Promise<{ ok: true } | 
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const c = await forConversation(key); if (isRefusal(c)) return c
   await setReadMark('member', c.me.id, readIdOfCtx(c))
+  /* (the Dashboard redesigned, 2026-10-26 — P-14, a bug B's study found: ST-16 "one message, two badges") read here, the client's message is
+     read in the bell too: this member's "{client} sent a message" notices for this conversation (lib/portal/client-message-bell.ts, which rings
+     at its `hrefOfCtx`) — they stayed unread after the chat was read, so the rail's Messages cleared while the bell kept counting */
+  if (c.kind === 'client' || c.kind === 'lead') await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.memberId, c.me.id), eq(notifications.kind, 'chat_message'), isNull(notifications.readAt), eq(notifications.href, hrefOfCtx(c))))
   return { ok: true }
 }
 

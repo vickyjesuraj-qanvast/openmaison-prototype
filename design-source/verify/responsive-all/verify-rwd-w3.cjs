@@ -108,7 +108,7 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
       }
       /* a tap on a neighbour goes there, and lands with that one in view */
       await go(p, `/projects/${BEN}/updates`)
-      await p.locator('[data-testid="project-views"] [role="radio"]', { hasText: 'Tickets' }).tap()
+      await p.locator('[data-testid="project-views"] [role="radio"]', { hasText: 'Issues' }).tap()   // (the calm UI build 2026-10-27, a deliberate change) the view reads "Issues" (3-37)
       await p.waitForURL(/\/tickets/, { timeout: 15000 }); await settle(p, 1300)
       const m = await chipInRail(p)
       ok(m && m.inside, `${tag}: a tap on Tickets lands on Tickets with its chip in view`)
@@ -147,7 +147,8 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
       /* (W3-18) the Money tab's Needs you at an upright tablet: a row's words keep a reading width, its buttons take the next line */
       const t = await ctxOf(TABLET); const m = await t.newPage(); watch(m, 'money-768')
       await go(m, `/projects/${RYAN}/money`)
-      const words = await m.locator('[data-testid="money-needs"] [role="status"]').evaluateAll((els) => els.map((e) => Math.round(e.querySelector('[class*="__bannerText"]').getBoundingClientRect().width)))
+      /* (the calm UI build 2026-10-27, a deliberate change) the Money list's rows are the Overview's Needs row (3-22): its words are the row's label */
+      const words = await m.locator('[data-testid="money-needs"] [data-need]').evaluateAll((els) => els.map((e) => Math.round((e.querySelector('[class*="__label"]') ?? e).getBoundingClientRect().width)))
       ok(words.length > 0 && words.every((w) => w >= 240), '768 touch: every Money Needs you row keeps its words at least 240 wide', JSON.stringify(words))
       await shot(m, '02-money-needs-768')
       await t.close()
@@ -241,7 +242,8 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
     {
       const c = await ctxOf(TABLET); await signIn(c); const p = await c.newPage(); watch(p, 'portal-768')
       await go(p, '/my/demo-studio')
-      const links = await p.locator('[data-testid="portal-nav"] a').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-36) the bar's four sections and its More ▾ */
+      const links = await p.locator('[data-testid="portal-nav"] a, [data-testid="portal-nav-more"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
       ok(links.length > 3 && links.every((w) => w >= 44), '768 touch: every section in the bar is at least 44 wide', JSON.stringify(links))
       const so = await box(p, '[data-testid="portal-sign-out"]')
       ok(so.h >= 44, `768 touch: Sign out is 44 tall (${Math.round(so.h)})`)
@@ -257,8 +259,9 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
       const s = await ctxOf(SIDEWAYS); await signIn(s); const h = await s.newPage(); watch(h, 'portal-sideways')
       for (const sec of ['messages', 'about', 'files']) {
         await go(h, `/my/demo-studio/${sec}`)
-        const inRow = await h.evaluate(() => { const n = document.querySelector('[data-testid="portal-nav"]'), a = n?.querySelector('[aria-current="page"]'); if (!a) return null; const nr = n.getBoundingClientRect(), ar = a.getBoundingClientRect(); return ar.left >= nr.left - 1 && ar.right <= nr.right + 1 })
-        ok(inRow === true, `844×390: on ${sec} the section's own link is inside the bar's row`)
+        /* (the calm UI build 2026-10-27, a deliberate change — 3-36) these three live under the bar's More ▾, which names the section you are on */
+        const inRow = await h.evaluate(() => { const n = document.querySelector('[data-testid="portal-nav"]'), a = n?.querySelector('[aria-current="page"], [data-testid="portal-nav-more"][data-active]'); if (!a) return null; const nr = n.getBoundingClientRect(), ar = a.getBoundingClientRect(); return ar.left >= nr.left - 1 && ar.right <= nr.right + 1 })
+        ok(inRow === true, `844×390: on ${sec} the section's own place in the bar (its More ▾) is inside the bar's row`)
       }
       await shot(h, '07-portal-nav-sideways')
       await s.close()

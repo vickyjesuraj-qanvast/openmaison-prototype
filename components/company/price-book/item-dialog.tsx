@@ -30,6 +30,7 @@ import { moneyTyped } from '@/lib/format'
 import { TRADES_RULE } from '@/lib/settings/trades'
 import { NewCategoryDialog } from './new-category-dialog'
 import { NewUnitDialog } from './new-unit-dialog'   // (S44I — M9)
+import { HowItWorks } from './how-it-works'
 import { UNITS_RULE } from '@/lib/settings/units'
 
 type Draft = { name: string; description: string; html: string; kind: string; unit: string; cost: string; markup: string; /** (S44P, M8) the unit price as typed — cost + markup */ price: string; category: string; vendor: string; link: string; thumb: string | null; waste: string }
@@ -40,6 +41,16 @@ const fmt = (minor: number) => (minor / 100).toFixed(2)
 const signedMoney = (raw: string) => `${/^\s*[-−–]/.test(raw) ? '-' : ''}${moneyTyped(raw)}`
 const kindOf = (label: string) => ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === label) ?? 'purchase'
 const HISTORY_SHOWN = 6
+/** (the calm UI build 2026-10-27, the UI audit's 4-40) what the item dialog's field helpers said, behind "How the Price book works". */
+const HOW_ITEMS = [
+  'Lines already on a quote keep what they copied; new picks take these values.',
+  'The unit price is what a quote line starts at.',
+  'Units and trades are the studio’s own lists — Settings › Quotes & pricing. “New unit…” and “New trade…” at the foot of each list add one.',
+  'Vendor: who supplies it — the same product from two vendors is two items. Vendors come from Company › Finance › Vendors.',
+  'Waste (a Purchase item): ordered on top of the quote’s quantity, for cuts and breakage.',
+  'Website link: a product or spec page — the line keeps it; it never prints.',
+  'A photo shows on the card and in the Add Item box, and goes onto every line picked from it.',
+]
 /** (Dane UAT 3.10) The item changed under the open dialog (a Bring back, its Undo): each box the member left alone follows the item; a box
     they typed in keeps what they typed. */
 const follow = (cur: Draft, was: Draft, next: Draft): Draft => {
@@ -64,7 +75,7 @@ const differs = (item: PriceBookItem, h: ItemChange) => Object.entries(h.changes
  * (pending modules S12 — 1.0's waste factor) A Purchase item carries its **Waste (%)**: the share a purchase order made from the signed quote
  * orders on top of the quoted quantity (lib/company/price-book-waste.ts) — offered for a Purchase, and on any item that already carries one.
  */
-const NO_CATEGORY = 'No category'
+const NO_CATEGORY = 'No trade'   // (the calm UI build 2026-10-27, the UI audit's 4-01) the item's grouping is its Trade on screen; the stored field stays `category`
 export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing = false, readOnly = null, proposal = null, now, onBringBack, costs = true, canAddTrade = false, units: studioUnits = UNITS, canAddUnit = false }: {
   /** (pending modules S41b-1 — 1.0's Cost & Margin Visibility) the member sees costs — else one Unit price box in place of Cost and Markup: the
       item came with its cost folded into its price, so its mark-up box IS its price, and the server keeps the stored cost on the save */
@@ -156,7 +167,7 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
   const approveNow = async () => { const v = dirty ? draftInput() : null; if ((dirty && !v) || busy || !proposal) return; setBusy(true); try { await proposal.onApprove(v) } finally { setBusy(false) } }
   const bringBack = async (h: ItemChange) => { if (!onBringBack || bringing) return; setBringing(h.id); try { await onBringBack(h) } finally { setBringing(null) } }
   const title = readOnly ? 'Item details' : item ? 'Edit item' : proposing ? 'Propose an item' : 'New item'
-  const subtitle = readOnly ? undefined : item ? 'Lines already on a quote keep what they copied; new picks take these values.'
+  const subtitle = readOnly ? undefined : item ? 'Quotes that already use this item keep their prices.'
     : proposing ? 'It’s on your quotes at once; an Owner or an Admin approves it before the rest of the studio uses it.' : 'What a quote line starts with when this item is picked.'
   return (
     /* (Dane UAT 3.10) An item's History sits beside its form, in its own column — the dialog takes the house l (800); a phone keeps it below */
@@ -174,8 +185,8 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
             : <div className={styles.richBox}><span className={styles.eyebrow}>Description</span><RichEditor value={d.html} onChange={set('html')} placeholder="What the line says under its name — bullets and bold print as you see them" label="Description" framed minHeight={96}
                                                                                                                                   right={<WritingHelp label="Description" subject={d.name.trim() || undefined} kind="description" trigger="icon" nested testId="book-writing" sources={{}} read={() => ({ html: d.html })} apply={set('html')} />} /></div>}
           <div className={styles.pair}>
-            <TextField label="Kind" mode="select" options={ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k])} value={d.kind} onChange={set('kind')} />
-            <TextField label="Unit" mode="select" options={units} value={d.unit} onChange={set('unit')} searchable={units.length > 8} helper="The studio’s units — Settings › Quotes & pricing"
+            <TextField label="Type" mode="select" options={ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k])} value={d.kind} onChange={set('kind')} />   {/* (the calm UI build 2026-10-27, W-536) the quote's Items table calls it Type */}
+            <TextField label="Unit" mode="select" options={units} value={d.unit} onChange={set('unit')} searchable={units.length > 8}
                        action={{ label: 'New unit…', onSelect: () => setNamingUnit(true), disabled: !canAddUnit, help: canAddUnit ? undefined : UNITS_RULE, testId: 'new-unit-row' }} />   {/* (S44I — M9) */}
           </div>
           {costs ? (
@@ -183,36 +194,37 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
             <div className={styles.trio} data-testid="item-prices">
               <TextField label="Cost (S$)" numeric="money" value={d.cost} onChange={onCost} onBlur={settleMarkup} />
               <TextField label="Markup (S$)" inputMode="decimal" value={d.markup} onChange={onMarkup} onBlur={settleMarkup} helper={markupHelp} />
-              <TextField label="Unit price (S$)" numeric="money" value={d.price} onChange={onPrice} helper="What a quote line starts at" />
+              <TextField label="Unit price (S$)" numeric="money" value={d.price} onChange={onPrice} />
             </div>
           ) : (
             <div className={styles.pair}>
-              <TextField label="Unit price (S$)" numeric="money" value={d.markup} onChange={set('markup')} helper="What a quote line starts at" />
+              <TextField label="Unit price (S$)" numeric="money" value={d.markup} onChange={set('markup')} />
             </div>
           )}
           <div className={styles.pair}>
-            <TextField label="Category" mode="select" options={categories} value={d.category || NO_CATEGORY} onChange={(v) => set('category')(v === NO_CATEGORY ? '' : v)} helper="The studio’s trades — Settings › Quotes & pricing"
-                       action={{ label: 'New category…', onSelect: () => setNaming(true), disabled: !canAddTrade, help: canAddTrade ? undefined : TRADES_RULE, testId: 'new-category-row' }} />   {/* (S44P, row 319) */}
+            <TextField label="Trade" mode="select" options={categories} value={d.category || NO_CATEGORY} onChange={(v) => set('category')(v === NO_CATEGORY ? '' : v)}
+                       action={{ label: 'New trade…', onSelect: () => setNaming(true), disabled: !canAddTrade, help: canAddTrade ? undefined : TRADES_RULE, testId: 'new-category-row' }} />   {/* (S44P, row 319) */}
             {/* (one-home N-16) from Company › Finance › Vendors — the house text field with the directory under it */}
-            <VendorNameField label="Vendor" value={d.vendor} onChange={set('vendor')} directory={vendors.list} onAdd={vendors.add} maxLength={80} helper="Who supplies it — the same product from two vendors is two items" testId="item-vendor" />
+            <VendorNameField label="Vendor" value={d.vendor} onChange={set('vendor')} directory={vendors.list} onAdd={vendors.add} maxLength={80} testId="item-vendor" />
           </div>
           {showWaste ? (
             <div className={styles.pair}>
               <TextField label="Waste (%)" numeric="decimal" value={d.waste} onChange={set('waste')}
                          error={touched && !wasteOk ? `Up to ${WASTE_MAX}%` : undefined}
-                         helper={wasteOk && wasteN > 0 ? `A PO from the quote orders ${orderedQty(100, wasteN)} ${wasteUnit} for every 100 quoted; the quote keeps its own` : 'Ordered on top of the quote’s quantity, for cuts and breakage'} />
+                         helper={wasteOk && wasteN > 0 ? `A PO from the quote orders ${orderedQty(100, wasteN)} ${wasteUnit} for every 100 quoted; the quote keeps its own` : undefined} />
             </div>
           ) : null}
-          <TextField label="Website link" value={d.link} onChange={set('link')} maxLength={500} helper="A product or spec page — the line keeps it; it never prints" error={touched && !linkOk ? MSG.url : undefined} />
+          <TextField label="Website link" value={d.link} onChange={set('link')} maxLength={500} helper="Never printed" error={touched && !linkOk ? MSG.url : undefined} />
           <div className={styles.photoRow} data-testid="item-photo">
             <button type="button" className={styles.photoWell} onClick={pickPhoto} disabled={!!readOnly} aria-label={d.thumb ? 'Replace the photo' : 'Add a photo'}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {d.thumb ? <img src={d.thumb} alt="" /> : <span className={styles.wellEmpty}><Icon name="add_photo_alternate" size={20} weight={300} /> Photo</span>}
             </button>
-            <span className={styles.photoHelp}>{d.thumb ? 'Shows on the card and in the Add Item box, and goes onto every line picked from it.' : 'A photo shows on the card and in the Add Item box, and goes onto every line picked from it.'}</span>
             {d.thumb && !readOnly ? <Button appearance="text" variant="secondary" onPress={() => setD((x) => ({ ...x, thumb: null }))}>Remove photo</Button> : null}
           </div>
         </ReadOnlyScope>
+        {/* (the calm UI build 2026-10-27, the UI audit's 4-40 · T-05) the helpers that sat under the fields — one press away, every word kept */}
+        <HowItWorks points={HOW_ITEMS} />
       </div>
         {item ? (
           <section className={styles.history} aria-label="History" data-testid="item-history">

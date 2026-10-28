@@ -67,6 +67,10 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
   /* ── b-time (UAT 5.05): a follow-up set at 10:00 keeps its hour when its day moves — in the panel and in the table — and shows it ── */
   const D1 = at(TODAY, 2), D2 = at(TODAY, 4), D3 = at(TODAY, 5)
   const FU = 'Follow up with Cheryl Lim'
+  /* (the calm UI build 2026-10-27: restated to the rule already in force) repair R179 (the Dashboard redesign) gives Cheryl a Call due today,
+     so her Next follow-up opens that task — set it aside on this copy for the b-time chain (a lead with no dated follow-up), then back */
+  const R179_CALL = sql(`select t.id from lead_tasks t join leads l on l.id = t.lead_id where l.name = 'Cheryl Lim' and t.done = 0 and t.title = 'Call Cheryl back about her budget' limit 1`)
+  if (R179_CALL) sql(`update lead_tasks set done = 1 where id = '${R179_CALL}'`)
   await step('b-time set a follow-up', async () => {
     await page.goto(`${BASE}/leads/${CHERYL}`); await ready(page)
     await page.getByTestId('next-follow-up').click()
@@ -90,9 +94,10 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     await page.getByRole('button', { name: `Open ${FU}` }).click()
     const field = page.getByRole('dialog', { name: 'Task' }).getByRole('button', { name: 'Due date', exact: true })
     await field.waitFor()
-    ok('b-time the panel’s Due is a date and a time', /, 10:00 AM$/.test(await field.innerText()), await field.innerText())
-    const helper = await page.getByRole('dialog', { name: 'Task' }).getByText(due(D1), { exact: true }).count()
-    ok('g-weekday the panel says the due with its day under the field', helper === 1)
+    /* (the calm UI build 2026-10-27, a deliberate change) one date (1-24): the field itself says the day, the date and the time — its second line went */
+    const fieldDue = (d) => `${DAYS[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()} · ${time(d)}`
+    ok('b-time the panel’s Due is a date and a time', / · 10:00 AM$/.test(await field.innerText()), await field.innerText())
+    ok('g-weekday the panel says the due with its day — in the field', (await field.innerText()).trim() === fieldDue(D1), await field.innerText())   // (the calm UI build 2026-10-27, a deliberate change)
     await shot(page, 'b-time-panel-before')
     await field.click()
     ok('b-time the panel’s picker has the time row', await page.locator('#om-date-picker').getByRole('group', { name: 'Time' }).count() === 1)
@@ -103,7 +108,7 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     ok('b-time the panel changes the time', await until(() => dueOf(FU, CHERYL) === D2pm.getTime()), new Date(dueOf(FU, CHERYL)).toString())
     await page.locator('#om-date-picker').getByRole('button', { name: 'Done' }).click()
     await page.waitForTimeout(600)
-    ok('b-time the panel shows the moved due', await page.getByRole('dialog', { name: 'Task' }).getByText(due(D2pm), { exact: true }).count() === 1)
+    ok('b-time the panel shows the moved due', (await field.innerText()).trim() === fieldDue(D2pm), await field.innerText())   // (the calm UI build 2026-10-27, a deliberate change) the field says it
     await shot(page, 'b-time-panel-after')
     const ev = sql(`select detail from lead_events where lead_id = '${CHERYL}' and kind = 'task_edited' order by at desc limit 1`)
     const lines = sql(`select count(*) from lead_events where lead_id = '${CHERYL}' and kind = 'task_edited'`)
@@ -128,11 +133,15 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
 
   /* ── b-newtask (UAT 11.02) · g-tasktitle (UAT 8.16): the task just added is the first row, pulses once; a cut title says itself ── */
   const NEW1 = 'Probe — a task with no date', NEW2 = 'Probe — confirm the kitchen carpentry measurements with the contractor before the site visit on Monday and share the photos with the client'
+  if (R179_CALL) sql(`update lead_tasks set done = 0 where id = '${R179_CALL}'`)   // (the calm UI build) R179's call back as it was
   await step('b-newtask lead tab', async () => {
     /* what the system writes meanwhile: unseen, dated tasks (a log's reminder, contract automation, a render's call back) */
     sql(`update lead_tasks set seen_at = null where lead_id = '${OLIVIA}' and due_at is not null and done = 0`)
     await page.goto(`${BASE}/leads/${OLIVIA}/tasks`); await ready(page)
-    await page.locator('[role="table"][aria-label="Tasks"] [class*="__foot"]').getByText('Add Task').click()
+    /* (the calm UI build 2026-10-27, a deliberate change) the desk's "+ Add Task" bar under the table went (1-11 · 2-13 · 2-19): New task ▾ ›
+       Blank task is the one add, and it opens the same add row */
+    await page.locator('[data-kb="create"]').filter({ visible: true }).first().click()
+    await page.getByRole('menuitem', { name: 'Blank task' }).click()
     const input = page.getByRole('textbox', { name: 'Task title' })
     await input.fill(NEW1); await input.press('Enter')
     await snack(page, /Task added/)
@@ -179,7 +188,9 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
   })
   await step('b-newtask /tasks', async () => {
     await page.goto(`${BASE}/tasks`); await ready(page)
-    await page.locator('[role="table"][aria-label="Tasks"] [class*="__foot"]').getByText('Add Task').click()
+    /* (the calm UI build 2026-10-27, a deliberate change) New task ▾ › Blank task — the one add (the bar under the table went) */
+    await page.locator('[data-kb="create"]').filter({ visible: true }).first().click()
+    await page.getByRole('menuitem', { name: 'Blank task' }).click()
     const input = page.getByRole('textbox', { name: 'Task title' })
     await input.fill('Probe — studio task, no date'); await input.press('Enter')
     await snack(page, /Task added/)
@@ -284,8 +295,8 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     const qid = sql(`select id from quotes where number = 'OM-10006'`)
     await page.goto(`${BASE}/quotes/${qid}`); await ready(page)
     await page.getByTestId('quote-send').click()
-    await page.getByText('Send for confirmation', { exact: true }).click()
-    await page.getByRole('button', { name: 'Send via WhatsApp' }).click()
+    await page.getByText('Ask to confirm', { exact: true }).click()   // (the calm UI build 2026-10-27, a deliberate change) 4-21 · W-358: Send ▾'s row reads "Ask to confirm"
+    await page.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const t = await snack(page, /follow-up on/, 10000)
     ok('g-weekday the send snackbar’s follow-up wears its day', /follow-up on (Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} \w{3} ’\d\d/.test(t), t)
     await shot(page, 'g-weekday-send-snackbar')
@@ -325,9 +336,15 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     await page.locator('[data-notifications-tile]').first().click()
     await page.getByTestId('notifications-panel').waitFor(); await page.waitForTimeout(1200)
     const groups = await page.locator('[data-testid="notifications-panel"] section').evaluateAll((ss) => ss.map((s) => s.getAttribute('data-testid')))
-    const lateRows = await page.locator('[data-testid="notifications-due"] [data-late]').count()
-    ok('g-bell with a late Due row, Due comes first', lateRows > 0 && groups[0] === 'notifications-due' && groups.includes('notifications-notices'), `${groups.join(' · ')} (late ${lateRows})`)
-    const lines = await page.locator('[data-testid="notifications-due"] [data-late]').allInnerTexts()
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-20, B1's ledger) the bell is for what happened: the notices lead and what
+       is due folds under one line at the end, "Due · n · m late · Show" — late work is said on that line instead of leading the list. Same rule
+       on the new place: while a Due row is late, the bell says so at once (the fold's late count = the late rows), then the rows wear their day. */
+    const fold = page.getByTestId('notifications-due-fold')
+    const foldLate = Number(/· (\d+) late/.exec(await fold.innerText().catch(() => ''))?.[1] ?? 0)
+    if (await fold.count() && (await fold.getAttribute('aria-expanded')) !== 'true') { await fold.click(); await page.waitForTimeout(400) }
+    const lateRows = await page.locator('[data-testid="notifications-due"] [data-testid="notification-row"] [data-late]').count()
+    ok('g-bell with a late Due row, the Due line says how many are late (the notices lead, Due folds at the end)', lateRows > 0 && foldLate === lateRows && groups[0] === 'notifications-notices' && groups[groups.length - 1] === 'notifications-due', `${groups.join(' · ')} (late ${lateRows}, the line says ${foldLate})`)
+    const lines = await page.locator('[data-testid="notifications-due"] [data-testid="notification-row"] [data-late]').allInnerTexts()
     ok('g-weekday the bell’s late rows wear their day', lines.length > 0 && lines.every((l) => /^Due (today|(Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} \w{3} ’\d\d)/.test(l)), lines.slice(0, 3).join(' | '))
     await shot(page, 'g-bell-due-first')
     await page.keyboard.press('Escape')
@@ -349,7 +366,9 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     await p.locator('[data-notifications-tile]').first().click().catch(async () => { await p.getByRole('button', { name: /Notifications/ }).first().click() })
     await p.getByTestId('notifications-panel').waitFor(); await p.waitForTimeout(1200)
     const groups = await p.locator('[data-testid="notifications-panel"] section').evaluateAll((ss) => ss.map((s) => s.getAttribute('data-testid')))
-    ok('phone 390 the bell’s sheet opens with Due first while late', groups[0] === 'notifications-due', groups.join(' · '))
+    /* (the calm UI build 2026-10-27, a deliberate change — 1-20) the sheet as at a desk: the notices lead, the Due line at the end says the late count */
+    const phoneFold = await p.getByTestId('notifications-due-fold').innerText().catch(() => '')
+    ok('phone 390 the bell’s sheet says what is late on its Due line while late', groups[0] === 'notifications-notices' && groups[groups.length - 1] === 'notifications-due' && /· \d+ late/.test(phoneFold), `${groups.join(' · ')} — ${phoneFold.replace(/\s+/g, ' ')}`)
     await shot(p, 'phone-bell')
     await p.goto(`${BASE}/leads/${SERENA}`); await ready(p)
     const row = p.getByTestId('next-follow-up')
@@ -381,6 +400,9 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     await page.locator('[data-notifications-tile]').first().click()
     await page.getByTestId('notifications-panel').waitFor(); await page.waitForTimeout(1200)
     const groups = await page.locator('[data-testid="notifications-panel"] section').evaluateAll((ss) => ss.map((s) => s.getAttribute('data-testid')))
+    /* (the calm UI build 2026-10-27, a deliberate change — 1-20) the Due rows rest under their fold: opened, so "nothing late" is read on the rows too */
+    const quietFold = page.getByTestId('notifications-due-fold')
+    if (await quietFold.count() && (await quietFold.getAttribute('aria-expanded')) !== 'true') { await quietFold.click(); await page.waitForTimeout(400) }
     const lateRows = await page.locator('[data-testid="notifications-due"] [data-late]').count()
     ok('g-bell with nothing late, the Notices come first', lateRows === 0 && groups[0] === 'notifications-notices' && groups.includes('notifications-due'), `${groups.join(' · ')} (late ${lateRows})`)
     await shot(page, 'g-bell-updates-first')

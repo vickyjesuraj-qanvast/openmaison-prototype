@@ -5,18 +5,38 @@ import gallery from './quote-templates-gallery.module.css'
 import table from './templates-table.module.css'
 import styles from './library-gallery.module.css'
 import emptyStyles from '@/components/om/empty-state.module.css'
+import pillStyles from '@/components/om/scope-pill.module.css'
+import { Icon } from '@/components/om/icon'
 
 /** A bone whose box the stylesheet sizes per width (the pill is 114 × 36 at a desk, 72 × 36 on a touch tablet or a phone). */
 const Box = ({ cls }: { cls: string }) => <span className={`${styles.gBox} ${cls}`}><Bone w="100%" style={{ height: '100%' }} /></span>
+
+/** (the calm UI build 2026-10-27 — the closing regression) A scope pill or its to-do twin as a bone the pill's own size: the house pill's box
+    (scope-pill.module.css) holds its words unseen and the bone covers it, so it is as wide as "Type: All ▾" at every width — the UI audit's 4-24
+    took the narrow bar's short label away — and a to-do's short "1" stands ≤1024 as the page's does. */
+export type GhostPill = { label: string; short?: string; icon?: string; todo?: boolean }
+function PillBone({ label, short, icon, todo = false }: GhostPill) {
+  return (
+    <span className={styles.gPillBox}>
+      <span className={pillStyles.pill} data-tone={todo ? 'attention' : undefined} data-short={short !== undefined || undefined} style={{ visibility: 'hidden' }}>
+        {icon ? <Icon name={icon} size={18} weight={300} /> : null}
+        <span className={pillStyles.label}>{label}</span>
+        {short !== undefined ? <span className={pillStyles.short}>{short}</span> : null}
+        {todo ? null : <span className={pillStyles.chev}><Icon name="keyboard_arrow_down" size={20} /></span>}
+      </span>
+      <Bone w="100%" r={4} className={styles.gPillBone} style={{ height: '100%' }} />
+    </span>
+  )
+}
 
 /**
  * (REG-708) The Folders group's ghost on the house folder card's own classes (components/om/folders/folder-card): the group's head (the
  * select-all box and "Folders" — `check`), then the folder cards on the host's track (`min`: the galleries' 248, the Files tab's 299).
  */
-export function GhostFolderGroup({ count, min, check = false }: { count: number; /** the host's track; none = the card's own (299, 220 narrow) */ min?: number; check?: boolean }) {
+export function GhostFolderGroup({ count, min, check = false, head = true }: { count: number; /** the host's track; none = the card's own (299, 220 narrow) */ min?: number; check?: boolean; /** (the calm UI build 2026-10-27) FolderGroup's `head` */ head?: boolean }) {
   return (
     <div className={folderStyles.group}>
-      <div className={folderStyles.groupHead}>{check ? <><Bone w={18} h={18} style={{ margin: 3 }} /><Bone w={50} h={14} /></> : <Bone w={64} h={16} className={styles.gLine} />}</div>
+      {head ? <div className={folderStyles.groupHead}>{check ? <><Bone w={18} h={18} style={{ margin: 3 }} /><Bone w={50} h={14} /></> : <Bone w={64} h={16} className={styles.gLine} />}</div> : null}
       <div className={folderStyles.row} style={min ? ({ '--folder-min': `${min}px`, '--folder-min-narrow': `${min}px` } as CSSProperties) : undefined}>
         {Array.from({ length: Math.min(count, 12) }, (_, i) => (
           <div key={i} className={`${folderStyles.folder} ${styles.gFolder}`}><span className={styles.gPick}><Bone w={24} h={24} /></span><Bone w={24} h={24} /><span className={styles.gFolderText}><Bone w="60%" h={14} className={styles.gFolderName} /><Bone w="36%" h={10} className={styles.gFolderCount} /></span></div>
@@ -32,9 +52,12 @@ export function GhostFolderGroup({ count, min, check = false }: { count: number;
  * the bones stand where the page lands: two cards a row at 390, one at 320, the kebab-free body a phone gets. The host draws its header (and
  * an intro) around it; `loading.tsx` and the page's PageReveal draw the same thing.
  */
-export function LibraryGalleryGhost({ pill = false, filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1, newW, list, first = false, rows = 0 }: {
-  /** A scope pill leads the tools (the AI Visualizer's Kind). */
-  pill?: boolean
+export function LibraryGalleryGhost({ pill = false, todos = [], filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1, newW, list, first = false, rows = 0 }: {
+  /** A scope pill leads the tools (the AI Visualizer's Kind) — its words, when given, size the bone as the page's pill ("Type: All"). */
+  pill?: boolean | string
+  /** (the calm UI build 2026-10-27) The to-do twins before the pill ("1 approval", "1" ≤1024), as the page draws them while something waits —
+      on a phone they and the pill can push the tools onto a second line. */
+  todos?: { label: string; short: string; icon?: string }[]
   /** The Filters button (a library with facets). */
   filters?: boolean
   newFolder?: boolean
@@ -71,7 +94,12 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
         {/* (wave E, gallery-9) the bar's two groups, as the page draws them — on a phone the pill at the left, the tools at the right, New
             Folder inside New ▾ */}
         <div className={`${gallery.toolbarEnd} ${styles.end}`}>
-          {pill ? <div className={styles.scopes}><Box cls={styles.gPill!} /></div> : null}
+          {pill || todos.length ? (
+            <div className={styles.scopes}>
+              {todos.map((t) => <span key={t.label} className={styles.todo}><PillBone label={t.label} short={t.short} icon={t.icon ?? 'approval'} todo /></span>)}
+              {typeof pill === 'string' ? <PillBone label={pill} /> : pill ? <Box cls={styles.gPill!} /> : null}
+            </div>
+          ) : null}
           <div className={styles.tools}>
             {newFolder ? <span className={styles.folderSlot} data-keep={newW ? '' : undefined}><Box cls={styles.gIcon!} /></span> : null}   {/* (pending modules S17) a plain New keeps New Folder on a phone, as the page's does */}
             <span className={`${styles.gBox} ${styles.gNew}`} style={newW ? ({ '--g-new': `${newW}px` } as CSSProperties) : undefined}><Bone w="100%" style={{ height: '100%' }} /></span>
@@ -91,7 +119,7 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
       ) : null}
       {list ? <span className={styles.gListOnly}><LibraryTableGhost {...list} folders={folders} /></span> : null}
       <div className={`${styles.gridStack}${list ? ` ${styles.gGridOnly}` : ''}${rows ? ` ${styles.gNoRows}` : ''}`} aria-hidden>
-        {folders > 0 ? <GhostFolderGroup count={folders} min={248} /> : null}
+        {folders > 0 ? <GhostFolderGroup count={folders} min={248} head={false} /> : null}   {/* (the calm UI build 2026-10-27, 4-37 · 6-20) the gallery's folders have no head */}
         {cards > 0 ? (
           <div className={`${gallery.grid} ${styles.cards}`}>
             {Array.from({ length: cards }, (_, i) => (

@@ -14,7 +14,7 @@ async function ready(page) { await page.waitForLoadState('networkidle').catch(()
 async function snack(page, text, timeout = 6000) { await page.getByText(text, { exact: false }).first().waitFor({ timeout }) }
 const row = (page, id) => page.locator(`[data-item-id="${id}"]`).first()
 async function drawerSwitch(page, label, on) {
-  await page.getByRole('button', { name: 'Column settings' }).first().click()
+  await page.getByRole('button', { name: 'More options for Items' }).first().click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Column settings' }).click()   // (the calm UI build 2026-10-27, a deliberate change) 4-03: Column settings is the Items ⋮'s row
   const sw = page.getByRole('switch', { name: `Show ${label} column` }).first()
   await sw.waitFor()
   if ((await sw.isChecked()) !== on) await sw.locator('xpath=ancestor::label[1]').click().catch(async () => { await sw.click({ force: true }) })
@@ -37,10 +37,10 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
   await page.goto(`${BASE}/quotes/${OM1}`); await page.locator('#section-items').waitFor(); await ready(page)
 
   await step('columns: Vendor/Sub and Website Link switch on (no coming soon)', async () => {
-    await drawerSwitch(page, 'Vendor/Sub', true)
+    await drawerSwitch(page, 'Vendor', true)   // (the calm UI build 2026-10-27, a deliberate change) W-422
     await drawerSwitch(page, 'Website Link', true)
     const heads = await page.getByRole('columnheader').allInnerTexts()
-    ok('both heads drawn', heads.some((h) => /Vendor\/Sub/i.test(h)) && heads.some((h) => /Website Link/i.test(h)), heads.filter((h) => /vendor|website/i.test(h)).join(' · '))
+    ok('both heads drawn', heads.some((h) => /^Vendor/i.test(h)) && heads.some((h) => /Website Link/i.test(h)), heads.filter((h) => /vendor|website/i.test(h)).join(' · '))
     ok('the quote keeps them on', /"key":"vendor","on":true/.test(sql(`select items_columns from quotes where id='${OM1}'`)) && /"key":"website","on":true/.test(sql(`select items_columns from quotes where id='${OM1}'`)))
   })
 
@@ -150,7 +150,7 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
     ok('the owner has the Share · Margin chips', await chips.isVisible())
     await chips.getByRole('radio', { name: 'Margin' }).click(); await page.waitForTimeout(300)
     const meta = await box.innerText()
-    ok('the head says what the margin is', /margin before the quote’s discounts/.test(meta))
+    ok('the head says what the margin is', /before the quote’s discounts/.test(meta))   // (the calm UI build 2026-10-27, a deliberate change) W-129: “By trade · before the quote’s discounts”
     // Carpentry by the lines as stored now (own category on every line): the maths' rule.
     const rows = sql(`select qty, cost_minor, markup_minor, discount_pct, rebate_minor, ifnull(print_as,''), optional, status from quote_items where quote_id='${OM1}' and kind='item' and category='Carpentry'`).split('\n').filter(Boolean).map((l) => l.split('|'))
     let rev = 0, cost = 0
@@ -174,7 +174,7 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
     await qty.click(); await qty.fill('47'); await qty.press('Tab')
     await waitSave(page)
     ok('the edit landed', sql(`select qty from quote_items where id='${L.elec}'`) === '47.0')
-    await page.getByRole('button', { name: 'Undo', exact: true }).first().click()
+    await page.locator('#section-items').getByRole('button', { name: 'More options for Items' }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Undo' }).click()   // (the calm UI build 2026-10-27, a deliberate change) 4-03: Undo is the Items ⋮'s row (⌘Z unchanged)
     await page.waitForTimeout(2500)
     const q = sql(`select qty from quote_items where id='${L.elec}'`)
     const one = sql(`select print_one_line from quote_items where id='${L.bath}'`)
@@ -218,7 +218,7 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
     const sheet = pp.getByTestId('line-sheet'); await sheet.waitFor(); await pp.waitForTimeout(400)
     await sheet.getByTestId('line-more').click(); await pp.waitForTimeout(300)   // (quotes on the move, a deliberate change of this rule) the vendor, the link and the description sit under the sheet's More
     await sheet.getByLabel('Website Link').scrollIntoViewIfNeeded()
-    const vendorVal = await sheet.getByRole('combobox', { name: /^Vendor\/Sub/ }).innerText().catch(() => '')
+    const vendorVal = await sheet.getByRole('combobox', { name: /^Vendor/ }).innerText().catch(() => '')   // (the calm UI build 2026-10-27, a deliberate change) W-422
     ok('the sheet has Vendor/Sub (Hafary) and Website Link', /Hafary/.test(vendorVal) && (await sheet.getByLabel('Website Link').count()) === 1, vendorVal)
     const d = await sheet.getByRole('button', { name: /^Description/ }).boundingBox()
     ok('the sheet keeps the 16px gutter', Math.round(d.x) === 16 && Math.round(d.x + d.width) === 390 - 16, `${Math.round(d.x)} … ${Math.round(d.x + d.width)}`)

@@ -42,7 +42,9 @@ export const viewShows = (o: { status: string; approval: string }) => !awaitingA
 export function viewCardWords(o: { status: string; clientFirst: string; studio: string; designerFirst: string; confirmedBy: string | null; confirmedOn: string | null }): string {
   if (o.status === 'Signed') return `Hi ${o.clientFirst}, this quote is signed. ${o.studio} keeps a copy of the agreement with you.`
   if (o.status === 'Confirmed') return `Hi ${o.clientFirst}, this quote was confirmed${o.confirmedBy ? ` by ${o.confirmedBy}` : ''}${o.confirmedOn ? ` on ${o.confirmedOn}` : ''}. It stays here for you to look at.`
-  return `Hi ${o.clientFirst}, this is the quote ${o.designerFirst} is preparing for you. It updates here as they work on it — there’s nothing to confirm or sign on this page.`
+  /* (the calm UI build 2026-10-27, 4-34 · W-209) a sent quote reads as sent; one still being worked on says so */
+  if (o.status === 'Sent to Client' || o.status === 'Approved') return `Hi ${o.clientFirst}, here is your quote from ${o.designerFirst}. It stays up to date on this page.`
+  return `Hi ${o.clientFirst}, here is your quote from ${o.designerFirst} — ${o.designerFirst} is still working on it. It stays up to date on this page.`
 }
 /** The card while the quote waits for the studio's approval (a revision on its way). */
 export const notReadyWords = (o: { clientFirst: string; studio: string }) => `Hi ${o.clientFirst}, ${o.studio} is updating this quote. It’ll be back here once it’s ready.`

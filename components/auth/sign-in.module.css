@@ -11,6 +11,8 @@
 .notice { composes: note from '../company/read-only-note.module.css'; }
 .check { display: flex; align-items: center; min-height: 40px; }
 .fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — the audit's 1-46) the demo's one quiet box: the surface's grey well, the house 8 radius, body-s */
+.demoBox { margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
 /* (pending modules S35) A link inside the fine line (the Terms line): the house link at the line's own size — 12/16 semibold — so the line keeps
    its height and its ghost's bars land on it. */
 .fineLink { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); }

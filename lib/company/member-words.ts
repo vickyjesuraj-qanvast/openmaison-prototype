@@ -18,4 +18,4 @@ export const emailHelp = (own: boolean, onLeads: boolean, marketing = false): st
   : onLeads ? `Printed as ${own ? 'your' : 'their'} email on the quotes ${own ? 'you' : 'they'} prepare` : `Shown on the papers ${own ? 'you' : 'they'} send`
 
 /** The Phone field's helper — one rule for "a mobile" (S30): it signs them in and carries WhatsApp; a landline does neither. */
-export const phoneHelp = (own: boolean, onLeads: boolean): string => `A mobile signs ${own ? 'you' : 'them'} in and gets WhatsApp notices${onLeads ? '; clients see it on their portal' : ''}`
+export const phoneHelp = (own: boolean, onLeads: boolean): string => `A mobile signs ${own ? 'you' : 'them'} in and gets WhatsApp notifications${onLeads ? '; clients see it on their portal' : ''}`   // (the calm UI build 2026-10-27 — B1's request, 1-41) one word: notifications

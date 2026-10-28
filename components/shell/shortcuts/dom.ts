@@ -138,6 +138,7 @@ export function liveGroups(editor: boolean): Group[] {
     for (const id of ['list.next', 'list.prev', 'list.open']) page.push(row(id, keyDef(id)!.label.replace('{noun}', noun))!)
     if (list.querySelector('[data-kb-select]')) page.push(row('list.select', `Select the ${noun}`)!)
     if (list.querySelector('[data-kb-select-all]')) page.push(row('list.all', `Select every ${noun} shown`)!)
+    if (list.querySelector('[data-kb="list.review"]')) page.push(row('list.review', `Review the ${noun}`)!)   // (the Dashboard redesigned, 2026-10-26) Needs you
   } else if (onLeadPage()) {
     page.push(row('lead.next')!, row('lead.prev')!)
   }
@@ -152,7 +153,9 @@ export function liveGroups(editor: boolean): Group[] {
   }
   for (const id of hereIds()) { const r = row(id); if (r && !page.some((p) => p.id === id)) page.push(r) }
 
-  const everywhere = ['search', 'shortcuts', ...(hasSearchTarget() ? ['find'] : []), ...GO.map((g) => g.id), 'undo', ...(editor ? ['save'] : [])]
+  /* (the Dashboard redesigned 2026-10-26, Q-09 — lane D4) ⌘J asks Maison AI wherever it is on the page: the floating button, or the Dashboard's docked field */
+  const maison = document.querySelector('[data-maison-fab], [data-maison-dock]') ? ['maison'] : []
+  const everywhere = ['search', ...maison, 'shortcuts', ...(hasSearchTarget() ? ['find'] : []), ...GO.map((g) => g.id), 'undo', ...(editor ? ['save'] : [])]
     .map((id) => row(id)).filter((r): r is Row => !!r)
   const layer = ['layer.close', 'layer.move', 'layer.pick', 'layer.save'].map((id) => row(id)!).filter(Boolean)
   return [

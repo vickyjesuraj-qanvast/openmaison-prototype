@@ -58,8 +58,6 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
     ? groups.map((g) => ({ ...g, rows: g.rows.filter((r) => r.label.toLowerCase().includes(needle) || keysPlain(r.keys, platform).toLowerCase().includes(needle)) })).filter((g) => g.rows.length)
     : groups
   const used = usedKeys()
-  const here = scope === 'here' ? groups.filter((g) => g.key !== 'layer').flatMap((g) => g.rows) : []
-  const usedHere = here.filter((r) => used.has(r.id)).length
 
   return (
     <Drawer open={open} title="Keyboard shortcuts" label="Keyboard shortcuts" onClose={closeShortcuts} width="narrow" kbPanel
@@ -68,17 +66,18 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
               <div className={styles.switches}>
                 <div className={styles.switchRow}>
                   <span className={styles.switchText}>
-                    <span className={styles.switchName}>Single-key shortcuts</span>
-                    <span className={styles.switchHelp}>Letters, numbers and ? — arrows, ↵, Esc and ⌘ keys always work</span>
+                    {/* (the calm UI build 2026-10-27 — the audit's 1-36, W-053 · W-057) plain words for the two switches */}
+                    <span className={styles.switchName}>Use single keys (C, F, J, K…)</span>
+                    <span className={styles.switchHelp}>Arrows, Enter, Esc and ⌘ shortcuts always work</span>
                   </span>
-                  <Switch size="sm" isSelected={single} onChange={setSingle} aria-label="Single-key shortcuts" />
+                  <Switch size="sm" isSelected={single} onChange={setSingle} aria-label="Use single keys" />
                 </div>
                 <div className={styles.switchRow}>
                   <span className={styles.switchText}>
-                    <span className={styles.switchName}>Tips while I work</span>
-                    <span className={styles.switchHelp}>A key, once the mouse has done the same three times</span>
+                    <span className={styles.switchName}>Show shortcut tips</span>
+                    <span className={styles.switchHelp}>After you do the same thing 3 times with the mouse</span>
                   </span>
-                  <Switch size="sm" isSelected={tips} onChange={setTips} aria-label="Tips while I work" />
+                  <Switch size="sm" isSelected={tips} onChange={setTips} aria-label="Show shortcut tips" />
                 </div>
               </div>
             }>
@@ -86,12 +85,7 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
         <SearchBar appearance="outlined" size="md" placeholder="Find a shortcut" aria-label="Find a shortcut" value={q} onChange={setQ} className={styles.find} />
         <Chips label="Show the keys for" options={[{ value: 'here', label: 'On this page' }, { value: 'all', label: 'All pages' }]} value={scope}
                onChange={(v) => setScope(v === 'all' ? 'all' : 'here')} />
-        {scope === 'here' && here.length && !needle ? (
-          <div className={styles.progress}>
-            <span>You use {usedHere} of {here.length} here</span>
-            <span className={styles.bar} aria-hidden><i style={{ width: `${Math.round((usedHere / here.length) * 100)}%` }} /></span>
-          </div>
-        ) : null}
+        {/* (the calm UI build 2026-10-27 — the audit's 1-36, W-063) the "You use n of N here" meter went — the tick on each row you have used stays */}
         {shown.length ? shown.map((g) => (
           <section key={g.key} className={styles.group} aria-label={g.title}>
             <h3 className={styles.groupHead}>{g.title}</h3>

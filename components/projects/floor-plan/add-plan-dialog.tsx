@@ -44,8 +44,9 @@ export function AddPlanDialog({ open, onClose, files, hasPlans, client, busy, st
     if (missing || wrongKind) return
     onAdd({ file: from === 'upload' ? picked : null, fileId: from === 'files' ? fileId : null, name: name.trim(), main: !hasPlans || main })
   }
+  /* (the calm UI build 2026-10-27, W-474) the dialog is named as its button: New plan */
   return (
-    <Dialog open={open} onClose={onClose} title="Add a plan" size="form" width={600} closeOnScrim={false}
+    <Dialog open={open} onClose={onClose} title="New plan" size="form" width={600} closeOnScrim={false}
             subtitle="A picture or a PDF of the plan — a PDF’s first page is what you mark up, and the original is kept in Files › Floor plans."
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button variant="primary" onPress={submit} isDisabled={busy} data-testid="plan-add-save">{busy ? 'Adding…' : 'Add plan'}</Button></>}>
       <div className={styles.form} data-testid="plan-add-dialog">

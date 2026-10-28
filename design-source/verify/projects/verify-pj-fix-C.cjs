@@ -41,6 +41,8 @@ const FLOOR = sql(`select id from project_updates where project_id='${BEN_P}' an
   const dialog = (p) => p.locator('[role="dialog"]').last()
   const post = (p, title) => p.locator('[data-testid="update-post"]').filter({ has: p.locator('h3', { hasText: title }) }).first()
   const card = (p, title) => p.locator('[data-testid="choice-card"]', { has: p.locator('h3', { hasText: title }) })
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-27) Choose with {client} left the card's band for its ⋮ */
+  const chooseWith = async (p, title) => { await card(p, title).locator('[data-testid="choice-kebab"]').click(); await p.waitForTimeout(250); await p.locator('[data-testid="choice-choose"] [role="menuitem"]').click() }
   const menu = async (p, scope, kebab, item) => { await scope.locator(kebab).first().click(); await settle(p, 300); await p.getByRole('menuitem', { name: new RegExp(`^${item}`) }).click(); await settle(p, 700) }
   const signIn = async (p) => {
     await go(p, '/my/demo-studio/login')
@@ -92,7 +94,7 @@ const FLOOR = sql(`select id from project_updates where project_id='${BEN_P}' an
     console.log('C-04 a pick ends the wait · C-02 the variation order follows the pick')
     ok(sql(`select coalesce(waiting_on,'') from project_milestones where id='${PAINTING}'`) === 'client', 'Painting waits on Benjamin for the paint colours (seeded)')
     await go(s, `/projects/${BEN_P}/choices`)
-    await card(s, 'Paint colours').locator('[data-testid="choice-choose"]').click(); await settle(s, 600)
+    await chooseWith(s, 'Paint colours'); await settle(s, 600)
     const radios = dialog(s).locator('[data-testid="choose-option"]')
     await radios.first().click(); await settle(s, 200)
     await s.keyboard.press('ArrowDown'); await settle(s, 200)
@@ -104,7 +106,7 @@ const FLOOR = sql(`select id from project_updates where project_id='${BEN_P}' an
     await snack(s).getByRole('button', { name: 'Undo' }).click(); await settle(s, 1500)
     ok(sql(`select status || '|' || coalesce((select waiting_on from project_milestones where id='${PAINTING}'),'none') from project_selections where id='${PAINT}'`) === 'shared|client', 'Undo puts the choice and the wait back')
     await go(s, `/projects/${BEN_P}/choices`)
-    await card(s, 'Paint colours').locator('[data-testid="choice-choose"]').click(); await settle(s, 600)
+    await chooseWith(s, 'Paint colours'); await settle(s, 600)
     await dialog(s).locator('[data-testid="choose-option"]').first().click(); await s.locator('[data-testid="choose-save"]').click(); await settle(s, 1600)
     ok(sql(`select chosen_option_id from project_selections where id='${PAINT}'`) === OPT('Sage Whisper'), 'Sage Whisper chosen with Benjamin')
     await go(s, `/projects/${BEN_P}/choices`)

@@ -454,7 +454,7 @@ export function MoveStageWizard({
       <p className={styles.panelTitle}>{panelTitle}</p>
       {logKey ? (
         <LinkButton icon="add" onClick={addLog}>
-          Add Log
+          Add log
         </LinkButton>
       ) : editLink}
     </div>
@@ -622,7 +622,7 @@ export function MoveStageWizard({
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               {!anyOpen ? null : (
                 <Button onPress={save} isDisabled={pending}>
-                  {editing ? 'Save changes' : active === 'Won' ? 'Save & Convert to Project' : 'Save'}
+                  {editing ? 'Save changes' : active === 'Won' ? 'Save & convert to project' : 'Save'}
                 </Button>
               )}
             </div>

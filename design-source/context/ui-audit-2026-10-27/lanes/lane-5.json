@@ -1,0 +1,1144 @@
+[
+ {
+  "id": "5-01",
+  "area": "Company › Members",
+  "route": "/company/members",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Every member row has 3 selects, a switch, tags and 4–5 purple text actions",
+  "now": "Each row (8 active members) shows: avatar · name + \"YOU\"/pencil · email · Role select · \"Reports to\" select (or \"Runs the studio\" / \"Team: Michelle, Sarah\" / \"Keeps the books\" / \"Looks after the leads\") · \"n leads\" · second line: \"Open to new leads\" switch · \"CLOSED TO NEW LEADS\" chip · \"Projects at once\" select (\"Studio default · 4\") · preference summary (cut to \"Land…\", \"Cond…\") · \"Signature: not set\" · \"PayNow: 9661 4208 Change\" or \"Add PayNow\" · \"ON THE ABOUT PAGE\" tag · Preferences · Public profile · Deactivate. The measure counts 61 controls, 28 purple text actions and 404 words on the first screen; the page is 1,406 px for 9 people (4,588 px on a phone).",
+  "why": "A studio owner opens Members to add someone or change a role. Every other setting about every person is drawn at once, so the two things he came for drown in ~15 controls a row; the eye cannot find a row's one verb because there are five.",
+  "proposal": "One row per member on the listing's row model: avatar · name (+ \"You\") and email · Role select (the only inline control — it is what the page is named for) · \"14 leads\" · ⋮. The ⋮ (PortalMenu + DropdownItem) holds: Edit details · Reports to… · Lead preferences… · Projects at once… · PayNow… · Public profile · Deactivate. Show state only when it is off the usual: a quiet \"Not taking new leads\" meta line when the switch is off, a \"Signature not set\" line only on your own row (with Set it up). Drop \"Runs the studio\" / \"Keeps the books\" / \"Looks after the leads\" (the role says it), drop \"ON THE ABOUT PAGE\" (it lives on the public profile page), drop \"No preferences set\" and \"Reports to: Nobody\". Better still, Edit details opens one member drawer (house Drawer 480) with sections Details · Leads (open to new leads, preferences, projects at once, reports to) · Pay (PayNow) · Public profile — then the row's ⋮ is Edit · Public profile · Deactivate.",
+  "effort": "M",
+  "shots": [
+   "5-members.png",
+   "5-members-full.png",
+   "5-members-390.png"
+  ],
+  "code": [
+   "components/company/members-view.tsx:366-433",
+   "components/company/members-view.tsx:260",
+   "components/company/company-ghosts.tsx:176-210"
+  ]
+ },
+ {
+  "id": "5-02",
+  "area": "Company › Members",
+  "route": "/company/members",
+  "kind": "noise",
+  "severity": "high",
+  "title": "A five-line rules paragraph sits on top of Members (seven lines on a phone)",
+  "now": "Card \"People and roles\" opens with: \"Owners and Admins run the studio and assign any lead; only an Owner makes another Owner, and nobody changes their own role. A Manager assigns within their team — the Designers who report to them. A Designer keeps the leads assigned to them. Accounting keeps the books — Finance and each project’s money, never a lead. Who sees which leads is set under Settings › Roles & access.\" On a 390 phone it fills the first screen before the first member.",
+  "why": "Nobody reads a role policy before adding a member; the rules already sit in Settings › Roles & access › Who may do what, and the paragraph pushes the list below the fold on a phone.",
+  "proposal": "Remove the card title \"People and roles\" (the page is Members) and the paragraph. Keep one HelpLink after the list or beside the Role column head: \"What can each role do?\" → Settings › Roles & access. The read-only note for non-runners stays.",
+  "effort": "S",
+  "shots": [
+   "5-members.png",
+   "5-members-390.png"
+  ],
+  "code": [
+   "lib/company/copy.ts:24",
+   "components/company/members-view.tsx:347-349"
+  ]
+ },
+ {
+  "id": "5-03",
+  "area": "Company › Members",
+  "route": "/company/members",
+  "kind": "copy",
+  "severity": "high",
+  "title": "Members speaks in system words: \"Projects at once\", \"Studio default · 4\"",
+  "now": "\"Projects at once\" + \"Studio default · 4\" (members-view.tsx:260, :412); \"Runs the studio\" (:385), \"Keeps the books\" (:383), \"Looks after the leads\" (:384); \"On the About page\" tag (:427); \"Reports to: Nobody\" (:49, :380); \"No preferences set\" (:414); \"Signature: not set\" (:419, :421); \"Closed to new leads\" chip beside an off \"Open to new leads\" switch (:406-409); snackbar \"Sarah now runs the studio default — 4 projects at once\" (:270).",
+  "why": "A studio owner reads \"Studio default · 4\" as a code; \"Projects at once\" is not how studios talk about workload; \"On the About page\" assumes he knows the portal's About page; the switch and its chip say the same thing twice.",
+  "proposal": "\"Projects at once\" → \"Max projects\"; its options \"Studio default · 4\" → \"4 (studio usual)\", \"3 projects\" stays. \"Runs the studio\" / \"Keeps the books\" / \"Looks after the leads\" → nothing (the Role select says it). \"On the About page\" → drop from the row; on the public profile the switch reads \"Show on your client portal\". \"Reports to: Nobody\" → \"No manager\" (and only in the drawer). \"No preferences set\" → nothing. \"Signature: not set\" → only on your own row: \"Add your signature\". \"Closed to new leads\" chip → drop (the switch is off); if kept, \"Not taking new leads\". Snackbar → \"Sarah takes up to 4 projects (the studio usual)\".",
+  "effort": "S",
+  "shots": [
+   "5-members.png"
+  ],
+  "code": [
+   "components/company/members-view.tsx:260",
+   "components/company/members-view.tsx:270",
+   "components/company/members-view.tsx:380-385",
+   "components/company/members-view.tsx:406-427"
+  ]
+ },
+ {
+  "id": "5-04",
+  "area": "Settings › Roles & access",
+  "route": "/settings?section=studio",
+  "kind": "noise",
+  "severity": "high",
+  "title": "\"Who may do what\" draws a ~120-row × 6-role matrix on the page (8,123 px tall)",
+  "now": "Under Who sees leads and Who sees costs, the card \"Who may do what\" lists every action in the app (STUDIO · LEADS · PROJECTS · CLIENT PORTAL · QUOTES AND CONTRACTS · TEMPLATES AND THE PRICE BOOK · MONEY IN · MONEY OUT …) with Yes / No / \"Their own\" / \"Their team’s\" / \"Submits for approval — their team’s\" in six columns and a \"Set under …\" line under half the rows — 269 \"check / Set under\" cells. Its help: \"What each role may do, as the app checks it. The rows follow this studio’s settings — quote and template approval, the payment schedule, who sees leads and who sees costs. Roles are fixed; a member’s role is set under Company › Members.\"",
+  "why": "The module is called Roles & access, but its two real decisions (who sees leads, who sees costs) are followed by a reference table nobody can scan; it reads like a spec, not a setting, and makes the page eight screens long.",
+  "proposal": "Keep the two decisions on the page. Replace the matrix with one row: \"What each role can do\" · secondary text \"Owner, Admin, Manager, Designer, Marketing, Accounting\" · a text button \"See the list\" that opens it in a house Drawer (560) with the role as Chips at the top (one role at a time = one column of Yes/No, grouped by area, the \"Set under …\" lines as links). Nothing is lost; the page drops to ~2 screens.",
+  "effort": "M",
+  "shots": [
+   "5-set-studio.png",
+   "5-set-studio-seg1.png",
+   "5-set-studio-seg2.png"
+  ],
+  "code": [
+   "app/settings/studio-settings.tsx:17",
+   "lib/settings/permissions.ts",
+   "lib/settings/copy.ts:23"
+  ]
+ },
+ {
+  "id": "5-05",
+  "area": "Settings › Notifications",
+  "route": "/settings?section=notifications",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Notifications draws all 232 message previews open — the page is 26,324 px tall",
+  "now": "After the \"Events and channels\" table and \"Follow-ups\", the \"Message wording\" card renders every email and WhatsApp template in full (title · channel · \"· off\" · Edit · the whole message), three across, 232 cards. The page measures 26,324 px — 26 screens.",
+  "why": "An owner who wants to switch WhatsApp off for one event has to scroll past hundreds of sample messages; the wording is an occasional edit, not something to read on every visit.",
+  "proposal": "Drop the Message wording card. In the Events and channels table, give each event row an end ⋮ (or a text button \"Edit wording\") that opens a house Drawer 560 with that event's WhatsApp and Email messages, a preview and Save. Keep a \"Sent messages\" link in the module head. The page becomes the events table only (~3 screens).",
+  "effort": "M",
+  "shots": [
+   "5-set-notifications.png",
+   "5-set-notifications-seg4.png"
+  ],
+  "code": [
+   "app/settings/notifications-settings.tsx:141-160",
+   "lib/settings/copy.ts:96"
+  ]
+ },
+ {
+  "id": "5-06",
+  "area": "Finance · Projects › Money · Reports (money words)",
+  "route": "/company/finance/* · /projects/[id]/money · /company/reports/finance",
+  "kind": "copy",
+  "severity": "high",
+  "title": "The same money is named 4–5 ways across Finance, project Money and Reports",
+  "now": "What clients still owe: \"To collect\" (Finance › To do section; project Money tile), \"Owed\" (Money in column; To do caption \"S$57,825.65 owed on 4 invoices\"), \"Owed to you\" (Reports › Finance tab and tile), \"Still owed\" (report invoice column), \"Outstanding\" (code) and \"Balance\" (Client statement). What the studio owes: \"To pay\" (To do; project Money tile), \"You owe\" (Reports tab), \"Owed\" (Vendors column), \"Still owed\" (Vendor spend report), \"still to pay\" (Money out caption). \"Payments\" means client payments (Money in › Payments, project Billing chip), commission paid (Commission › \"Payments\"), and the paid-out list is \"Paid\" (chip) / \"Payments out\" (its own title). \"Money in\" is the Finance tab with invoices, VOs and credit notes, but in Cash flow \"MONEY IN\" = \"Client payments, 2026\". The project calls its invoices \"Billing\"; Reports call them \"Revenue\".",
+  "why": "A studio owner reconciling \"Owed to you S$34,802.98\" (Reports) against \"To collect S$57,825.65\" (To do) cannot tell whether they are the same thing (they are not — one is sent invoices, the other includes drafts ready to send). One word per idea is the only way the figures can be trusted.",
+  "proposal": "Glossary, applied everywhere: client money still due = \"To collect\" (Reports tab \"Owed to you\" → \"To collect\"; Money in column \"Owed\" → \"To collect\"; \"Still owed\" → \"To collect\"); studio money still due = \"To pay\" (Reports tab \"You owe\" → \"To pay\"; Vendors column \"Owed\" → \"To pay\"; Vendor spend \"Still owed\" → \"To pay\"); a client's money received = \"Client payments\" (Money in kind \"Payments\" → \"Client payments\"); money paid out = \"Payments out\" (Money out kind \"Paid\" → \"Payments out\", matching its title); commission paid = \"Commission paid\" (Commission › \"Payments\"); the project Money list \"Billing\" → \"Invoices\"; Reports keep \"Revenue\" only inside Profit and loss, with Cash flow's tile \"Money in\" → \"Received\". Where a figure differs on purpose (sent invoices vs sent + ready drafts), say so in the caption: \"S$34,802.98 to collect on sent invoices\".",
+  "effort": "M",
+  "shots": [
+   "5-fin-todo-full.png",
+   "5-fin-in-invoices.png",
+   "5-fin-vendors.png",
+   "5-fin-out-paid.png",
+   "5-fin-commission-full.png",
+   "5-rep-finance-full.png",
+   "5-rep-fin-ar-seg0.png",
+   "5-xref-project-money.png"
+  ],
+  "code": [
+   "lib/finance/todo.ts:131-135",
+   "components/finance/money-in/money-in-workspace.tsx:55",
+   "lib/finance/reports.ts:27-28",
+   "lib/finance/reports.ts:300-301",
+   "lib/finance/sections.ts:53-58",
+   "lib/finance/sections.ts:73-74",
+   "components/finance/cost-tables.tsx:236",
+   "components/finance/books/commissions-view.tsx:254",
+   "components/projects/money/billing-section.tsx:35",
+   "components/projects/money/project-money.tsx:258"
+  ]
+ },
+ {
+  "id": "5-07",
+  "area": "Company › Reports › Finance",
+  "route": "/company/reports/finance · ?report=profitability",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "Two different \"Profit\" figures and two margins on two tabs of the same report",
+  "now": "Profit and loss (This year): \"PROFIT S$71,264.01 · Revenue less costs\" and \"MARGIN ON WHAT WAS INVOICED 64.5% · Healthy · before GST\". Profitability: \"PROFIT S$88,161.92 · Contract value less committed costs, on 2 projects with costs past a tenth of the contract\" and \"MARGIN ON CONTRACTS 70.9% · Weighted by contract value · early estimates left out\"; its table help: \"Profit = contract value − committed costs, both with GST (the Money tab’s figure) — “--” until its costs pass a tenth of the contract.\" (REG: the two margins are named apart on purpose — lib/finance/reports.ts:10.)",
+  "why": "An owner sees two profits a click apart, one before GST and one with GST, one on invoices and one on contracts, and concludes the numbers are wrong. Naming them apart does not survive a glance at two big numbers both labelled \"Profit\".",
+  "proposal": "Use one basis (before GST) for every profit and margin in Reports. Rename Profitability's tile \"Profit\" → \"Expected profit\" with the caption \"On signed contracts, before GST\", and its margin \"Margin on contracts\" → \"Expected margin\". Move the \"--\" rule and \"Weighted by contract value · early estimates left out\" into a Tooltip on the tile. The project Money tab's Profit follows the same basis so the figures meet.",
+  "effort": "M",
+  "shots": [
+   "5-rep-finance-full.png",
+   "5-rep-fin-profitability-seg0.png"
+  ],
+  "code": [
+   "lib/finance/reports.ts:10",
+   "lib/finance/reports.ts:273-276",
+   "lib/finance/reports.ts:369-372"
+  ]
+ },
+ {
+  "id": "5-08",
+  "area": "Company › Finance › To do",
+  "route": "/company/finance/todo",
+  "kind": "noise",
+  "severity": "high",
+  "title": "To do: five stacked tables, two purple links a row, cut key facts, counts ×3",
+  "now": "Sections To approve · To pay · To collect · Stuck · Recently, each a full table with a column-settings button. Every row: a purple record link (\"PO-2026-008 to Stone & Tile Maso…\") + a purple verb (\"Approve and send\", \"Pay\", \"Pay back\", \"Pay Michelle\", \"Remind on WhatsApp\", \"Send\", \"Change it\", \"Answer\") + a bordered ⋮ — 20 purple text actions on the first screen. \"What to know\" — the reason to act — is truncated: \"Over S$5,000.00 · Leaves 23.8% …\", \"No receipt · Germaine is paid bac…\"; Project \"HDB 5-Room — Benja…\". Counts: the tab badge \"18\", the chips \"All · 18 · To approve · 4 · To pay · 8 · To collect · 4 · Stuck · 2\", and each section head \"4 waiting for you · S$11,672.07\". Recently uses CAPS kind tags \"INVOICE · PAYMENT · BILL · PO\".",
+  "why": "This is the Finance landing page; its job is \"what do I do next\". Two purple links on every row and the cut \"What to know\" make each row harder to decide on than the record itself.",
+  "proposal": "One list grouped by section heads (no tables, no column settings): row = title in on-surface text (opens the record) · second line \"HDB 5-Room — Benjamin Han · asked by Germaine 18 Oct · Over S$5,000, leaves 23.8% against the quote\" (wraps, never cut) · amount right · ONE outlined secondary verb (\"Approve\", \"Pay\", \"Remind\", \"Confirm\", \"Send\") · ⋮ for the rest. Chips without counts (\"All · To approve · To pay · To collect · Waiting on others\"); the section heads keep the count. Recently: drop the CAPS tags, put the kind in the second line (\"Invoice · HDB 5-Room — Aisha Rahman · 1 day ago\").",
+  "effort": "M",
+  "shots": [
+   "5-fin-todo.png",
+   "5-fin-todo-full.png",
+   "5-fin-todo-390.png"
+  ],
+  "code": [
+   "components/finance/todo/todo-workspace.tsx:60-95",
+   "components/finance/todo/todo-workspace.tsx:322",
+   "components/finance/todo/todo-workspace.tsx:339-350",
+   "lib/finance/todo.ts:131-135"
+  ]
+ },
+ {
+  "id": "5-09",
+  "area": "Company › Reports (Leads · Projects · Meetings)",
+  "route": "/company/reports/leads · /projects · /meetings",
+  "kind": "copy",
+  "severity": "high",
+  "title": "Reports speak statistician: \"Creation → Assignment\", \"26.3h\", \"median · avg\"",
+  "now": "Leads › Response time tiles \"CREATION → ASSIGNMENT 30m · median · avg 52m · 29 leads\", \"ASSIGNMENT → FIRST OUTREACH 26.3h · median · avg 30.6h\", \"FIRST OUTREACH → WON\"; chips \"1 LEAD AWAITING ASSIGNMENT\", \"4 ASSIGNED, NO OUTREACH LOGGED YET\"; table help \"Outreach & conversion attributed to whoever logged the first outreach\"; foot \"Medians shown as headline (robust to one long job). Leads with no outreach yet are excluded from elapsed-time math and counted in “Awaiting outreach”.\" Projects: \"COLLECTION DAYS 2 days · median, sent → paid in full · 8 invoices\", \"START → COMPLETED\", same \"Medians shown as headline…\" foot. Meetings: \"WENT AHEAD 25%\", \"AVERAGE DEAL SCORE 54 · Cool\", \"TIPS ACTED ON --\", \"Deal score check · Scores don’t match what happened yet · Check the weights in Settings › Meetings — try more on Timeline\", \"Yours: 0% · studio: 25% · best: 0%\".",
+  "why": "Studio owners want \"how fast do we reply\" and \"how fast do clients pay\". \"Median\", \"avg\", \"elapsed-time math\", \"26.3h\" and arrows between system events read like a data team's dashboard.",
+  "proposal": "Leads: \"Creation → Assignment\" → \"Time to assign\"; \"Assignment → First outreach\" → \"Time to first contact\"; \"First outreach → Won\" → \"First contact to Won\"; values \"30m\" → \"30 min\", \"26.3h\" → \"26 hours\" (or \"1 day 2 hours\"), caption \"median · avg 52m · 29 leads\" → \"Usually · 29 leads\" with the average in a Tooltip; chips \"1 lead waiting for a member\", \"4 not contacted yet\"; help \"Counted for whoever logged the first contact\"; foot → a HelpLink \"How these are counted\". Projects: \"Collection days\" → \"Days to get paid\", \"Start → Completed\" → \"Project length\". Meetings: \"Went ahead\" → \"Won after\", \"Tips acted on\" → \"Tips used\", \"Deal score check\" → \"Is the deal score right?\", \"Yours / studio / best\" → \"Dane 0% · studio 25%\".",
+  "effort": "S",
+  "shots": [
+   "5-rep-leads-full.png",
+   "5-rep-projects-full.png",
+   "5-rep-meetings-full.png",
+   "5-rep-leads-390.png"
+  ],
+  "code": [
+   "lib/leads/tat.ts:19-21",
+   "lib/leads/tat.ts:42",
+   "components/leads/insights/insights-view.tsx:193-202",
+   "components/projects/insights/project-insights-view.tsx:119",
+   "lib/meetings/report-model.ts:47",
+   "components/company/reports/meetings-report.tsx:62-65",
+   "components/company/reports/meetings-report.tsx:228-241",
+   "lib/format.ts:308-320"
+  ]
+ },
+ {
+  "id": "5-10",
+  "area": "Company › Finance (phone)",
+  "route": "/company/finance/todo · /money-out · /money-in (390)",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "On a phone, Finance lists are the table turned sideways — 7 label lines a card",
+  "now": "At 390 every Finance row becomes a card of label rows: \"Project · BTO 4-Room — Shalini Menon / Vendor · ColourPro Painting Services / Amount · S$1,635.00 incl. S$135.00 GST / Paid · S$1,635.00 Nothing to pay / Status · CLOSED Paid in full / Next step · ⋮\". To do: \"Asked by · Germaine 18 Oct ’26 / What to know · Over S$5,000.00 · Leaves 23.8…\" still cut. The status pill loses its name (\"All ▾\"). Leads, Quotes and Contracts have designed phone cards (Last · Next, one verb) — Finance does not.",
+  "why": "Finance is one of the four screens a studio owner checks on the move (approve a PO, see what is due); six label rows per record means one record per screen and the verb is the last line.",
+  "proposal": "Finance cards on the Leads card model: line 1 vendor / client name + amount (right); line 2 project short name · due (\"Shalini Menon · due 13 Oct · 14 days late\" in red when late); the status chip; one outlined verb (Approve / Pay / Remind) + ⋮; tap = open. Keep \"Status: All ▾\" named on the phone.",
+  "effort": "M",
+  "shots": [
+   "5-fin-todo-390.png",
+   "5-fin-out-po-390.png"
+  ],
+  "code": [
+   "components/finance/todo/todo-workspace.tsx",
+   "components/finance/finance-workspace.tsx:203",
+   "components/leads/lead-card-words.ts"
+  ]
+ },
+ {
+  "id": "5-11",
+  "area": "Company › Finance › Money in",
+  "route": "/company/finance/money-in (every ?kind=)",
+  "kind": "noise",
+  "severity": "med",
+  "title": "\"Next step\" says \"Open\" or \"View receipt\" on every row of Money in",
+  "now": "Invoices: the invoice number is purple and the \"NEXT STEP\" column says \"Open\" on all 14 rows (24 purple text actions on the first screen). Payments: \"RCT-2026-010\" purple + \"View receipt\" on 12 rows. Variation orders and Credit notes: \"Open\" on every row. The help line: \"Every invoice sent, and the Drafts that are ready to send, waiting for approval or sent back — a stage’s Draft joins once its milestone is reached.\"",
+  "why": "\"Open\" is not a next step. A column of identical purple words is pure noise and hides the few rows that need a real action (Send, Confirm, Remind).",
+  "proposal": "The row opens on press (it already does through its first cell). Next step shows a verb only when there is one — \"Send\" on a ready Draft, \"Confirm\" on a payment to confirm, \"Remind\" on an overdue invoice — otherwise empty. The record number in on-surface text, not purple. Help line → \"Sent invoices and Drafts ready to send.\" (the milestone rule moves to a Tooltip).",
+  "effort": "S",
+  "shots": [
+   "5-fin-in-invoices.png",
+   "5-fin-in-payments.png"
+  ],
+  "code": [
+   "components/finance/money-in/money-in-workspace.tsx:50",
+   "components/finance/money-in/money-in-workspace.tsx:161",
+   "components/finance/money-in/money-in-workspace.tsx:174",
+   "components/finance/money-in/money-in-workspace.tsx:184",
+   "components/finance/money-in/money-in-workspace.tsx:200"
+  ]
+ },
+ {
+  "id": "5-12",
+  "area": "Company › Finance (row actions)",
+  "route": "/company/finance/money-in · /money-out · /commissions",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Each Finance list draws its row actions differently",
+  "now": "Money in: purple \"Open\" text, no ⋮. Money out (POs, Bills, Expenses): purple verb + bordered ⋮ box; rows with nothing to do show only the ⋮. Paid: ⋮ only, and its first column is black while every other list's is purple. Vendors: ⋮ only. Commission: the member row \"Pay Germaine S$667.41\" and each project row under it \"Pay\" + ⋮ — two Pays for one person; the asks row has two purple verbs \"Decline  Approve\". To do: verb + ⋮.",
+  "why": "The same kind of row (a money record) behaves five ways in one module; the owner cannot learn where the action is.",
+  "proposal": "One grammar for every Finance list, the house rule: name in on-surface text (the row opens), at most ONE verb as a DS secondary outlined small button when a next step exists, and the ⋮ always. Commission: the member row carries \"Pay S$667.41\"; project rows carry only ⋮ (Pay this project). Asks: \"Answer\" → a dialog with Approve / Decline.",
+  "effort": "M",
+  "shots": [
+   "5-fin-in-invoices.png",
+   "5-fin-out-po.png",
+   "5-fin-out-paid.png",
+   "5-fin-commission-full.png"
+  ],
+  "code": [
+   "components/finance/money-in/money-in-workspace.tsx:161",
+   "components/finance/cost-tables.tsx:244",
+   "components/finance/books/commissions-view.tsx:221"
+  ]
+ },
+ {
+  "id": "5-13",
+  "area": "Finance › To do vs Projects › Money",
+  "route": "/company/finance/todo · /projects/[id]/money",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The same approval is a filled button on the project and a purple link in Finance",
+  "now": "PO-2026-008's approval: on the project's Money tab \"Needs you\" it is \"Send back\" (text) + \"Approve and send\" (filled) — four filled buttons on one screen; on Finance › To do the same row reads \"Approve and send\" as purple text beside a ⋮.",
+  "why": "One decision drawn two ways; the project screen gets four filled buttons, against the house rule of one filled button a screen.",
+  "proposal": "Both use the row grammar: ONE outlined verb (\"Approve\") + ⋮ (Approve and send · Send back · Open). Filled stays for the page's single primary (the header's).",
+  "effort": "S",
+  "shots": [
+   "5-xref-project-money.png",
+   "5-fin-todo.png"
+  ],
+  "code": [
+   "components/projects/money/needs-list.tsx",
+   "components/finance/todo/todo-workspace.tsx"
+  ]
+ },
+ {
+  "id": "5-14",
+  "area": "Company › Integrations",
+  "route": "/company/integrations",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Integrations has four filled buttons and seven different status chip words",
+  "now": "Filled: \"Connect a Facebook page\" (left, under the text), \"Generate webhook URL\", \"Connect Gmail\" (right), \"Connect Xero\" (right). Status chips in CAPS: \"CONNECTED\", \"READY\", \"NOT CONNECTED\", \"1 ACTIVE\", \"ACTIVE\" (Gmail when connected), \"WORKS WITHOUT CONNECTING\", \"LISTED\" (Profile). The Connect buttons sit on the left on one card and the right on the others.",
+  "why": "Four primaries on one page means none of them is the primary; seven status words for \"is it on\" make the owner read each one.",
+  "proposal": "Every Connect is a DS secondary outlined button at the card's right, in the same place. Two status words only: \"Connected\" (green) and \"Not connected\" (grey); the website address card \"Ready\" → \"Connected\"; Webhooks \"1 active\" → \"Connected · 1\"; Calendar invites \"Works without connecting\" → no chip, one line \"No set-up needed\".",
+  "effort": "S",
+  "shots": [
+   "5-integrations-full.png"
+  ],
+  "code": [
+   "components/company/integrations-view.tsx:165",
+   "components/company/integrations-view.tsx:175",
+   "components/company/integrations-view.tsx:191",
+   "components/company/integrations-view.tsx:223",
+   "components/company/integrations-view.tsx:233",
+   "components/company/integrations-view.tsx:250",
+   "components/company/integrations-view.tsx:305",
+   "components/company/integrations-view.tsx:355",
+   "components/company/integrations-view.tsx:379"
+  ]
+ },
+ {
+  "id": "5-15",
+  "area": "Company › Integrations",
+  "route": "/company/integrations",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Webhooks card is written for developers: \"POST JSON\", \"property_type\"",
+  "now": "\"Generate webhook URLs for external systems to push leads directly into your studio. Supports any platform that can POST JSON (Zapier, Make, Typeform, Facebook Lead Ads, etc.).\" · steps \"Generate a URL below and paste it into your form / integration tool. When someone submits the form, a POST request is sent to the URL.\" · \"Accepted JSON fields: name, phone, email, budget, property_type, notes, source. Also accepts common aliases like full_name, mobile, message.\" · caps eyebrow \"NEW WEBHOOK ENDPOINT\" · button \"Generate webhook URL\" · per-hook \"Simulate a POST (demo)\".",
+  "why": "A studio owner who uses Zapier or a Typeform needs \"copy this link into your form tool\"; POST, JSON and field keys are for the person who sets it up, not him.",
+  "proposal": "Card title \"Webhooks\" → \"Other forms (Zapier, Typeform…)\"; help \"Connect any form tool: make a link, paste it into the tool, and each answer arrives as a lead.\" Button \"Generate webhook URL\" → \"Make a link\". Eyebrow → \"New link\" in sentence case. The JSON field list moves behind a HelpLink \"For your developer\" (a Tooltip or Drawer). \"Simulate a POST (demo)\" → \"Try it\".",
+  "effort": "S",
+  "shots": [
+   "5-integrations-full.png"
+  ],
+  "code": [
+   "components/company/integrations-view.tsx:233-250",
+   "components/company/integrations-view.tsx:241",
+   "components/company/integrations-view.tsx:244"
+  ]
+ },
+ {
+  "id": "5-16",
+  "area": "Company › Integrations · Profile · Plan & billing",
+  "route": "/company/integrations · /company/profile · /company/plan/billing",
+  "kind": "noise",
+  "severity": "med",
+  "title": "\"Simulated on this prototype —\" sentences on every integration card",
+  "now": "Integrations: \"Simulated on this prototype — the Qanvast leads here are sample records…\", \"— nothing really arrives at this address; Simulate an enquiry plays one.\", \"— leads from Facebook don’t really arrive…\", \"— no inbox is really read…\", \"— nothing is sent to Xero.\"; Meta card \"The platform opens Meta’s login; the prototype connects a stand-in page.\"; \"Simulate an enquiry arriving (demo)\". Profile › Listed on Qanvast: \"Simulated on this prototype — your application is kept here and isn’t sent to Qanvast; while it waits you can play Qanvast’s answer.\" Plan & billing: \"Visa ending 4242 · expires 08/28 (demo)\" and \"Paid through Dodo Payments. In the live app, updating the card opens Dodo’s billing page in a new tab.\" (Deliberate — S34 registry of stand-ins.)",
+  "why": "These are developer notes. In a client demo they tell the studio the page is fake, and they add a line of grey text to every card; \"Dodo Payments\" is a vendor name the studio never needs.",
+  "proposal": "Keep the registry (lib/services/registry.ts) but render its words only for developers (behind OPENMAISON_DEV_PREVIEWS) or as one quiet \"Demo\" MetaChip with the sentence in its Tooltip. Billing: \"Visa ending 4242 · expires 08/28\" and \"Update card\"; drop the Dodo sentence.",
+  "effort": "S",
+  "shots": [
+   "5-integrations-full.png",
+   "5-company-profile-full.png",
+   "5-plan-billing-full.png"
+  ],
+  "code": [
+   "lib/services/registry.ts:274-286",
+   "components/company/integrations-view.tsx:185",
+   "components/company/plan/billing-view.tsx:162-163"
+  ]
+ },
+ {
+  "id": "5-17",
+  "area": "Settings (every module)",
+  "route": "/settings?section=*",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Every Settings module opens with 3–5 lines of signposts before the first setting",
+  "now": "Each module repeats its tab as an H2 (\"Roles & access\", \"Lead management\", \"Finance\"…), then a help sentence (\"Applies to every lead in Demo Studio — the table, the kanban board and imports.\"), then \"Kept in Company: Integrations · Questionnaire · Members\", then \"Your own details, signature and notifications: Your profile\", then pointer paragraphs (\"Who sees which leads — and each lead’s project, quotes and contracts — is set under Roles & access › Who sees leads.\", Finance's \"How a client pays — the bank and PayNow — the issuing entities and the GST switch are kept on Profile…\", Projects' two). On a 390 phone this fills the first screen (Settings › Lead management).",
+  "why": "The signposts exist because one subject lives in two homes (Settings and Company); the owner pays for that split with a screen of words on every module.",
+  "proposal": "Drop the H2 that repeats the selected tab. Keep one help line. Fold \"Kept in Company\" and \"Your profile\" into one line of text links at the module's END under \"Related: Members · Profile · Your profile\". Delete the pointer paragraphs — the card that a pointer names gets a HelpLink inline where it matters (e.g. Who sees leads beside the lead stages), and ⌘K finds the rest.",
+  "effort": "S",
+  "shots": [
+   "5-set-leads-seg0.png",
+   "5-set-finance-seg0.png",
+   "5-set-leads-390.png"
+  ],
+  "code": [
+   "app/settings/module-head.tsx:15-50",
+   "lib/settings/modules.ts:31-40",
+   "lib/settings/copy.ts:14-19",
+   "lib/settings/copy.ts:64-65",
+   "lib/settings/copy.ts:81"
+  ]
+ },
+ {
+  "id": "5-18",
+  "area": "Company + Settings (saving)",
+  "route": "/company/profile · /company/members/[id]/profile · /company/portal · /settings?section=finance|projects|quotes|meetings · /settings?section=leads",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Three ways to save on settings-like pages, and seven different Save labels",
+  "now": "Header \"Discard / Save changes\" (Profile, a member's public profile); per-card \"Discard / Save …\" with its own words — \"Save the numbers\", \"Save invoice rules\", \"Save the paper\" (twice), \"Save cost rules\", \"Save numbering\" (Projects and Quotes), \"Save rate\" (outlined), \"Save\" (Meetings deal score, Portal welcome line, Portal privacy links, Profile › About); and save-as-you-go with a snackbar (Lead management, Roles & access, Notifications channels, Portal sections, Members). Profile has BOTH the header bar and the About card's own Discard / Save.",
+  "why": "The owner cannot tell whether a change is kept: on one card it saved the moment he toggled, on the next it waits for a button with a different name.",
+  "proposal": "One rule: a switch, chip or select saves as it changes with an Undo snackbar (already the house way on Lead management); a card of text fields gets one \"Discard · Save\" pair whose primary is always \"Save\". Profile: one sticky header pair for the whole page, the About card's own pair removed.",
+  "effort": "M",
+  "shots": [
+   "5-set-finance-seg0.png",
+   "5-company-profile-full.png",
+   "5-portal-full.png"
+  ],
+  "code": [
+   "app/settings/document-numbers.tsx:133",
+   "components/projects/money/invoice-settings.tsx:99",
+   "components/projects/money/invoice-paper-settings.tsx:151",
+   "components/finance/po-paper-settings.tsx:57",
+   "components/finance/cost-settings.tsx:108",
+   "app/settings/projects-settings.tsx:102",
+   "app/settings/settings-view.tsx:675",
+   "app/settings/settings-view.tsx:737",
+   "components/company/about-card.tsx:124-125",
+   "components/company/profile-view.tsx:147-148"
+  ]
+ },
+ {
+  "id": "5-19",
+  "area": "Company › Reports (period control)",
+  "route": "/company/reports/* · /company/plan",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The period is picked three different ways, with three different option lists",
+  "now": "Reports › Leads, Projects, Meetings, Studio health: Chips \"Last 30 days · Last 90 days · Last 12 months · All time\" + a grey line \"Filtering on lead created date · 30 leads in range\". Reports › Finance: a labelled select field \"Period / This year\" (This month · Last month · This quarter · Last quarter · This year · Last year · All time). Plan & AI credits › Usage: a ScopePill \"Period: This month ▾\" + \"9 Oct – 8 Nov\".",
+  "why": "Same job, three controls and two vocabularies (rolling days vs calendar periods) inside the same Company section.",
+  "proposal": "One ScopePill \"Period: Last 90 days ▾\" (PortalMenu, menuitemradio) on every report and on Usage, at the toolbar's start, with one list: This month · Last month · Last 30 days · Last 90 days · This quarter · Last quarter · This year · Last 12 months · All time. Drop the \"Filtering on …\" line; the pill names the period and a Tooltip says what the date is.",
+  "effort": "M",
+  "shots": [
+   "5-rep-leads-full.png",
+   "5-rep-finance-full.png",
+   "5-plan-full.png"
+  ],
+  "code": [
+   "components/leads/insights/insights-view.tsx:162",
+   "components/company/reports/meetings-report.tsx:144",
+   "components/company/reports/studio-health-report.tsx:144",
+   "components/finance/books/reports-view.tsx:148",
+   "components/company/plan/usage-view.tsx:238",
+   "lib/finance/reports.ts:48-52"
+  ]
+ },
+ {
+  "id": "5-20",
+  "area": "Company › Reports › Finance",
+  "route": "/company/reports/finance",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Ten report chips in one row, above a period select and Export",
+  "now": "Chips \"Profit and loss · Owed to you · You owe · Profitability · Cash flow · GST · Vendor spend · Expenses · Commissions · Client statement\" (the phone already uses a select). Sub-report switches also sit above Reports › Leads (\"Response time · Sales\") as chips that look exactly like the range chips under them.",
+  "why": "Ten equal chips give no starting point and look like filters; on Leads two rows of identical chips do two different jobs (which report vs which period).",
+  "proposal": "Use the phone's pattern at every width: one ScopePill \"Report: Profit and loss ▾\" (PortalMenu with each report's help line as the row's second line) followed by the Period pill. Leads: \"Report: Response time ▾\". Rename \"Commissions\" → \"Commission\" (the Finance tab's word), \"Owed to you\" → \"To collect\", \"You owe\" → \"To pay\".",
+  "effort": "S",
+  "shots": [
+   "5-rep-finance-full.png",
+   "5-rep-leads-full.png"
+  ],
+  "code": [
+   "components/finance/books/reports-view.tsx:144-146",
+   "lib/finance/reports.ts:25-36",
+   "components/leads/insights/insights-view.tsx:156"
+  ]
+ },
+ {
+  "id": "5-21",
+  "area": "Company › Reports › Leads › Sales",
+  "route": "/company/reports/leads?report=sales",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Sales is seven tables and a chart on one 4,816 px page, half of it zero rows",
+  "now": "By team member · Where leads stop · By source (12 rows, 9 of them \"0 · 0% · S$0.00 · --\") · Open pipeline · Over time (chart + table) · Going quiet · Going quiet, by team member, then a 4-line foot note (\"Conversion counts the leads that reached Won. Won value is the signed quote as signed, or the value agreed, before GST — variation orders are changes to a contract, never the sale; where a won lead has neither…\").",
+  "why": "The owner wants \"who sells, where leads come from, what is stuck\"; rows of S$0.00 and two \"Going quiet\" tables bury those three answers.",
+  "proposal": "By source shows sources with leads that went somewhere; the rest fold into \"+ 9 sources with no wins yet\" (a text button). Merge the two Going quiet tables (one table, a \"By member\" Chips switch). The foot note becomes a HelpLink \"How these are counted\" opening a Tooltip / Drawer. Over time: chart only, \"Show the numbers\" already exists.",
+  "effort": "M",
+  "shots": [
+   "5-rep-leads-sales-full.png"
+  ],
+  "code": [
+   "components/company/reports/sales-report.tsx",
+   "lib/leads/sales.ts"
+  ]
+ },
+ {
+  "id": "5-22",
+  "area": "Company › Reports › Studio health",
+  "route": "/company/reports/health",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Studio health is a wall of 15 number tiles, with insider names",
+  "now": "Four tile rows (Your team · New work · Work done · Your clients) = 15 tiles: \"ACTIVE MEMBERS 8 of 9 · 1 did nothing\", \"SIGN-INS 188\", \"AI RUNS 6 · 70 credits used\", \"HANGOUT CHATS 2 · at 1 Hangout\", \"PORTAL SIGN-INS 7\"…, then a chart, a member table, and a foot note. Tab is \"Studio health\"; Company panel says \"Reports — Leads, projects and money\".",
+  "why": "Fifteen same-weight numbers have no story; \"AI runs\", \"Hangout chats\" and \"did nothing\" are insider or blunt words for a page the owner may show his team.",
+  "proposal": "Keep four tiles (Active members · Leads added · Quotes sent · Portal sign-ins) and the member table; the rest behind \"Show all figures\" (a text button) or into the table's columns. Rename \"AI runs\" → \"AI uses\", \"Hangout chats\" → \"Qanvast Hangout chats\", \"1 did nothing\" → \"1 not active in this period\".",
+  "effort": "S",
+  "shots": [
+   "5-rep-health-full.png"
+  ],
+  "code": [
+   "lib/studio-health/model.ts:83-87",
+   "components/company/reports/studio-health-report.tsx:48",
+   "components/company/reports/studio-health-report.tsx:94"
+  ]
+ },
+ {
+  "id": "5-23",
+  "area": "Company › Client portal · Reports › Meetings · Settings cards",
+  "route": "/company/portal · /company/reports/meetings · /settings?section=*",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Card heads drawn two ways in Company: bold sentence case vs grey CAPS caption",
+  "now": "Members, Profile, Integrations, Questionnaire, Settings and most of Reports: bold 16 sentence-case card titles (\"People and roles\", \"Company details\", \"Lead stages\"). Client portal › Set-up uses the lead Overview's caps caption head for every card: \"GETTING IT LIVE\", \"WHAT CLIENTS CAN SEE\", \"WELCOME LINE\", \"PRIVACY AND TERMS\", \"WHAT A CLIENT SEES\", \"CLIENTS\". Reports › Meetings mixes both on one page: \"By team member\" / \"Objections\" bold, \"COACHING\" / \"DEAL SCORE CHECK\" caps. Inside Settings cards, more caps eyebrows: \"HOW LEADS MOVE\", \"MONEY IN\", \"MONEY OUT\", \"COMMISSION\", \"PAYMENT SCHEDULES AND SPLITS\", \"VARIATION ORDERS ARE BILLED\", \"ACCENT COLOUR\", \"ON THE PAPER\", \"PREVIEW · A SAMPLE INVOICE\", \"WHO CONFIRMS A CLIENT’S PAYMENT\", \"ALSO IN THE NUMBER\".",
+  "why": "Same kind of card, two looks, sometimes on one page; caps everywhere make each card shout and add a third type style.",
+  "proposal": "Company, Settings and Reports cards all use the Company card head (bold title + one help line). The lead Overview's caps head stays on the lead and project Overview only. Inside a Settings card, a sub-group label is sentence-case semibold 14 (\"How leads move\", \"Variation orders are billed\"), never caps; Settings' module-level \"MONEY IN / MONEY OUT / COMMISSION\" become section titles in the same bold style, or go (the cards already say it).",
+  "effort": "M",
+  "shots": [
+   "5-portal-full.png",
+   "5-rep-meetings-full.png",
+   "5-set-finance-seg0.png"
+  ],
+  "code": [
+   "components/company/portal/portal-setup-view.tsx:8",
+   "components/company/portal/portal-setup-view.tsx:184",
+   "components/company/portal/portal-sections-card.tsx:40",
+   "components/company/portal/portal-sections-card.tsx:154",
+   "components/company/reports/meetings-report.tsx:209-241",
+   "app/settings/settings.module.css:99"
+  ]
+ },
+ {
+  "id": "5-24",
+  "area": "Company + Finance (tags)",
+  "route": "/company/members · /company/finance/todo · /company/members/[id]/profile · /company/questionnaire · /company/integrations",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Tags in CAPITALS that are not statuses",
+  "now": "Members: \"YOU\", \"ON THE ABOUT PAGE\", \"CLOSED TO NEW LEADS\". Finance › To do › Recently: \"INVOICE\", \"PAYMENT\", \"BILL\", \"PO\". A member's public profile preview: \"HDB & BTO HOMES\", \"COMPACT LAYOUTS\". Questionnaire: every question's type \"TEXT\", \"NUMBER\", \"DATE\", \"YES / NO\", \"MULTI SELECT\". Integrations: \"GOOGLE ADS (LEAD FORM)\" beside a webhook name. Vendors: \"ACTIVE\" on all 12 rows.",
+  "why": "Caps chips read as status; when every row has one, nothing stands out — and the real statuses (Overdue, Waiting for approval) lose their signal.",
+  "proposal": "Status chips stay (Paid, Overdue, Draft…). Everything else becomes secondary text in sentence case after the name or on the second line: \"Dane (you)\", \"Invoice · HDB 5-Room — Aisha Rahman\", \"Known for HDB & BTO homes, compact layouts\", \"Short answer\", \"Google Ads lead form\". Vendors: drop the Status column while the Active chip is selected (see the repeated-information finding).",
+  "effort": "S",
+  "shots": [
+   "5-members.png",
+   "5-fin-todo-full.png",
+   "5-member-profile-full.png",
+   "5-questionnaire-full.png",
+   "5-integrations-full.png"
+  ],
+  "code": [
+   "components/company/members-view.tsx:370",
+   "components/company/members-view.tsx:409",
+   "components/company/members-view.tsx:427",
+   "components/finance/todo/todo-workspace.tsx:339-360",
+   "lib/company/question-bank.ts:8",
+   "components/company/integrations-view.tsx:273"
+  ]
+ },
+ {
+  "id": "5-25",
+  "area": "Company › Finance (truncation)",
+  "route": "/company/finance/money-out (every ?kind=) · /todo",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Finance tables cut the very fact a row is about",
+  "now": "Bills: PO column \"PO-2026-0…\" (the number itself), Due \"S$1,400.00 ov…\", Project \"Executive Condo — Ry…\". POs: Vendor \"ColourPro Painting S…\", amount line \"incl. S$135.00 …\", \"S$6,033.15 ad…\", status line \"Accepted on the link · 15 Sep…\", \"An Owner or an Admin appro…\", \"“The drawing shows 67 point…\". Expenses: \"Floor protection boards for the…\", \"Grab to site — tile selection wi…\". To do: \"What to know\" cut on every row.",
+  "why": "A cut PO number or a cut \"overdue\" amount forces a click to learn what the row says; the house rule (REG-212) keeps ellipsis for cells whose width is the design — these are the key values.",
+  "proposal": "Let the second line of a cell wrap to two lines (no ellipsis on status lines, amounts or reasons). Give the PO column a floor that fits \"PO-2026-001\". Shorten the Project column to the client's name (\"Shalini Menon\") with the project type in a Tooltip — it is the part people recognise.",
+  "effort": "S",
+  "shots": [
+   "5-fin-out-bills.png",
+   "5-fin-out-po.png",
+   "5-fin-out-expenses.png",
+   "5-fin-todo.png"
+  ],
+  "code": [
+   "components/finance/cost-tables.tsx",
+   "components/finance/todo/todo-workspace.tsx:66"
+  ]
+ },
+ {
+  "id": "5-26",
+  "area": "Company › Finance (Project column)",
+  "route": "/company/finance/money-in · /money-out · /todo · /company/reports/finance?report=profitability",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The Project column is written four different ways",
+  "now": "Money in: \"P-2026-003 · HDB 5-Room …\" over \"Aisha Rahman\". Money out / To do: \"BTO 4-Room — Shalini …\" on one line. Profitability: \"BTO 4-Room — Shalini Menon · P-2025-001\". Commission: \"HDB 5-Room — Benjamin Han\" over \"P-2026-002\".",
+  "why": "The same project looks different on every tab, so the eye cannot scan for it.",
+  "proposal": "One cell everywhere (a shared ProjectCell): client name on line 1 (\"Shalini Menon\"), \"P-2025-001 · BTO 4-Room\" on line 2 in secondary text.",
+  "effort": "S",
+  "shots": [
+   "5-fin-in-invoices.png",
+   "5-fin-out-po.png",
+   "5-rep-fin-profitability-seg0.png",
+   "5-fin-commission-full.png"
+  ],
+  "code": [
+   "components/finance/money-in/money-in-workspace.tsx:48",
+   "components/finance/cost-tables.tsx",
+   "lib/finance/reports.ts:372"
+  ]
+ },
+ {
+  "id": "5-27",
+  "area": "Company › Finance (toolbars)",
+  "route": "/company/finance/todo · /money-in · /money-out · /vendors",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Each Finance tab has a different toolbar, and counts sit on some chips only",
+  "now": "To do: search · chips with counts (\"All · 18\", \"To approve · 4\") · New ▾ (filled). Money in: search · kind chips without counts · \"Status: All ▾\" · Export (no New). Money out: search · kind chips without counts · \"Status: All ▾\" · New ▾ (filled) — no Export. Vendors: search · chips with counts (\"Active · 12\", \"Contractors · 7\", \"Inactive · 0\", \"All · 12\") · New vendor (filled). A \"Reports ›\" text link sits in the page header on every tab.",
+  "why": "Four tabs of one section, four toolbars; \"Inactive · 0\" offers a choice that shows nothing.",
+  "proposal": "One toolbar order on every Finance tab: search · kind Chips (no counts) · Status pill · (spacer) · Export (outlined) · New ▾ (the one filled). Vendors: \"Active · Contractors · Inactive\" chips without counts; hide Inactive while it is empty; drop \"All\".",
+  "effort": "S",
+  "shots": [
+   "5-fin-todo.png",
+   "5-fin-in-invoices.png",
+   "5-fin-out-po.png",
+   "5-fin-vendors.png"
+  ],
+  "code": [
+   "components/finance/todo/todo-workspace.tsx:322-326",
+   "components/finance/money-in/money-in-workspace.tsx:221-234",
+   "components/finance/finance-workspace.tsx:156",
+   "components/finance/finance-workspace.tsx:200-213"
+  ]
+ },
+ {
+  "id": "5-28",
+  "area": "Company › Finance › Money out",
+  "route": "/company/finance/money-out?kind=bills|paid",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Kind chips and the list titles under them use different names",
+  "now": "Chip \"Bills\" → list title \"Supplier bills\"; chip \"Paid\" → title \"Payments out\"; Money in chip \"Payments\" → first column \"Receipt\". To do's \"Stuck\" section (\"2 waiting on someone else\"). Settings names the money-out card \"Costs\" and Roles & access points to \"Finance › Costs\", while Finance's tab is \"Money out\".",
+  "why": "The owner presses \"Paid\" and lands on \"Payments out\"; \"Stuck\" sounds like an error; \"Finance › Costs\" does not exist as a place he can find.",
+  "proposal": "Chip = title: \"Supplier bills\" (chip) or \"Bills\" (both); \"Payments out\" (chip and title). \"Stuck\" → \"Waiting on others\". Settings card \"Costs\" → \"Money out\" and every \"Set under Finance › Costs\" → \"Set under Settings › Finance › Money out\".",
+  "effort": "S",
+  "shots": [
+   "5-fin-out-bills.png",
+   "5-fin-out-paid.png",
+   "5-fin-todo-full.png"
+  ],
+  "code": [
+   "lib/finance/sections.ts:53-58",
+   "components/finance/finance-workspace.tsx:243",
+   "components/finance/finance-workspace.tsx:257",
+   "lib/finance/todo.ts:135",
+   "lib/settings/copy.ts:76"
+  ]
+ },
+ {
+  "id": "5-29",
+  "area": "Company (create buttons)",
+  "route": "/company/members · /questionnaire · /materials · /finance/vendors · /finance/money-out",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The create button changes place, fill and verb from page to page",
+  "now": "\"Add member\" filled in the page header; \"Add question\" filled inside the card head; \"New material\" OUTLINED in the toolbar (no filled button on Materials); \"New vendor\" filled at the toolbar end; \"New ▾\" filled at the toolbar end; Integrations \"Generate webhook URL\" filled mid-card; Profile \"+ Add an entity\" / \"+ Add an award\" text buttons.",
+  "why": "The owner cannot predict where \"make a new one\" is, or which button is the page's main one.",
+  "proposal": "The page's create is always the one filled button at the toolbar's end (or the page header when the page has no toolbar), verb \"New <thing>\" for records and \"Add <thing>\" for people and rows inside a form: \"Add member\", \"New question\", \"New material\" (filled), \"New vendor\", \"New ▾\".",
+  "effort": "S",
+  "shots": [
+   "5-members.png",
+   "5-questionnaire-full.png",
+   "5-materials.png",
+   "5-fin-vendors.png"
+  ],
+  "code": [
+   "components/company/members-view.tsx:343",
+   "components/company/questionnaire-view.tsx:62",
+   "components/company/materials"
+  ]
+ },
+ {
+  "id": "5-30",
+  "area": "Company › Questionnaire",
+  "route": "/company/questionnaire",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Each question row has five controls plus two switches; types in system words",
+  "now": "11 rows × (drag handle · up arrow · down arrow · pencil · bin) + Required switch + Active switch = 78 controls on the screen. Types as CAPS chips: \"TEXT\", \"NUMBER\", \"DATE\", \"YES / NO\", \"MULTI SELECT\". Help: \"Customise the questions homeowners answer about their project. New leads start with the active questions; an older lead adds them from its Questionnaire tab. Ask the client sends the lead’s questionnaire to the portal.\"",
+  "why": "Drag and arrows do the same job; the bin and pencil on every row double the visual weight; \"homeowners\" and \"client\" in one paragraph; \"Multi select\" is a developer's term.",
+  "proposal": "Row: drag handle · question (press = edit) · type as secondary text · Required · Active · ⋮ (Edit · Move up · Move down · Delete). Types: \"Short answer\", \"Number\", \"Date\", \"Yes or no\", \"Pick one\", \"Pick several\". Help → \"The questions every new lead starts with. Ask the client sends them to the client's portal.\"",
+  "effort": "S",
+  "shots": [
+   "5-questionnaire-full.png"
+  ],
+  "code": [
+   "components/company/questionnaire-view.tsx",
+   "lib/company/question-bank.ts:5",
+   "lib/company/question-bank.ts:8"
+  ]
+ },
+ {
+  "id": "5-31",
+  "area": "Company › Members › Lead preferences",
+  "route": "/company/members (Preferences dialog)",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Lead preferences dialog repeats \"Select a priority to configure\" four times",
+  "now": "Title \"Lead preferences · James\"; intro \"Select the types of leads you prefer for each category, then set how important each one is. Must match means you strongly prefer those leads. Nice to have gives a soft boost. Leave a category as Don’t care to skip it. This is optional — if not set, every factor counts equally.\"; under each of four categories \"This category won’t affect lead matching. Select a priority to configure.\"; footer count \"0 of 4 categories configured\"; select default \"Don’t care\".",
+  "why": "The dialog is about James but says \"you prefer\"; \"configure\", \"factor\" and \"lead matching\" are system words; the same sentence four times is noise.",
+  "proposal": "Title \"James’s lead preferences\". Intro one line: \"What kind of leads suit James? Leave a row on Any if it doesn’t matter.\" Priority options \"Any · Nice to have · Must match\"; drop the per-row sentence (the \"Any\" value says it) and the \"0 of 4 configured\" count.",
+  "effort": "S",
+  "shots": [
+   "5-dlg-preferences.png"
+  ],
+  "code": [
+   "components/company/preferences-dialog.tsx:53",
+   "components/company/preferences-dialog.tsx:57"
+  ]
+ },
+ {
+  "id": "5-32",
+  "area": "Settings › Lead management",
+  "route": "/settings?section=leads",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Lead management speaks system: \"Linear / Flexible\", \"Raise an untouched lead\"",
+  "now": "How leads move: \"Linear — Stages are completed one at a time. Changing a lead’s stage opens the Move stage window…\" / \"Flexible — … Stage details can be added later from the lead’s journey.\" Untouched leads: field \"Raise an untouched lead after\" and help \"A New lead with no contact logged is raised as “untouched” after this delay — to the members on it, in the bell and on the channels Notifications sets for it.\" Lead sources help ends \"Not set yet — these are the defaults.\"; Lost and On Hold reasons \"These are the defaults.\"; \"Contacts expected first\". Source chips carry an eye-off icon or ✕ with no words. Stage table column \"LEADS NOW\".",
+  "why": "\"Linear\" is an engineering word; \"raised\" is an alert system's verb; \"Not set yet\" sounds like something is wrong.",
+  "proposal": "\"Linear\" → \"One stage at a time\"; \"Flexible\" → \"Any stage, any time\"; \"the lead’s journey\" → \"the lead’s stages\". Field → \"Mark a new lead untouched after\"; help → \"A new lead nobody has contacted is flagged after this time, to the members on it.\" Drop \"Not set yet — these are the defaults.\" / \"These are the defaults.\". \"Contacts expected first\" → \"Contacts logged first\". Chip icons get Tooltips \"Stop offering\" (eye-off) and \"Remove\" (✕). \"Leads now\" → \"Leads\".",
+  "effort": "S",
+  "shots": [
+   "5-set-leads-seg0.png"
+  ],
+  "code": [
+   "lib/settings/types.ts:15",
+   "app/settings/settings-view.tsx:523",
+   "app/settings/settings-view.tsx:531",
+   "app/settings/settings-view.tsx:561",
+   "lib/settings/copy.ts:42-44",
+   "app/settings/list-entry-dialog.tsx:14"
+  ]
+ },
+ {
+  "id": "5-33",
+  "area": "Settings › Projects",
+  "route": "/settings?section=projects",
+  "kind": "copy",
+  "severity": "med",
+  "title": "\"What waits for an Owner or an Admin\" and three pointer lines repeat each other",
+  "now": "Card title \"What waits for an Owner or an Admin\" + help \"Every approval a project can wait for, in one place. On, a Designer’s or a Manager’s step waits until an Owner or an Admin approves it; theirs goes at once. Off, the project’s team goes ahead.\" Rule \"Handover needs an owner’s review\" (lowercase owner, while every other rule says \"an Owner or an Admin\"). Pointer lines: \"Whether a Designer’s or a Manager’s handover waits for an owner’s review is switched under What waits for an Owner or an Admin, above.\" / \"Whether a milestone’s Done and schedule changes wait for an Owner or an Admin is switched under What waits for an Owner or an Admin, above.\" / Finance: \"Whether a Designer’s or a Manager’s invoice waits for an Owner or an Admin is set with the studio’s other approvals, under Projects › What waits for an Owner or an Admin.\"",
+  "why": "A long card name repeated in three sentences that only say \"see above\"; \"owner\" vs \"Owner\" reads like a different person.",
+  "proposal": "Card title \"Approvals\"; help \"Turn on to have an Owner or Admin approve what Designers and Managers do.\" Rule \"Handover needs an owner’s review\" → \"Handover needs approval\". Delete the three pointer lines.",
+  "effort": "S",
+  "shots": [
+   "5-set-projects-seg0.png"
+  ],
+  "code": [
+   "lib/settings/copy.ts:66-74",
+   "lib/settings/copy.ts:84",
+   "components/projects/ending/handover-setting.tsx:40"
+  ]
+ },
+ {
+  "id": "5-34",
+  "area": "Settings › Finance",
+  "route": "/settings?section=finance",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Settings › Finance: 5,189 px of long help paragraphs and a Save per card",
+  "now": "Document numbers help: \"How the studio’s invoices, receipts, credit notes, purchase orders and tickets are numbered, each under its own prefix. The prefix is letters and digits, up to 8; a blank next number continues from the highest given; the digits pad the number — 3 prints 004; the year adds the year it is numbered in. Documents already numbered keep their numbers.\" Then Invoices, Invoice paper (with a full sample invoice), Client payments (\"Trust the client’s proof\"), Credit notes, Costs (\"A bill over the limit below with no PO, or one that takes its PO’s bills over the PO by more than the tolerance below, waits in To do before it is paid…\"), Expense categories (\"…Not set yet — these are the ones every studio starts with.\"), The purchase order paper, Commission — each card with its own Discard / Save.",
+  "why": "Each rule is explained in a paragraph before the control; the owner scans eight screens to change one number.",
+  "proposal": "Help lines at one sentence: Document numbers → \"How invoices, receipts, credit notes, POs and tickets are numbered.\" (the prefix/digits rules move to each field's helper, which already exist on Projects). Costs → \"When POs, expenses and bills need an Owner’s or Admin’s OK.\" \"Trust the client’s proof\" → \"Count a client’s proof of payment before you check it\". Drop \"Not set yet — …\". Group the two paper cards under one \"Printed papers\" card with Chips Invoice · Purchase order.",
+  "effort": "M",
+  "shots": [
+   "5-set-finance-seg0.png",
+   "5-set-finance-seg1.png",
+   "5-set-finance-seg2.png"
+  ],
+  "code": [
+   "lib/settings/copy.ts:82",
+   "components/finance/cost-settings.tsx:96",
+   "components/projects/money/payments-settings.tsx:62",
+   "components/finance/expense-categories-settings.tsx",
+   "components/finance/po-paper-settings.tsx"
+  ]
+ },
+ {
+  "id": "5-35",
+  "area": "Company › Profile",
+  "route": "/company/profile",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Profile helpers show template field codes and demo notes",
+  "now": "Company details help \"What the templates print through their fields — {studio_name}, {studio_uen}, {studio_address} and the rest.\"; Tagline \"Prints where a template places {studio_tagline} — a cover, a footer.\"; Social links \"Handles or links, as you want them printed — e.g. @demostudio.sg. {studio_social} prints the filled ones in a line; the Social links element on a template prints each with its mark.\"; Listed on Qanvast \"Listed before your studio used OpenMaison — what Qanvast shows isn’t on record here yet.\" + the Simulated line; GST \"GST-registered · off turns GST off on quotes raised under it\".",
+  "why": "Curly-brace field codes are template-editor internals; the owner just wants to type his company details.",
+  "proposal": "Company details help → \"These print on your quotes, invoices and contracts.\"; Tagline → \"A short line for your quote cover or footer.\"; Social links → \"As you want them printed, e.g. @demostudio.sg.\" (the field codes go to the template editor's Insert field menu, where they already are). GST switch helper → \"Off: quotes under this company have no GST.\"",
+  "effort": "S",
+  "shots": [
+   "5-company-profile-full.png"
+  ],
+  "code": [
+   "lib/company/copy.ts:10-21",
+   "components/company/profile-view.tsx:49",
+   "components/company/profile-view.tsx:157-168"
+  ]
+ },
+ {
+  "id": "5-36",
+  "area": "Company › Profile",
+  "route": "/company/profile",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Profile is six cards on 3,743 px with two save bars",
+  "now": "Company details (13 fields + social + review link) · Registrations & accreditations (a five-row table with switches) · Listed on Qanvast · Issuing entities & bank details · About the studio, for clients (year, rich text, awards, photos, its own Discard / Save) · a Brand kit door. Header \"Discard / Save changes\" plus the About card's own \"Discard / Save\".",
+  "why": "Everything about the studio on one scroll; two save bars on one page leave the owner unsure which one keeps what.",
+  "proposal": "Give Profile a tab strip on CompanyShell (as Plan and Client portal have): Details · Bank & entities · Registrations · About page. One header Save per tab. The Brand kit door goes (it lives in Templates and ⌘K finds it).",
+  "effort": "M",
+  "shots": [
+   "5-company-profile-full.png"
+  ],
+  "code": [
+   "components/company/profile-view.tsx:147-152",
+   "components/company/about-card.tsx:83-125"
+  ]
+ },
+ {
+  "id": "5-37",
+  "area": "Company › Client portal › Set-up",
+  "route": "/company/portal",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Client portal set-up says things twice: \"See it as Ryan\" ×2, PDPA ×2, two Saves",
+  "now": "Header: \"LIVE\" chip · \"Pause the portal\" · filled \"See it as Ryan\"; the Getting it live list also ends \"Try it yourself … See it as Ryan\". Step \"Privacy notice — Clients sign in with their mobile number, so Singapore’s PDPA asks you to tell them how you use it — link your privacy notice. Add the link\" and the card \"PRIVACY AND TERMS — Clients sign in with their mobile number, so Singapore’s PDPA asks you to tell them how you use their details. Link the pages on your own website…\". The Welcome line and Privacy cards each have their own filled Save. The Clients card on Set-up repeats the Clients tab. Tab \"Set-up\" (hyphenated).",
+  "why": "The same sentence and the same button twice on one screen.",
+  "proposal": "Header: \"See it as Ryan\" outlined (the checklist keeps its link) or the reverse; the Privacy notice step's \"Add the link\" scrolls to the Privacy card, with no paragraph of its own; drop the Clients card from Set-up (the tab exists); tab \"Set-up\" → \"Set up\". One Save per card stays only for text (see the saving finding).",
+  "effort": "S",
+  "shots": [
+   "5-portal-full.png"
+  ],
+  "code": [
+   "components/company/portal/portal-setup-view.tsx:184-191",
+   "components/company/portal/portal-sections-card.tsx:60-82",
+   "components/company/portal/portal-sections-card.tsx:154",
+   "lib/company/sections.ts:91"
+  ]
+ },
+ {
+  "id": "5-38",
+  "area": "Company › Plan & AI credits › Usage",
+  "route": "/company/plan",
+  "kind": "noise",
+  "severity": "med",
+  "title": "\"Nothing yet\", \"No limit\" and \"—\" repeated down the By member table",
+  "now": "9 rows: 8 × \"Nothing yet\" under an empty bar, 9 × \"No limit ▾\" select, 9 × \"—\" status, 8 × \"0\". Help \"A monthly amount keeps one person from using the studio’s month. Every active member is listed.\" Column \"MONTHLY AMOUNT\"; pill \"New members: No limit ▾\".",
+  "why": "A table of placeholders; the one row that matters (Dane, 20 credits; Sarah capped at 600) is lost.",
+  "proposal": "Show members who used credits or have a limit; fold the rest into \"7 members haven’t used AI this month\". \"Monthly amount\" → \"Monthly limit\", values as text with the select on the row's ⋮ (\"Set a limit…\"); drop the Status column unless someone is at their limit. Help → \"Set a monthly limit so one person can’t use up the studio’s credits.\"",
+  "effort": "S",
+  "shots": [
+   "5-plan-full.png"
+  ],
+  "code": [
+   "components/company/plan/usage-view.tsx:302-305"
+  ]
+ },
+ {
+  "id": "5-39",
+  "area": "Company › Finance › Commission",
+  "route": "/company/finance/commissions",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Commission explains its rate rule in one sentence; \"You\" here, \"Dane\" on To do",
+  "now": "By member help: \"Each member, then their projects — the share, the rate that applies (a member’s on the project, the project’s, the member’s, then the studio’s), earned before GST from the payments that count. The rules are in Settings › Finance.\" The signed-in member is \"You … Pay yourself S$228.83\" here, but \"Dane … Pay Dane\" on Finance › To do. Section \"Asks for another rate\" + status \"WAITING FOR AN ANSWER\". Payments section \"A reversed payment stays on the record and counts for nothing.\"",
+  "why": "The rate-precedence rule is a developer's description; the same person is named two ways a tab apart.",
+  "proposal": "Help → \"Each member’s commission, project by project, before GST.\" with the precedence rule in a Tooltip on \"Rate\". Use the name everywhere with \"(you)\" — \"Dane (you) · Pay S$228.83\". \"Asks for another rate\" → \"Rate requests\"; status \"Waiting for your answer\". Payments → \"Commission paid\"; help → drop.",
+  "effort": "S",
+  "shots": [
+   "5-fin-commission-full.png",
+   "5-fin-todo-full.png"
+  ],
+  "code": [
+   "components/finance/books/commissions-view.tsx:113",
+   "components/finance/books/commissions-view.tsx:235",
+   "components/finance/books/commissions-view.tsx:245",
+   "components/finance/books/commissions-view.tsx:254"
+  ]
+ },
+ {
+  "id": "5-40",
+  "area": "Company panel (rail)",
+  "route": "rail › Company",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Company panel help lines cut on 8 of 11 rows; three words for \"waiting\"",
+  "now": "Rows show a help line that is truncated: \"People, roles and who reports to w…\", \"Brand kit, quotes, co…\", \"My Items and My S…\", \"Your own finishes for the AI Visualiz…\", \"Your plan, the AI credits the team u…\", \"The page your clients sign in to — it…\", \"Purchase orders, …\", \"Leads, projects and money, for the …\", \"Qanvast, the website form, Meta Le…\". Badges: \"1 awaiting\" (Templates), \"1 proposed\" (Price book), \"4 to approve\" (Finance); the rail's accessible name \"Company (6 awaiting approval)\".",
+  "why": "A help line that cannot be read is noise; three words for the same \"needs your OK\" make the owner wonder if they differ.",
+  "proposal": "Drop the help lines (names are plain; the full line can be the row's Tooltip), which also shortens the panel. One badge word: \"n to approve\" on all three.",
+  "effort": "S",
+  "shots": [
+   "5-company-panel.png"
+  ],
+  "code": [
+   "lib/company/sections.ts:11-26",
+   "components/company/company-popover.tsx"
+  ]
+ },
+ {
+  "id": "5-41",
+  "area": "Cross-module names (people, clients)",
+  "route": "/company/members · /company/reports/* · /company/questionnaire · /company/integrations · /settings",
+  "kind": "copy",
+  "severity": "med",
+  "title": "A member is also \"team member\", \"person\", \"Your team\"; a client a \"homeowner\"",
+  "now": "Members page / \"People and roles\" card / Reports \"By team member\" (Leads, Projects, Meetings, Health) / Commission and Plan \"By member\" / Health \"Your team\" / Settings \"the studio’s team\" / Workload \"each person\". Clients: Questionnaire \"the questions homeowners answer\", Integrations \"Homeowners find your studio on Qanvast\", Notifications \"a homeowner’s chat at the tables\"; everywhere else \"client\".",
+  "why": "Two names for one thing makes the owner wonder whether they are two things.",
+  "proposal": "\"Member\" for a studio person everywhere (\"By member\" on every report; \"People and roles\" goes). \"Client\" for the studio's customer everywhere in the studio app; \"homeowner\" stays only on Qanvast-facing words (Qanvast Ops, Hangouts) where Qanvast says it.",
+  "effort": "S",
+  "shots": [
+   "5-members.png",
+   "5-rep-leads-full.png",
+   "5-questionnaire-full.png"
+  ],
+  "code": [
+   "lib/company/question-bank.ts:5",
+   "components/leads/insights/insights-view.tsx:202",
+   "lib/studio-health/model.ts:264"
+  ]
+ },
+ {
+  "id": "5-42",
+  "area": "Company › Client portal › Clients",
+  "route": "/company/portal/clients",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Access chip repeats the Last opened date on every row",
+  "now": "ACCESS \"OPENED 18 OCT\" chip and LAST OPENED \"18 Oct\" on the same row (6 rows); \"--\" in Invited / Last opened for others; ACTIONS column of ⋮.",
+  "why": "Same fact twice per row.",
+  "proposal": "Access chip says the state only: \"Opened\" (green) · \"Invited\" (yellow) · \"Not invited\" (grey); the date stays in Last opened.",
+  "effort": "S",
+  "shots": [
+   "5-portal-clients.png"
+  ],
+  "code": [
+   "lib/portal/model.ts:68",
+   "components/company/portal/portal-clients-view.tsx:45"
+  ]
+ },
+ {
+  "id": "5-43",
+  "area": "Company › Vendors",
+  "route": "/company/finance/vendors",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Vendors table: \"POS\" head, cryptic codes and a Status column of ACTIVE",
+  "now": "Column \"POs\" is uppercased by the head style and reads \"POS\". Captions \"Plumbing · works on site · AF\", \"Hacking · Masonry · Tiling · works on site ·…\" (AF / BS / CV = the vendor's code). Status \"ACTIVE\" on all 12 rows while the Active chip is on. GST \"No GST / Charges GST\". \"--\" vs \"- -\" in Committed / Owed.",
+  "why": "\"POS\" reads as point-of-sale; \"works on site · AF\" is internal.",
+  "proposal": "Head \"Purchase orders\" (or \"Orders\"); caption \"Plumbing · Contractor\" (code in the drawer only); drop the Status column when the chip already narrows to Active; GST \"Charges GST / —\".",
+  "effort": "S",
+  "shots": [
+   "5-fin-vendors.png"
+  ],
+  "code": [
+   "components/finance/cost-tables.tsx:236",
+   "components/finance/cost-tables.tsx:244",
+   "components/finance/vendor-dialog.tsx:38"
+  ]
+ },
+ {
+  "id": "5-44",
+  "area": "Settings › Quotes & pricing",
+  "route": "/settings?section=quotes",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Quotes settings leak a field code, a template name and mixed-case units",
+  "now": "Prepared by: \"What a template’s {prepared_by} field prints on every quote…\". New quotes start with: \"What every new quote takes from the studio’s default template, Default Quote PDF… Change in Default Quote PDF › New quotes\". Units list \"Pieces · Lot · sqft · ft run · point · hour · set\". Selling prices \"…The cost never moves; the markup takes the difference. Round Prices on a quote still rounds the whole quote at once.\" Contracts sits in this module as \"Contracts · signing links\".",
+  "why": "{prepared_by} is a template internal; units in two cases look like a typo.",
+  "proposal": "\"What prints as “Prepared by” on every quote\"; units \"Piece · Lot · sqft · ft run · Point · Hour · Set\" (or all lower case — one case); \"Contracts · signing links\" → \"Signing links\".",
+  "effort": "S",
+  "shots": [
+   "5-set-quotes-seg0.png",
+   "5-set-quotes-seg1.png"
+  ],
+  "code": [
+   "lib/quotes/items-model.ts:22",
+   "app/settings/units-card.tsx:80",
+   "app/settings/settings-view.tsx:682"
+  ]
+ },
+ {
+  "id": "5-45",
+  "area": "Settings › Meetings · Reports › Meetings · Tools",
+  "route": "/settings?section=meetings · /company/reports/meetings",
+  "kind": "copy",
+  "severity": "low",
+  "title": "The meeting tool is spelled four ways: co-pilot, Copilot, Co-Pilot, Co-pilot",
+  "now": "Code count: \"co-pilot\" 161 · \"Copilot\" 54 · \"Meeting Copilot\" 51 · \"Meeting Co-Pilot\" 13 · \"Co-pilot\" 1. Settings › Meetings help \"How the co-pilot works in Demo Studio’s meetings…\"; Reports tile \"0 of 12 with the co-pilot on\"; Tools tile \"Meeting Copilot\".",
+  "why": "A product name spelled four ways looks careless in a demo.",
+  "proposal": "One spelling: \"Meeting Copilot\" as the name, \"Copilot\" in a sentence (\"with Copilot on\").",
+  "effort": "S",
+  "shots": [
+   "5-set-meetings-seg0.png",
+   "5-rep-meetings-full.png"
+  ],
+  "code": [
+   "lib/settings/copy.ts:48-54",
+   "lib/meetings/report-model.ts:228"
+  ]
+ },
+ {
+  "id": "5-46",
+  "area": "Company › Members (layout)",
+  "route": "/company/members",
+  "kind": "defect",
+  "severity": "low",
+  "title": "Member rows don't line up; Marketing / Accounting rows flip actions to the left",
+  "now": "The second line's controls shift with their content (Hui Min's \"Projects at once\" select is pushed right by the \"CLOSED TO NEW LEADS\" chip); Nurul Huda (Marketing) and Priya Tan (Accounting) show \"Add PayNow · Public profile · Deactivate\" left-aligned under the name while every other row's actions are right-aligned; the preference summary is cut to \"Land…\" / \"Cond…\" / \"HDB & BTO homes, c…\".",
+  "why": "A ragged list reads as broken; the cut preferences hide the one useful fact of that column.",
+  "proposal": "Solved by the one-row model (first finding). If the row stays, put the second line on a fixed grid and right-align the actions on every role.",
+  "effort": "S",
+  "shots": [
+   "5-members-full.png"
+  ],
+  "code": [
+   "components/company/members-view.tsx:400-431",
+   "components/company/members-view.module.css"
+  ]
+ },
+ {
+  "id": "5-47",
+  "area": "Settings › Notifications",
+  "route": "/settings?section=notifications",
+  "kind": "defect",
+  "severity": "low",
+  "title": "Every message preview links to a lead, even AI-credits and plan-payment messages",
+  "now": "\"The studio is out of AI credits · WhatsApp — Demo Studio is out of AI credits. AI tools are paused — top up here: https://app.openmaison.sg/leads/farah-ahmad\"; the same lead link on \"A payment for the plan doesn’t go through\", \"Your ask for AI credits is answered\", \"An item is proposed for My Items\". SAMPLE_FIELDS has one {link} for every event.",
+  "why": "The owner reading the wording sees a wrong link and loses trust in what is sent.",
+  "proposal": "Give the preview a sample link per event kind (plan → /company/plan, price book → /company/price-book, task → the task, …) — the event table already knows each event's place.",
+  "effort": "S",
+  "shots": [
+   "5-set-notifications-seg4.png"
+  ],
+  "code": [
+   "lib/notifications/model.ts:533"
+  ]
+ },
+ {
+  "id": "5-48",
+  "area": "Finance · Reports · Plan (empty values)",
+  "route": "/company/finance/* · /company/reports/* · /company/plan",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "Empty values print as \"--\", \"- -\" and \"—\" on the same pages",
+  "now": "Vendors: Committed \"- -\" but Owed \"--\" in the next column; Money in: Due \"- -\", Paid / Owed \"--\"; Reports (Leads, Projects, Meetings): \"- -\"; To do Amount \"--\"; Plan & Profile \"—\"; Money in › Payments \"-- Once confirmed\".",
+  "why": "Three empty marks reads like three meanings.",
+  "proposal": "One house empty mark (\"--\" per REG P-35 / durationWords) through one component; never the spaced \"- -\". Better: leave cells empty where the row has nothing to say (Paid on an unpaid draft).",
+  "effort": "S",
+  "shots": [
+   "5-fin-vendors.png",
+   "5-fin-in-invoices.png",
+   "5-rep-projects-full.png",
+   "5-plan-full.png"
+  ],
+  "code": [
+   "lib/format.ts:309",
+   "lib/format.ts:317"
+  ]
+ },
+ {
+  "id": "5-49",
+  "area": "Company + Finance (dates)",
+  "route": "/company/finance/todo · /company/portal/clients · /company/plan · /company/reports/health",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "Dates and times are written five ways across the section",
+  "now": "\"18 Oct ’26\" (Finance tables), \"13 Oct · 14 days late\" (To do), \"1d ago\" / \"2d ago\" (To do › Recently), \"Yesterday\" / \"2 days ago\" / \"9 Sep ’26\" in one column (Health), \"21 Aug\" with no year (Portal clients), \"9 Oct ’26 · 3:20 PM\" (Plan activity), \"Opened 18 Oct\" (chips).",
+  "why": "\"1d ago\" is a developer's shorthand; mixing relative and absolute in one column breaks sorting by eye.",
+  "proposal": "House rule: lists write \"18 Oct\" this year and \"18 Oct ’25\" otherwise; relative words only \"Today\", \"Yesterday\", \"3 days ago\" (never \"1d ago\"); one style per column.",
+  "effort": "S",
+  "shots": [
+   "5-fin-todo-full.png",
+   "5-portal-clients.png",
+   "5-plan-full.png",
+   "5-rep-health-full.png"
+  ],
+  "code": [
+   "components/finance/todo/todo-workspace.tsx:339-360",
+   "lib/format.ts"
+  ]
+ },
+ {
+  "id": "5-50",
+  "area": "Company + Reports (Maison AI button)",
+  "route": "/company/members · /company/portal · /company/reports/meetings · /company/reports/finance · /company/finance/money-in",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The Maison AI button sits over row content at rest at 1440",
+  "now": "At 1440×1024 the floating ✦ covers Sarah's \"7 leads\" (Members), Kevin Ng's \"INVITED, NOT OPENED\" chip (Client portal), the \"Outcome: All\" pill (Reports › Meetings), the Costs table's column-settings button (Reports › Finance) and an \"Open\" (Money in).",
+  "why": "A fixed button over a control means a mis-press or a hidden status at the screen's most-read corner.",
+  "proposal": "Give right-edge columns the FAB's clearance (the house `--fab-clearance` on the content's right, not only its bottom) or let the FAB step aside while a table row sits under it, as it does on the Dashboard.",
+  "effort": "S",
+  "shots": [
+   "5-members.png",
+   "5-portal-full.png",
+   "5-rep-meetings-full.png",
+   "5-rep-finance-full.png",
+   "5-fin-in-invoices.png"
+  ],
+  "code": [
+   "components/shell/maison-fab.tsx"
+  ]
+ },
+ {
+  "id": "5-51",
+  "area": "Company › Members › Public profile",
+  "route": "/company/members/[id]/profile",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Public profile names insider places: \"About › Our team\", \"the meeting room\"",
+  "now": "\"Show on the About page · The client portal’s About › Our team.\"; \"Known for: HDB & BTO homes · Compact layouts — their specialty, set with their lead preferences on Company › Members\" (a link back to the page you came from); \"How clients see it\" ends with \"The client portal’s About › Our team · Qanvast Hangout · Marina Bay’s booking page · The meeting room’s Past projects\"; \"Blank shows their role — Designer\"; \"A line or two\".",
+  "why": "The owner needs \"where will clients see this\", in his words.",
+  "proposal": "\"Show on your client portal\" (switch) with helper \"Clients see it under Our team.\"; \"Known for\" helper → \"Set in Lead preferences\"; \"How clients see it\" footer → \"Shown on: your client portal · your Qanvast Hangout booking page · meetings\"; \"A line or two\" → \"About them\".",
+  "effort": "S",
+  "shots": [
+   "5-member-profile-full.png"
+  ],
+  "code": [
+   "components/portfolio/public-profile-view.tsx:114",
+   "components/portfolio/public-profile-view.tsx:126",
+   "components/portfolio/public-profile-view.tsx:147-154"
+  ]
+ },
+ {
+  "id": "5-52",
+  "area": "Settings ↔ Company",
+  "route": "/settings · rail › Company",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "Settings and Company split one studio's set-up into two homes",
+  "now": "Members (Company) vs Roles & access (Settings); GST switch + Reg. No. (Company › Profile) vs GST rate (Settings › Quotes & pricing); vendors (Company › Finance) vs money-out rules (Settings › Finance › \"Costs\"); Questionnaire (Company) vs Custom fields (Settings › Lead management); Integrations (Company) vs Lead sources (Settings). Each Settings module spends its head on \"Kept in Company:\" links to bridge it.",
+  "why": "An owner looking for \"GST\" or \"who can approve\" has a 50/50 chance of opening the wrong home first.",
+  "proposal": "Smallest step that keeps REG-484 / REG-645: add a \"Settings\" group to the Company panel listing the seven modules (one door for everything about the studio), and give each Company page a \"Rules for this\" text link to its Settings module instead of each Settings module linking back. A bigger step for Vicky to weigh: Settings becomes Company › Settings (the rail's gear stays as a shortcut).",
+  "effort": "M",
+  "shots": [
+   "5-company-panel.png",
+   "5-set-studio.png"
+  ],
+  "code": [
+   "lib/company/sections.ts:11-26",
+   "lib/settings/modules.ts:31-40"
+  ]
+ }
+]

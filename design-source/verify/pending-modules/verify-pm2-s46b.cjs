@@ -96,19 +96,21 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     const row = (await menuRows(p)).find((r) => r[0].startsWith('Tickets'))
     await p.keyboard.press('Escape'); await settle(p, 300)
     const railItem = p.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
-    const rowCount = Number((((await railItem.innerText().catch(() => '')) || '').match(/\d+/) ?? ['0'])[0])
-    ok(!row && await railItem.count() === 1 && rowCount === toAnswer && (toAnswer === 0 || new RegExp(`Tickets \\(${toAnswer} waiting\\)`).test((await railItem.getAttribute('aria-label')) ?? '')), `the rail carries Tickets after Tasks, its count the tickets waiting on the studio (${rowCount} = ${toAnswer}); the Projects ⋮ has no Tickets row`, (await railItem.getAttribute('aria-label')) ?? '')
+    /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-04 · 1-10) the rail says Issues and wears a grey dot, no number on the glyph — the count is its accessible name, "Issues (n waiting)" */
+    const railLabel = (await railItem.getAttribute('aria-label').catch(() => '')) ?? ''
+    const rowCount = Number((/\((\d+) waiting\)/.exec(railLabel) ?? ['', '0'])[1])
+    ok(!row && await railItem.count() === 1 && rowCount === toAnswer && (toAnswer === 0 || new RegExp(`^Issues \\(${toAnswer} waiting\\)`).test(railLabel)), `the rail carries Tickets after Tasks, its count the tickets waiting on the studio (${rowCount} = ${toAnswer}); the Projects ⋮ has no Tickets row`, (await railItem.getAttribute('aria-label')) ?? '')
     const railOrder = await p.locator('[class*="app-rail-module__"] a[href]').evaluateAll((as) => as.map((a) => new URL(a.href).pathname))
     ok(railOrder.indexOf('/tickets') === railOrder.indexOf('/tasks') + 1, 'Tickets sits right after Tasks', railOrder.join(' · '))
 
     await go(p, '/tickets')
     const newBtn = p.getByTestId('studio-new-ticket')
-    ok(await newBtn.count() === 1 && /New ticket/.test(await text(newBtn)), 'the header carries New ticket (an Owner may raise one on any project)')
+    ok(await newBtn.count() === 1 && /New issue/.test(await text(newBtn)), 'the header carries New issue (an Owner may raise one on any project)')   // (the calm UI build 2026-10-27, a deliberate change) "Issues" on screen (3-37)
     /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own, as Tasks is) */
-    ok(await p.locator('header a[data-kb="back"]').count() === 0 && /^Tickets$/.test((await text(p.locator('main h1, header h1').first())).trim()), 'an L1 page: “Tickets”, no Back')
+    ok(await p.locator('header a[data-kb="back"]').count() === 0 && /^Issues$/.test((await text(p.locator('main h1, header h1').first())).trim()), 'an L1 page: “Issues”, no Back')   // (the calm UI build 2026-10-27, a deliberate change)
     await shot(p, 'm1-tickets-1440')
     await newBtn.click(); await settle(p, 700)
-    const pick = p.getByRole('dialog', { name: 'Which project is this ticket for?' })
+    const pick = p.getByRole('dialog', { name: 'Which project is this issue for?' })
     ok(await pick.isVisible(), 'New ticket asks which project first')
     await pick.getByRole('combobox').click(); await settle(p, 300)
     const options = await p.getByRole('option').allInnerTexts()
@@ -117,7 +119,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await shot(p, 'm1-pick-1440')
     await p.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(p, 200)
     await pick.getByRole('button', { name: 'Continue' }).click(); await settle(p, 700)
-    const compose = p.getByRole('dialog', { name: 'New ticket' })
+    const compose = p.getByRole('dialog', { name: 'New issue' })
     ok(await compose.isVisible() && /For Benjamin Han — they see it on their page/.test(await text(compose)), 'then the project tab’s own compose, for its client')
     await compose.getByRole('combobox').first().click(); await settle(p, 250)
     const cat = (await p.getByRole('option').allInnerTexts())[0]?.trim()
@@ -133,50 +135,53 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     ok(!(await compose.isVisible().catch(() => false)), 'the compose closed once the save landed')
     await shot(p, 'm1-made-1440')
     await p.keyboard.press('Escape'); await settle(p, 500)
-    ok(await p.locator(`[data-testid="ticket-card"][data-ticket="${made[0]}"]`).count() === 1 && new RegExp(`P-2026-002`).test(await text(p.locator(`[data-testid="ticket-card"][data-ticket="${made[0]}"]`))), 'its card on the list names its project')
+    /* (the calm UI build 2026-10-27, a deliberate change) the card names its project by its name (1-22) — its number is the drawer's Project row */
+    ok(await p.locator(`[data-testid="ticket-card"][data-ticket="${made[0]}"]`).count() === 1 && (await text(p.locator(`[data-testid="ticket-card"][data-ticket="${made[0]}"]`))).includes(BEN_NAME), 'its card on the list names its project')
     await go(p, `/projects/${BEN}/tickets`)
     ok(await p.locator(`[data-testid="ticket-card"][data-ticket="${made[0]}"]`).count() === 1, '…and it is on the project’s own Tickets tab')
 
     console.log('M1 · ?new=1 and &project=')
     await go(p, '/tickets?new=1', 1400)
-    ok(await p.getByRole('dialog', { name: 'Which project is this ticket for?' }).isVisible() && !/new=1/.test(p.url()), '?new=1 opens the picker, and the address loses the mark')
+    ok(await p.getByRole('dialog', { name: 'Which project is this issue for?' }).isVisible() && !/new=1/.test(p.url()), '?new=1 opens the picker, and the address loses the mark')
     await p.keyboard.press('Escape'); await settle(p, 400)
     await go(p, `/tickets?new=1&project=${RYAN}`, 1400)
-    ok(/For Ryan D’Souza/.test(await text(p.getByRole('dialog', { name: 'New ticket' }))), '&project= goes straight to that project’s compose')
+    ok(/For Ryan D’Souza/.test(await text(p.getByRole('dialog', { name: 'New issue' }))), '&project= goes straight to that project’s compose')
     await p.keyboard.press('Escape'); await settle(p, 400)
 
     console.log('M1 · the Dashboard tile')
     const toAnswer2 = Number(sql(TO_ANSWER))
     await go(p, '/dashboard', 1800)
-    const tile = p.getByTestId('tile-tickets')
-    const tileVal = Number((await tile.locator('[class*="__value"]').innerText()).trim())
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): the count the ⋮ row wore is the rail item's badge now */
+    /* (the Dashboard redesigned 2026-10-26 — a deliberate change of this rule, his marks P-04 · P-13 and brief § 4: the Tickets tile is gone; a
+       ticket waiting on the studio is its project's Needs you row under Clients waiting, one per ticket, and the rail's Tickets keeps the count) */
     const railTickets = p.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
-    const rowCount2 = Number((((await railTickets.innerText().catch(() => '')) || '').match(/\d+/) ?? ['0'])[0])
-    ok(tileVal === rowCount2 && tileVal === toAnswer2, `the tile is the rail’s Tickets count (${tileVal} = ${rowCount2} = DB ${toAnswer2})`)
-    const open = Number(sql(`select count(*) from project_tickets t join projects p on p.id = t.project_id where p.deleted_at is null and t.status in ('open','in_progress')`))
-    await go(p, '/dashboard', 1800)
-    const help = await text(tile.locator('[class*="__help"]'))
-    ok(toAnswer2 ? new RegExp(`^waiting on you( · ${open} open)?`).test(help) : new RegExp(`^Nothing waits on you · ${open} open`).test(help), `its line: whose turn and how many are open (${help})`)
-    ok(await tile.getAttribute('data-grade') === null && await p.locator('[data-testid="stands-tiles"] [data-grade]').count() === 0, 'no colour on it — red is the project’s Needs you’s')
+    /* (the calm UI build 2026-10-27, a deliberate change) 1-04: the rail's Issues wears a grey dot, its number in its name ("Issues (n waiting)") */
+    const rowCount2 = Number((/\((\d+) waiting\)/.exec((await railTickets.getAttribute('aria-label').catch(() => '')) || '') ?? ['', '0'])[1])
+    const more = p.locator('[data-card="needs"] [data-testid="needs-more"]')
+    /* (the calm UI build 2026-10-27, a deliberate change) 1-01: "See all n" opens every row in the house Drawer (was "Show all n" unrolling the card) */
+    let needsRows = p.locator('[data-card="needs"]')
+    if (await more.count() && /See all \d+/.test(await more.innerText())) { await more.click(); await settle(p, 700); needsRows = p.getByTestId('needs-all-list') }
+    else if (await more.count() && /Show all \d+|Show \d+ more/.test(await more.innerText())) { await more.click(); await settle(p, 500) }   // (the calm pass 2026-10-26, a deliberate change) Needs you's "Show all n" (was "Show n more")
+    const ticketRows = await needsRows.locator('[data-inbox-row*=":ticket:"]').count()
+    ok(ticketRows === rowCount2 && rowCount2 <= toAnswer2, `Needs you holds a row per ticket waiting on you, the rail's Tickets count (${ticketRows} = ${rowCount2}; ${toAnswer2} wait in the studio)`)
+    ok(await p.getByTestId('tile-tickets').count() === 0, 'no Tickets tile on the Dashboard any more — its count is the rail’s, its rows Needs you’s')
+    if (await p.getByTestId('needs-all').isVisible().catch(() => false)) { await p.keyboard.press('Escape'); await settle(p, 500) }   // (the calm UI build 2026-10-27, a deliberate change) the drawer closes before the rail is pressed
     await shot(p, 'm1-dashboard-1440', true)
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): an L1 page, the rail's Tickets lit — no Back, as Tasks has none */
-    await tile.click(); await p.waitForURL(/\/tickets/, { timeout: 10000 }).catch(() => {}); await settle(p, 1400)
-    ok(new URL(p.url()).pathname === '/tickets' && await p.getByTestId('studio-tickets').isVisible(), 'the tile opens Tickets', p.url())
+    await railTickets.click(); await p.waitForURL(/\/tickets/, { timeout: 10000 }).catch(() => {}); await settle(p, 1400)
+    ok(new URL(p.url()).pathname === '/tickets' && await p.getByTestId('studio-tickets').isVisible(), 'the rail’s Tickets opens Tickets', p.url())
     ok(await p.locator('header a[data-kb="back"]').count() === 0 && await railTickets.getAttribute('aria-current') === 'page', 'Tickets is a rail place: no Back, the rail’s Tickets lit')
-    await go(p, '/dashboard', 1800)   // the tile count below is the Dashboard's
-    /* the loader draws the tile too */
+    await go(p, '/dashboard', 1800)
+    /* the loader draws the Pulse strip as the page does */
     const gctx = await desk({ reducedMotion: 'reduce' }); const gl = await loader(gctx, '/dashboard')
-    const ghostTiles = await gl.locator('[class*="standTiles"]').first().locator('> *').count()   // the loader comes first in the streamed page
+    const ghostTiles = await gl.locator('[class*="pulseTiles"], [class*="standTiles"]').first().locator('> *').count()
     await gctx.close()
-    ok(ghostTiles === await p.locator('[data-testid="stands-tiles"] > *').count(), `the Dashboard’s ghost draws as many tiles as the page (${ghostTiles})`)
+    ok(ghostTiles === await p.locator('[data-testid="stands-tiles"] > *').count(), `the Dashboard’s ghost draws as many Pulse figures as the page (${ghostTiles})`)
 
     console.log('M1 · roles')
     as('germaine')
     await go(p, '/tickets')
     ok(await p.getByTestId('studio-new-ticket').count() === 1, 'germaine (Designer, on two projects’ teams): New ticket')
     await p.getByTestId('studio-new-ticket').click(); await settle(p, 600)
-    const gpick = p.getByRole('dialog', { name: 'Which project is this ticket for?' })
+    const gpick = p.getByRole('dialog', { name: 'Which project is this issue for?' })
     await gpick.getByRole('combobox').click(); await settle(p, 300)
     const gopts = (await p.getByRole('option').allInnerTexts()).map((x) => x.trim())
     const mine = sql(`select group_concat(p.number, ',') from projects p join lead_assignees a on a.lead_id = p.lead_id where a.member_id = 'germaine' and p.deleted_at is null`).split(',').filter(Boolean)
@@ -186,7 +191,9 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await shot(p, 'm1-germaine-refused-1440')
     await p.keyboard.press('Escape'); await settle(p, 300)
     await go(p, '/dashboard', 1800)
-    ok(await p.getByTestId('tile-tickets').count() === 1, 'germaine: the Tickets tile is hers too (she opens projects)')
+    /* (the Dashboard redesigned 2026-10-26 — a deliberate change of this rule: no Tickets tile for anyone; her projects' tickets that wait on the
+       studio come as their Needs you rows) */
+    ok(await p.getByTestId('tile-tickets').count() === 0, 'germaine: no Tickets tile — her projects’ tickets come as Needs you rows')
     for (const who of ['priya', 'nurul']) {
       as(who)
       await go(p, '/dashboard', 1600)
@@ -218,7 +225,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await go(p, `/projects/${RYAN}`, 1500)
     await kebab(p)
     const rows = (await menuRows(p)).map((r) => r[0])
-    ok(rows.indexOf('See it as Ryan') === rows.indexOf('Invite to Portal') + 1, 'See it as Ryan sits beside Invite to Portal', rows.join(' · '))
+    ok(rows.indexOf('See it as Ryan') === Math.max(rows.indexOf('Client portal'), rows.indexOf('Invite to Portal')) + 1,   /* (the calm UI build 2026-10-27, a deliberate change) the row reads "Client portal" */ 'See it as Ryan sits beside Invite to Portal', rows.join(' · '))
     ok(rows.indexOf('Complete handover') === rows.length - 2 && rows[rows.length - 1] === 'Delete', 'Complete handover just before Delete (1.0’s Close project)', rows.join(' · '))
     await shot(p, 'm6-menu-1440')
     await p.getByRole('menuitem', { name: 'Complete handover' }).click()
@@ -310,8 +317,12 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     // ── M5 · Meeting Copilot's Insights ───────────────────────────────────────────────────────────────────────────────────────────
     console.log('M5 · Tools › Meeting Copilot › Insights')
     await go(p, '/meetings', 1500)
+    /* (the calm UI build 2026-10-27, a deliberate change) B2 1-30 · 2-47: the header's outlined "Insights" door is the toolbar ⋮'s first row,
+       "Reports" (`open-insights`) — the Leads and Projects listings' own door (their ⋮'s Reports) — still into Reports › Meetings with Back */
+    const moreMeetings = async (pg) => { await pg.getByRole('button', { name: 'More options' }).last().click(); await settle(pg, 500) }
+    await moreMeetings(p)
     const ins = p.getByTestId('open-insights')
-    ok(await ins.count() === 1 && /Insights/.test(await text(ins)), 'the Leads and Projects listings’ Insights door, after New Meeting')
+    ok(await ins.count() === 1 && /^\s*Reports\s*$/.test(await text(ins)), 'the Leads and Projects listings’ Insights door, after New Meeting — the ⋮’s Reports row')
     await shot(p, 'm5-meetings-1440')
     await ins.click(); await p.waitForURL(/\/company\/reports\/meetings/, { timeout: 10000 }).catch(() => {}); await settle(p, 1500)
     ok(new URL(p.url()).searchParams.get('from') === '/meetings', 'it opens Company › Reports › Meetings with the way back', p.url())
@@ -321,11 +332,13 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await back.click(); await p.waitForURL(/\/meetings$/, { timeout: 10000 }).catch(() => {}); await settle(p, 900)
     ok(new URL(p.url()).pathname === '/meetings', 'Back returns to Meeting Copilot')
     const mctx = await desk({ reducedMotion: 'reduce' }); const ml = await loader(mctx, '/meetings')
-    ok(await ml.locator('[aria-label="Loading meetings"]').first().locator('[class*="headActions"] > *').count() === 2, 'its loader draws New Meeting and Insights')
+    ok(await ml.locator('[aria-label="Loading meetings"]').first().locator('[class*="headActions"] > *').count() === 1, 'its loader draws New Meeting — as the page’s header, Reports in its ⋮')   // (the calm UI build 2026-10-27, a deliberate change) 1-30
     await mctx.close()
     as('germaine')
     await go(p, '/meetings', 1300)
-    ok(await p.getByTestId('open-insights').count() === 0, 'germaine: no Insights — Reports › Meetings is Owners’ and Admins’')
+    await moreMeetings(p)   // (the calm UI build 2026-10-27, a deliberate change) read in the ⋮, where the door lives now
+    ok(await p.getByRole('menuitem', { name: 'Meeting settings' }).count() === 1 && await p.getByTestId('open-insights').count() === 0, 'germaine: no Insights — Reports › Meetings is Owners’ and Admins’')
+    await p.keyboard.press('Escape'); await settle(p, 300)
     as('dane')
 
     // ── M8 · AI Visualizer by project ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -347,7 +360,10 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await p.waitForURL(/\/visualizer\/[0-9a-f-]{36}/, { timeout: 15000 }).catch(() => {}); await settle(p, 2000)
     const D = (p.url().split('/visualizer/')[1] ?? '').split(/[?#/]/)[0]
     ok(sql(`select kind || '|' || lead_id from visualizer_designs where id = '${D}'`) === `lead|${RYAN_LEAD}` && Number(sql(`select count(*) from visualizer_designs`)) === designs0 + 1, 'For a project… opens the project’s lead’s design (made on first open)')
-    ok(/Project · P-2026-001/i.test(await text(p.locator('body'))), 'the editor names it the project’s: “Project · P-2026-001”')
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-08 · 6-16: the kind rides the name's tooltip in the editor's bar, not a chip */
+    await p.locator('h1').first().hover(); await settle(p, 900)
+    ok(/Project · P-2026-001/i.test(await text(p.locator('[role="tooltip"]').first())), 'the editor names it the project’s: “Project · P-2026-001” (its name’s tooltip)')
+    await p.mouse.move(2, 2)
     await shot(p, 'm8-editor-1440')
     /* a room on it, so the landing shows it (a lead's design shows once it has a room) */
     const R0 = sql(`select id from project_rooms where deleted_at is null and design_id = (select id from visualizer_designs where name = 'Kevin Ng' or lead_id = (select id from leads where name = 'Kevin Ng') limit 1) limit 1`)
@@ -355,16 +371,19 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await go(p, '/visualizer', 1500)
     await p.getByRole('button', { name: /^Kind: / }).click(); await settle(p, 300)
     const kinds = (await p.getByRole('menuitemradio').allInnerTexts()).map((x) => x.split(/\s·\s|\n/)[0].trim())
-    ok(kinds.slice(0, 4).join(' · ') === 'All · Projects · Leads · Personal', `the Kind pill: Projects · Leads · Personal, the planner’s order (${kinds.join(' · ')})`)
+    ok(kinds.slice(0, 4).join(' · ') === 'All · Projects · Leads · Studio’s own', `the Kind pill: Projects · Leads · Studio’s own, the planner’s order (${kinds.join(' · ')})`)   // (the calm UI build 2026-10-27, a deliberate change) — W-027
     await p.getByRole('menuitemradio', { name: /^Projects/ }).click(); await settle(p, 600)
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-21 · 6-32: the card leads with the client; the project's number is the list view's Kind column */
+    await p.getByRole('button', { name: 'List view' }).first().click(); await settle(p, 500)
     const vmain = await text(p.locator('main'))
     ok(/Ryan D’Souza/.test(vmain) && /P-2026-001/.test(vmain) && !/Kevin Ng/.test(vmain), 'Kind: Projects — Ryan’s design with its number; Kevin Ng (a lead still) under Leads', vmain.slice(0, 200))
+    await p.getByRole('button', { name: 'Grid view' }).first().click(); await settle(p, 400)
     await shot(p, 'm8-projects-1440')
     await p.getByRole('button', { name: /^Kind: / }).click(); await settle(p, 250); await p.getByRole('menuitemradio', { name: /^Leads/ }).click(); await settle(p, 500)
     const lmain = await text(p.locator('main'))
     ok(/Kevin Ng/.test(lmain) && !/Ryan D’Souza/.test(lmain), 'Kind: Leads keeps the designs whose lead is still a lead')
     await p.getByRole('button', { name: /^Kind: / }).click(); await settle(p, 250); await p.getByRole('menuitemradio', { name: /^All/ }).click(); await settle(p, 500)
-    ok(/Project · P-2026-001/.test(await text(p.locator('main'))), 'under All its line says “Project · P-2026-001”')
+    ok(/Project · \d+ rooms?/.test(await text(p.locator('main'))), 'under All its line says it is a project’s: “Project · 1 room …” (its number is the list’s Kind column)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-32
     as('germaine')
     await go(p, '/visualizer', 1500)
     await p.getByRole('button', { name: 'New', exact: true }).click(); await settle(p, 400)
@@ -376,21 +395,20 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     console.log('Phone 390 · 320')
     const ph = await touch(); await ph.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }); const q = await page(ph, 'phone')
     await go(q, '/tickets', 1500)
-    ok(await q.getByRole('button', { name: 'New ticket' }).count() === 1 && await sideways(q) <= 0, '390: New ticket as the header’s square, no sideways scroll', `${await sideways(q)}px`)
+    ok(await q.getByRole('button', { name: 'New issue' }).count() === 1 && await sideways(q) <= 0, '390: New ticket as the header’s square, no sideways scroll', `${await sideways(q)}px`)
     await shot(q, 'm1-tickets-390')
-    await q.getByRole('button', { name: 'New ticket' }).click(); await settle(q, 900)
-    ok(await q.getByRole('dialog', { name: 'Which project is this ticket for?' }).isVisible() && await sideways(q) <= 0, '390: the picker as a sheet')
+    await q.getByRole('button', { name: 'New issue' }).click(); await settle(q, 900)
+    ok(await q.getByRole('dialog', { name: 'Which project is this issue for?' }).isVisible() && await sideways(q) <= 0, '390: the picker as a sheet')
     await shot(q, 'm1-pick-390')
-    await q.getByRole('dialog', { name: 'Which project is this ticket for?' }).getByRole('combobox').click(); await settle(q, 400)
+    await q.getByRole('dialog', { name: 'Which project is this issue for?' }).getByRole('combobox').click(); await settle(q, 400)
     await q.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(q, 300)
     await q.getByRole('button', { name: 'Continue' }).click(); await settle(q, 900)
-    ok(await q.getByRole('dialog', { name: 'New ticket' }).isVisible() && await sideways(q) <= 0, '390: the compose as a sheet')
+    ok(await q.getByRole('dialog', { name: 'New issue' }).isVisible() && await sideways(q) <= 0, '390: the compose as a sheet')
     await shot(q, 'm1-compose-390')
     await q.keyboard.press('Escape'); await settle(q, 500)
     await go(q, '/dashboard', 1800)
-    await q.getByTestId('tile-tickets').scrollIntoViewIfNeeded(); await settle(q, 300)
-    ok(await q.getByTestId('tile-tickets').isVisible() && await sideways(q) <= 0, '390: the Tickets tile')
-    await q.getByTestId('tile-tickets').screenshot({ path: path.join(dir, 'm1-tile-390.png') }).catch(() => {})
+    /* (the Dashboard redesigned 2026-10-26 — a deliberate change: the Tickets tile is gone; the phone's Dashboard holds no Tickets figure) */
+    ok(await q.getByTestId('tile-tickets').count() === 0 && await sideways(q) <= 0, '390: no Tickets tile, nothing scrolls sideways')
     await shot(q, 'm1-dashboard-390', true)
     await go(q, `/projects/${RYAN}`, 1600)
     await q.locator('[data-testid="project-page"] header').getByRole('button', { name: 'More options' }).click(); await settle(q, 700)
@@ -408,7 +426,10 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await q.getByTestId('details-call').click(); await settle(q, 600)
     ok(!/is copied — call from your phone/.test(await snackText(q)), 'on a touch screen Call dials — it never says “copied”')
     await go(q, '/meetings', 1500)
-    ok(await q.getByRole('button', { name: 'Insights' }).count() === 1 && await sideways(q) <= 0, '390: Insights as the header’s square')
+    /* (the calm UI build 2026-10-27, a deliberate change) B2 2-13: Meeting Copilot's Insights is the toolbar ⋮'s "Reports" row (`open-insights`) */
+    await q.getByRole('button', { name: 'More options' }).last().click(); await settle(q, 500)
+    ok(await q.getByTestId('open-insights').count() === 1 && await sideways(q) <= 0, '390: Insights as the header’s square')
+    await q.keyboard.press('Escape'); await settle(q, 300)
     await shot(q, 'm5-meetings-390')
     await go(q, '/visualizer', 1500)
     await q.getByRole('button', { name: 'New', exact: true }).click().catch(async () => { await q.getByRole('button', { name: /^New/ }).first().click() }); await settle(q, 700)

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
-import { resolveTokens, type TokenValues } from '@/lib/contracts/tokens'
+import { resolveTokens, tightenPunctuation, type TokenValues } from '@/lib/contracts/tokens'
 import { sanitizeContractHtml } from '@/lib/contracts/sanitize'
 import type { SignedLetterhead } from '@/lib/contracts/policy'
 import { clausesOf, signsLine } from '@/lib/contracts/clauses'
@@ -38,7 +38,7 @@ export function ContractDocument({ html, values, brand, studio, studioSignature,
   const issuer = letterhead?.name || values['studio.name'] || studio.name
   const split = useMemo(() => {
     if (uploaded || blank) return { lead: '', clauses: [] }
-    return clausesOf(renderSignFields(resolveTokens(sanitizeContractHtml(html), values), { studio: studioSignature, client, studioName: issuer }))
+    return clausesOf(renderSignFields(tightenPunctuation(resolveTokens(sanitizeContractHtml(html), values)), { studio: studioSignature, client, studioName: issuer }))   // (4-45)
   }, [uploaded, blank, html, values, studioSignature, client, issuer])
   const [open, setOpen] = useState<Set<number>>(() => new Set([split.lead ? -1 : split.clauses[0]?.index ?? -1]))
   const toggle = (i: number) => setOpen((s) => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n })

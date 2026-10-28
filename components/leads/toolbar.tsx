@@ -70,7 +70,7 @@ export function LeadsToolbar({
       <div ref={leftRef} className={styles.left}>
         {/* (REG-729) The house scope pill (components/om/scope-pill.tsx) — the listing's own pill, now written once: the chevron turns
             while its menu is open, the applied dot off "All Leads" (REG-295). */}
-        {bare ? <h2 className={styles.title}>All Leads</h2> : (<>
+        {bare ? <h2 className={styles.title}>All leads</h2> : (<>
         <ScopePill ref={pillRef} label={chipLabel} onClick={onChipClick} open={chipOpen} scoped={chipScoped} />
         {chipMenu}
         {viewAll ? (

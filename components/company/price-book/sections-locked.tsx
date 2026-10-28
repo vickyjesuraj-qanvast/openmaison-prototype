@@ -4,7 +4,7 @@ import { CompanyShell } from '@/components/company/company-shell'
 import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
 import { ProLocked } from '@/components/credits/pro-tag'
 import { ProLockedGhost, useLockedNow } from '@/components/credits/pro-locked-ghost'
-import { PriceBookGhost } from '@/components/company/company-ghosts'
+import { PriceBookSectionsGhost } from './price-book-ghost'
 import { PRICE_BOOK_TABS } from '@/lib/company/sections'
 
 /**
@@ -23,5 +23,5 @@ export function SectionsLocked({ count, from }: { count: number; from?: string }
 export function SectionsLoading() {
   return useLockedNow('package_creation')
     ? <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading My Sections"><ProLockedGhost feature="package_creation" /></CompanyGhostFrame>
-    : <PriceBookGhost sections />
+    : <PriceBookSectionsGhost />
 }

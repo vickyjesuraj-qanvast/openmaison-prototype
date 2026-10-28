@@ -10,6 +10,7 @@ import { clientDay, type NeedItem } from '@/lib/portal/model'
 import type { BeforeStep } from '@/lib/portal/needs'
 import type { PortalData, PortalHome as Home } from '@/lib/portal/home'
 import { CLIENT_STATE_LABEL, dayLabel, shortTitle } from '@/lib/projects/schedule-model'
+import { resumeWords } from '@/lib/portal/schedule-model'
 import type { PortalMoneyHome } from '@/lib/projects/payments-portal'
 import type { PortalUpdate } from '@/lib/portal/updates'
 import { ContactLine } from './contact-line'
@@ -110,8 +111,14 @@ function homeLede(h: Home, now: number): string {
   const s = h.schedule?.summary
   if (h.stage === 'in_progress' && h.hold) return `${at}. Work is paused for now.`   // (gaps build D, item 4) the hold card says why
   if (h.stage === 'in_progress' && s) {
-    const now = s.now?.state === 'in_progress' ? `${shortTitle(s.now.title)} is under way` : 'Work is under way'
-    return `${at}. ${now}${s.handover !== null ? `; handover is planned for ${dayLabel(s.handover)}` : ''}.`
+    /* (the calm UI build 2026-10-27, 3-10 · T-17) the line reads the state the card under it reads: a paused milestone is paused here too, with the
+       day the studio said it picks up again — "Electrical is paused — resuming around 27 Oct. Handover is planned for Fri 13 Nov." */
+    if (s.now?.paused) {
+      const resume = resumeWords(s.now.resumeOn, now)
+      return `${at}. ${shortTitle(s.now.title)} is paused${resume ? ` — ${resume.charAt(0).toLowerCase()}${resume.slice(1)}` : ''}.${s.handover !== null ? ` Handover is planned for ${dayLabel(s.handover)}.` : ''}`
+    }
+    const going = s.now?.state === 'in_progress' ? `${shortTitle(s.now.title)} is under way` : 'Work is under way'
+    return `${at}. ${going}${s.handover !== null ? `; handover is planned for ${dayLabel(s.handover)}` : ''}.`
   }
   if (h.stage === 'in_progress' && h.project?.targetEndDate && !h.schedule?.hasMilestones) return `${at}. Work is under way; handover is planned for ${clientDay(h.project.targetEndDate, now)}.`
   if (h.stage === 'in_progress') return `${at}. Work is under way.`
@@ -203,7 +210,7 @@ function MoneyCard({ m, now, place }: { m: PortalMoneyHome; now: number; place: 
   const soonest = due.map((s) => s.dueAt).filter((x): x is number => x !== null).sort((a, b) => a - b)[0] ?? null
   const when = soonest === null || soonest <= now ? 'is due now' : `is due ${clientDay(soonest, now)}`
   return (
-    <section className={money.paid} aria-label="Money" data-slot="money" data-testid="portal-home-money">
+    <section className={money.paid} aria-label="Payments" data-slot="money" data-testid="portal-home-money">   {/* (the calm UI build 2026-10-27, 3-02) */}
       {place ? <span className={money.eyebrow}>{place}</span> : null}
       <PaidSoFar h={m} />
       {owed > 0 ? <p className={money.dueLine} data-testid="portal-home-money-due">{`${money2(owed)} ${when}`}</p> : null}

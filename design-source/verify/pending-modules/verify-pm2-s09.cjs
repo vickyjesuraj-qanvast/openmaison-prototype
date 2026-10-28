@@ -77,6 +77,11 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const text = async (l) => ((await l.count()) ? (await l.first().innerText()).replace(/\s+/g, ' ') : '')
   const row = (p, name) => p.getByTestId('member-row').filter({ has: p.locator('span[class*="__name"]').filter({ hasText: new RegExp(`^${name}`) }) })
+  /* (the calm UI build 2026-10-27, a deliberate change) a member row's Copy link, Cancel invitation and Deactivate are in its ⋮ (5-01): open it, count / press there, close it */
+  const openMore = async (p, r) => { await r.getByTestId('member-more').click(); await settle(p, 350) }
+  const inMenu = async (p, r, ids) => { if (!(await r.getByTestId('member-more').count())) return 0; await openMore(p, r); let n = 0; for (const id of ids) n += await p.locator(`[role="menu"] [data-testid="${id}"]`).count(); await p.keyboard.press('Escape'); await settle(p, 250); return n }
+  const inMenuName = async (p, r, name) => { if (!(await r.getByTestId('member-more').count())) return 0; await openMore(p, r); const n = await p.getByRole('menuitem', { name: new RegExp(`^${name}`) }).count(); await p.keyboard.press('Escape'); await settle(p, 250); return n }
+  const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) Who may do what is Roles & access' drawer now (5-04)
   const inviteOf = (name) => json(`select i.* from studio_invitations i join members m on m.id = i.member_id where m.name = '${name}' order by i.created_at desc limit 1`)[0]
   const outbox = (invId) => json(`select key, channel, to_address, subject, body, status, member_id, event from notification_outbox where key like 'i:${invId}:%' order by key`)
   const addMember = async (p, o) => {
@@ -139,8 +144,8 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       ok(/invited/i.test(await text(r.locator('span[class*="__name"]'))), 'her row wears Invited beside her name')
       const line = await text(r.getByTestId('member-invite'))
       ok(line.includes(`Invited by Dane on ${dm(inv.created_at)} · sent by WhatsApp and email · the link is open until ${dm(inv.expires_at)}`), `the row says who invited her and when, how it went, until when (${line})`)
-      ok(await r.getByTestId('member-invite-send').innerText() === 'Send again' && await r.getByTestId('member-invite-copy').count() === 1 && await r.getByTestId('member-invite-cancel').count() === 1, 'Send again · Copy link · Cancel invitation')
-      ok(await r.getByRole('button', { name: 'Deactivate' }).count() === 0, 'no Deactivate while she is invited — Cancel the invitation is her remove')
+      ok(await r.getByTestId('member-invite-send').innerText() === 'Send again' && await inMenu(d, r, ['member-invite-copy', 'member-invite-cancel']) === 2, 'Send again · Copy link · Cancel invitation (the last two in the row’s ⋮)')
+      ok(await inMenuName(d, r, 'Deactivate') === 0, 'no Deactivate while she is invited — Cancel the invitation is her remove')
       const takers1 = Number(sql(`select count(*) from members where is_active = 1 and role not in ('Accounting', 'Marketing')`))   // (S44O — call C6, a deliberate change of this rule) Marketing takes no seat either
       if (seatLimit != null && takers1 > seatLimit) {
         const note = await text(d.getByTestId('members-seats'))
@@ -169,7 +174,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       const out = outbox(inv.id).filter((m) => m.key.startsWith(`i:${inv.id}:2:`))
       ok(out.length === 2 && out.find((m) => m.channel === 'email')?.subject === 'Reminder: Dane invited you to join Demo Studio' && /^A reminder: Hi Nadia/.test(out.find((m) => m.channel === 'whatsapp')?.body ?? ''), 'a second pair of messages — 1.0’s “Reminder”')
       ok(/sent again on/.test(await text(row(d, 'Nadia Lim').getByTestId('member-invite'))), 'the row says it was sent again, and when')
-      await row(d, 'Nadia Lim').getByTestId('member-invite-copy').click()
+      await openMore(d, row(d, 'Nadia Lim')); await d.getByTestId('member-invite-copy').click()
       const sc = await waitSnack(d, /copied/)
       const clip = await d.evaluate(() => navigator.clipboard.readText()).catch(() => '')
       ok(/Invitation link copied/.test(sc) && clip === `${BASE}/join/${inv.token}`, `Copy link copies her page’s address (${clip})`)
@@ -191,7 +196,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       console.log('4 · Cancel the invitation · Undo')
       as('dane'); await go(d, '/company/members')
       const inv0 = inviteOf('Nadia Lim')
-      await row(d, 'Nadia Lim').getByTestId('member-invite-cancel').click()
+      await openMore(d, row(d, 'Nadia Lim')); await d.getByTestId('member-invite-cancel').click()
       const sn = await waitSnack(d, /cancelled/)
       ok(/Invitation to Nadia Lim cancelled/.test(sn) && await d.locator('[role="status"]').getByRole('button', { name: 'Undo' }).count() >= 1, `“Invitation to Nadia Lim cancelled” with Undo (${sn})`)
       await settle(d, 900)
@@ -258,7 +263,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       await settle(d, 1200)
       ok(fresh && !/open=/.test(d.url()), 'the bell’s link lands on her row (it pulses once) and the address drops it')
       const r = row(d, 'Nadia Lim')
-      ok(await r.getByTestId('member-invite').count() === 0 && !/invited/i.test(await text(r.locator('span[class*="__name"]'))) && await r.getByRole('button', { name: 'Deactivate' }).count() === 1, 'joined: no Invited, no invitation line — Deactivate is back')
+      ok(await r.getByTestId('member-invite').count() === 0 && !/invited/i.test(await text(r.locator('span[class*="__name"]'))) && await inMenuName(d, r, 'Deactivate') === 1, 'joined: no Invited, no invitation line — Deactivate is back')
     }
 
     // ── 6 · Expired, unsent, never sent, invited again; the first visit through View as ─────────────────────────────────────────────────
@@ -273,7 +278,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       sql(`update studio_invitations set expires_at = ${Date.now() - DAY} where id = '${inv.id}'`)
       await go(d, '/company/members')
       let r = row(d, 'Omar Teo')
-      ok(/invitation expired/i.test(await text(r.locator('span[class*="__name"]'))) && new RegExp(`the link expired on ${dm(Date.now() - DAY)} — send it again to open it for 30 more days`).test(await text(r.getByTestId('member-invite'))) && await r.getByTestId('member-invite-copy').count() === 0, 'an expired link: “Invitation expired”, when, and the way — Send again (no Copy link)')
+      ok(/invitation expired/i.test(await text(r.locator('span[class*="__name"]'))) && new RegExp(`the link expired on ${dm(Date.now() - DAY)} — send it again to open it for 30 more days`).test(await text(r.getByTestId('member-invite'))) && await inMenu(d, r, ['member-invite-copy']) === 0, 'an expired link: “Invitation expired”, when, and the way — Send again (no Copy link)')
       const E = await desk(); const e = await page(E, 'join-expired')
       await go(e, `/join/${inv.token}`)
       ok(/This invitation has expired/.test(await text(e.getByTestId('join-page'))) && await text(e.getByTestId('join-line')) === 'Invitations stay open for 30 days. Ask Dane to send you a new one.', 'its page: “This invitation has expired” — ask Dane for a new one')
@@ -286,7 +291,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       await go(e, `/join/${inv.token}`)
       ok(await e.getByTestId('join-go').count() === 1, 'and its page opens')
       /* cancelled, then invited again from Deactivated — a new link; the old one stays dead */
-      await row(d, 'Omar Teo').getByTestId('member-invite-cancel').click(); await waitSnack(d, /cancelled/); await settle(d, 1200)
+      await openMore(d, row(d, 'Omar Teo')); await d.getByTestId('member-invite-cancel').click(); await waitSnack(d, /cancelled/); await settle(d, 1200)
       await go(d, '/company/members')
       await d.getByTestId('members-inactive').locator(`[data-member-id="${omar}"]`).getByTestId('member-invite-again').click()
       const ag = await waitSnack(d, /invited again/)
@@ -313,7 +318,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       inv = inviteOf('Lee Ann')
       ok(inv && inv.status === 'pending' && inv.channels === '' && inv.send_count === 0 && outbox(inv.id).length === 0, 'no mobile, no email: the invitation is kept, and nothing is sent')
       r = row(d, 'Lee Ann')
-      ok(/not sent — add a mobile number or an email, then send it/.test(await text(r.getByTestId('member-invite'))) && await r.getByTestId('member-invite-send').innerText() === 'Send invitation' && await r.getByTestId('member-invite-copy').count() === 1, 'the row says it isn’t sent and why — Send invitation, and Copy link to share it by hand')
+      ok(/not sent — add a mobile number or an email, then send it/.test(await text(r.getByTestId('member-invite'))) && await r.getByTestId('member-invite-send').innerText() === 'Send invitation' && await inMenu(d, r, ['member-invite-copy']) === 1, 'the row says it isn’t sent and why — Send invitation, and Copy link to share it by hand')
       await r.getByTestId('member-invite-send').click()
       const no = await waitSnack(d, /Couldn’t send/)
       ok(/Couldn’t send the invitation — add a mobile number or an email for Lee Ann first/.test(no), `Send invitation says why it can’t (${no})`)
@@ -321,7 +326,7 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       sqlFile(`INSERT INTO members (id, name, role, color, is_you, accepting_leads, is_active, portal_shown, welcome_due) VALUES ('probe-ravi', 'Ravi Kumar', 'Designer', '#2B8A8A', 0, 1, 1, 0, 1);\nUPDATE members SET phone = '91230079' WHERE id = 'probe-ravi';\n`)
       await go(d, '/company/members')
       r = row(d, 'Ravi Kumar')
-      ok(/Hasn’t come in yet — no invitation was sent/.test(await text(r.getByTestId('member-invite'))) && await r.getByTestId('member-invite-send').innerText() === 'Send invitation' && await r.getByRole('button', { name: 'Deactivate' }).count() === 1, 'a member never invited: “Hasn’t come in yet — no invitation was sent” · Send invitation (Deactivate stays)')
+      ok(/Hasn’t come in yet — no invitation was sent/.test(await text(r.getByTestId('member-invite'))) && await r.getByTestId('member-invite-send').innerText() === 'Send invitation' && await inMenuName(d, r, 'Deactivate') === 1, 'a member never invited: “Hasn’t come in yet — no invitation was sent” · Send invitation (Deactivate stays)')
       await r.getByTestId('member-invite-send').click()
       const rv = await waitSnack(d, /Invitation sent/)
       await settle(d, 1000)
@@ -338,14 +343,14 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       dlg = await addMember(d, { name: 'Mei Ling', phone: '91230081' })
       await dlg.getByRole('button', { name: 'Add member' }).click(); await waitSnack(d, /Mei Ling added/); await settle(d, 1200)
       as('huimin'); await go(d, '/company/members')
-      ok(await row(d, 'Kelvin Ong').getByTestId('member-invite').count() === 1 && await row(d, 'Kelvin Ong').getByTestId('member-invite-send').count() === 0 && await row(d, 'Kelvin Ong').getByTestId('member-invite-cancel').count() === 0, 'an Admin reads an Owner’s invitation but never sends or cancels it (the Owner rules)')
-      ok(await row(d, 'Mei Ling').getByTestId('member-invite-send').count() === 1 && await row(d, 'Mei Ling').getByTestId('member-invite-cancel').count() === 1, '…and manages a Designer’s')
+      ok(await row(d, 'Kelvin Ong').getByTestId('member-invite').count() === 1 && await row(d, 'Kelvin Ong').getByTestId('member-invite-send').count() === 0 && await inMenu(d, row(d, 'Kelvin Ong'), ['member-invite-cancel']) === 0, 'an Admin reads an Owner’s invitation but never sends or cancels it (the Owner rules)')
+      ok(await row(d, 'Mei Ling').getByTestId('member-invite-send').count() === 1 && await inMenu(d, row(d, 'Mei Ling'), ['member-invite-cancel']) === 1, '…and manages a Designer’s')
       if (seatLimit != null && Number(sql(`select count(*) from members where is_active = 1 and role not in ('Accounting', 'Marketing')`)) > seatLimit) ok(/Dane changes the plan’s seats\./.test(await text(d.getByTestId('members-seats'))) && await d.getByTestId('members-seats-plans').count() === 0, 'an Admin is told the seats, and who changes them — no See plans')   // (S44O — call C6, a deliberate change of this rule) Marketing takes no seat either
       as('germaine'); await go(d, '/company/members')
       ok(await row(d, 'Mei Ling').getByTestId('member-invite').count() === 1 && await row(d, 'Mei Ling').locator('[data-testid^="member-invite-"]').count() === 0 && await d.getByTestId('members-seats').count() === 0, 'a Designer reads who is invited — no buttons, no seats note')
       await shot(d, '09-members-designer-1440')
-      as('dane'); await go(d, '/settings?section=studio')
-      ok(/Add and invite members, deactivate and reactivate them; set roles/.test(await text(d.locator('main'))), 'Who may do what: “Add and invite members, deactivate and reactivate them; set roles”')
+      as('dane'); await go(d, '/settings?section=studio'); await openRoles(d)
+      ok(/Add and invite members, deactivate and reactivate them; set roles/.test(await text(d.getByTestId('studio-roles-list'))), 'Who may do what: “Add and invite members, deactivate and reactivate them; set roles”')
     }
 
     // ── 9 · Accounting: no seat, "to keep the books", Join lands on Finance ─────────────────────────────────────────────────────────────
@@ -366,10 +371,10 @@ const dm = (ms) => { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.g
       await a.getByTestId('join-go').click(); await settle(a, 900)
       await a.getByTestId('join-digit').first().click(); await a.keyboard.type('123456')   // (pending modules, a deliberate change of this rule — S30) the code step
       await a.getByTestId('join-go').click()
-      await a.waitForURL(/\/company\/finance/, { timeout: 15000 }).catch(() => {})
+      await a.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {})   // (the calm UI build 2026-10-27: restated to the rule already in force) homeOfRole sends every role to the Dashboard (his Q-08)
       await settle(a, 1500)
       const w = a.getByRole('dialog').filter({ has: a.getByTestId('first-visit-welcome') })
-      ok(new URL(a.url()).pathname.startsWith('/company/finance') && /Dane invited you to keep Demo Studio’s books\./.test(await text(w)) && await w.getByTestId('welcome-go').innerText() === 'Open Finance', 'Join lands her on Finance (her home), the welcome naming who invited her')
+      ok(new URL(a.url()).pathname.startsWith('/dashboard') /* (the calm UI build 2026-10-27: restated to the rule already in force) the Dashboard is Accounting's front door too; the welcome's Open Finance is the way on */ && /Dane invited you to keep Demo Studio’s books\./.test(await text(w)) && await w.getByTestId('welcome-go').innerText() === 'Open Finance', 'Join lands her on Finance (her home), the welcome naming who invited her')
       await w.getByTestId('welcome-later').click(); await settle(a, 800)
       await A.close()
       as('dane')

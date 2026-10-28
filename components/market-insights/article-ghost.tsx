@@ -27,7 +27,7 @@ export function ArticleGhost() {
   const samples = peek ? peek.sample : seeded
   return (
     <GhostSheet label="Loading the article">
-      <GhostHead2 crumb={112} title={360} />
+      <GhostHead2 crumb={112} />   {/* (the calm UI build 2026-10-27, 6-34) the page's crumb-only header */}
       <div className={styles.content} aria-hidden>
         <div className={styles.article}>
           <div className={styles.head}>

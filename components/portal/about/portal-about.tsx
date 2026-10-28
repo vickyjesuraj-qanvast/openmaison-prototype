@@ -9,7 +9,6 @@ import type { PortalData } from '@/lib/portal/home'
 import { PortalFrame } from '../portal-frame'
 import { PhotoViewer } from '../project/photo-viewer'
 import { PortalAboutGhost } from '../threads/thread-ghosts'
-import { MetaChip } from '@/components/om/meta-chip'
 import { WorkDialog } from '@/components/portfolio/designer-card'   // (pending modules S27)
 import { yearsLine, type WorkCard } from '@/lib/portfolio/model'
 import p from '../portal.module.css'
@@ -75,7 +74,8 @@ export function PortalAboutView({ data, about }: { data: PortalData; about: Abou
                       <span className={a.memberText}>
                         <p className={a.memberName}>{m.name}</p>
                         <p className={a.memberTitle}>{[m.title, yearsLine(m.years)].filter(Boolean).join(' · ')}</p>
-                        {m.knownFor.length ? <span className={a.known}>{m.knownFor.map((k) => <MetaChip key={k}>{k}</MetaChip>)}</span> : null}
+                        {/* (the calm UI build 2026-10-27, T-06) what they are known for is meta — a grey line under their title, never capitals tags */}
+                        {m.knownFor.length ? <p className={a.memberTitle} data-testid="about-member-known">{m.knownFor.join(' · ')}</p> : null}
                         {m.bio ? <p className={a.bio}>{m.bio}</p> : null}
                         {/* (pending modules S27) their work — each piece opens its pictures */}
                         {m.work.length ? (

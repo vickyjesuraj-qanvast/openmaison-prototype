@@ -6,18 +6,16 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import type { LeadTask } from '@/lib/db/schema'
-import { displayDayMonth, displayDue, displayTime, hasTime, isDueToday, isOverdue, startOfDay } from '@/lib/format'
+import { displayDue, displayTime, hasTime, isDueToday, isOverdue, overdueWords } from '@/lib/format'
 import { Card, CardEmpty, CardRule } from './card'
 import styles from './my-work-card.module.css'
 
 /**
- * MY TASKS card (858:24989 full · 858:24505 due-today only · 858:24171 empty).
+ * Open tasks card — was "MY TASKS" (858:24989 full · 858:24505 due-today only · 858:24171 empty).
  * Open tasks grouped Overdue → Due today → Upcoming, Upcoming collapsed. Each group lists every task it counts:
  * the label prints the real total, so the two rows per group in the mock are its data, not a cap (user 2026-08-30).
  * Spec: design-source/context/lead-overview/05-*.txt.
  */
-
-const DAY_MS = 86_400_000
 
 type GroupKey = 'overdue' | 'today' | 'upcoming'
 type Group = { key: GroupKey; label: string; tasks: LeadTask[] }
@@ -51,24 +49,24 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
     { key: 'upcoming', label: 'Upcoming', tasks: upcoming },
   ] satisfies Group[]).filter((g) => g.tasks.length > 0)
 
-  const attention = overdue.length
-  const metaRight = attention > 0
-    ? `${attention} ${attention === 1 ? 'task needs' : 'tasks need'} attention`
+  /* (the Dashboard redesigned, 2026-10-26 — P-13, his Build mark: "Needs attention" means one thing — a project's health, REG-914) the head
+     names what it counts, the overdue tasks: "1 task overdue" (the mock's "2 tasks need attention", 858:24989, reversed) */
+  const late = overdue.length
+  const metaRight = late > 0
+    ? `${late} ${late === 1 ? 'task' : 'tasks'} overdue`
     : undefined
 
+  /* (the calm UI build 2026-10-27, 2-28 · W-269) "Open tasks": the card lists every open task on the record, not the viewer's (it read "MY TASKS"
+     over James's and nobody's). Today's date left the head — it was the day, not the tasks'. (The tasks carry no members here, so "1 is yours"
+     waits for the loader to hand them.) (2-04 · 2-23 · W-384 · W-507) Empty: one plain line and ONE outlined "Add a task" — the page's filled
+     button is its header's (T-03); the marketing line went. */
   return (
     <Card
-      title="MY TASKS"
+      title="Open tasks"
       headGap={8}
-      meta={(
-        <span className={styles.headMeta}>
-          <span>·</span>
-          <span>{displayDayMonth(new Date(now))}</span>
-        </span>
-      )}
       metaRight={metaRight}
       onOpen={onOpenTab}
-      openLabel="Open my tasks"
+      openLabel="Open the tasks"
       testId="my-work"
     >
       {open.length === 0 && quietEmpty ? quietEmpty : open.length === 0 ? (
@@ -76,12 +74,12 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
           illustration="/figma-assets/empty-tasks.svg"
           width={140}
           height={107}
-          title="Add your first task"
-          body="Stay organised — track, prioritise, and complete everything from one place."
+          title="No tasks yet"
+          body=""
           gap={20}
           actions={(
-            <Button iconStart={<Icon name="add" size={20} />} onPress={(e) => onCreate(e.target as HTMLElement)}>
-              Create New Task
+            <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={(e) => onCreate(e.target as HTMLElement)}>
+              Add a task
             </Button>
           )}
         />
@@ -147,9 +145,6 @@ function TaskRow({ task, group, now, onComplete, onOpenTask, where }: {
   where?: string | null
 }) {
   const due = task.dueAt
-  const overdueDays = due && group === 'overdue'
-    ? Math.round((startOfDay(new Date(now)) - startOfDay(due)) / DAY_MS)
-    : 0
 
   return (
     <div className={styles.row}>
@@ -168,7 +163,9 @@ function TaskRow({ task, group, now, onComplete, onOpenTask, where }: {
             <>
               <span className={styles.dot}>·</span>
               <span data-tone="red">{displayDue(due)}</span>
-              <span data-tone="red">({overdueDays}d overdue)</span>
+              {/* (the Dashboard redesigned, 2026-10-26 — P-13: "5 days overdue", never "(5d)"; the mock's "(7d overdue)", 858:24989, reversed) */}
+              <span className={styles.dot}>·</span>
+              <span data-tone="red">{overdueWords(due, now)}</span>
             </>
           ) : group === 'today' ? (
             <>

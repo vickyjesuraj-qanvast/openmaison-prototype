@@ -46,7 +46,7 @@ export function LibraryNewButton({ open, onOpenChange, children, sheetTitle = 'N
 
 /** The tab's kebab beside its New ▾ (REG-502 → REG-541): Deleted Templates of this kind. (REG-653) A section's own page rows (the
     price book's Export) come first, above a rule. */
-export function LibraryKebab({ open, onOpenChange, deletedCount, onDeleted, label = 'Deleted Templates', sheetTitle = 'Templates', children }: { open: boolean; onOpenChange: (open: boolean) => void; deletedCount: number; onDeleted: () => void; label?: string; sheetTitle?: string; children?: ReactNode }) {
+export function LibraryKebab({ open, onOpenChange, deletedCount, onDeleted, label = 'Deleted templates', sheetTitle = 'Templates', children }: { open: boolean; onOpenChange: (open: boolean) => void; deletedCount: number; onDeleted: () => void; label?: string; sheetTitle?: string; children?: ReactNode }) {
   return (
     <span className={styles.kebabAnchor}>
       <Tooltip label="More options" disabled={open}>

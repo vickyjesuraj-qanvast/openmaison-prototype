@@ -29,8 +29,6 @@
 /* Compact (the camera model, ≤1024 portrait and phones): the title owns the free width (F148); the rooms live in their own row. */
 .bar[data-compact] .titles { max-width: none; flex: 1; }
 .bar[data-compact] .saved[data-tone='warn'] { display: none; }
-.whose { display: contents; }
-@media (max-width: 767px) { .whose { display: none; } }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .roomChips > [role='radio'] { line-height: 42px; } }
 /* (wave E, E3) A phone on its side: the same bar at 44 — the photo is the hero. The room chips drop to the 36 px touch floor (REG-307)
    so they sit inside it; the name keeps its 16 px (heading-h4, above). */

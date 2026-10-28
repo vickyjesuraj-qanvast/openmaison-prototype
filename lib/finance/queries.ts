@@ -204,6 +204,7 @@ function maskFigures(s: CostSummary): CostSummary {
 
 /** A project a cost may sit on, as a picker and a list name it. */
 export type CostProject = { id: string; number: string; name: string; leadId: string; stage: string; address: string | null; entity: string | null; quoteId: string | null
+  /** (the calm UI build 2026-10-27, 5-26) the client's name — the first line of Finance's one Project cell (display only) */ client: string
   /** whether this viewer may raise a PO / record a bill / log an expense on it */ prepares: boolean; locked: string | null
   /** (parity map, MO-098) whether they may record a bill, an expense, a PO made elsewhere or a delivery on it — `prepares` for the team;
       Accounting records on every project without raising a PO (lib/finance/rules.ts `recordsPo`) */ records: boolean }
@@ -218,7 +219,7 @@ async function projectFacts(rows: { p: typeof projects.$inferSelect; l: typeof l
   return rows.map(({ p, l }) => {
     const teamIds = team.filter((t) => t.leadId === l.id).map((t) => t.memberId)
     return {
-      id: p.id, number: p.number, name: p.name, leadId: l.id, stage: p.stage, address: l.propertyAddress ?? l.leadAddress ?? null, entity: qs.find((q) => q.id === p.quoteId)?.entity ?? null, quoteId: p.quoteId,
+      id: p.id, number: p.number, name: p.name, leadId: l.id, stage: p.stage, address: l.propertyAddress ?? l.leadAddress ?? null, entity: qs.find((q) => q.id === p.quoteId)?.entity ?? null, quoteId: p.quoteId, client: titleCaseName(l.name),
       prepares: preparesPo(viewer, teamIds), records: recordsPo(viewer, teamIds), locked: completedBlock(p.stage, 'money'), teamIds, seesMoney: seesMoney(viewer, teamIds),
     }
   })

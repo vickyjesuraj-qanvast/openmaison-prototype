@@ -109,11 +109,11 @@ export function ProjectOverview({ d, href, onSetup, onOpenTab, onVisualizer, onH
   const closingRows = d.closing ? closingLines(d.closing, moneyCard) : []   // (parity Q-03) a card's sums
   const closing = closingRows.length ? (
     <div data-card="closing-summary">
-      <Card title="Closing summary" headGap={8} testId="closing-summary" onOpen={d.money ? () => onOpenTab('money') : undefined} openLabel="Open money">
+      <Card title="Closing summary" headGap={8} testId="closing-summary" onOpen={d.money ? () => onOpenTab('money') : undefined} openLabel="Open payments">
         <div className={styles.body}>
           <div className={styles.group}>
             {closingRows.map((l) => (
-              <Row key={l.key} icon={l.key.startsWith('deferred-') ? 'pending' : l.key === 'days' ? 'event' : l.key === 'late' ? 'flag' : l.key === 'variations' ? 'request_quote' : l.key === 'refund' || l.key === 'credit' ? 'undo' : l.key === 'collected' ? 'account_balance' : 'payments'}
+              <Row key={l.key} two /* (the calm UI build 2026-10-27, 3-16 · T-12) a caption wraps, never cut */ icon={l.key.startsWith('deferred-') ? 'pending' : l.key === 'days' ? 'event' : l.key === 'late' ? 'flag' : l.key === 'variations' ? 'request_quote' : l.key === 'refund' || l.key === 'credit' ? 'undo' : l.key === 'collected' ? 'account_balance' : 'payments'}
                    state={l.tone === 'alert' ? 'alert' : undefined} name={l.key.startsWith('deferred-') ? `Deferred: ${l.value}` : l.label} caption={l.caption}
                    meta={l.key.startsWith('deferred-') ? undefined : l.value} onPress={d.money && (l.key === 'contract' || l.key === 'collected' || l.key === 'refund' || l.key === 'credit' || l.key === 'variations') ? () => onOpenTab('money') : undefined}
                    testId={`closing-${l.key}`} />

@@ -19,6 +19,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s43a')
@@ -102,14 +105,14 @@ function sourceGuard() {
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - screen.width)
   const block = (p) => p.locator('button[aria-haspopup="menu"][aria-label^="Demo Studio"]')
   const blockLabel = async (p) => (await block(p).count()) ? (await block(p).first().getAttribute('aria-label')) ?? '' : ''
-  const openMenu = async (p) => { await block(p).first().click(); await settle(p, 600); return p.locator('[role="menu"][aria-label="View as"]') }
+  const openMenu = async (p) => { await block(p).first().click(); await settle(p, 600); await openDemo(p); return p.locator('[role="menu"][aria-label="View as"]') }
   /* the ticked members (the plans group below has its own tick): each radio reads its initial, name and role */
   const ticked = async (p) => { const m = await openMenu(p); const t = await m.locator('[role="menuitemradio"][aria-checked="true"]').allInnerTexts(); await p.keyboard.press('Escape'); await settle(p, 300); return t.map((x) => x.replace(/\s+/g, ' ').trim()) }
   const nameField = async (p) => (await p.locator('main input').evaluateAll((els) => els.map((e) => e.value))).filter(Boolean)
   const bellLabel = async (p) => (await p.locator('nav [data-notifications-tile]').first().getAttribute('aria-label').catch(() => '')) ?? ''
   const unread = (member) => Number(sql(`select count(*) from notifications where member_id = '${member}' and read_at is null`))
   const ready = async (p, testId = 'sign-in') => { await p.waitForFunction((id) => { const e = document.querySelector(`[data-testid="${id}"]`); return !!e && !e.closest('[inert]') }, testId, { timeout: 15000 }).catch(() => {}); await settle(p, 300) }
-  const askCode = async (p, contact) => { await ready(p); await p.getByLabel('Mobile number or email').fill(contact); await p.getByTestId('sign-in-send').click(); await settle(p, 1000) }
+  const askCode = async (p, contact) => { await ready(p); await p.getByLabel(/^Mobile number or (work )?email/).fill(contact); await p.getByTestId('sign-in-send').click(); await settle(p, 1000) }
   const signIn = async (p, contact) => {
     await go(p, '/sign-in', 400); await askCode(p, contact)
     await p.getByTestId('sign-in-digit').first().click(); await p.keyboard.type('123456'); await settle(p, 200)
@@ -120,7 +123,9 @@ function sourceGuard() {
   }
   const dismissWelcome = async (p) => { const later = p.getByTestId('welcome-later'); if (await later.count()) { await later.first().click().catch(() => {}); await settle(p, 900) } }
   const liveSessionOf = (member) => json(`select * from studio_sessions where member_id = '${member}' and ended_at is null and id not like 'ss-trail-%' order by started_at desc`)[0] ?? null
-  const greeting = async (p) => { const t = (await p.locator('main').innerText().catch(() => '')).replace(/\s+/g, ' '); return (/Good (morning|afternoon|evening), [^.]+\./.exec(t) ?? [''])[0] }
+  /* (the Dashboard redesigned 2026-10-26 — a deliberate change of this reading: the MAISON AI BRIEF's sentence "Good evening, Dane." is gone; the
+     greeting is the page's title, "Good evening, Dane" — read there, and given its old full stop so the checks below read as they did) */
+  const greeting = async (p) => { const t = ((await p.getByTestId('greeting-title').innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim(); return /^Good (morning|afternoon|evening), /.test(t) ? `${t}.` : '' }
 
   /* the probe's own invitee: a Designer with a mobile, owed the first-visit welcome, invited by Dane */
   const INV = `${P}-nora`, INV_NAME = 'Nora Probe', INV_TOKEN = `${P}nora`.padEnd(22, 'x').slice(0, 22)
@@ -268,6 +273,7 @@ function sourceGuard() {
         ok(/\bLeads\b/i.test(ka) && ka.toLowerCase().includes(otherLead.name.toLowerCase()) && !/\bLeads\b/i.test(kc) && /Nothing matches/.test(kc), `⌘K finds ${otherLead.name} on the Owner’s window, never on Sarah’s`, `${ka.slice(0, 120)} ‖ ${kc.slice(0, 120)}`)
       }
       const ask = async (p, q) => {
+        await go(p, '/tasks', 1200)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
         await p.locator('button[aria-label="Maison AI"]').last().click(); await settle(p, 900)
         const sheet = p.locator('[role="dialog"][aria-label="Maison AI suggestions"]')
         const box = sheet.locator('[data-testid="maison-ask"] input'); await box.fill(q); await box.press('Enter')
@@ -323,7 +329,8 @@ function sourceGuard() {
       await A2.close()
       await go(c, '/dashboard', 1400)
       ok(await blockLabel(c) === 'Demo Studio, viewing as Sarah. View as', 'a browser signed in by a code stays its own member — Sarah')
-      await a.getByRole('button', { name: 'Maison AI' }).first().click(); await settle(a, 800)
+      await go(a, '/tasks', 1200)   // (Dashboard redesign 2026-10-26, a deliberate change) the floating button — and its sheet's reset — are on every page but the Dashboard (Q-02)
+      await a.getByRole('button', { name: 'Maison AI', exact: true }).first().click(); await settle(a, 800)
       await a.getByRole('button', { name: /Reset prototype to base/ }).click(); await settle(a, 500)
       await a.getByRole('dialog', { name: 'Reset the prototype?' }).getByRole('button', { name: 'Reset' }).click()
       await a.waitForLoadState('networkidle').catch(() => {}); await settle(a, 4500)
@@ -340,7 +347,7 @@ function sourceGuard() {
         const X = w === 1440 ? await desk() : await phoneCtx(w, h); await X.addCookies([{ name: 'om_seen', value: 'out', url: BASE }]); const x = await page(X, `code-${w}`)
         await go(x, '/sign-in', 400); await askCode(x, 'sarah@demostudio.sg')
         const fine = await x.getByTestId('sign-in-demo').innerText().catch(() => '')
-        ok(await x.getByTestId('sign-in').getAttribute('data-step') === 'code' && await x.getByTestId('sign-in-one-at-a-time').count() === 0 && /Demo only — no text or email is sent: any six digits sign you in\./.test(fine), `${w}: the code step says only the demo’s line about the code`)
+        ok(await x.getByTestId('sign-in').getAttribute('data-step') === 'code' && await x.getByTestId('sign-in-one-at-a-time').count() === 0 && /^Demo: any 6 digits work/.test(fine), `${w}: the code step says only the demo’s line about the code`)
         if (w !== 1440) ok(await sideways(x) <= 0, `${w}: no sideways scroll (${await sideways(x)})`)
         await shot(x, `05-sign-in-code-${w}`)
         await X.close()

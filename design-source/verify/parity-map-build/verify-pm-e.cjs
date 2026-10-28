@@ -159,7 +159,7 @@ const dayNum = (ms) => { const d = new Date(ms); return Math.round(Date.UTC(d.ge
     ok(await p.locator('[data-testid="check-vendors-defer"]').count() === 1, 'deferrable, as every row')
     ok(await p.locator('[data-testid="summary-costs"]').count() === 1 && await p.locator('[data-testid="summary-margin"]').count() === 1, 'the Closing summary: Costs and Margin (an Owner)')
     const alert = await p.locator('[data-testid="summary-margin"][data-open]').count()
-    ok((await p.locator('[data-testid="handover-margin-warning"]').count()) === alert, 'the strip shows exactly when the margin is more than 25 points off the expected')
+    ok((await p.locator('[data-testid="handover-margin-warning"]').count()) === alert, 'the strip shows exactly when the margin row is in the warning tone — more than 25 points under the quote’s plan')   // (the calm UI build 2026-10-27, a deliberate change — 3-16) below plan only
     await shot('pm-e-handover-1440')
     await p.locator('[data-testid="check-vendors-go"]').click(); await p.waitForTimeout(1400)
     ok(/\/money/.test(p.url()) && /#costs/.test(p.url()), 'Open Costs lands on Money’s Costs')
@@ -220,7 +220,7 @@ const dayNum = (ms) => { const d = new Date(ms); return Math.round(Date.UTC(d.ge
     await go(`/projects/${ryan}`)
     const needRow = p.locator('[data-testid="need-vo-days"]')
     if (await p.locator('[data-testid="needs-more"]').count() && !(await needRow.count())) { await p.locator('[data-testid="needs-more"]').click(); await p.waitForTimeout(300) }
-    ok(await needRow.count() === 1 && /VO-1 adds 3 days — move what follows\?/.test(await needRow.innerText()), 'Needs you: “VO-1 adds 3 days — move what follows?” (needs the Overview loader’s `voDays`)')
+    ok(await needRow.count() === 1 && /VO-1 adds 3 days — (move what follows|update the schedule)\?/.test(await needRow.innerText())   /* (the calm UI build 2026-10-27, a deliberate change) plain words (1-08 · W-398 · W-426 · W-278 · 3-37) */, 'Needs you: “VO-1 adds 3 days — move what follows?” (needs the Overview loader’s `voDays`)')
     await go(`/projects/${ryan}/schedule`)
     const chip = p.locator('[data-testid="vo-days"]')
     ok(await chip.count() === 1 && /\+3 days from changes/i.test(await chip.innerText()), 'the Schedule’s toolbar: “+3 days from changes”')
@@ -294,7 +294,7 @@ const dayNum = (ms) => { const d = new Date(ms); return Math.round(Date.UTC(d.ge
     await undo()
     ok(Number(sql(`select count(*) from lead_tasks where milestone_id='${carp}'`)) === tBefore, 'Undo takes them back')
     await go(`/projects/${ben}/tasks`)
-    await p.getByRole('button', { name: /^Add Task/ }).first().click(); await p.waitForTimeout(400)
+    await p.getByRole('button', { name: /^(Add Task|New task)/ }).first().click(); await p.waitForTimeout(400)   // (the calm UI build 2026-10-27, a deliberate change) B2: New task ▾
     ok(await menu(/^Suggest tasks from the quote/).count() === 1, 'Tasks › Add Task offers Suggest tasks from the quote (a signed quote with lines)')
     await menu(/^Suggest tasks from the quote/).click(); await p.waitForTimeout(1500)
     ok(await p.locator('[data-testid="quote-tasks-section"]').count() >= 1, 'its sections, each with its lines as tasks')

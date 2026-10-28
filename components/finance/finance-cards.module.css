@@ -1,0 +1,26 @@
+/*
+ * (the calm UI build 2026-10-27 — 5-10 · T-15) Finance's phone cards on the Leads card model: the list and the card are the Leads cards'
+ * (lead-cards.module.css — p16 gap12 r8 level-1 on the canvas), composed, never copied. What is here is the card's own lines: the name that
+ * wraps (never "…" — a record's name is the fact, T-12) beside its amount, the facts line, the status, the foot with its one verb and the ⋮ at
+ * the left (the Maison AI button floats over a phone card's right end — the Leads cards' A-02). Tokens only.
+ */
+.list { composes: list from '../leads/lead-cards.module.css'; margin: 0; padding: 0; list-style: none; }
+.card { composes: card from '../leads/lead-cards.module.css'; }
+.card[data-focus] { box-shadow: 0 0 0 var(--om-border-2) var(--om-color-primary-default), var(--om-elevation-level-1); }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); min-width: 0; }   /* the amount sits on the name's first line */
+.names { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.name {
+  position: relative;   /* (the calm UI build, landing) the name keeps its own press over the sub line (W4-18, as money.module.css) */
+  display: block; padding: 10px 0; margin: -10px 0; border: 0; background: none; text-align: left; cursor: pointer; text-decoration: none;
+  font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; border-radius: var(--om-radius-1);
+}
+.name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.nameText { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.amount { flex: 0 0 auto; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.status > * { min-width: 0; max-width: 100%; }
+.foot { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; margin-bottom: calc(-1 * var(--om-spacing-2)); }
+.foot button { min-height: 44px; }
+.card[data-faint] .name, .card[data-faint] .amount { text-decoration: line-through; color: var(--om-color-on-surface-secondary); }

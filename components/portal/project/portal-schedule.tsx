@@ -130,7 +130,9 @@ function HomeSchedule({ home, many, data, preview, busy, given, withGiven, onCon
   const [filter, setFilter] = useState<StageFilter>('all')
   const filtering = showStageFilters(stages)
   const shownFilter: StageFilter = filtering ? filter : 'all'
-  const events: ScheduleEvent[] = (home.events ?? []).filter((e) => shownFilter === 'all' || (shownFilter === 'payments' && e.kind === 'invoice'))
+  /* (the calm UI build 2026-10-27, 3-52) with the chips there, an invoice sent sits under Payments alone — under All the milestones read in a row
+     (each one's own payment line still says what it bills); a short list without chips keeps every moment on its rail, as before */
+  const events: ScheduleEvent[] = (home.events ?? []).filter((e) => (filtering ? (shownFilter === 'all' ? e.kind !== 'invoice' : shownFilter === 'payments' && e.kind === 'invoice') : true))
   const rail = railOf(stages.filter((s) => stageMatches(s, shownFilter)), events)
   const filterLabel = STAGE_FILTERS.find((f) => f.key === shownFilter)!.label
   /* the confirm cards: the stages still asked, and those answered on this visit (they turn into their thank-you) */
@@ -144,7 +146,7 @@ function HomeSchedule({ home, many, data, preview, busy, given, withGiven, onCon
         {asks.map((s0) => {
           const done = given[s0.id]
           return (
-            <section key={s0.id} id={`stage-${s0.id}`} className={styles.confirm} aria-label="A stage to confirm" data-slot="confirm" data-answered={done ? done.kind : undefined} data-testid="portal-confirm">
+            <section key={s0.id} id={`stage-${s0.id}`} className={styles.confirm} aria-label="A milestone to confirm" data-slot="confirm" data-answered={done ? done.kind : undefined} data-testid="portal-confirm">
               {done ? (
                 <div className={styles.answered} data-kind={done.kind} role="status">
                   <span className={styles.answeredGlyph}><Icon name={done.kind === 'confirmed' ? 'check' : 'chat'} size={18} /></span>   {/* (fix-F, F-27) the answer went through — never an error glyph */}
@@ -174,14 +176,15 @@ function HomeSchedule({ home, many, data, preview, busy, given, withGiven, onCon
         })}
         {filtering ? (
           <div data-slot="filters" className={styles.filters}>
-            <ChipRail label="Show stages">
-              <Chips label="Show stages" testId="portal-stage-filters"
-                     options={STAGE_FILTERS.map((f) => ({ value: f.key, label: `${f.label} (${stages.filter((s) => stageMatches(s, f.key)).length})` }))}
+            <ChipRail label="Show milestones">
+              {/* (the calm UI build 2026-10-27, 3-39 · 3-52 · T-07) one count style, "Label · n", and none on an empty chip */}
+              <Chips label="Show milestones" testId="portal-stage-filters"
+                     options={STAGE_FILTERS.map((f) => { const n = stages.filter((s) => stageMatches(s, f.key)).length; return { value: f.key, label: n ? `${f.label} · ${n}` : f.label } })}
                      value={shownFilter} onChange={(v) => setFilter(v as StageFilter)} />
             </ChipRail>
           </div>
         ) : null}
-        <section className={styles.stages} aria-label="Stages" data-slot="stages" data-testid="portal-stages" data-filter={shownFilter}>
+        <section className={styles.stages} aria-label="Milestones" data-slot="stages" data-testid="portal-stages" data-filter={shownFilter}>
           <ol className={styles.stageList}>
             {rail.length === 0 ? <li className={styles.stagesNone} data-testid="portal-stages-none">{`Nothing ${shownFilter === 'payments' ? 'with a payment' : filterLabel.toLowerCase()} right now.`}</li> : null}
             {rail.map((item) => {
@@ -205,7 +208,7 @@ function HomeSchedule({ home, many, data, preview, busy, given, withGiven, onCon
                 <li key={s.id} className={styles.stage} data-tone={tone} data-mark={s.mark ? s.mark.kind : undefined} data-testid="portal-stage" data-stage-id={s.id}>
                   <span className={styles.dot} data-tone={tone} aria-hidden>{tone === 'done' || tone === 'ask' || tone === 'changes' ? <Icon name="check" size={16} /> : tone === 'paused' ? <Icon name="timelapse" size={16} /> : null}</span>
                   <span className={styles.stageText}>
-                    <span className={styles.stageName}>{s.title}{s.mark ? <span data-testid="portal-stage-mark"><MetaChip color="blue">{s.mark.kind === 'new' ? 'New' : 'Changed'}</MetaChip></span> : null}{s.here ? <span data-testid="portal-stage-here"><MetaChip icon="flag">You are here</MetaChip></span> : null}</span>
+                    <span className={styles.stageName}>{s.title}{s.mark ? <span data-testid="portal-stage-mark"><MetaChip color="blue">{s.mark.kind === 'new' ? 'New' : 'Changed'}</MetaChip></span> : null}{/* (the calm UI build 2026-10-27, 3-52 · T-06 · W-647) a place, not a status — sentence case, the row's own grey caption with its flag */}{s.here ? <span className={styles.here} data-testid="portal-stage-here"><Icon name="flag" size={16} weight={300} />You are here</span> : null}</span>
                     {/* (fix-F, F-26) a move is said once, on its dates: the old range struck, then the new; a renamed or restarted stage keeps its line */}
                     <span className={styles.stageDates} data-testid="portal-stage-dates">{s.mark?.wasRange ? <><s className={styles.wasDates}>{s.mark.wasRange}</s>{' '}</> : null}{datesOf(s)}</span>
                     {s.mark && s.mark.kind === 'changed' && !s.mark.wasRange ? <span className={styles.stageWas}>{s.mark.was ? <s>{s.mark.was}</s> : null}{s.mark.now}</span> : null}

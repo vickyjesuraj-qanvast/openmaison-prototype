@@ -335,7 +335,7 @@ export function useCosts(h: CostsHost) {
      nobody pays it until then — its row says why where Pay would be */
   const approveBillNow = (b: BillView) => act(b.id, 'approve the bill', async () => {
     const r = await approveBill(b.id)
-    if (!('error' in r)) snackbar({ message: `${vendorOf(b.vendorId)?.name ?? 'The vendor'}’s bill ${b.reference} approved — it can be paid`, actionLabel: 'Undo', onAction: () => { void run('undo the approval', () => undoBillApproval(r.undo), `Bill ${b.reference} waits for approval again`) } })
+    if (!('error' in r)) snackbar({ message: `Bill ${b.reference} from ${vendorOf(b.vendorId)?.name ?? 'the vendor'} approved — it can be paid`,   /* (the calm UI build 2026-10-27, B3's ask) the project's rows' words */ actionLabel: 'Undo', onAction: () => { void run('undo the approval', () => undoBillApproval(r.undo), `Bill ${b.reference} waits for approval again`) } })
     return r
   })
   /** (S44R, C8) the bill dialog's line before it is recorded: why it would wait for its OK (the server's own rule, `billWaitWhy`), else null */
@@ -548,7 +548,7 @@ export function useCosts(h: CostsHost) {
       {sendPoView && sendVendor ? (
         <SendContractDialog open onClose={() => setSendId(null)} title={sendPoView.state === 'awaiting' ? `Approve and send ${sendPoView.number}` : `Send ${sendPoView.number} to ${sendVendor.name}`}
                             subtitle={`${money2(sendPoView.totalMinor)}, paid ${termsLabel(sendPoView.terms, sendPoView.termsText).replace(/^Paid /, '').toLowerCase()}. It’s recorded as sent and WhatsApp opens with the message; ${sendVendor.contactName ? sendVendor.contactName.split(' ')[0] : 'the vendor'} accepts it on its link.`}
-                            link={linkOf(sendPoView)} phoneLabel="Vendor’s mobile" nameLabel="Vendor’s name" messageLabel="Message to the vendor" copyDone="The PO’s link is copied" sendLabel={sendPoView.state === 'awaiting' ? 'Approve and send via WhatsApp' : 'Send via WhatsApp'}
+                            link={linkOf(sendPoView)} phoneLabel="Vendor’s mobile" nameLabel="Vendor’s name" messageLabel="Message to the vendor" copyDone="The PO’s link is copied" sendLabel={sendPoView.state === 'awaiting' ? 'Approve and send on WhatsApp' : 'Send on WhatsApp'}   /* (the calm UI build 2026-10-27 — B6's request, W-058) one verb for every WhatsApp send */
                             defaults={{ name: sendVendor.contactName ?? sendVendor.name, phone: sendVendor.phone ?? '' }}
                             draft={() => poMessage({ vendor: sendVendor.name, contact: sendVendor.contactName, studio: h.studio, number: sendPoView.number, where: projectOf(sendPoView.projectId)?.address ?? projectOf(sendPoView.projectId)?.name ?? '', total: sendPoView.totalMinor, terms: termsLabel(sendPoView.terms, sendPoView.termsText), link: linkOf(sendPoView), again: !!sendPoView.sentAt && editable(sendPoView.state) })}
                             busy={busy === sendPoView.id}

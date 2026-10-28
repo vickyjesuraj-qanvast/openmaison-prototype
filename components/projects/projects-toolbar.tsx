@@ -46,15 +46,15 @@ export function ProjectsToolbar({ scope, counts, shown, onScope, query, onQuery,
   const pick = (s: ProjectScope) => { setOpen(false); onScope(s) }
   const group = (g: ScopeGroup) => SCOPES.filter((s) => s.group === g)
   const inactive = group('inactive').filter((s) => s.key !== 'on_hold' || counts.on_hold > 0 || scope === 'on_hold')
-  const item = (s: (typeof SCOPES)[number]) => (
-    <DropdownItem key={s.key} role="menuitemradio" checked={scope === s.key} meta={String(counts[s.key])} help={s.help} onSelect={() => pick(s.key)}>{s.label}</DropdownItem>
-  )
+  /* (the calm UI build 2026-10-27, 3-24) one line of help; the full list of what counts in the row's tooltip */
+  const row = (s: (typeof SCOPES)[number]) => <DropdownItem key={s.key} role="menuitemradio" checked={scope === s.key} meta={String(counts[s.key])} help={s.help} onSelect={() => pick(s.key)}>{s.label}</DropdownItem>
+  const item = (s: (typeof SCOPES)[number]) => (s.full ? <Tooltip key={s.key} label={s.full}>{row(s)}</Tooltip> : row(s))
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
-        {bare ? <h2 className={styles.title}>All Projects</h2> : (<>
+        {bare ? <h2 className={styles.title}>All projects</h2> : (<>
           <span ref={anchor} className={styles.pillWrap}>
-            <ScopePill ref={pill} label={`${current.label} (${shown})`} onClick={() => setOpen((o) => !o)} open={open} scoped={scope !== 'open'} />
+            <ScopePill ref={pill} label={`${current.label} · ${shown}`} short={current.label} onClick={() => setOpen((o) => !o)} open={open} scoped={scope !== 'open'} />
             <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Project status">
               {group('top').map(item)}
               <DropdownDivider />

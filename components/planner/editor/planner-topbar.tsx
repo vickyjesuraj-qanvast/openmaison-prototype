@@ -40,10 +40,16 @@ export function ViewMenuButton({ onOpen, open, on, compact = false }: { onOpen: 
  * (gaps build J, J-Q2 · J-Q14) The planner editor's bar — the AI Visualizer's 56 bar (its own stylesheet, REG-673): back · the layout's
  * name and whose it is (the project's number and name, or Personal — 1.0's F-266 never showed the project) · the view switch · the save
  * stamp · Undo / Redo · Share with client · the layout's ⋮.
+ * (the calm UI build 2026-10-27, 6-16 · 6-08 · W-369 — T-03, T-06) Share is outlined at every width (the editor's filled button is no state:
+ * "Shared with client" on a filled button read as a step not done) and, once shared, a quiet "Shared 17 Oct" beside it; whose it is (the
+ * project's number and the client, a lead, the studio's own) is the title's tooltip and the Back's words, not a chip that cut the title —
+ * a template keeps its chip, a state it is in (it never shares).
  */
-export function PlannerTopbar({ backLabel, onBack, title, chip, view, onView, compact, tight = false, saving, savedLabel, savedTone, canUndo, canRedo, onUndo, onRedo, onShare, shareBlock, shared, onMenu, menuOpen, viewButton }: {
+export function PlannerTopbar({ backLabel, onBack, title, chip, whose = null, sharedOn = null, view, onView, compact, tight = false, saving, savedLabel, savedTone, canUndo, canRedo, onUndo, onRedo, onShare, shareBlock, shared, onMenu, menuOpen, viewButton }: {
   backLabel: string; onBack: () => void
   title: string; chip: string | null
+  /** (the calm UI build, 6-16) whose it is — "P-2026-002 · Benjamin Han", said in the title's tooltip */ whose?: string | null
+  /** (the calm UI build, W-369) the day the client's copy was last shared — "Shared 17 Oct" beside Share */ sharedOn?: string | null
   view: View; onView: (v: View) => void
   compact: boolean
   /** (pending modules S28, found) ≤1024 with the switch still in the bar: Share's short word, so the switch and View keep clear of Undo */ tight?: boolean
@@ -59,7 +65,7 @@ export function PlannerTopbar({ backLabel, onBack, title, chip, view, onView, co
     <header className={bar.bar} data-compact={compact || undefined} data-testid="planner-topbar">
       <Tooltip label={backLabel}><IconButton icon="arrow_back" label={backLabel} size={36} variant="bare" iconSize={24} iconWeight={300} onClick={onBack} data-testid="planner-back" /></Tooltip>
       <div className={bar.titles}>
-        <Tooltip label={title}><h1 className={bar.title}>{title}</h1></Tooltip>
+        <Tooltip label={whose ? `${title} · ${whose}` : title}><h1 className={bar.title}>{title}</h1></Tooltip>
         {chip ? <span className={bar.whose}><MetaChip>{chip}</MetaChip></span> : null}
       </div>
       <div className={styles.middle}>{!compact ? <><ViewSwitch view={view} onView={onView} />{viewButton}</> : null}</div>
@@ -72,10 +78,11 @@ export function PlannerTopbar({ backLabel, onBack, title, chip, view, onView, co
             <span className={bar.rule} />
           </>
         ) : null}
-        <Tooltip label={shareBlock ?? (shared ? 'The client’s link — share your changes, copy it, or stop sharing' : 'Send the client a link to walk through this layout')}>
+        {shared && sharedOn && !compact && !tight ? <span className={styles.sharedOn} data-testid="planner-shared-on">{`Shared ${sharedOn}`}</span> : null}
+        <Tooltip label={shareBlock ?? (shared ? `The client’s link${sharedOn ? `, shared ${sharedOn}` : ''} — share your changes, copy it, or stop sharing` : 'Send the client a link to walk through this layout')}>
           <span>
-            <Button onPress={onShare} isDisabled={!!shareBlock} iconStart={<Icon name={shared ? 'link' : 'send'} size={20} weight={300} />} className={bar.share} aria-label={shared ? 'Shared with client' : 'Share with client'} data-testid="planner-share">
-              {compact || tight ? (shared ? 'Shared' : 'Share') : shared ? 'Shared with client' : 'Share with client'}
+            <Button variant="secondary" appearance="outlined" onPress={onShare} isDisabled={!!shareBlock} iconStart={<Icon name={shared ? 'link' : 'send'} size={20} weight={300} />} className={bar.share} aria-label={shared ? 'Shared with client' : 'Share with client'} data-testid="planner-share">
+              {compact || tight || shared ? 'Share' : 'Share with client'}
             </Button>
           </span>
         </Tooltip>

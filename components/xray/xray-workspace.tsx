@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { Button, SearchBar, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
-import { MetaChip } from '@/components/om/meta-chip'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -14,10 +13,13 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { ProgressCard } from '@/components/om/progress-card'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { Drawer } from '@/components/om/drawer'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Dropzone, FieldError } from '@/components/leads/move-stage/fields'
-import { useFlagPref } from '@/lib/prefs'
+import { setCountPref, useFlagPref } from '@/lib/prefs'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { useSearchTarget } from '@/components/shell/search-focus'
 import { SlashSlot } from '@/components/om/slash-slot'
@@ -32,7 +34,7 @@ import { answerLock, usePlanLock } from '@/components/credits/credits-client'
 import { ProLocked } from '@/components/credits/pro-tag'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './xray-workspace.module.css'
-import { DROP_HELP, SETUP_WORDS, XRAY_INTRO } from './intro-copy'   // (pending modules S19 · S21) the intro's and the setup's words, shared with its ghost
+import { DROP_HELP, RECENTS_HEAD, SETUP_WORDS, XRAY_COUNT_KEY, XRAY_INTRO } from './intro-copy'   // (pending modules S19 · S21) the intro's and the setup's words, shared with its ghost
 
 type Mode = 'lead' | 'upload'
 export type Side = { file: File; read: SideRead | null }
@@ -78,7 +80,7 @@ export function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void 
         <span className={styles.fileNote} role="status"><Icon name="upload_file" size={18} weight={300} /> Reading {side.file.name}…</span>
       ) : r.ok ? (
         <>
-          <span className={styles.fileNote} role="status" data-tone="done"><Icon name="task_alt" size={18} weight={300} /> <span><b>{r.lines.length} {r.lines.length === 1 ? 'line' : 'lines'}</b> read{r.studio ? ` from ${r.studio}’s quote` : ''} · {money(r.totalMinor)}{check?.agrees ? ' — the same as its own total' : ''}</span></span>
+          <span className={styles.fileNote} role="status" data-tone="done"><Icon name="task_alt" size={18} weight={300} /> <span><b>{r.lines.length} {r.lines.length === 1 ? 'item' : 'items'}</b> read{r.studio ? ` from ${r.studio}’s quote` : ''} · {money(r.totalMinor)}{check?.agrees ? ' — the same as its own total' : ''}</span></span>
           {check && !check.agrees ? (
             <span className={styles.fileNote} data-tone="check" data-testid="xray-file-check"><Icon name="info" size={18} weight={300} /> <span>The quote’s own total is {money(check.statedMinor)} — a line may not have been read. Check the item-by-item list before you send anything.</span></span>
           ) : null}
@@ -103,6 +105,12 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
   const xrayLock = usePlanLock('quote_xray')   // (pending modules S19) Quote X-Ray is Pro
   const snackbar = useSnackbar()
   const [introHidden, setIntroHidden] = useFlagPref('om.xray.introHidden', false)
+  /* (the calm UI build 2026-10-27, 6-10 — T-05) the how-it-works box shows on a first run only (no comparison yet), until it is closed; every
+     other visit says what X-Ray is in one line, its three points one press away in a drawer. The count rides to the ghost (REG-708). */
+  const firstRun = data.recents.length === 0
+  const showIntro = !introHidden && firstRun
+  const [howOpen, setHowOpen] = useState(false)
+  useEffect(() => { setCountPref(XRAY_COUNT_KEY, data.recents.length) }, [data.recents.length])
   const scoped = initialLead ? data.leads.find((l) => l.id === initialLead) ?? null : null
   const liveQuote = (id: string | null, lead: string | null) => (id ? data.quotes.find((q) => q.id === id && (!lead || q.leadId === lead) && q.lineCount > 0) ?? null : null)
   const onlyQuote = (lead: string | null) => { const qs = data.quotes.filter((q) => q.leadId === lead && q.lineCount > 0); return qs.length === 1 ? qs[0]!.id : null }
@@ -146,8 +154,8 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
   const ready = mode === 'lead' ? !!(lead && quoteId && otherOk) : mineOk && otherOk
   const reading = (s: Side | null) => !!s && s.read === null
   const hint = mode === 'lead'
-    ? (!lead ? 'Choose a lead.' : !comparable.length ? '' : !quoteId ? 'Choose which of your quotes to compare.' : !other ? 'Add the other studio’s quote.' : reading(other) ? 'Reading the other studio’s quote…' : '')
-    : (!mine ? 'Add your quote.' : reading(mine) ? 'Reading your quote…' : !other ? 'Add the other studio’s quote.' : reading(other) ? 'Reading the other studio’s quote…' : '')
+    ? (!lead ? 'Choose a lead.' : !comparable.length ? '' : !quoteId ? 'Choose which of your quotes to compare.' : !other ? 'Add their quote.' : reading(other) ? 'Reading their quote…' : '')
+    : (!mine ? 'Add your quote.' : reading(mine) ? 'Reading your quote…' : !other ? 'Add their quote.' : reading(other) ? 'Reading their quote…' : '')
 
   const pickLead = (id: string | null) => { setLeadId(id); setQuoteId(onlyQuote(id)) }
   /* (Q-10) read on pick: the type and size first, then the file itself; a later pick or a remove wins over a slow read */
@@ -227,8 +235,8 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
     )
   }
   const lockedLead = (l: XrayData['leads'][number], onClear?: () => void) => (
-    <span className={styles.lockedLead} data-testid="xray-lead">
-      <span className={styles.lockedName}>{l.name}</span><MetaChip>{l.propertyType}</MetaChip>
+    <span className={styles.lockedLead} data-testid="xray-lead" role="group" aria-label={`${SETUP_WORDS.lead}: ${l.name}`}>
+      <span className={styles.lockedName}>{l.name}</span><span className={styles.lockedType}>{l.propertyType}</span>
       {onClear ? <span className={styles.lockedClear}><Tooltip label="Not for this lead"><IconButton icon="close" label={`Not for ${l.name}`} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onClear} /></Tooltip></span> : null}
     </span>
   )
@@ -245,18 +253,20 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
           <PageHeader title="Quote X-Ray" />
         )}
         <div className={styles.content}>
-          {!introHidden ? (
+          {showIntro ? (
             <section className={styles.intro} aria-label="What Quote X-Ray does">
               <div className={styles.introText}>
                 <span className={styles.introTitle}>{XRAY_INTRO.title}</span>
-                <ul className={styles.introList}>
-                  {XRAY_INTRO.points.map(([b, rest]) => <li key={b}><Icon name="check" size={18} weight={300} /><span><b>{b}</b>{rest}</span></li>)}
-                </ul>
-                <span className={styles.introNote}>{XRAY_INTRO.note}</span>
+                <IntroPoints />
               </div>
               <Tooltip label="Dismiss"><IconButton icon="close" label="Dismiss" size={24} variant="bare" iconSize={20} onClick={() => setIntroHidden(true)} /></Tooltip>
             </section>
-          ) : null}
+          ) : (
+            <div className={styles.lede} data-testid="xray-lede">
+              <span>{XRAY_INTRO.lede}</span>
+              <Button appearance="text" onPress={() => setHowOpen(true)} data-testid="xray-how">{XRAY_INTRO.how}</Button>
+            </div>
+          )}
 
           <div className={styles.columns}>
             {/* (pending modules S19 — 1.0's plan gating: Quote X-Ray is Pro) on Free the setup is the lock — what X-Ray does and the way on;
@@ -276,7 +286,6 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                   {mode === 'lead' ? (
                     <div className={styles.grid}>
                       <div className={styles.side}>
-                        <span className={styles.eyebrow}>Lead</span>
                         {scoped ? lockedLead(scoped) : data.leads.length === 0 ? (
                           /* (sweep S3) nobody to compare for — Who sees leads can leave a Designer with no leads; say so and offer the other way */
                           <div className={styles.noQuote} data-testid="xray-no-leads">
@@ -292,7 +301,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                             {comparable.length ? <span className={styles.question} aria-hidden>{SETUP_WORDS.question}</span> : null}
                             {comparable.length === 0 ? (
                               <div className={styles.noQuote} data-testid="xray-no-quote">
-                                <span className={styles.none}>{leadQuotes.length ? `${lead.name}’s quotes have no lines to compare yet.` : `${lead.name} has no quote yet.`}</span>
+                                <span className={styles.none}>{leadQuotes.length ? `${lead.name}’s quotes have no items to compare yet.` : `${lead.name} has no quote yet.`}</span>
                                 <span className={styles.noQuoteActions}>
                                   <Button appearance="outlined" variant="secondary" iconStart={<Icon name="add" size={20} />} onPress={() => router.push(withFrom(`/leads/${lead.id}/quotes?new=1`, here))}>Create a quote</Button>
                                   <Button appearance="outlined" variant="secondary" iconStart={<Icon name="upload_file" size={20} />} onPress={() => { setMode('upload'); setUploadLead(lead.id); setErrors({}) }}>Upload your quote instead</Button>
@@ -301,39 +310,35 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                             ) : null}
                             {comparable.length ? leadQuotes.map((qq) => (
                               <ChoiceCard key={qq.id} title={`${qq.number} · ${qq.title}`} selected={quoteId === qq.id} onSelect={() => setQuoteId(qq.id)} disabled={qq.lineCount === 0}
-                                          help={qq.lineCount === 0 ? 'No lines to compare yet' : `${money(qq.amountMinor)} · ${qq.status} · ${qq.lineCount} ${qq.lineCount === 1 ? 'line' : 'lines'} · updated ${displayDate(new Date(qq.updatedAt))}`} />
+                                          help={qq.lineCount === 0 ? 'No items to compare yet' : `${money(qq.amountMinor)} · ${qq.status} · ${qq.lineCount} ${qq.lineCount === 1 ? 'item' : 'items'} · updated ${displayDate(new Date(qq.updatedAt))}`} />
                             )) : null}
                           </div>
                         ) : null}
                       </div>
                       <div className={styles.side}>
-                        <span className={styles.eyebrow}>The other studio’s quote</span>
-                        {dropzone('other', 'The other studio’s quote')}
+                        {dropzone('other', SETUP_WORDS.other)}
                       </div>
                     </div>
                   ) : (
                     <>
                       {linked ? (
                         <div className={styles.side}>
-                          <span className={styles.eyebrow}>Lead</span>
                           {lockedLead(linked, scoped ? undefined : () => setUploadLead(null))}
                         </div>
                       ) : null}
                       <div className={styles.grid}>
                         <div className={styles.side}>
-                          <span className={styles.eyebrow}>Your quote</span>
-                          {dropzone('yours', 'Your quote')}
+                          {dropzone('yours', SETUP_WORDS.yours)}
                         </div>
                         <div className={styles.side}>
-                          <span className={styles.eyebrow}>The other studio’s quote</span>
-                          {dropzone('other', 'The other studio’s quote')}
+                          {dropzone('other', SETUP_WORDS.other)}
                         </div>
                       </div>
                     </>
                   )}
 
                   <div className={styles.foot}>
-                    <span className={styles.hint}>{hint}</span>
+                    <span className={styles.hint}>{ready ? XRAY_INTRO.check : hint}</span>   {/* (the calm UI build, 6-10) the intro's note, where it matters */}
                     <Button onPress={() => { void compare() }} isDisabled={!ready || busy}>Compare</Button>
                   </div>
                 </>
@@ -342,7 +347,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
             )}
 
             <aside className={styles.recents} aria-label="Recent comparisons">
-              <span className={styles.recentsHead}>{scoped ? `Recent comparisons · ${scoped.name}` : 'Recent comparisons'}</span>   {/* (sweep S3) a lead's page lists only its readings — the head says so */}
+              <span className={styles.recentsHead}>{scoped ? `${RECENTS_HEAD} · ${scoped.name}` : RECENTS_HEAD}</span>   {/* (sweep S3) a lead's page lists only its readings — the head says so */}
               {recents.length > SEARCH_FROM ? <RecentSearch query={query} onQuery={setQuery} inputRef={searchRef} /> : null}
               {recents.length === 0 ? (
                 <span className={styles.recentsEmpty}>{scoped ? `Nothing compared for ${scoped.name} yet.` : 'Nothing compared yet. Your comparisons will be kept here.'}</span>
@@ -351,16 +356,14 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
               ) : (
                 <ul className={styles.recentList}>
                   {shown.map((r) => {
-                    const label = `${r.leadName ?? r.yourLabel} · vs ${r.otherStudio}`
+                    /* (the calm UI build 2026-10-27, 6-15 · 6-21) the row opens the comparison; Open the quote and Delete sit in its ⋮, as the record's.
+                       Its quote is the one Recent names — the lead's live quote with that number (a deleted or archived one offers no Open). */
+                    const number = r.leadName ? r.yourLabel.split(' · ')[0]! : null
+                    const quote = number && r.leadId ? data.quotes.find((qq) => qq.leadId === r.leadId && qq.number === number) ?? null : null
                     return (
-                      <li key={r.id} className={styles.recent} data-testid="xray-recent">
-                        <Link href={withFrom(`/quote-x-ray/${r.id}`, here)} className={styles.recentLink}>
-                          <span className={styles.recentText}><span className={styles.recentTitle}>{label}</span><span className={styles.recentMeta}>{displayDate(new Date(r.createdAt))}{r.sentAt ? ` · Sent ${displayDate(new Date(r.sentAt))}` : ''}{r.leadName ? ` · ${r.yourLabel}` : ''}</span></span>
-                          <Icon name="chevron_right" size={20} weight={300} className={styles.chev} />
-                        </Link>
-                        {/* (REG-641, Q-20) its maker, an Owner or an Admin — out of reach for anyone else, and the tooltip says who */}
-                        <Tooltip label={r.canDelete ? 'Delete' : COMPARISON_DELETE_RULE}><IconButton icon="delete" label={`Delete ${label}`} size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!r.canDelete} onClick={() => { if (xrayLock.locked) { xrayLock.open(); return } setDel({ payload: r, open: true }) }} /></Tooltip>
-                      </li>
+                      <RecentRow key={r.id} recent={r} href={withFrom(`/quote-x-ray/${r.id}`, here)} number={number}
+                                 onOpenQuote={quote ? () => router.push(withFrom(`/quotes/${quote.id}`, here)) : null}
+                                 onDelete={() => { if (xrayLock.locked) { xrayLock.open(); return } setDel({ payload: r, open: true }) }} />
                     )
                   })}
                 </ul>
@@ -369,12 +372,54 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
           </div>
         </div>
 
+        {/* (the calm UI build 2026-10-27, 6-10) the intro's three points, one press away from the page's one line */}
+        <Drawer open={howOpen} onClose={() => setHowOpen(false)} title={XRAY_INTRO.how} label="How Quote X-Ray works">
+          <div className={styles.howBody} data-testid="xray-how-drawer">
+            <span className={styles.introTitle}>{XRAY_INTRO.title}</span>
+            <IntroPoints />
+            <span className={styles.introNote}>{XRAY_INTRO.check}</span>
+          </div>
+        </Drawer>
+
         <ConfirmDialog open={del.open} title="Delete this comparison?" confirmLabel="Delete"
                        message={`${del.payload ? `${del.payload.leadName ?? del.payload.yourLabel} · vs ${del.payload.otherStudio}` : 'It'} will be deleted permanently. This can’t be undone.`}
                        onCancel={() => setDel((d) => ({ ...d, open: false }))}
                        onConfirm={() => { const r = del.payload; setDel((d) => ({ ...d, open: false })); if (r) void remove(r.id, `${r.leadName ?? r.yourLabel} · vs ${r.otherStudio}`) }} />
       </div>
     </PageReveal>
+  )
+}
+
+/** The intro's three points — the first-run box's and the How it works drawer's. */
+function IntroPoints() {
+  return (
+    <ul className={styles.introList}>
+      {XRAY_INTRO.points.map(([b, rest]) => <li key={b}><Icon name="check" size={18} weight={300} /><span><b>{b}</b>{rest}</span></li>)}
+    </ul>
+  )
+}
+
+/** (the calm UI build 2026-10-27, 6-15 · 6-21 — T-02) A Recent comparison: the row opens it, its ⋮ holds Open the quote · Delete (the record's
+    ⋮ rows); the meta line reads the quote's number and the day, not the job name. (REG-641, Q-20) Delete is its maker's, an Owner's or an
+    Admin's — refused in the row with the rule. */
+function RecentRow({ recent: r, href, number, onOpenQuote, onDelete }: { recent: XrayData['recents'][number]; href: string; number: string | null; onOpenQuote: (() => void) | null; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const label = `${r.leadName ?? r.yourLabel} · vs ${r.otherStudio}`
+  const meta = [number, displayDate(new Date(r.createdAt)), r.sentAt ? `Sent ${displayDate(new Date(r.sentAt))}` : null].filter(Boolean).join(' · ')
+  return (
+    <li className={styles.recent} data-testid="xray-recent">
+      <Link href={href} className={styles.recentLink}>
+        <span className={styles.recentText}><span className={styles.recentTitle}>{label}</span><span className={styles.recentMeta}>{meta}</span></span>
+      </Link>
+      <span ref={anchor} className={styles.recentMenu}>
+        <Tooltip label="More options" disabled={open}><IconButton icon="more_vert" label={`More options for ${label}`} size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} /></Tooltip>
+      </span>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={label}>
+        {onOpenQuote ? <DropdownItem onSelect={() => { setOpen(false); onOpenQuote() }}>Open the quote</DropdownItem> : null}
+        <DropdownItem tone="danger" disabled={!r.canDelete} help={r.canDelete ? undefined : COMPARISON_DELETE_RULE} onSelect={() => { setOpen(false); onDelete() }}>Delete</DropdownItem>   {/* (REG-728) the rule in the row */}
+      </PortalMenu>
+    </li>
   )
 }
 

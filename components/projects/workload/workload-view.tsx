@@ -4,7 +4,6 @@ import { useState, type CSSProperties } from 'react'
 import { Button } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dialog } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
@@ -13,8 +12,11 @@ import { MSG } from '@/lib/forms'
 import type { ProjectRow } from '@/lib/projects/model'
 import styles from './workload.module.css'
 
-const TONE = { room: 'green', full: 'yellow', over: 'red' } as const
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+/** (the calm UI build 2026-10-27, 3-15 · W-526 · T-06) A person's load in sentence-case words, the one display map for the row's state: "Full" ·
+    "1 free slot" · "2 over" — no capitals tag (the state's tone stays on the words). */
+const loadWords = (l: { state: 'room' | 'full' | 'over'; count: number; capacity: number }) =>
+  l.state === 'room' ? plural(l.capacity - l.count, 'free slot') : l.state === 'full' ? 'Full' : `${l.count - l.capacity} over`
 
 /**
  * (gaps build I, I-Q1…I-Q5 — 1.0's workload view, A-145…A-174, without its faults) Who carries how many running projects, against the
@@ -35,11 +37,16 @@ export function WorkloadView({ rows, people, viewer, studioDefault, sets, onOpen
   const { lines, counted, completed } = workloadOf(rows, people, viewer, studioDefault)
   return (
     <div className={styles.view} data-testid="workload-view">
-      <p className={styles.caption} data-testid="workload-caption">
-        <span>{`Counting ${plural(counted, 'running project')} the list shows${completed ? ` · ${plural(completed, 'completed one')} left out` : ''} · a person can run ${studioDefault} unless set otherwise`}</span>
+      {/* (the calm UI build 2026-10-27, 3-15 · W-158 · T-09) one plain line — "Each person runs up to 4 projects · Set capacity"; what it counts (the
+          running projects the list shows, the completed ones left out) is the line's tooltip and its `data-counted` */}
+      <p className={styles.caption} data-testid="workload-caption" data-counted={counted} data-completed={completed}>
+        <Tooltip label={`Counting ${plural(counted, 'running project')} the list shows${completed ? ` · ${plural(completed, 'completed one')} left out` : ''}`}>
+          <span tabIndex={0}>{`Each person runs up to ${plural(studioDefault, 'project')}`}</span>
+        </Tooltip>
         <span className={styles.captionActions}>
           {sets ? <Button variant="primary" appearance="text" iconStart={<Icon name="tune" size={20} />} onPress={onSetCapacity} data-testid="workload-set">Set capacity</Button> : null}
-          <Button variant="primary" appearance="text" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={onInsights} data-testid="workload-insights">Insights</Button>   {/* (parity P-21) the Leads listing's Insights glyph */}
+          {/* (the calm UI build 2026-10-27, T-01) "Reports" — the place it opens (was Insights) */}
+          <Button variant="primary" appearance="text" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={onInsights} data-testid="workload-insights">Reports</Button>   {/* (parity P-21) the Leads listing's Insights glyph */}
         </span>
       </p>
       <div className={styles.card} role="list" aria-label="Workload">
@@ -53,7 +60,7 @@ export function WorkloadView({ rows, people, viewer, studioDefault, sets, onOpen
 function Line({ line: l, onOpen }: { line: WorkloadLine<ProjectRow>; onOpen: (r: ProjectRow) => void }) {
   const slots = l.person ? Math.max(l.capacity, l.count) : Math.max(1, l.count)
   return (
-    <div className={styles.row} role="listitem" data-testid="workload-row" data-person={l.person?.id ?? 'nobody'} data-state={l.person ? l.state : undefined}>
+    <div className={styles.row} role="listitem" data-testid="workload-row" data-person={l.person?.id ?? 'nobody'} data-state={l.person ? l.state : undefined} data-default={l.person && !l.own ? '' : undefined}>
       <span className={styles.who}>
         {l.person ? <Avatar name={l.person.name} color={l.person.color} size={36} tooltip={false} /> : <span className={styles.nobody}><Icon name="person_add" size={20} /></span>}
         <span className={styles.whoText}>
@@ -78,8 +85,9 @@ function Line({ line: l, onOpen }: { line: WorkloadLine<ProjectRow>; onOpen: (r:
         })}
       </span>
       <span className={styles.state}>
-        {l.person ? <MetaChip color={TONE[l.state]}>{l.words}</MetaChip> : <MetaChip color="yellow">Assign someone</MetaChip>}
-        {l.person ? <span className={styles.count}>{`${l.count} of ${l.capacity}${l.own ? '' : ' · studio default'}`}</span> : null}
+        {/* (the calm UI build 2026-10-27, 3-15 · W-459 · W-526) the load in words, then "1 of 4" — the caption says the studio's number */}
+        {l.person ? <span className={styles.loadWord} data-tone={l.state} data-testid="workload-load">{loadWords(l)}</span> : <span className={styles.loadWord} data-tone="full">Assign someone</span>}
+        {l.person ? <span className={styles.count}>{`${l.count} of ${l.capacity}`}</span> : null}
       </span>
     </div>
   )
@@ -117,7 +125,7 @@ export function CapacityDialog({ open, people, studioDefault, onClose, onSave, o
         {people.map((p) => (
           <div key={p.id} className={styles.capRow}>
             <span className={styles.who}><Avatar name={p.name} color={p.color} size={36} tooltip={false} /><span className={styles.whoText}><span className={styles.name}>{p.name}</span><span className={styles.role}>{p.role}</span></span></span>
-            <TextField label="Projects at once" value={values[p.id] ?? ''} numeric="digits" maxLength={2} placeholder={String(studioDefault)}
+            <TextField label="Max projects" value={values[p.id] ?? ''} numeric="digits" maxLength={2} placeholder={String(studioDefault)}
                        onChange={(v) => setValues((x) => ({ ...x, [p.id]: v }))} error={valid(values[p.id]) ? undefined : MSG.capacity}
                        inputProps={{ 'data-testid': `capacity-${p.id}` } as never} />
           </div>

@@ -69,7 +69,7 @@ export function WriteUpDialog({ open, onClose, onSave, team, client, defaults, t
   }
   return (
     <Dialog open={open} onClose={onClose} title={from === 'recording' ? 'Upload a recording' : 'Write up a meeting'} subtitle={`With ${firstOf(client)}`} size="modal" width={600} closeOnScrim={false}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy || reading} data-testid="writeup-save">Make the brief</Button></>}>
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy || reading} data-testid="writeup-save">Make the summary</Button></>}>
       <div className={styles.form} data-testid="writeup-dialog">
         <Chips label="From" value={from} onChange={(x) => setFrom(x as 'notes' | 'recording')} options={[{ value: 'notes', label: 'My notes' }, { value: 'recording', label: 'A recording' }]} testId="writeup-from" />
         <div className={styles.group}>
@@ -77,7 +77,7 @@ export function WriteUpDialog({ open, onClose, onSave, team, client, defaults, t
           <Chips label="What it was for" value={v.aim} onChange={(a) => set({ aim: a as AimKey })} options={AIMS.map((a) => ({ value: a.key, label: a.label }))} />
         </div>
         <div className={styles.pair}>
-          <DateTimeField label="Date & time" required value={v.when} onChange={(x) => set({ when: x })} today={today} error={tried ? errors.when : undefined} />
+          <DateTimeField label="Date and time" required value={v.when} onChange={(x) => set({ when: x })} today={today} error={tried ? errors.when : undefined} />
           <TextField label="Where" required value={v.whereKind} mode="select" options={[...WHERE]} onChange={(x) => set({ whereKind: x as WhereKind })} />
         </div>
         <AssigneeField label="Who went" team={team} value={v.memberIds} onChange={(ids) => set({ memberIds: ids })} error={tried ? errors.people : undefined} />

@@ -79,7 +79,7 @@ const MONTH_DEFS: readonly TableColumnDef[] = [
   { key: 'leads', label: 'Leads received', track: 'minmax(152px, 152fr)' },
   { key: 'budget', label: 'Leads’ budgets', track: 'minmax(160px, 160fr)' },
   { key: 'credits', label: 'Credits used', track: 'minmax(144px, 144fr)' },
-  { key: 'closures', label: 'Closures', track: 'minmax(120px, 120fr)' },
+  { key: 'closures', label: 'Won', track: 'minmax(120px, 120fr)' },   /* (the calm UI build 2026-10-27, 2-42 · W-143) the app's word */
 ]
 
 function Overview({ d }: { d: CreditsOverview }) {
@@ -107,7 +107,7 @@ function Overview({ d }: { d: CreditsOverview }) {
         {back ? (
           <StatTile label={W.onTheWay} value={creditsText(d.onTheWay.credits)} testId="credits-on-the-way"
                     help={`${names(d.onTheWay.names)} — Qanvast approved the ${d.onTheWay.names.length === 1 ? 'return' : 'returns'} and credits ${d.onTheWay.names.length === 1 ? 'it' : 'them'} once processed`}
-                    press={{ href: QANVAST_LEADS_HREF, label: `${creditsWords(d.onTheWay.credits)} on the way back — open the Qanvast leads` }} />
+                    press={{ href: QANVAST_LEADS_HREF, label: `${creditsWords(d.onTheWay.credits)} to come back — open the Qanvast leads` }} />
         ) : null}
       </StatTiles>
 
@@ -252,7 +252,7 @@ function suggestions(d: CreditsOverview | CreditsTransactions | CreditsContracts
   if (d.view === 'overview') {
     const busiest = [...d.months].sort((a, b) => b.leads - a.leads)[0]
     return [
-      { label: 'How many lead credits are left?', answer: { title: `${creditsWords(d.balance)} left`, text: d.onTheWay.credits ? `${creditsWords(d.onTheWay.credits)} more are on the way back — ${names(d.onTheWay.names)}’s ${d.onTheWay.names.length === 1 ? 'return was' : 'returns were'} approved. ${W.topUp}` : W.topUp, link: { label: 'Open this month’s statement', href: `${QANVAST_CREDITS_HREF}/transactions` } } },
+      { label: 'How many lead credits are left?', answer: { title: `${creditsWords(d.balance)} left`, text: d.onTheWay.credits ? `${creditsWords(d.onTheWay.credits)} more are to come back — ${names(d.onTheWay.names)}’s ${d.onTheWay.names.length === 1 ? 'return was' : 'returns were'} approved. ${W.topUp}` : W.topUp, link: { label: 'Open this month’s statement', href: `${QANVAST_CREDITS_HREF}/transactions` } } },
       { label: 'Which month brought the most Qanvast leads?', answer: busiest && busiest.leads
         ? { title: `${monthLong(busiest.key)} — ${plural(busiest.leads, 'lead')}`, rows: d.months.filter((m) => m.leads).map((m) => ({ id: m.key, label: monthShort(m.key), meta: `${plural(m.leads, 'lead')} · ${creditsWords(m.credits)}`, href: monthHref(m.key, d.now), share: m.leads / busiest.leads })) }
         : { title: 'No Qanvast leads in the last six months', text: 'When Qanvast sends the studio a lead, it is counted here month by month.' } },

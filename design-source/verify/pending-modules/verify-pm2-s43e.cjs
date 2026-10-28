@@ -106,13 +106,20 @@ const STRIP = `
       const C = await b.newContext(phoneOpts()); const p = await page(C, 'hm-390')
       await go(p, '/company/members', 1800)
       const row = p.getByTestId('member-row').filter({ has: p.locator('[class*="__name"]').filter({ hasText: /^Dane/ }) })
-      const btn = row.getByRole('button', { name: 'Deactivate' })
-      ok(await btn.count() === 1 && await btn.isDisabled(), 'Hui Min (an Admin) sees the Owner’s Deactivate refused')
+      /* (the calm UI build 2026-10-27, a deliberate change) 5-01: Deactivate is a row of the member's ⋮ (`member-more`, a sheet on a phone). Refused,
+         it stays in the menu, greyed, and its rule is the row's own second line (REG-728 — said on every pointer, a finger included), so a tap
+         needs no snackbar to say why: the reason must be on the refused row, and a tap on it must deactivate nothing. */
+      await row.getByTestId('member-more').tap(); await settle(p, 700)
+      const btn = p.getByRole('menuitem', { name: /^Deactivate/ })
+      ok(await btn.count() === 1 && (await btn.getAttribute('aria-disabled')) === 'true', 'Hui Min (an Admin) sees the Owner’s Deactivate refused')
       const snack = async () => (await p.locator('[data-om-snackbar]').allInnerTexts().catch(() => [])).join(' | ').replace(/\s+/g, ' ')
       await btn.scrollIntoViewIfNeeded(); const bb = await btn.boundingBox()
       await p.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await settle(p, 700)
-      ok(/Only an Owner deactivates an Owner/.test(await snack()), `390 touch: a tap on it says the reason in the snackbar — REG-273's second channel (“${(await snack()).slice(0, 80)}”)`)
+      ok(/Only an Owner deactivates an Owner/.test(await text(btn)) && await btn.isVisible() && (await p.getByRole('dialog', { name: /^Deactivate Dane/ }).count()) === 0 && sql(`select is_active from members where id = 'dane'`) === '1',
+        `390 touch: the refused row says the reason itself, and a tap on it deactivates nothing — REG-728's line (“${(await text(btn)).slice(0, 80)}”)`)
       await shot(p, '01-refused-tap-390')
+      await p.keyboard.press('Escape'); await settle(p, 500)
+      if (await btn.isVisible().catch(() => false)) { await p.touchscreen.tap(195, 40); await settle(p, 500) }   // the sheet's scrim, if Escape left it
       const role = row.getByTestId('member-role'); const rb = await role.boundingBox()
       await p.touchscreen.tap(rb.x + 40, rb.y + rb.height / 2); await settle(p, 700)
       ok(await p.locator('[data-om-snackbar]').count() === 1 && (await snack()).length > 0 && !/Only an Owner deactivates/.test(await snack()), `the refused Role says its own reason — one snackbar, replaced in place (“${(await snack()).slice(0, 80)}”)`)
@@ -133,8 +140,11 @@ const STRIP = `
       const D = await b.newContext(opts()); const d = await page(D, 'hm-1440')
       await go(d, '/company/members', 1800)
       const dRow = d.getByTestId('member-row').filter({ has: d.locator('[class*="__name"]').filter({ hasText: /^Dane/ }) })
-      await dRow.getByRole('button', { name: 'Deactivate' }).hover({ force: true }); await settle(d, 700)
-      ok(/Only an Owner deactivates an Owner/.test(await text(d.locator('[role="tooltip"]'))), '1440 with a mouse: hovering it says the same, as before')
+      /* (the calm UI build 2026-10-27, a deliberate change) 5-01: at a desk too the refused Deactivate is the ⋮'s greyed row, its rule the row's line */
+      await dRow.getByTestId('member-more').click(); await settle(d, 600)
+      const dBtn = d.getByRole('menuitem', { name: /^Deactivate/ })
+      await dBtn.hover({ force: true }); await settle(d, 500)
+      ok((await dBtn.getAttribute('aria-disabled')) === 'true' && /Only an Owner deactivates an Owner/.test(await text(dBtn)), '1440 with a mouse: it says the same, as before')
       await D.close()
       as('dane')
     }
@@ -281,9 +291,9 @@ const STRIP = `
       const C = await b.newContext(opts()); const p = await page(C, 'mk')
       const categoryOf = async (brandId) => {
         await go(p, `/marketplace/${brandId}`, 2000)
-        await p.getByRole('button', { name: /Add to Price book/ }).first().click(); await settle(p, 900)
+        await p.getByTestId('product-add').first().click(); await settle(p, 900)   // (the calm UI build 2026-10-27, a deliberate change) 6-11: the row's verb is a quiet "+ Add" (named "Add {product} to the Price book") — its handle kept
         const d = p.getByRole('dialog').last()
-        const v = await d.getByLabel('Category').first().evaluate((e) => (e.value ?? e.textContent ?? '').trim()).catch(() => '')
+        const v = await d.getByLabel('Trade').first().evaluate((e) => (e.value ?? e.textContent ?? '').trim()).catch(() => '')   // (the calm UI build 2026-10-27, a deliberate change) the item dialog says Trade
         const t = await text(d)
         await d.getByRole('button', { name: 'Cancel' }).click(); await settle(p, 400)
         return v || t
@@ -291,7 +301,7 @@ const STRIP = `
       const two = sql(`select id from marketplace_brands where name = 'Rattan Row'`)
       const single = sql(`select id from marketplace_brands where categories = '["Flooring"]' limit 1`)
       const c2 = await categoryOf(two)
-      ok(/No category/.test(c2) && !/^Electrical$/.test(c2), `Rattan Row (Furniture · Lighting): no guess — the studio picks (${c2.slice(0, 40)})`)
+      ok(/No trade/.test(c2) && !/^Electrical$/.test(c2), `Rattan Row (Furniture · Lighting): no guess — the studio picks (${c2.slice(0, 40)})`)   // (the calm UI build 2026-10-27, a deliberate change) the item dialog says Trade
       if (single) { const c1 = await categoryOf(single); ok(/Flooring/.test(c1), `a flooring brand still starts on Flooring (${c1.slice(0, 40)})`) }
       await C.close()
     }
@@ -314,18 +324,22 @@ const STRIP = `
       as('nurul')
       const C = await b.newContext(opts()); const p = await page(C, 'nurul-profile')
       await go(p, '/profile', 1800)
-      const help = await text(p.locator('main p').filter({ hasText: /Your name and photo show/ }))
-      ok(/the leads you add and the members you put on them/.test(help) && !/invoices, orders and payments/.test(help), `Nurul (Marketing): her name shows on the leads she adds (“${help.slice(0, 90)}”)`)
+      /* (the calm UI build 2026-10-27, a deliberate change) 1-29 (REG-B1.16): Your details opens with its title and the role chip — the card's
+         two-line help ("Your name and photo show …") went. The rule stays on the words the card still says per role: the Email helper is
+         Marketing's own, and no line on the page is Accounting's (its papers, its invoices, orders and payments) */
+      const help = await text(p.locator('main'))
+      ok(/You can sign in with it, and the studio’s emails go there/.test(help) && !/invoices, orders and payments|Shown on the papers you send/.test(help), `Nurul (Marketing): her name shows on the leads she adds (“${(help.match(/You can sign in with it[^.]*/) ?? [''])[0].slice(0, 90)}”)`)
       const mail = await text(p.locator('main').getByText(/sign in with it|Shown on the papers|Printed as/).first())
       ok(/sign in with it/.test(mail), `…and her email is her way in, not a paper's (“${mail}”)`)
       await shot(p, '12-profile-marketing')
       await C.close()
-      const g = await held(b, opts(), '/profile', `return { g: (ghost.textContent || '').includes('the leads you add and the members you put on them'), wrong: (ghost.textContent || '').includes('invoices, orders and payments') }`)
+      const g = await held(b, opts(), '/profile', `return { g: (ghost.textContent || '').includes('You can sign in with it, and the studio’s emails go there'), wrong: /invoices, orders and payments|Shown on the papers you send/.test(ghost.textContent || '') }`)   // (the calm UI build 2026-10-27, a deliberate change) 1-29: the role's own words are the Email helper's
       ok(!g.none && g.g && !g.wrong, 'the ghost says the same words as the page', JSON.stringify(g))
       as('priya')
       const A = await b.newContext(opts()); const a = await page(A, 'priya-profile')
       await go(a, '/profile', 1800)
-      ok(/invoices, orders and payments you handle/.test(await text(a.locator('main p').filter({ hasText: /Your name and photo show/ }))), 'Accounting keeps its own words')
+      const own = await text(a.locator('main'))
+      ok(/Shown on the papers you send/.test(own) && !/sign in with it, and the studio’s emails/.test(own), 'Accounting keeps its own words')   // (the calm UI build 2026-10-27, a deliberate change) 1-29: Accounting's own words are its Email helper's
       await A.close()
       as('dane')
     }
@@ -337,7 +351,11 @@ const STRIP = `
         as(who)
         const C = await b.newContext(opts()); const p = await page(C, `tasks-${who}`)
         await go(p, '/tasks', 1800)
-        const n = await p.getByRole('radio', { name: /^Projects$/ }).count()
+        /* (the calm UI build 2026-10-27, a deliberate change) 1-26: whose tasks (Leads and projects · Leads · Projects) rides in the scope pill's
+           menu at every width (`task-source`), no longer a segment beside it — open the pill and count the Projects row there */
+        const pill = p.getByRole('button', { name: /^All tasks · \d+/ }).first()
+        ok(await pill.count() === 1, `${who}: the Tasks page's scope pill`); await pill.click(); await settle(p, 500)
+        const n = await p.getByTestId('task-source').getByRole('menuitemradio', { name: /^Projects$/ }).count()
         ok(expect ? n >= 1 : n === 0, `${who}: ${expect ? 'Leads · Projects is offered' : 'no Projects choice — Marketing opens no project'} (${n})`)
         await C.close()
       }

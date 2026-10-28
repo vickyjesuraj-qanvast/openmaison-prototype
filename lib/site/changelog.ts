@@ -11,7 +11,7 @@ import type { ModuleSlug } from './platform'
 
 export type ReleaseArea = 'quotes' | 'finance' | 'leads' | 'projects' | 'portal' | 'ai' | 'platform' | 'security'
 export const AREA_LABEL: Record<ReleaseArea, string> = {
-  quotes: 'Quotes', finance: 'Finance', leads: 'Leads & CRM', projects: 'Projects', portal: 'Client Portal', ai: 'AI', platform: 'Platform', security: 'Security',
+  quotes: 'Quotes', finance: 'Finance', leads: 'Leads', projects: 'Projects', portal: 'Client portal',   /* (the calm UI build 2026-10-27 — the audit's 6-29, W-035) the app's names */ ai: 'AI', platform: 'Platform', security: 'Security',
 }
 export type Release = {
   id: string
@@ -250,8 +250,8 @@ export const RELEASES: Release[] = [
   },
   {
     id: 'quote-xray', date: '2026-05-14', month: 'May 2026', status: 'new', areas: ['quotes', 'ai'],
-    title: 'X-ray any quote in seconds',
-    summary: 'Drop in a quote — yours or a competitor’s — and see straight through it.',
+    title: 'Quote X-Ray: compare a quote with another studio’s, line by line',   // (the calm UI build 2026-10-27 — the audit's 6-29, W-061) what the app's tool does
+    summary: 'Put another studio’s quote beside yours — it matches them line by line and tells you what to say to the client.',
     highlights: [
       'Every line read and sorted by trade.',
       'Spot the items a quote quietly leaves out.',

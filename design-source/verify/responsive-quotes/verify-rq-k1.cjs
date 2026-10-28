@@ -122,7 +122,7 @@ const moneyRound = (minor) => `S$${new Intl.NumberFormat('en-SG', { maximumFract
     ok(/v1 · Default Quote PDF/.test(await hero.innerText()), 'the version and the template: "v1 · Default Quote PDF"')
     ok((await p.getByTestId('quote-amount').innerText()) === money2(DRAFT.amount), `the amount as stored (${money2(DRAFT.amount)})`)
     const n1 = lineCount(DRAFT.id)
-    ok(new RegExp(`${n1} lines · valid until \\d+ \\w+ ’\\d+ · GST 9% included`).test(await hero.innerText()), `"${n1} lines · valid until … · GST 9% included"`)
+    ok(new RegExp(`${n1} items · valid until \\d+ \\w+ ’\\d+ · GST 9% included`).test(await hero.innerText()), `"${n1} items · valid until … · GST 9% included"`)   // (the calm UI build 2026-10-27, a deliberate change) 4-28 · W-060: items, not lines
     ok(/Olivia Martinez/.test(await hero.innerText()) && /9123 4567/.test(await hero.innerText()), 'the client and her number')
     ok((await p.getByTestId('quote-call').getAttribute('href')) === `tel:+65${LEAD.phone}` && (await p.getByTestId('quote-whatsapp').getAttribute('href')) === `https://wa.me/65${LEAD.phone}`, 'Call is a tel: link, WhatsApp a wa.me link')
     ok((await p.getByTestId('screen-contract-row').count()) === 1, 'the draft contract raised from it is a row under the client (contracts on the move, a deliberate change of this rule — C4 · P-11: the 10px chip became a 44 row)')
@@ -167,15 +167,16 @@ const moneyRound = (minor) => `S$${new Intl.NumberFormat('en-SG', { maximumFract
     for (const id of ['quote-back', 'quote-more', 'quote-call', 'quote-whatsapp', 'as-printed']) { const h = await hits(p, id); ok(!!h && h.all, `${id}: a 44 box (${h?.w}×${h?.h}${h && !h.all ? ` — lands on ${h.at}` : ''})`) }
     await foot.getByTestId('quote-send').tap(); await settle(p, 800)
     const sendSheet = p.getByRole('menu', { name: 'Send' })
-    ok(await sendSheet.isVisible() && (await sendSheet.getByRole('menuitem', { name: /Send for confirmation/ }).count()) === 1, 'Send ▾ opens the Send sheet — confirmation · signature · another way')
+    ok(await sendSheet.isVisible() && (await sendSheet.getByRole('menuitem', { name: /Ask to confirm/ }).count()) === 1, 'Send ▾ opens the Send sheet — confirmation · signature · another way')   // (the calm UI build 2026-10-27, a deliberate change) W-358
     await shot(p, '03-send-390')
     await p.keyboard.press('Escape'); await settle(p, 500)
     // ⋮
     await p.getByTestId('quote-more').tap(); await settle(p, 800)
     const more = p.getByRole('menu', { name: 'OM-10001' })
     const moreText = await more.innerText()
-    ok(await more.isVisible() && ['LOOK', 'CHANGE', 'SHARE', 'EXPORT'].every((g) => moreText.includes(g)), '⋮ is a sheet grouped Look · Change · Share · Export')
-    ok(['Preview', 'Version History', 'Rename Quote', 'Revise — new version', 'Duplicate and Edit', 'Change template', 'Edit template', 'Save as Template', 'Copy confirmation link', 'Share a view-only link', 'Create contract from this quote', 'Compare with another quote', 'Download as PDF', 'Export', 'Print', 'Delete'].every((r) => moreText.includes(r)), '…every desk action is in it (nothing lost)')
+    const moreGroups = (await more.locator('[data-menu-label]').allInnerTexts()).map((g) => g.trim())
+    ok(await more.isVisible() && JSON.stringify(moreGroups) === JSON.stringify(['Look', 'Change', 'Share', 'Export']), '⋮ is a sheet grouped Look · Change · Share · Export')   // (the calm UI build 2026-10-27, a deliberate change) T-06 · W-101: a group's title is sentence case, not capitals — the group labels themselves are read, in order
+    ok(['Preview', 'Version history', 'Rename quote', 'Revise — new version', 'Duplicate and edit', 'Change template', 'Edit template', 'Save as template', 'Copy confirmation link', 'Share a view-only link', 'Create contract from this quote', 'Compare with another quote', 'Download as PDF', 'Export', 'Print', 'Delete'].every((r) => moreText.includes(r)), '…every desk action is in it (nothing lost)')
     ok((await more.locator('kbd').count()) === 0 && !/[⌘]/.test(moreText), '…and no key hints on touch')
     await shot(p, '04-more-390')
     await p.keyboard.press('Escape'); await settle(p, 500)
@@ -201,7 +202,7 @@ const moneyRound = (minor) => `S$${new Intl.NumberFormat('en-SG', { maximumFract
     await p.getByTestId('section-row-items').tap(); await settle(p, 1500)
     ok(rel(p).endsWith('?edit=items') && await p.getByTestId('section-screen').isVisible(), `the Items row opens the Items screen (${rel(p)})`)
     const itemsBar = p.getByTestId('section-screen').locator('[data-screen-bar]')
-    ok((await itemsBar.locator('h1').innerText()) === 'Items' && new RegExp(`${n1} lines · ${moneyRound(DRAFT.amount).replace('$', '\\$')}`).test(await itemsBar.innerText()), `its bar: "Items" over "${n1} lines · ${moneyRound(DRAFT.amount)}"`)
+    ok((await itemsBar.locator('h1').innerText()) === 'Items' && new RegExp(`${n1} items · ${moneyRound(DRAFT.amount).replace('$', '\\$')}`).test(await itemsBar.innerText()), `its bar: "Items" over "${n1} items · ${moneyRound(DRAFT.amount)}"`)   // (the calm UI build 2026-10-27, a deliberate change) 4-28 · W-060: items, not lines
     ok((await itemsBar.getByRole('button', { name: 'More options for Items' }).count()) === 1 && (await itemsBar.getByRole('button', { name: 'Create' }).count()) === 0, '…and the section’s own controls (search · ⋮) in the bar — on a phone the adds live in the pinned foot, not a Create ▾ (K2; quotes on the move, a deliberate change of this rule)')
     ok((await p.getByTestId('section-screen').locator('[class*="handle"]').count()) === 0, 'no drag handle on the move (B-27)')
     ok(await sideways(p) <= 0, `no sideways scroll on the Items screen (${await sideways(p)})`)

@@ -4,6 +4,9 @@
    'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const S = process.env.S || '/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/24a43f16-101f-4145-ad44-d6551add8f54/scratchpad/verify'
 const DB = `${S}/test.db`
 const OUT = `${S}/shots`
@@ -72,6 +75,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
   await p.getByRole('button', { name: /^View as/ }).click()
   const va = p.getByRole('dialog', { name: 'View as' }).or(p.getByRole('menu', { name: 'View as' })).first()
   await va.waitFor()
+  await openDemo(p)
   await va.getByRole('menuitemradio', { name: /^Free/ }).click()
   await p.getByText('Studio plan: Free (demo)').waitFor({ timeout: 10000 })
   await p.getByRole('button', { name: /^More( \(|$)/ }).click()
@@ -92,6 +96,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
   await t.getByRole('button', { name: /^Demo Studio/ }).click()
   const menu = t.getByRole('menu', { name: 'View as' }).or(t.getByRole('dialog', { name: 'View as' })).first()
   await menu.waitFor()
+  await openDemo(t)
   await menu.getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).click()
   await t.getByText('Studio plan: Pro — Studio (demo)').waitFor({ timeout: 10000 })
   const row = t.getByTestId('rail-credits')

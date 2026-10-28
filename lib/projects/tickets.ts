@@ -248,17 +248,23 @@ export async function countTicketsToAnswer(): Promise<number> {
   return (await ticketTally()).toAnswer
 }
 /** (pending modules S46B, M1 — 1.0's "Escalations (3)") The studio's live tickets on the projects the viewer sees: how many wait on the studio
-    (the ⋮ row's count — `countTicketsToAnswer`), how many are open in all, how many are escalated. */
+    (the ⋮ row's count — `countTicketsToAnswer`), how many are open in all, how many are escalated.
+    (the Dashboard redesigned, 2026-10-26 — P-13 "one tickets count", his Build mark) "Waiting on you" is the tickets a member answers: the
+    studio's turn, on a project they work on (`mayChangeProject` — who may reply, and each project's Needs you `ticket` rows, the Dashboard's own)
+    — so the rail's count is the Dashboard's ticket rows. With Who sees leads at "everyone" a Designer's badge counted every project's tickets,
+    ones they could neither see in their Needs you nor reply to. Open and escalated stay what they see (the Tickets list). */
 export async function ticketTally(): Promise<{ toAnswer: number; open: number; escalated: number }> {
   const viewer = await fetchViewer()
-  const [rows, seen] = await Promise.all([
+  const [rows, seen, links] = await Promise.all([
     db.select({ t: projectTickets, leadId: projects.leadId }).from(projectTickets).innerJoin(projects, eq(projects.id, projectTickets.projectId))
       .where(and(isNull(projects.deletedAt), inArray(projectTickets.status, ['open', 'in_progress']))),
     visibleLeadIds(viewer),
+    db.select({ leadId: leadAssignees.leadId, memberId: leadAssignees.memberId }).from(leadAssignees),
   ])
   const mine = rows.filter((r) => !seen || seen.has(r.leadId))
+  const team = (leadId: string) => links.filter((l) => l.leadId === leadId).map((l) => l.memberId)
   return {
-    toAnswer: mine.filter((r) => turnOf({ status: r.t.status, lastClientAt: r.t.lastClientAt?.getTime() ?? null, lastStudioAt: r.t.lastStudioAt?.getTime() ?? null, createdAt: r.t.createdAt.getTime() }) === 'studio').length,
+    toAnswer: mine.filter((r) => mayChangeProject(viewer, team(r.leadId)) && turnOf({ status: r.t.status, lastClientAt: r.t.lastClientAt?.getTime() ?? null, lastStudioAt: r.t.lastStudioAt?.getTime() ?? null, createdAt: r.t.createdAt.getTime() }) === 'studio').length,
     open: mine.length,
     escalated: mine.filter((r) => !!r.t.escalatedAt).length,
   }

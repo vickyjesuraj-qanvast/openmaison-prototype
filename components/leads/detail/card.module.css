@@ -12,11 +12,13 @@
 /* Head ("Filter Option"): 48px = 20 top + 16 text + 12 bottom; 20px sides; items centred. */
 .head {
   display: flex; align-items: center;
-  padding: var(--om-spacing-5) var(--om-spacing-5) var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-3);   /* (the calm UI build) 16 top: the 20 line of the bold head keeps the 48 */
   min-height: 48px;
 }
 .headText { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-1); }
-.title { font: var(--om-type-subheading-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* 12/Semi Bold/16 (858:24893) = subheading-s */
+/* (the calm UI build 2026-10-27 — T-06, audit 3-41) One card head for the app: bold sentence case, as written — the mock's 12/600 grey CAPS
+   (858:24893) read as a status; the head keeps its 48 (16 + the 20 line + 12) with the title at 14/600 on-surface. */
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 .meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .metaRight { margin-left: auto; padding-left: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 /* Head link ("Ask Client"): subheading-s primary; hover = "Link text" of interaction-states.md (#4400cc). */

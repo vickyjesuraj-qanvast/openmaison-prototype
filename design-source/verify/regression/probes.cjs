@@ -90,4 +90,33 @@ add('rwd-c2', 'responsive-all/verify-rwd-c2.cjs', { args: ['$DB', '$L/shots', '$
 // the house timeline by day with a type glyph on every row — a lead's and a project's Activity, the quote's trail, the Overview card; reads only
 add('rwd-a', 'responsive-all/verify-rwd-a.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
 add('pj-gap-c', 'projects/verify-pj-gap-c.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // the schedule's asks, outside people (their badge on a phone's task card — REG-2926)
+// The Dashboard redesigned (2026-10-26), lane D3 — the grid's five cards (Your day · Pipeline · Projects · Team · On site) and P-14's Coming up; the
+// pm2 probes whose Dashboard assertions it moved to the new cards (S22's MY TASKS / Coming up / Workload / Site updates, S45B's Contractors
+// tile; S42A's two moved checks run from its own folder — its REPO is three levels up, so the harness's copy can't run it)
+add('dash-d3', 'dashboard-2026-10-26/verify-dash-d3.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+for (const s of ['s22', 's45b']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+// The Dashboard redesigned (2026-10-26), lane D5 — P-13 "one fact, one number" and P-14's bugs across the modules the Dashboard reads: its probe, and
+// the probes its files reach that had no line yet (the bell and Your notifications, Messages' reads, Studio health, Maison AI's D-11, Sales ·
+// Response time, the schedule's bell, Money in's and money out's Needs you rows, the outbox).
+add('dash-d5', 'dashboard-2026-10-26/verify-dash-d5.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+for (const s of ['s18', 's26', 's39', 's45a']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+for (const id of ['pj-r2', 'pj-gap-b']) add(id, `projects/verify-${id}.cjs`, { args: ['$DB', '$L/shots'] })
+for (const id of ['pm-a', 'pm-g']) add(id, `parity-map-build/verify-${id}.cjs`, { args: ['$DB', '$L/shots'] })
+// The Dashboard redesigned (2026-10-26), lane D2 — Needs you as one ranked inbox: every project's rows, the new signals, the verbs in place with
+// Undo, the Review pane, Not today, the chips, the ring from the records, You're all caught up, the keys, by role and at every width (puts back
+// every table it touches by primary key)
+add('dash-d2', 'dashboard-2026-10-26/verify-dash-d2.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The Dashboard redesigned (2026-10-26), lane D4 — Maison AI docked: the field at the page's foot, its suggestions by rule, short answers above it
+// and long ones in the pane, the answer cards (the sheet everywhere else too), Remind with its receipt and Undo, Stop · Retry, ⌘J, the phone's
+// accessory and its ✦, the sheet and the keyboard, each role's suggestions (puts back the reminders, the Recent questions and the meeting it seeds)
+add('dash-d4', 'dashboard-2026-10-26/verify-dash-d4.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The Dashboard redesigned (2026-10-26), lane D1 — the frame, Since you were last here, Pulse, Studio / Mine, hiding a card, every role's page,
+// every width, the ghost, the first answer
+add('dash-d1', 'dashboard-2026-10-26/verify-dash-d1.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The Dashboard redesigned (2026-10-26), the closing pass — probes the round reached that had no line yet (a probe not registered hides a
+// regression — the 2026-10-24 lesson): Listed on Qanvast, Who sees costs, Qanvast Ops › Lead credits and Reviews, one signed-in member per
+// browser (its greeting read from the page's title now), the money desk's and the client-loop parity rounds. S42A and S42D run directly only —
+// their REPO resolves three levels up from the harness's copy (node design-source/verify/pending-modules/verify-pm2-s42a.cjs <db> <shots> <base>).
+for (const s of ['s37', 's41b1', 's41b5', 's43a']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+for (const id of ['pm-e', 'pm-h']) add(id, `parity-map-build/verify-${id}.cjs`, { args: ['$DB', '$L/shots'] })
 module.exports = P

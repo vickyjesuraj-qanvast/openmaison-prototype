@@ -5,7 +5,6 @@ import { AutoHideChrome } from '@/components/shell/auto-hide-chrome'
 import { rememberView, useStoredView, type ListingView } from '@/lib/leads/view-pref'
 import { copyText } from '@/lib/clipboard'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { AnimatePresence } from 'motion/react'
 import { GHOST_MIN_MS, PageReveal } from '@/components/shell/page-reveal'
 import { ListingGhost } from '@/components/leads/listing-ghost'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
@@ -50,7 +49,6 @@ import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { DeletedLeadsSheet } from '@/components/leads/deleted-sheet'
 import { ImportWizard } from '@/components/leads/import-wizard'
-import { ReviewBanner } from '@/components/leads/review-banner'
 import { ReviewSheet } from '@/components/leads/review-sheet'
 import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
@@ -200,9 +198,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [reviewOpen, setReviewOpen] = useState(false)
   // The queue emptied under an open sheet → close it (render-phase adjust; the action's snackbar is the cue).
   if (reviewOpen && review.length === 0) setReviewOpen(false)
-  const docked = review.length > 0 && !reviewOpen
-  // Bottom-docked overlays (FAB, bulk bar, snackbar, AI sheet) lift above the review banner through `--bottom-dock`,
-  // which the banner itself writes from its measured height (REG-302, components/leads/review-banner.tsx).
   const deletingRef = useRef(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [nowTick, setNowTick] = useState(initialNow)
@@ -243,8 +238,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     if (!r.kept.length) { snackbar({ message: done }); return }
     const k = r.kept[0]!
     const head = r.removed ? `${r.removed} deleted forever` : 'Nothing was deleted'
-    const who = r.kept.length === 1 ? `${k.name} stays: ${k.deleted ? `${k.number} is in Deleted Projects` : 'its project is live'}` : `${r.kept.length} leads stay — they have projects`   // the house snackbar's width: the confirm said the rest
-    snackbar({ message: `${head} — ${who}`, ...(r.kept.length === 1 ? { actionLabel: k.deleted ? 'Deleted Projects' : 'Open project', onAction: () => router.push(k.deleted ? `/projects?deleted=${encodeURIComponent(k.projectId)}` : withFrom(`/projects/${k.projectId}`, here())) } : {}) })
+    const who = r.kept.length === 1 ? `${k.name} stays: ${k.deleted ? `${k.number} is in Deleted projects` : 'its project is live'}` : `${r.kept.length} leads stay — they have projects`   // the house snackbar's width: the confirm said the rest
+    snackbar({ message: `${head} — ${who}`, ...(r.kept.length === 1 ? { actionLabel: k.deleted ? 'Deleted projects' : 'Open project', onAction: () => router.push(k.deleted ? `/projects?deleted=${encodeURIComponent(k.projectId)}` : withFrom(`/projects/${k.projectId}`, here())) } : {}) })
   }
   /** (fix-E, A-01) Every Undo of a move: a refusal (a lead whose project is live stays Won) says its rule. */
   const undoMove = async (leadId: string, logId: string, toStage: string) => {
@@ -373,7 +368,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const t = window.setTimeout(() => setLeadForm({ mode: 'create', prefill: fill }), GHOST_MIN_MS)
     return () => window.clearTimeout(t)
   }, [landNew, router])
-  useShortcut('create', openCreate, true, 'Create New Lead')
+  useShortcut('create', openCreate, true, 'New lead')
   // Selection follows the pipeline: ids hidden by scope / filters / search drop out (render-phase adjust).
   const stageCounts = useMemo(() => {
     const c: Record<string, number> & { all: number } = { all: effectiveRows.length }
@@ -430,7 +425,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     setAssign(null)
     try {
       await assignMembers(leadId, memberIds)
-      snackbar({ message: 'Members updated' })
+      snackbar({ message: 'Members saved' })   // (the calm UI build — 2-34) the house's past tense
       /* (A-06) the move the stage sheet was asked for, now that the lead has its member */
       const lead = rows.find((r) => r.id === leadId)
       if (then && lead && memberIds.length > 0) requestStageChange({ ...lead, assignees: team.filter((m) => memberIds.includes(m.id)) }, then.stage)
@@ -465,25 +460,29 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /* (pending modules S05) The listing's three suggestions act, from the listing's own rows — (pending modules S10) one builder for the listing
      and Qanvast Ops › Leads (components/leads/use-listing-maison.ts) */
   const aiSuggestions = useListingMaison({ rows, newest: newest ?? null, team })
-  useMaisonAi(aiSuggestions, docked)   /* (REG-507) the shell's FAB + sheet carry the listing's suggestions, raised above the review banner */
+  useMaisonAi(aiSuggestions)   /* (REG-507) the shell's FAB + sheet carry the listing's suggestions */
 
   /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
+  /* (the calm UI build 2026-10-27 — audit 2-33 · 2-13 · T-10, W-031 · W-242) New lead ▾: the two ways a member adds a lead by hand, then ONE row
+     for the set-ups that bring leads in on their own — Email, Zapier and Meta Lead Ads are cards on Company › Integrations, where its three
+     rows (Link to Email · Link to Zapier · Connect to Ads) each landed. */
   const addMenu = (
-    <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right" sheetTitle="Add Lead">
-      <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }} shortcut="create">Create New Lead</DropdownItem>
-      <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
+    <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right" sheetTitle="New lead">
+      <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }} shortcut="create">Type in a lead</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import a file</DropdownItem>
       <DropdownDivider />
-      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#email') }}>Link to Email</DropdownItem>   {/* (REG-602) the website's intake address */}
-      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#webhooks') }}>Link to Zapier</DropdownItem>   {/* (REG-612) the webhook card */}
-      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#meta') }}>Connect to Ads</DropdownItem>   {/* (REG-602) Meta Lead Ads */}
+      <DropdownItem onSelect={() => { setAddOpen(false); router.push(withFrom('/company/integrations', here())) }} help="Email, Zapier or Meta Lead Ads">Get leads automatically…</DropdownItem>   {/* (REG-602 · REG-612) the intake address, the webhook card, Meta Lead Ads */}
     </Dropdown>
   )
+  /* (the calm UI build 2026-10-27 — audit 1-30 · 2-47 · 2-12, W-025 · W-238 · W-024) The header is the title, one filled "New lead ▾" and ⋮: the
+     Insights button is the ⋮'s first row, by the name of the place it opens — Reports. */
   const kebabMenu = (
     <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Leads">
-      <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
-      <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportPicked(null); setExportOpen(true) }}>Export all as…</DropdownItem>
-      <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
-      <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=leads', here())) }}>Leads Settings</DropdownItem>   {/* (REG-645) Lead management, Back returns here — (parity P-18) as it was */}
+      {readsReports ? <DropdownItem onSelect={() => { setKebabOpen(false); openInsights() }} testId="leads-reports">Reports</DropdownItem> : null}   {/* (REG-611, parity Q-24 · Q-41) Owners', Admins' — (S44O — C6) and Marketing's */}
+      <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Import history</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportPicked(null); setExportOpen(true) }}>Export all…</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted leads</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=leads', here())) }}>Lead settings</DropdownItem>   {/* (REG-645) Lead management, Back returns here — (parity P-18) as it was */}
     </Dropdown>
   )
 
@@ -501,17 +500,13 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               <>
                 {rows.length === 0 ? null : (   /* (REG-735) no lead yet: the empty card carries Create and Import */
                 <div ref={addRef} style={{ position: 'relative' }}>
-                  <Tooltip label="Add Lead" disabled={addOpen}>
-                    <IconButton icon="add" label="Add Lead" variant="filled" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)} />
+                  <Tooltip label="New lead" disabled={addOpen}>
+                    <IconButton icon="add" label="New lead" variant="filled" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)} />
                   </Tooltip>
                   {addMenu}
                 </div>
                 )}
-                {readsReports ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' — (S44O — C6) and Marketing's */
-                  <Tooltip label="Insights">
-                    <IconButton icon="bar_chart_4_bars" label="Insights" onClick={openInsights} />
-                  </Tooltip>
-                ) : null}
+                {/* (the calm UI build — 1-30 · 2-47) Reports is the ⋮'s first row */}
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
                     <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
@@ -524,19 +519,14 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               <>
                 {/* (REG-735) no lead yet: one filled button on the screen — the empty card's Create New Lead (it takes C) */}
                 {rows.length === 0 ? null : (
-                <div ref={addRef} style={{ position: 'relative' }} data-kb="create" data-kb-label="Create New Lead">   {/* (REG-713) C: lit here, answered by the create handler */}
+                <div ref={addRef} style={{ position: 'relative' }} data-kb="create" data-kb-label="New lead">   {/* (REG-713) C: lit here, answered by the create handler */}
                   <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
-                    Add Lead
+                    New lead
                   </Button>
                   {addMenu}
                 </div>
                 )}
-                {readsReports ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' — (S44O — C6) and Marketing's */
-                  <Button variant="secondary" appearance="outlined"
-                          iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={openInsights}>
-                    Insights
-                  </Button>
-                ) : null}
+                {/* (the calm UI build — 1-30 · 2-47) Reports is the ⋮'s first row */}
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
                     <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
@@ -548,7 +538,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           />
           <div className={styles.content}>
             <LeadsToolbar bare={rows.length === 0}
-              chipLabel={rows.length === 0 ? 'All Leads' : `${attention ? ATTENTION_LABEL[attention] : stageScope ?? 'All Leads'} (${filtered.length})`}   /* (UX audit L3) the pill names the scope it holds */
+              chipLabel={rows.length === 0 ? 'All leads' : `${attention ? ATTENTION_LABEL[attention] : stageScope ?? 'All leads'} · ${filtered.length}`}   /* (UX audit L3) the pill names the scope it holds · (the calm UI build — W-479, T-07) "Label · n" */
               onChipClick={() => { setNowTick(Date.now()); setStageMenuOpen((o) => !o) }}   /* the counts' clock: Overdue is "before today" */
               chipOpen={stageMenuOpen}
               chipScoped={stageScope !== null || attention !== null}   // (REG-295) a stage scope is a filter — say so; (UX audit L3) so is an attention scope
@@ -563,7 +553,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                                      counts={stageCounts} value={stageScope}
                                      onSelect={(s) => { setStageScope(s); setAttention(null) }} onManage={() => router.push(`${withFrom('/settings?section=leads', here())}#lead-stages`)}   /* (pending modules S05) Manage Stages › Settings › Lead management › Lead stages */
                                      phone={mobile}   /* (leads on the move, P-05) To call today leads the phone's To do group */
-                                     attention={{ counts: attentionCounts, value: attention, onSelect: (k) => { setAttention(k); setStageScope(null) } }} />
+                                     attention={{ counts: attentionCounts, value: attention, onSelect: (k) => { setAttention(k); setStageScope(null) } }}
+                                     review={review.length ? { count: review.length, onOpen: () => { setNowTick(Date.now()); setReviewOpen(true) } } : undefined}   /* (the calm UI build — 2-16) the import queue, where the docked bar sat */ />
               }
               query={query}
               onQueryChange={setQuery}
@@ -660,13 +651,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               />
             )}
           </div>
-          <AnimatePresence>
-            {docked ? (
-              <ReviewBanner count={review.length}
-                            duplicates={review.filter((r) => r.row.status === 'duplicate').length}
-                            onOpen={() => setReviewOpen(true)} />
-            ) : null}
-          </AnimatePresence>
+          {/* (the calm UI build 2026-10-27 — audit 2-16 · T-05, W-600) The docked "Review imported leads (14)" bar that sat on every visit is gone:
+              the queue is the scope pill's "Needs your attention › To review · n" row, and the import's own snackbar still offers Review. */}
         </div>
 
       <StageDropdown
@@ -735,7 +721,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                is answered back to it and said in its foot, the step as typed; only a landed save closes it (and settles a kanban drop) */
             onUpdate={async ({ stage, data }) => {
               try {
-                if (stage === 'New') { await assignMembers(lead.id, data.assignees); setWizard(null); setPendingDrop(null); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+                if (stage === 'New') { await assignMembers(lead.id, data.assignees); setWizard(null); setPendingDrop(null); snackbar({ message: 'Members saved' }) }   // (REG-334) New's details are its members
                 else {
                   const r = await updateStageDetails({ leadId: lead.id, stage, data })
                   if ('error' in r) return couldnt('update the details', refusalOf(r.error))   // (S43B · F1-07) the server's own check
@@ -776,7 +762,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             onConfirm={async (input: ReturnInput) => {
               // 931:49009 → 931:48553: the same snackbar + Undo as the overview; Undo lives as long as the snackbar (user 2026-08-30).
               const { returnId } = await returnLead(lead.id, input)
-              snackbar({ message: input.appealOf ? 'Appeal sent to Qanvast' : 'Lead returned successfully', actionLabel: 'Undo', onAction: () => { void undoReturn(returnId).then(() => router.refresh()) } })   // (pending modules S05)
+              snackbar({ message: input.appealOf ? 'Appeal sent to Qanvast' : 'Returned to Qanvast', actionLabel: 'Undo', onAction: () => { void undoReturn(returnId).then(() => router.refresh()) } })   // (pending modules S05)
               router.refresh()
             }}
           />
@@ -887,7 +873,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                  Fill from a document) is written with the lead */
               const picked = extras?.picked ?? []
               const id = await createLead({ ...data, files: (extras?.files ?? []).filter((n) => !picked.some((f) => f.name === n)), customValues: extras?.customValues })   /* (REG-609 · REG-612) the attached documents, the custom fields */
-              snackbar({ message: 'Successfully Created' })
+              /* (the calm UI build 2026-10-27 — 2-34, W-392) the snackbar names what it did, and opens it */
+              snackbar({ message: `${data.name.trim() || 'Lead'} added`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/leads/${id}`, here())) })
               for (const f of picked) {
                 const up = await uploadPicked(id, f).catch(() => null)
                 if (!up || 'error' in up) snackbar({ message: couldnt(`upload ${f.name}`, up && 'error' in up ? up.error : null) })
@@ -896,7 +883,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               if (openAfterCreate) router.push(withFrom(`/leads/${id}`, here()))
             } else if (leadId) {
               await updateLead(leadId, { ...data, customValues: extras?.customValues })
-              snackbar({ message: 'Successfully Updated' })
+              snackbar({ message: 'Changes saved' })   // (the calm UI build — W-618)
             }
             setLeadForm(null)
             return true
@@ -950,6 +937,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         }}
       />
       <FiltersModal open={filtersOpen} value={filters} team={team} now={nowTick} sources={sources} onClose={() => setFiltersOpen(false)} onApply={setFilters}
+                    withSort={mobile || view !== 'table'}   /* (the calm UI build — 2-43) the table's heads sort */
                     resultCount={filtered.length} />   {/* (leads on the move, A-11) the phone sheet's Done says what the live filters leave */}
       <ReviewSheet
         open={reviewOpen}
@@ -1020,7 +1008,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           catch { snackbar({ message: 'Couldn’t delete — please try again' }) }
         }}
         onEmptyTrash={async () => {
-          try { purged(await emptyTrash(), 'Trash emptied') }
+          try { purged(await emptyTrash(), 'Deleted leads removed for good') }   // (the calm UI build — 2-31) no "Trash" on screen
           catch { snackbar({ message: 'Couldn’t empty the trash — please try again' }) }
         }}
       />

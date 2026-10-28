@@ -308,7 +308,7 @@ const lockCheck = (tag) => { if (!process.env.LOCKS) return; try { execSync(`sql
       lockCheck('6c during held nav')
       const ghost = gp.locator('[aria-label="Loading settings"]').first()
       const ghostText = await ghost.innerHTML().catch(() => '')
-      ok(/Set up your studio/.test(ghostText) && /What your documents print/.test(ghostText) && /Who may do what/.test(ghostText), 'the Settings ghost draws the list (then Who may do what) for the member it shows to')
+      ok(/Set up your studio/.test(ghostText) && /What your documents print/.test(ghostText) && /Who may do what|What each role can do/.test(ghostText) /* (the calm UI build 2026-10-27, a deliberate change) B5 5-04: the card's words */, 'the Settings ghost draws the list (then Who may do what) for the member it shows to')
       if (ghostText) await shot(gp, '09-ghost-1440')
       /* let the held page arrive before the tab closes — a page closed mid-answer leaves the server's render behind */
       await card(gp).waitFor({ timeout: 15000 }).catch(() => {}); await gp.waitForLoadState('networkidle'); await settle(gp, 1200)

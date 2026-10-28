@@ -33,6 +33,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s41b3')
@@ -110,11 +113,11 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
   /** the studio's Create New Lead form, filled and saved; answers the form (still open on a refusal) */
   const addLead = async (p, o) => {
     await p.getByTestId('trial-lead-add').first().click()
-    const dlg = p.getByRole('dialog').filter({ hasText: 'Create New Lead' })
+    const dlg = p.getByRole('dialog').filter({ hasText: /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ 'New lead' })
     await dlg.waitFor({ timeout: 6000 })
-    await dlg.getByLabel('Lead name', { exact: false }).first().fill(o.name)
-    await dlg.getByLabel('Lead phone number', { exact: false }).first().fill(o.phone)
-    if (o.source) { await dlg.getByLabel('Lead source').click(); await p.waitForTimeout(250); await p.getByRole('option', { name: o.source, exact: true }).or(p.getByRole('menuitemradio', { name: o.source, exact: true })).or(p.getByRole('menuitem', { name: o.source, exact: true })).first().click(); await p.waitForTimeout(200) }
+    await dlg.getByLabel('Name*', { exact: true }).first().fill(o.name)
+    await dlg.getByLabel('Mobile number*', { exact: true }).first().fill(o.phone)
+    if (o.source) { await dlg.getByLabel('Source', { exact: true }).click(); await p.waitForTimeout(250); await p.getByRole('option', { name: o.source, exact: true }).or(p.getByRole('menuitemradio', { name: o.source, exact: true })).or(p.getByRole('menuitem', { name: o.source, exact: true })).first().click(); await p.waitForTimeout(200) }
     await dlg.getByRole('button', { name: 'Create', exact: true }).click()
     await p.waitForTimeout(1200)
     return dlg
@@ -204,7 +207,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await go(m, '/site/try/leads', 300)
       ok(await m.getByTestId('trial-leads-empty').count() === 1, 'an empty start: “No leads yet” with Create New Lead')
       await m.getByTestId('trial-lead-add').first().click()
-      const dlg = m.getByRole('dialog').filter({ hasText: 'Create New Lead' }); await dlg.waitFor()
+      const dlg = m.getByRole('dialog').filter({ hasText: /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ 'New lead' }); await dlg.waitFor()
       const formText = await dlg.innerText()
       ok(!/Assign member|Fill from a document|Attach files/.test(formText), 'the form in its trial mode: no members to assign, no document fill, no files (nothing to keep a file in)')
       await dlg.getByRole('button', { name: 'Create', exact: true }).click(); await m.waitForTimeout(500)
@@ -243,7 +246,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await m.reload({ waitUntil: 'networkidle' }); await m.waitForTimeout(400)
       ok(/No free leads left/i.test(await allowance(m)) && (await m.locator('[data-testid="trial-leads"] [data-lead]').count()) === 3, 'reloaded: “No free leads left”, three leads')
       await m.getByTestId('trial-lead-add').first().click(); await m.waitForTimeout(400)
-      ok(/the free trial’s limit/.test(await gateText(m)) && (await m.getByRole('dialog').filter({ hasText: 'Create New Lead' }).count()) === 0, 'Create New Lead now opens the gate, not the form')
+      ok(/the free trial’s limit/.test(await gateText(m)) && (await m.getByRole('dialog').filter({ hasText: 'New lead' }).count()) === 0 /* (the calm UI build 2026-10-27, a deliberate change) "New lead" */, 'Create New Lead now opens the gate, not the form')
       await closeGate(m)
       await shot(m, 's41b3-leads-1440')
       leadIds = Object.fromEntries(payloadOf(idOf(c)).payload.leads.leads.map((l) => [l.data.name, l.id]))
@@ -255,7 +258,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       const c = await anon(M)
       await m.getByTestId('trial-quote-sample').click()
       await m.getByTestId('trial-quote-preview').waitFor({ timeout: 8000 }); await m.waitForTimeout(400)
-      ok(/8 lines read from Kitchen quote\.xlsx · S\$17,550\.00/.test(await text(m.getByTestId('trial-quote-read'))), 'the sample is read in this browser by Create Quote’s own reader: “8 lines read from Kitchen quote.xlsx · S$17,550.00”, the lines in its table')
+      ok(/* (the calm UI build 2026-10-27, a deliberate change) T-01 · 6-14: a quote's lines read as "items" */ /8 items read from Kitchen quote\.xlsx · S\$17,550\.00/.test(await text(m.getByTestId('trial-quote-read'))), 'the sample is read in this browser by Create Quote’s own reader: “8 lines read from Kitchen quote.xlsx · S$17,550.00”, the lines in its table')
       ok(/Read in your browser — nothing is kept until you keep it/.test(await text(m.getByTestId('trial-quote-preview'))) && !payloadOf(idOf(c)).payload['quote-digitizer'] && payloadOf(idOf(c)).spent_tokens === 0, '…nothing kept and nothing spent yet')
       ok(await m.evaluate(() => document.activeElement?.getAttribute('data-testid')) === 'trial-quote-read-title', 'the read takes the focus (its title), in view')
       await m.getByTestId('trial-quote-keep').click(); await m.waitForTimeout(500)
@@ -292,8 +295,8 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await q.getByTestId('trial-quote-preview').waitFor({ timeout: 8000 })
       ok(/Add the client it’s for/.test(await text(q.getByTestId('trial-quote-lead'))) && (await q.getByTestId('trial-quote-keep').count()) === 0, 'with no leads, the one filled press is Add the client')
       await q.getByTestId('trial-quote-add-client').click()
-      const d = q.getByRole('dialog').filter({ hasText: 'Create New Lead' }); await d.waitFor()
-      await d.getByLabel('Lead name', { exact: false }).first().fill('Siti Rahim'); await d.getByLabel('Lead phone number', { exact: false }).first().fill('91110005')
+      const d = q.getByRole('dialog').filter({ hasText: /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ 'New lead' }); await d.waitFor()
+      await d.getByLabel('Name*', { exact: true }).first().fill('Siti Rahim'); await d.getByLabel('Mobile number*', { exact: true }).first().fill('91110005')
       await d.getByRole('button', { name: 'Create', exact: true }).click(); await q.waitForTimeout(1600)
       const qw = payloadOf(idOf(await anon(Q)))
       ok(qw && qw.payload.leads.leads.length === 1 && qw.payload['quote-digitizer']?.documents?.[0]?.leadId === qw.payload.leads.leads[0].id, 'the studio’s form adds the client, and the quote is kept on them in the same go')
@@ -305,7 +308,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       console.log('\n§4 Quote X-Ray: the studio’s engine, one comparison')
       await go(m, '/site/try/quote-x-ray', 300)
       const c = await anon(M)
-      ok(/Use the quote you read \(8 lines\)/.test(await text(m.getByTestId('trial-xray-use-read'))) && /Kitchen quote\.xlsx · 8 lines/.test(await text(m.getByTestId('trial-xray-read-note'))), 'their side to add; your side: the quote they kept (8 lines)')
+      ok(/* (the calm UI build 2026-10-27, a deliberate change) T-01 · 6-14: a quote's lines read as "items" */ /Use the quote you read \(8 items\)/.test(await text(m.getByTestId('trial-xray-use-read'))) && /Kitchen quote\.xlsx · 8 items/.test(await text(m.getByTestId('trial-xray-read-note'))), 'their side to add; your side: the quote they kept (8 lines)')
       /* the same quote on both sides is refused, and keeps nothing */
       await m.getByTestId('trial-xray-use-read').getByRole('radio', { name: 'Upload a file' }).click(); await m.waitForTimeout(300)
       const inputs = m.getByTestId('trial-xray-setup').locator('input[type="file"]')
@@ -349,7 +352,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await xp.getByTestId('trial-xray-setup').locator('input[type="file"]').first().setInputFiles(PDF)
       await xp.getByTestId('xray-file').first().waitFor({ timeout: 10000 }); await xp.waitForTimeout(1800)
       const tile = await text(xp.getByTestId('xray-file').first())
-      ok(/23 lines/.test(tile) && /40,210/.test(tile) && /Urban Nest/i.test(await xp.getByLabel('Their studio’s name (optional)').inputValue().catch(() => '')), `a PDF quote is read by the studio’s own PDF reader (S21) — its lines, its total and its studio’s name (“${tile.slice(0, 80)}”)`)
+      ok(/23 items/.test(tile) &&   /* (the calm UI build 2026-10-27, a deliberate change) — T-01: a quote's lines are items */ /40,210/.test(tile) && /Urban Nest/i.test(await xp.getByLabel('Their studio’s name (optional)').inputValue().catch(() => '')), `a PDF quote is read by the studio’s own PDF reader (S21) — its lines, its total and its studio’s name (“${tile.slice(0, 80)}”)`)
       ok(!(await anon(X)), '…in the browser: reading keeps nothing')
       await X.close()
     }
@@ -467,7 +470,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await go(c2, '/site/try/leads', 300)
       await addLead(c2, { name: 'Ivan Koh', phone: '91110004' })
       await go(c2, '/sign-in', 400)
-      await c2.getByLabel('Mobile number or email').fill(OWNER.phone); await c2.getByTestId('sign-in-send').click(); await c2.waitForTimeout(1000)
+      await c2.getByLabel(/^Mobile number or (work )?email/).fill(OWNER.phone); await c2.getByTestId('sign-in-send').click(); await c2.waitForTimeout(1000)
       await c2.getByTestId('sign-in-digit').first().click(); await c2.keyboard.type('123456'); await c2.getByTestId('sign-in-go').click()
       await c2.waitForURL((u) => !/\/sign-in/.test(u.pathname), { timeout: 20000 }).catch(() => {}); await c2.waitForTimeout(2000)
       ok(/A lead from your free trial is in your studio/.test(await waitSnack(c2, /free trial/)), 'signing in to their studio brings the trial in (1.0’s claim-on-login) and says so')
@@ -479,7 +482,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
       await addLead(c3, { name: 'Trial Visitor', phone: '91110006' })
       const id3 = idOf(await anon(C3))
       await go(c3, '/sign-in', 400)
-      await c3.getByLabel('Mobile number or email').fill('dane@demostudio.sg'); await c3.getByTestId('sign-in-send').click(); await c3.waitForTimeout(1000)
+      await c3.getByLabel(/^Mobile number or (work )?email/).fill('dane@demostudio.sg'); await c3.getByTestId('sign-in-send').click(); await c3.waitForTimeout(1000)
       await c3.getByTestId('sign-in-digit').first().click(); await c3.keyboard.type('123456'); await c3.getByTestId('sign-in-go').click()
       await c3.waitForURL((u) => !/\/sign-in/.test(u.pathname), { timeout: 20000 }).catch(() => {}); await c3.waitForTimeout(2500)
       ok(Number(sql(`select count(*) from leads where name = 'Trial Visitor'`)) === 0 && Number(sql(`select count(*) from lead_events where kind = 'trial_claimed'`)) === 0, 'signing in to the demo brings nothing in — the demo is the demo')
@@ -554,7 +557,7 @@ const payloadOf = (id) => { const r = trialRows().find((x) => x.anon_id === id);
         if ((await c.getByTestId('studio-name').innerText().catch(() => '')) !== 'Demo Studio') {
           const dlg = c.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await dlg.count()) await dlg.getByRole('button', { name: 'Not now' }).click().catch(() => {})
           await c.getByTestId('studio-block').click(); await c.waitForTimeout(500)
-          await c.getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
+          await (await openDemo(c)).getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
         }
         await C.close()
       } catch (e) { console.log('  ! could not switch the server back to the demo — restart it:', String(e).slice(0, 120)) }

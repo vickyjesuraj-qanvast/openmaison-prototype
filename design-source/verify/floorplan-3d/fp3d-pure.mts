@@ -2,7 +2,7 @@
 // download's name, who opens the page, 1.0's addresses, ⌘K, the image model's seam. Run: npx tsx design-source/verify/floorplan-3d/fp3d-pure.mts
 import fs from 'node:fs'
 import path from 'node:path'
-import { FP3D_WORDS, LOOK_CHOICES, READY_SAMPLES, SAMPLE_PLANS, renderFileName, sampleLooks, samplePlan, sampleRooms } from '../../../lib/floorplan-3d/model.ts'
+import { FP3D_WORDS, LOOK_CHOICES, READY_SAMPLES, SAMPLE_PLANS, lookNotReady, renderFileName, sampleLooks, samplePlan, sampleRooms } from '../../../lib/floorplan-3d/model.ts'
 import { roomSummary } from '../../../lib/planner/photo.ts'
 import { opensPath } from '../../../lib/settings/roles.ts'
 import { OLD_REDIRECTS } from '../../../lib/links/old-addresses.ts'
@@ -22,6 +22,10 @@ ok(SAMPLE_PLANS.length === 3 && new Set(SAMPLE_PLANS.map((s) => s.key)).size ===
 for (const s of SAMPLE_PLANS) ok(fs.existsSync(pub(s.plan)), `${s.name}: its plan is a file (${s.plan})`)
 /* (his "Ship HDB 4-Room only", 2026-10-23) a sample is offered only with views, and only the looks it has views for */
 ok(READY_SAMPLES.map((s) => s.key).join() === 'hdb-4-room', 'the page offers the HDB 4-Room alone — the two others wait for their views')
+/* (2026-10-27) both looks always offered (1.0): one a sample has no view for says why; a studio's own plan is drawn in either */
+{ const s = samplePlan('hdb-4-room')!
+  ok(lookNotReady(s, 'dollhouse') === null && lookNotReady(s, 'top') === 'This sample has no top-down view yet' && lookNotReady(null, 'top') === null,
+    `a look's reason: ${lookNotReady(s, 'top')}`) }
 ok(sampleLooks(samplePlan('hdb-4-room')!).map((l) => l.value).join() === 'dollhouse', '…in Dollhouse alone')
 for (const s of READY_SAMPLES) for (const l of sampleLooks(s)) {
   const takes = s.renders[l.value]
@@ -33,7 +37,8 @@ ok(samplePlan('hdb-4-room')?.name === 'HDB 4-Room' && samplePlan('nope') === nul
 
 console.log('the rooms a sample says (its plan\'s own)')
 const chips = (k: string) => roomSummary(sampleRooms(samplePlan(k)!)).join(' · ')
-ok(chips('hdb-4-room') === '3 bedrooms · 2 bathrooms · Kitchen · Living / dining area · 1 service yard · 2 storerooms · 11 rooms in all', `HDB 4-Room: ${chips('hdb-4-room')}`)
+/* (the calm UI build 2026-10-27, a deliberate change) — 6-22 · W-080: the total counts what it names — the HDB 4-Room's corridor is named too */
+ok(chips('hdb-4-room') === '3 bedrooms · 2 bathrooms · Kitchen · Living / dining area · 1 service yard · 2 storerooms · Corridor · 11 rooms in total', `HDB 4-Room: ${chips('hdb-4-room')}`)
 ok(/^2 bedrooms · 2 bathrooms · Kitchen/.test(chips('hdb-3-room')), `HDB 3-Room: ${chips('hdb-3-room')}`)
 ok(/^3 bedrooms · 2 bathrooms · Kitchen · Living \/ dining area · 1 balcony/.test(chips('condo-3-bedroom')), `Condo 3-Bedroom: ${chips('condo-3-bedroom')}`)
 

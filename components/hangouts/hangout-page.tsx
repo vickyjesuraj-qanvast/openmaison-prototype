@@ -4,6 +4,8 @@ import { useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { Tooltip } from '@/components/om/tooltip'
 import { MetaChip } from '@/components/om/meta-chip'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { Tabs } from '@/components/om/tabs'
@@ -92,15 +94,15 @@ export function HangoutPage({ data, from }: { data: HangoutView; from?: string }
   /* (S10's rule; 1.0's "Ask ID Buddy about your Hangout performance") Maison AI answers from this Hangout's records — each row opens what it names */
   const waiting = data.meetings.filter((r) => r.status === 'scheduled')
   const suggestions: MaisonSuggestion[] = taking ? [
-    { label: 'Which designer converted most here?', answer: data.results.held
-      ? { title: 'Chats by designer', rows: [...data.results.byDesigner].sort((a, b) => b.converted - a.converted || b.meetings - a.meetings).map((d) => ({ id: d.memberId, label: d.name, meta: `${d.converted} converted of ${d.meetings} ${d.meetings === 1 ? 'chat' : 'chats'}${d.followUp ? ` · ${d.followUp} to follow up` : ''}` })) }
+    { label: 'Which member converted most here?', answer: data.results.held
+      ? { title: 'Chats by member', rows: [...data.results.byDesigner].sort((a, b) => b.converted - a.converted || b.meetings - a.meetings).map((d) => ({ id: d.memberId, label: d.name, meta: `${d.converted} converted of ${d.meetings} ${d.meetings === 1 ? 'chat' : 'chats'}${d.followUp ? ` · ${d.followUp} to follow up` : ''}` })) }
       : { title: 'No chats held yet', text: 'Each chat’s outcome counts here once it ends.' } },
     { label: 'Who is still waiting for a chat?', answer: waiting.length
       ? { title: `${waiting.length} waiting`, rows: waiting.map((r) => ({ id: r.id, label: r.leadName, meta: [r.memberName ? `With ${r.memberName}` : 'Nobody has it yet', r.shiftLine, r.tableNumber ? `Table ${r.tableNumber}` : null].filter(Boolean).join(' · '), href: hangoutHref(data.event.id, 'meetings') })) }
       : { title: 'Nobody is waiting', text: 'Every chat booked here is on or over.' } },
     { label: 'Is our plan with Qanvast?', answer: p?.planSentAt
       ? { title: 'Sent to Qanvast', text: `On ${displayDate(new Date(p.planSentAt))}${p.planSentBy ? ` by ${p.planSentBy}` : ''}${p.planSavedAt && p.planSavedAt > p.planSentAt ? ' — it has changed since; send it again from the Plan.' : '.'}` }
-      : { title: 'Not sent yet', text: 'Send it from the Plan once someone is on a shift — Qanvast matches homeowners to your studio on it.', link: { label: 'Open the Plan', href: hangoutHref(data.event.id, 'plan') } } },
+      : { title: 'Not sent yet', text: 'Send it from the Plan once someone is on a shift — Qanvast matches clients to your studio on it.', link: { label: 'Open the Plan', href: hangoutHref(data.event.id, 'plan') } } },
   ] : []
   useMaisonAi(suggestions)
 
@@ -113,15 +115,16 @@ export function HangoutPage({ data, from }: { data: HangoutView; from?: string }
     <PageReveal skeleton={<HangoutGhost />}>
       <div className={pageStyles.body} style={{ position: 'relative' }} data-testid="hangout-page" data-view={view} data-phase={data.event.phase}>
         <PageHeaderL2 backHref={back} crumbs={[{ label: 'Qanvast Ops', href: '/qanvast-ops' }, { label: 'Hangouts', href: HANGOUTS_HREF }]} title={data.event.name} scrollShadow={!taking}
-          chips={<><MetaChip color={standing.tone}>{standing.word}</MetaChip>{data.event.sample ? <MetaChip>Sample</MetaChip> : null}</>}
+          /* (the calm UI build 2026-10-27, 2-09 · T-05) the status is the one tag; that it is a sample is said behind its "?" */
+          chips={<><MetaChip color={standing.tone}>{standing.word}</MetaChip>{data.event.sample ? <Tooltip label="A sample Hangout written for the demo — Qanvast’s own events come through its feed."><IconButton icon="help" label="About this Hangout" data-testid="hangout-sample" /></Tooltip> : null}</>}
           actions={taking && p?.pagePath && !ended ? (
             <span ref={menuRef} className={styles.menuWrap}>
               <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} iconEnd={<span className={styles.chev} data-open={menuOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                       aria-haspopup="menu" aria-expanded={menuOpen} onPress={() => setMenuOpen((o) => !o)} data-testid="hangout-page-menu">Your booking page</Button>
               <PortalMenu open={menuOpen} anchor={menuRef} onClose={() => setMenuOpen(false)} align="right" width={MENU_WIDTH.detail} role="menu" sheetTitle="Your booking page">
-                <DropdownItem help="Homeowners book a chat with your designers — each arrives as a lead" onSelect={() => { void copyPage() }}>Copy the link</DropdownItem>
+                <DropdownItem help="Clients book a chat with your designers — each arrives as a lead" onSelect={() => { void copyPage() }}>Copy the link</DropdownItem>
                 <DropdownItem help="Opens WhatsApp with the link in a message" onSelect={sharePage}>Send on WhatsApp</DropdownItem>
-                <DropdownItem help="As homeowners see it, in a new tab" onSelect={() => { setMenuOpen(false); window.open(p.pagePath!, '_blank', 'noopener') }}>Open the page</DropdownItem>
+                <DropdownItem help="As clients see it, in a new tab" onSelect={() => { setMenuOpen(false); window.open(p.pagePath!, '_blank', 'noopener') }}>Open the page</DropdownItem>
                 {data.viewer.runs && !ended ? <><DropdownDivider />{p.pageOpen
                   ? <DropdownItem help="The chats already booked stay" onSelect={() => { void togglePage(false) }}>Stop taking bookings</DropdownItem>
                   : <DropdownItem onSelect={() => { void togglePage(true) }}>Take bookings again</DropdownItem>}</> : null}

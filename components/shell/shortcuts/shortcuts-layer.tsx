@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
-import { useRunUndo, useSnackbar } from '@/components/om/snackbar'
+import { useDismissNewest, useRunUndo, useSnackbar } from '@/components/om/snackbar'
 import { Keys, usePlatform } from '@/components/om/keys'
 import { openNotifications } from '@/components/shell/notifications-panel'
 import { GO, goFor, keyDef } from '@/lib/keys/registry'
@@ -27,7 +27,7 @@ import styles from './shortcuts.module.css'
  * Letters listen first (capture): a focused DS button is a react-aria pressable that can stop a key's travel. Keys a component may
  * answer itself (⌘Z, arrows, ↵, ⌫, Esc) listen last and stand down when it did.
  */
-const LETTER: Record<string, string> = { c: 'create', f: 'filters', v: 'view', m: 'move-stage', a: 'assign', e: 'edit', p: 'preview' }
+const LETTER: Record<string, string> = { c: 'create', f: 'filters', v: 'view', m: 'move-stage', a: 'assign', e: 'edit', p: 'preview', r: 'list.review' }   // (the Dashboard redesigned, 2026-10-26) R reviews the cursor's row
 const INTERACTIVE = 'button, a[href], [role="button"], [role="link"], [role="tab"], [role="checkbox"], [role="switch"], input, select, textarea, summary'
 const isInteractive = (t: EventTarget | null) => t instanceof Element && t !== document.body && !!t.closest(INTERACTIVE)
 type Cursor = { id: string | null; index: number }
@@ -40,6 +40,7 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
   const pathname = usePathname()
   const snackbar = useSnackbar()
   const runUndo = useRunUndo()
+  const dismissNewest = useDismissNewest()   // (the calm UI build 2026-10-27 — the audit's 2-44) Esc closes a message before it goes Back
   const open = useShortcutsOpen()
   const platform = usePlatform()
   const mounted = useSyncExternalStore(noSubscribe, () => true, () => false)   // overlays are the browser's; the server draws none
@@ -235,6 +236,9 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
         if (typing || document.querySelector('[role="dialog"]:not([data-kb-panel])')) return
         const clear = marked('clear')
         if (clear && press(clear)) { fire('clear'); return }
+        /* (the calm UI build 2026-10-27 — the audit's 2-44) a snackbar on screen takes the first Esc — Back needs a second; the habit of Esc for
+           "close this message" never takes you off the page */
+        if (dismissNewest()) return
         const back = marked('back')
         if (back && press(back)) fire('back')
       }
@@ -275,7 +279,7 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
       window.removeEventListener('keydown', onBubble)
       document.removeEventListener('click', onClick, true)
     }
-  }, [editor, router, snackbar, runUndo, cursorRow, startChord, endChord, tip])
+  }, [editor, router, snackbar, runUndo, dismissNewest, cursorRow, startChord, endChord, tip])
 
   /* the ? panel pushes the page aside from 1280 (app-shell.module.css), so the keys it lights stay in view */
   useEffect(() => {

@@ -29,6 +29,8 @@
   .titleField > .titleInput { flex: 0 1 auto; field-sizing: content; min-width: 0; }
 }
 .metaEnd { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; margin-left: auto; }
+.metaEnd.metaStart { margin-left: 0; }   /* (the calm UI build 2026-10-27, 4-18) the title left the row (it renames from the header's ⋮): the row starts with the recipient */
+.headWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (4-11) an upload's kind, a bundle — words beside the title, not tags */
 /* The recipient chip (the reference's "👤 Jonathan Slattery ✎"): a 36px pill-less button — glyph · name · edit glyph on hover. */
 .recipient { display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; max-width: 320px; min-width: 0; transition: background-color var(--motion-hover); }
 .recipient:hover { background: var(--om-color-hover-04p); }
@@ -112,7 +114,8 @@
 .signText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .signLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .signHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.signEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); }   /* (REG-729) no letter-spacing */
+.signEyebrow { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); margin-bottom: var(--om-spacing-3); }   /* (the calm UI build 2026-10-27, T-06) a section's name in the house card-head style — bold sentence case; capitals are a status's */
+.signNote.signLead { margin: calc(-1 * var(--om-spacing-2)) 0 var(--om-spacing-3); }   /* (4-19) the one line under "Signature boxes" */
 .signNote { margin-top: var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* Automation popover: a 320 card — title row, two switch rows with help. */
@@ -132,6 +135,7 @@
 .sendGrow { display: contents; }   /* (quotes on the move, B-17) the box's measuring wrapper — no box of its own */
 .sendUnder { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .sendTools { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); min-width: 0; }   /* (pending modules S29) Reset message · Write with AI */
+.howTip { display: flex; margin: calc(-1 * var(--om-spacing-2)) 0 0 calc(-1 * var(--om-spacing-3)); }   /* (the calm UI build 2026-10-27, 4-20) the desk's "How signing works": the text button's own padding lines its words up with the fields */
 .linkRow { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .linkRow code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
 .hint { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

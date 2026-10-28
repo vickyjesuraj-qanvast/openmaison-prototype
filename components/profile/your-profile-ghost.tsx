@@ -6,17 +6,24 @@ import { EMAIL_MODES, EMAIL_MODE_HELP, NOTHING_MUTED, NOTICES_CARD, NO_EMAIL_LIN
 import kit from '@/components/shell/ghost-kit.module.css'
 import field from '@/components/om/text-field.module.css'
 import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
-import { detailsHelp, emailHelp, phoneHelp } from '@/lib/company/member-words'   // (S42 audit A-02 · A-15) the page's own words
-import { useSeedStudio, useViewerShape } from '@/lib/ghost-shape'   // (pending modules S14) Accounting's page: no signature, no door to Members
+import { emailHelp, phoneHelp } from '@/lib/company/member-words'   // (S42 audit A-02 · A-15) the page's own words
+import { useViewerShape } from '@/lib/ghost-shape'   // (pending modules S14) Accounting's page: no signature, no door to Members
+import { CONSENT_HELP, CONSENT_LABEL } from '@/lib/quotes/signature'   // (calm-build regression fix F, R1) the consent row's words, as the page has them
 import profile from '@/components/company/profile-view.module.css'
 import photo from '@/components/company/member-photo-field.module.css'
 import styles from './your-profile.module.css'
 
 /** (pending modules S14) Your PayNow's line and the way to Members — said once for the page and its ghost. *(invented copy)* */
-export const PAYNOW_HELP = 'Where the studio pays you — a claim paid back, your commission. Finance shows it, with a copy button, when it pays you.'
-export const MEMBERS_LINK_HELP = 'Whether you take new leads and the leads you prefer are on your row in Company › Members.'
+/* (the calm UI build 2026-10-27 — the audit's 1-29, T-05 · W-058 · W-059) one short line a card, only where it changes a decision; the titles
+   carry the rest (was "Where the studio pays you — a claim paid back, your commission. Finance shows it, with a copy button, when it pays you.",
+   "What clients read about you — your card and your work — on their portal and your studio’s Hangout pages.") */
+export const PAYNOW_HELP = 'For claims and commission'
+export const MEMBERS_LINK_HELP = 'The leads you prefer — on your row in Company › Members'
 /** (pending modules S27) the way to the member's Public profile *(invented copy)* */
-export const PUBLIC_LINK_HELP = 'What clients read about you — your card and your work — on their portal and your studio’s Hangout pages.'
+export const PUBLIC_LINK_HELP = 'What clients see about you'
+/** (the calm UI build 2026-10-27 — the audit's 1-29 · 1-39, W-009 · W-032) the signature card's line, and Take new leads' words *(invented copy)* */
+export const SIGNATURE_HELP = 'Printed on your quotes and contracts'
+export const TAKE_LEADS = { title: 'New leads', label: 'Take new leads', help: 'New leads can be assigned to you' } as const
 
 /**
  * (REG-708 · pending modules S01) Your profile's ghost — the route's loading.tsx and the page's PageReveal draw it: Discard · Save changes; Your
@@ -33,13 +40,13 @@ export function YourProfileGhost({ notices = NOTICES_AT_REST }: { notices?: Noti
   const keeper = useViewerShape('role.accounting')
   const desk = useViewerShape('role.marketing')   // (S43E W6-01) Marketing's own words, as the page says them
   const leads = !keeper && !desk
-  const studio = useSeedStudio()   // (pending modules S31) the open studio's name
   return (
     <CompanyGhostFrame title={112} actions={[92, 126]} label="Loading your profile">
       <div className={profile.layout}>
         <div className={profile.form}>
           <section className={profile.card}>
-            <div className={profile.cardHead}><Words as="h2" className={profile.cardTitle}>Your details</Words><Words as="p" className={profile.cardHelp}>{detailsHelp(leads, desk)}</Words></div>
+            {/* (the calm UI build 2026-10-27 — the audit's 1-29) the title and the role's chip; the card's two-line help went */}
+            <div className={profile.cardHead}><span className={styles.titleRow}><Words as="h2" className={profile.cardTitle}>Your details</Words><Line w={48} lh={20} h={12} /><Slot kind="icon" /></span></div>   {/* (calm-build regression fix F) + the info tip's 36 */}
             <div className={photo.photoRow}><Slot kind="avatar40" /><Slot kind="btn" w={140} /></div>
             <div className={profile.details}>
               <div className={profile.detailWide}><GhostField /></div>
@@ -47,14 +54,14 @@ export function YourProfileGhost({ notices = NOTICES_AT_REST }: { notices?: Noti
               <div><span className={kit.fieldCol}><Slot kind="field" w="100%" /><span className={field.support}><Words>{emailHelp(true, leads, desk)}</Words></span></span></div>
               <div><span className={kit.fieldCol}><Slot kind="field" w="100%" /><span className={field.support}><Words>{phoneHelp(true, leads)}</Words></span></span></div>
             </div>
-            <Words as="p" className={styles.role}>{keeper ? `You’re in Accounting at ${studio}. An Owner or an Admin sets roles.` : `You’re an Owner at ${studio}. An Owner or an Admin sets roles on Company › Members.`}</Words>
           </section>
           {keeper ? null : <section className={profile.card}>
-            <div className={profile.cardHead}><Words as="h2" className={profile.cardTitle}>Your signature</Words><Words as="p" className={profile.cardHelp}>It prints on the quotes and contracts you prepare, once you allow it. Draw it, type your name in the signature face, or upload a picture of it.</Words></div>
+            <div className={profile.cardHead}><Words as="h2" className={profile.cardTitle}>Your signature</Words><Words as="p" className={profile.cardHelp}>{SIGNATURE_HELP}</Words></div>
             <div className={styles.signature}><Bone w="100%" h={140} r={8} className={styles.faceBone} /></div>
             <span className={profile.markActions}><Line w={96} lh={36} h={12} /><Line w={104} lh={36} h={12} /></span>
-            {/* (pending modules S03) the consent switch's row */}
-            <div className={styles.consentRow}><span className={styles.consentText}><Words className={styles.consentLabel}>Put it on the quotes and contracts I prepare</Words><Words className={profile.cardHelp}>Off, the studio signature box stays blank and you sign by hand. You can change this any time.</Words></span><Slot kind="switch" /></div>
+            {/* (pending modules S03) the consent switch's row — (calm-build regression fix F, R1) in the page's own words (lib/quotes/signature.ts), so
+                the ghost draws what the page lands with (the calm UI build's 1-29 shortened the helper; the ghost had kept the old sentence) */}
+            <div className={styles.consentRow}><span className={styles.consentText}><Words className={styles.consentLabel}>{CONSENT_LABEL}</Words><Words className={profile.cardHelp}>{CONSENT_HELP}</Words></span><Slot kind="switch" /></div>
           </section>}
           {/* (pending modules S14) Your PayNow: the value, then its Change */}
           <section className={profile.card}>
@@ -87,10 +94,15 @@ export function YourProfileGhost({ notices = NOTICES_AT_REST }: { notices?: Noti
             <Bone w={40} h={40} r="var(--om-radius-full)" style={{ flexShrink: 0 }} />
             <span className={profile.kitLinkText}><Words className={profile.kitLinkTitle}>Your public profile</Words><Words className={profile.cardHelp}>{PUBLIC_LINK_HELP}</Words></span>
           </div>}
-          {keeper ? null : <div className={profile.kitLink}>
-            <Bone w={40} h={40} r="var(--om-radius-full)" style={{ flexShrink: 0 }} />
-            <span className={profile.kitLinkText}><Words className={profile.kitLinkTitle}>New leads and preferences</Words><Words className={profile.cardHelp}>{MEMBERS_LINK_HELP}</Words></span>
-          </div>}
+          {/* (the calm UI build 2026-10-27 — the audit's 1-39) New leads: the switch itself, then the way to your lead preferences on Members */}
+          {keeper || desk ? null : <section className={profile.card}>
+            <div className={profile.cardHead}><Words as="h2" className={profile.cardTitle}>{TAKE_LEADS.title}</Words></div>
+            <div className={styles.consentRow}><span className={styles.consentText}><Words className={styles.consentLabel}>{TAKE_LEADS.label}</Words><Words className={profile.cardHelp}>{TAKE_LEADS.help}</Words></span><Slot kind="switch" /></div>
+            <div className={profile.kitLink}>
+              <Bone w={40} h={40} r="var(--om-radius-full)" style={{ flexShrink: 0 }} />
+              <span className={profile.kitLinkText}><Words className={profile.kitLinkTitle}>Lead preferences</Words><Words className={profile.cardHelp}>{MEMBERS_LINK_HELP}</Words></span>
+            </div>
+          </section>}
         </div>
       </div>
     </CompanyGhostFrame>

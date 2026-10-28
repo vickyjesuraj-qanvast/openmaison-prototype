@@ -32,7 +32,8 @@ export type DocumentNumbersData = { numbering: DocumentNumbering; numbers: Recor
    Numbering). Not a money document, so it rides beside the four (its own settings key, `ticket_numbering`); its year restarts the count each
    year, as today's T-{YYYY}-{nnn} — the default, so a studio that never opens it numbers as it always did. ── */
 export type TicketNumbersData = { numbering: ProjectNumbering; numbers: string[] }
-export const TICKET_DOC = { label: 'Tickets', noun: 'ticket', icon: 'handyman', when: 'Numbered when it is reported or raised', testId: 'ticket-number-example' } as const
+/* (the calm UI build 2026-10-27, T-01) a client's ticket is an *issue* on screen — the row's words; its key, settings and test id stay */
+export const TICKET_DOC = { label: 'Issues', noun: 'issue', icon: 'handyman', when: 'Numbered when it is reported or raised', testId: 'ticket-number-example' } as const
 
 export const DOCUMENT_NUMBERS_RULE = 'Only Owners and Admins change how documents are numbered'
 

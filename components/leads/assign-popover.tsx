@@ -92,9 +92,9 @@ export function AssignPopover({
   const tip = suggestion && value.length === 0 && !locked && mayPick(suggestion.id) ? (
     <div className={styles.suggest} data-testid="assign-suggestion">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <span className={styles.suggestHead}><img src="/figma-assets/brief-sparkle.svg" alt="" width={17} height={17} />Suggested · {suggestion.name}</span>
+      <span className={styles.suggestHead}><img src="/figma-assets/brief-sparkle.svg" alt="" width={17} height={17} />Suggested: {suggestion.name}</span>
       <span className={styles.suggestReason}>{suggestion.reason}</span>
-      <Button appearance="text" onPress={() => onApply([suggestion.id])}>Assign to {suggestion.name}</Button>
+      <Button appearance="text" onPress={() => onApply([suggestion.id])}>Assign {suggestion.name}</Button>
     </div>
   ) : null
   /* (REG-725) The message rides on the foot's left (FootStart) — in the popover's house foot and in the phone sheet's. */
@@ -107,7 +107,7 @@ export function AssignPopover({
     <>
       {requireOne && picked.size === 0 ? <FootStart><span className={styles.footMsg} role="alert">{MSG.assignee}</span></FootStart> : null}
       <Button variant="secondary" appearance="outlined" onPress={() => setPicked(new Set(assignable === null ? [] : [...picked].filter((id) => !assignable.includes(id))))}>
-        Clear All
+        Clear
       </Button>
       <Button isDisabled={requireOne && picked.size === 0} onPress={() => onApply(Array.from(picked))}>Assign</Button>
     </>
@@ -117,7 +117,7 @@ export function AssignPopover({
      Clear All / Assign row, off the bottom edge under a scrim instead of floating over the cell it came from. */
   if (sheet) {
     return (
-      <Sheet open={open} onClose={onClose} title="Assign Member" subtitle={subject} footer={foot} bodyClassName={styles.sheetBody}>
+      <Sheet open={open} onClose={onClose} title="Assign members" subtitle={subject} footer={foot} bodyClassName={styles.sheetBody}>
         {tip}{rows}
       </Sheet>
     )
@@ -133,11 +133,11 @@ export function AssignPopover({
           initial="initial" animate="animate" exit="exit"
           style={{ top: position.top, left: position.left, transformOrigin: 'top left' }}
           role="dialog"
-          aria-label="Assign Member"
+          aria-label="Assign members"
         >
           {/* (REG-725) the house head and foot (components/om/dialog.tsx): the 64 head with its rule inside and the outlined close; the
               foot's top rule always, its shadow only while the members scroll. */}
-          <SurfaceHead title="Assign Member" onClose={onClose} />
+          <SurfaceHead title="Assign members" onClose={onClose} />
           <div ref={scrollRef} className={styles.body}>
             {tip}{rows}
           </div>

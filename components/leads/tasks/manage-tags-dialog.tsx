@@ -47,7 +47,7 @@ export function ManageTagsDialog({
 
   return (
     <div className={styles.host}>
-      <Dialog open={open} onClose={onClose} title="Manage Tags" width={400} size="modal" footer={null}>
+      <Dialog open={open} onClose={onClose} title="Manage tags" width={400} size="modal" footer={null}>
         {tags.map((t, i) => (
           <Fragment key={t.id}>
             {i > 0 ? <div className={styles.rule} /> : null}

@@ -47,7 +47,8 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
     return (
       <div className={styles.inspector}>
         <div className={styles.head}><span className={styles.headTitle}>Nothing selected</span></div>
-        <div className={styles.empty}>
+        {/* (the calm UI build 2026-10-27, 4-23) the editor's orientation lives here alone — the first-visit banner's handle moved with its job */}
+        <div className={styles.empty} data-testid="editor-hint">
           <span className={styles.emptyGlyph}><Icon name="tune" size={40} weight={300} /></span>
           Click any part of the page to change it here.
           <div className={styles.emptySteps}>
@@ -447,6 +448,8 @@ function ItemsFields({ b, upd, style, onReset, rs, trades, brand, onCurrency }: 
   const bandFill = b.bandStyle === 'grey' || b.bandStyle === 'accent' || b.bandStyle === 'black'
   const col = (i: number, patch: Partial<ItemsBlock['columns'][number]>) => upd({ columns: b.columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) }, `col-${i}`)
   const nextAlign = (a: Align): Align => (a === 'left' ? 'center' : a === 'center' ? 'right' : 'left')
+  /* (the calm UI build 2026-10-27, 4-23) the one column card that is open — its heading, width, alignment, place and colour */
+  const [openCol, setOpenCol] = useState<string | null>(null)
   const ALIGN_WORD: Record<Align, string> = { left: 'left', center: 'centre', right: 'right' }
   /* (Dane UAT, Figma 1517:21) "Trade" keeps its name (REG-561 · REG-569); the line under the box says it in the studio's own words — its trades. */
   const tradeHelp = trades.length ? `A trade is one of your works — ${trades.slice(0, 2).join(', ')}${trades.length > 2 ? ' and the rest' : ''} in Settings › Quotes & pricing.` : 'A trade is one of your works, as listed in Settings › Quotes & pricing.'
@@ -454,7 +457,7 @@ function ItemsFields({ b, upd, style, onReset, rs, trades, brand, onCurrency }: 
   const pickNumbering = (v: ItemsBlock['numbering']) => upd((v === 'rooms' || v === 'roman') && b.subGroupBy === 'none' && b.groupBy !== 'room' ? { numbering: v, subGroupBy: 'room' } : { numbering: v })
   return (
     <>
-      <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section label' }]} onChange={(v) => upd({ groupBy: v })} helper={tradeHelp} />
+      <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Print group' }]} onChange={(v) => upd({ groupBy: v })} helper={tradeHelp} />
       <Sel label="Then split each by" value={b.subGroupBy} options={[{ value: 'none', label: 'Nothing' }, { value: 'room', label: 'Room' }, { value: 'category', label: 'Trade' }]} onChange={(v) => upd({ subGroupBy: v })} />
       <Seg label="Sections are marked" value={b.sectionLabel} options={[{ value: 'letters', label: 'A · B · C' }, { value: 'numbers', label: '1 · 2 · 3' }, { value: 'none', label: 'Not at all' }]} onChange={(v) => upd({ sectionLabel: v })} />
       <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'lettered', label: 'A1 · A2 · B1' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'rooms', label: 'B · 1 Kitchen · 1.1' }, { value: 'roman', label: '1 · a · i' }, { value: 'none', label: 'None' }]} onChange={pickNumbering} />
@@ -463,23 +466,40 @@ function ItemsFields({ b, upd, style, onReset, rs, trades, brand, onCurrency }: 
         <div className={styles.list}>
           {b.columns.map((c, i) => (
             /* (REG-569) A column as a card: the switch and the column's name with its order buttons, then the printed heading, the width and the alignment — the one-line row had squeezed the heading box to a letter. */
-            <div key={c.key} className={styles.card} data-off={!c.on || undefined} data-testid="column-card">
+            /* (the calm UI build 2026-10-27, the UI audit's 4-23 — the owner's rule for this editor, progressive disclosure, REG-542) one row a
+               column at rest — its switch and its name — and its heading, width, alignment, place and colour one press away (its chevron); about
+               sixty controls had stood in the panel at once. Every control is the one it was, inside. */
+            <div key={c.key} className={styles.card} data-off={!c.on || undefined} data-open={openCol === c.key || undefined} data-testid="column-card">
               <div className={styles.cardLine}>
                 <Switch size="sm" isSelected={c.on} onChange={(on: boolean) => col(i, { on })} aria-label={`Print the ${ITEM_COLUMN_LABEL[c.key]} column`} />
                 <span className={styles.cardName}>{ITEM_COLUMN_LABEL[c.key]}</span>
+                {c.label !== ITEM_COLUMN_LABEL[c.key] && openCol !== c.key ? <span className={styles.cardAlt}>“{c.label}”</span> : null}
                 <span className={styles.cardActions}>
-                  <Tooltip label={`Aligned ${ALIGN_WORD[c.align]} — press to change`}><IconButton icon={`format_align_${c.align}`} label={`Aligned ${ALIGN_WORD[c.align]} — press to change`} size={36} variant="bare" iconSize={20} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>
-                  {/* (Dane UAT, Figma 1517:27) left and right arrows: the move is across the page, as the tooltips always said */}
-                  <Tooltip label="Move left on the page"><IconButton icon="arrow_back" label={`Move ${ITEM_COLUMN_LABEL[c.key]} left`} size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => upd({ columns: swap(b.columns, i, i - 1) })} /></Tooltip>
-                  <Tooltip label="Move right on the page"><IconButton icon="arrow_forward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} right`} size={36} variant="bare" iconSize={20} disabled={i === b.columns.length - 1} onClick={() => upd({ columns: swap(b.columns, i, i + 1) })} /></Tooltip>
+                  <Tooltip label={openCol === c.key ? 'Done' : `Change the ${ITEM_COLUMN_LABEL[c.key]} column`}>
+                    <IconButton icon={openCol === c.key ? 'expand_less' : 'expand_more'} label={`Change the ${ITEM_COLUMN_LABEL[c.key]} column`} aria-expanded={openCol === c.key} size={36} variant="bare" iconSize={20}
+                                onClick={() => setOpenCol((k) => (k === c.key ? null : c.key))} data-testid="column-card-open" />
+                  </Tooltip>
                 </span>
               </div>
-              <div className={styles.cardLine}>
-                <span className={styles.cardGrow}><TextField label="Heading on the page" value={c.label} onChange={(v) => col(i, { label: v })} /></span>   {/* the column's name is on the line above; "mm" keeps the width box short */}
-                {c.key !== 'item' ? <span className={styles.rowMm}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.cardMeta}>takes the rest</span>}
-              </div>
-              {/* (S44T — UAT row 309) a printed column's colour — a kit colour or any hex; the # column's colours the section and sub-section marks too */}
-              {c.on ? <ColorPick label="Colour" value={c.color} onChange={(v) => col(i, { color: v })} brand={brand} none wide /> : null}
+              {openCol === c.key ? (
+                <>
+                  <div className={styles.cardLine}>
+                    <span className={styles.cardGrow}><TextField label="Heading on the page" value={c.label} onChange={(v) => col(i, { label: v })} /></span>   {/* the column's name is on the line above; "mm" keeps the width box short */}
+                    {c.key !== 'item' ? <span className={styles.rowMm}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.cardMeta}>takes the rest</span>}
+                  </div>
+                  <div className={styles.cardLine}>
+                    <span className={styles.cardGrow}><span className={styles.cardMeta}>Aligned {ALIGN_WORD[c.align]} · its place on the page</span></span>
+                    <span className={styles.cardActions}>
+                      <Tooltip label={`Aligned ${ALIGN_WORD[c.align]} — press to change`}><IconButton icon={`format_align_${c.align}`} label={`Aligned ${ALIGN_WORD[c.align]} — press to change`} size={36} variant="bare" iconSize={20} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>
+                      {/* (Dane UAT, Figma 1517:27) left and right arrows: the move is across the page, as the tooltips always said */}
+                      <Tooltip label="Move left on the page"><IconButton icon="arrow_back" label={`Move ${ITEM_COLUMN_LABEL[c.key]} left`} size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => upd({ columns: swap(b.columns, i, i - 1) })} /></Tooltip>
+                      <Tooltip label="Move right on the page"><IconButton icon="arrow_forward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} right`} size={36} variant="bare" iconSize={20} disabled={i === b.columns.length - 1} onClick={() => upd({ columns: swap(b.columns, i, i + 1) })} /></Tooltip>
+                    </span>
+                  </div>
+                  {/* (S44T — UAT row 309) a printed column's colour — a kit colour or any hex; the # column's colours the section and sub-section marks too */}
+                  {c.on ? <ColorPick label="Colour" value={c.color} onChange={(v) => col(i, { color: v })} brand={brand} none wide /> : null}
+                </>
+              ) : null}
             </div>
           ))}
         </div>

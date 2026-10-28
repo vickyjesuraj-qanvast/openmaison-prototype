@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { Button, Checkbox, Link, Tag } from '@/components/ds'
+import { Checkbox, Link, Tag } from '@/components/ds'
 import { DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { SelectTrigger } from '@/components/om/select-trigger'
@@ -75,7 +75,8 @@ export type TasksTableProps = {
   onAddTags: (task: TaskRow, anchor: HTMLElement) => void
   onRowMenu: (task: TaskRow, action: TaskRowAction) => void
   onEdit: (task: TaskRow) => void
-  /** Bottom bar "+ Add Task" (902:26450). */
+  /** Bottom bar "+ Add Task" (902:26450) — (the calm UI build 2026-10-27, 1-11 · 2-13 · 2-19) only where nothing else adds: a phone with no
+      quick add. The desk's second add under the table went; New task ▾ in the toolbar (or the page header) is the one way in. */
   onAddClick?: () => void
   /** (Dane UAT 11.02) The task the add row just created — brought into view and pulsed once; `n` changes per add. */
   pulse?: { id: string; n: number } | null
@@ -105,12 +106,16 @@ export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
      right (the Quotes / Contracts tables' way); Creator and Tags wait in Column settings, remembered per breakpoint */
   { key: 'creator', label: 'Creator', track: '160', tabletHidden: true },
   { key: 'due', label: 'Due date', track: '240' },   /* (Dane UAT 5.13 · 5.05) the mock's 137 held "17 Jul ’26"; the widest "Wed, 28 May ’26 · 10:00 PM" needs 234 — the table grows, never cuts (REG-430) */
-  { key: 'status', label: 'Status', track: '118' },
+  /* (the calm UI build 2026-10-27, 1-07 · 2-19 · W-295) Status rests in Column settings: on an open list every row said "OPEN", the list's own
+     filter, and a done row's filled ring already says it. Shown again from Column settings (or sorted by), it reads as it did. */
+  { key: 'status', label: 'Status', track: '118', hidden: true },
   { key: 'tags', label: 'Tags', track: '191', tabletHidden: true },
 ]
 /** The rail's Tasks page (REG-466): the same columns with the task's Lead after Title — free, not pinned (owner's call).
-    (parity P-27, Q-10) The head reads "For": the column holds leads, projects and the studio's own (the key stays `lead`, saved settings). */
-export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'For', track: '200' }, ...TASK_COLUMN_DEFS.slice(1).map((d) => (d.key === 'status' ? { ...d, tabletHidden: true } : d))]   /* (L4, C-07) a tablet's rail page: Title · For · Members · Due date — the ring says done */
+    (parity P-27, Q-10) The head reads "For": the column holds leads, projects and the studio's own (the key stays `lead`, saved settings).
+    (the calm UI build 2026-10-27, 1-07) It opens on Title · For · Members · Due date, which fit a 1440 screen without cutting the last column
+    ("+ Ad"); Creator, Status and Tags wait in Column settings, as a tablet's already did (L4, C-07). */
+export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'For', track: '200' }, ...TASK_COLUMN_DEFS.slice(1).map((d) => (d.key === 'status' || d.key === 'creator' || d.key === 'tags' ? { ...d, hidden: true } : d))]
 /** (Projects round 2) A project's tasks (a lead that has one): the milestone each sits in, after Title. */
 export const PROJECT_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'milestone', label: 'Milestone', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
 /** (Leads on the move, L4 — C-07) A touch tablet's floors: Title from 200, the due day in its short words ("Mon 26 Oct · 10:00 AM"), the names
@@ -167,16 +172,6 @@ export function TasksTable({
      anchor is the last row clicked, with or without shift. */
   const lastTouched = useRef<number | null>(null)
 
-  /* The Add Task bar is docked whenever the card's end sits below the fold; the 1px sentinel after it says so. */
-  const cardEnd = useRef<HTMLDivElement>(null)
-  const [floating, setFloating] = useState(false)
-  useEffect(() => {
-    const el = cardEnd.current
-    if (!el || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(([entry]) => setFloating(!entry?.isIntersecting), { rootMargin: '0px' })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
   const toggleOne = (id: string, index: number, range: boolean) => {
     const next = new Set(selected)
     const from = lastTouched.current
@@ -223,7 +218,7 @@ export function TasksTable({
         </div>
         {composer ?? (
           <div className={styles.foot}>
-            <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>Add Task</Link>
+            <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>New task</Link>
           </div>
         )}
       </div>
@@ -292,16 +287,9 @@ export function TasksTable({
     </div>
     </div>
 
-      {/* Bottom bar 902:26450 — Link text Primary leading icon add "Add Task". Sticks to the viewport bottom while
-          the card runs past it; `data-floating` adds the lift only while it is actually docked. (L4 — P-10) A touch tablet docks the quick add there. */}
-      {composer ?? (
-      <div className={styles.foot} data-floating={floating || undefined}>
-        <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>
-          Add Task
-        </Link>
-      </div>
-      )}
-      <div className={styles.footEnd} ref={cardEnd} aria-hidden />
+      {/* (the calm UI build 2026-10-27, 1-11 · 2-13 · 2-19) The desk's bottom bar "+ Add Task" (902:26450) went — the toolbar's (or the header's)
+          New task ▾ is the one add; its Blank task opens this table's own add row at the top. (L4 — P-10) A touch tablet docks the quick add here. */}
+      {composer ?? null}
     </div>
   )
 }
@@ -397,13 +385,11 @@ function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { init
   )
 }
 
-function AddTagsLink({ inert = false }: { inert?: boolean }) {
-  return (
-    <span className={styles.link} data-inert={inert || undefined}>
-      <Icon name="add" size={20} />
-      Add Tags
-    </span>
-  )
+/** (the calm UI build 2026-10-27, 1-07 · W-071) A task with no tag says nothing at rest — the cell was a purple "+ Add Tags" on every row, cut to
+    "+ Ad" at the table's edge. On a mouse the empty cell offers a quiet "Add tags" while the row is pointed at or in focus; the row's ⋮ and the
+    task panel carry "Add tags" at every width. */
+function AddTagsHint() {
+  return <span className={styles.hint}>Add tags</span>
 }
 
 /** Inline add row (frame 194 "Type=RW-New, State=Input"): band, disabled checkbox, the field, inert placeholders. */
@@ -425,9 +411,10 @@ export function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   )
   return (
     <span className={styles.menuWrap} ref={anchor} data-testid="task-add-lead">
-      <SelectTrigger size="s" label="Lead for the new task" value={current?.name ?? 'Studio'} open={open} onClick={() => setOpen((o) => !o)} />
+      {/* (the calm UI build 2026-10-27, 1-16) "General" — a task on no lead or project, the scope pill's General tasks (was "Studio") */}
+      <SelectTrigger size="s" label="Lead for the new task" value={current?.name ?? 'General'} open={open} onClick={() => setOpen((o) => !o)} />
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={projectsOnly.length ? MENU_WIDTH.wide : MENU_WIDTH.standard} role="menu" sheetTitle={projectsOnly.length ? 'Lead or project' : 'Lead'}>
-        <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>Studio (no lead)</DropdownItem>
+        <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>General (no lead)</DropdownItem>
         {projectsOnly.length && leadsOnly.length ? <DropdownLabel>Leads</DropdownLabel> : null}
         {leadsOnly.map(row)}
         {projectsOnly.length ? <DropdownLabel>Projects</DropdownLabel> : null}
@@ -463,7 +450,8 @@ function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign, mileston
         </div>
       ) : null}
       {/* (UX audit 2026-09-30, T4) A new task starts with its lead's members — the log reminder's rule (REG-608) — shown as the row will show
-          them; the person_add changes them before the save. With nobody on the lead, the row's "Assign" link picks them. */}
+          them; the person_add changes them before the save. With nobody on the lead, the person_add alone picks them — (the calm UI build
+          2026-10-27, 1-07) the members' own grey glyph, where a purple "Assign" link stood. */}
       <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-testid="add-row-members">
         {onAssign && members?.length ? (
           <>
@@ -472,34 +460,26 @@ function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign, mileston
               {members.length > 2 ? <span className={styles.plusBox}>+{members.length - 2}</span> : null}
             </span>
             <Tooltip label="Assign members">
-              <IconButton icon="person_add" label="Members of the new task" size={24} variant="primary" onClick={(e) => onAssign(e.currentTarget)} />
+              <IconButton icon="person_add" label="Members of the new task" size={24} onClick={(e) => onAssign(e.currentTarget)} />
             </Tooltip>
           </>
         ) : onAssign ? (
-          <button type="button" className={styles.assignLink} onClick={(e) => onAssign(e.currentTarget)} aria-label="Members of the new task">
-            <Icon name="person_add" size={20} />
-            Assign
-          </button>
+          <Tooltip label="Assign members">
+            <IconButton icon="person_add" label="Members of the new task" size={24} onClick={(e) => onAssign(e.currentTarget)} />
+          </Tooltip>
         ) : (
-          <span className={`${styles.assignLink} ${styles.inert}`}>
-            <Icon name="person_add" size={20} />
-            Assign
-          </span>
+          <IconButton icon="person_add" label="Members of the new task" size={24} className={styles.inert} tabIndex={-1} aria-disabled />
         )}
       </div>
       {/* The creator is stamped on save; until then the cell reads as unset, the panel's own "—". */}
       <div className={`${styles.cell} ${styles.colCreator} ${L.pinned('creator') ? styles.pin : ''}`} role="cell" data-col="creator" data-pin-edge={L.edge('creator') || undefined} style={L.style('creator')}>
         <span className={styles.creatorName}>—</span>
       </div>
-      <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')}>
-        <IconButton icon="calendar_add_on" label="Set due date" size={24} variant="primary" className={styles.inert} tabIndex={-1} aria-disabled />
-      </div>
-      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
-        <Tag appearance="outlined" color="blue">OPEN</Tag>
-      </div>
-      <div className={`${styles.cell} ${styles.colTags} ${L.pinned('tags') ? styles.pin : ''}`} role="cell" data-col="tags" data-pin-edge={L.edge('tags') || undefined} style={L.style('tags')}>
-        <AddTagsLink inert />
-      </div>
+      {/* (the calm UI build 2026-10-27, 1-07) the row a task is typed into says nothing it can't do yet: the due, the status and the tags come with
+          the saved task (its panel, its row) — the inert calendar, "OPEN" and "+ Add Tags" placeholders went */}
+      <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')} />
+      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')} />
+      <div className={`${styles.cell} ${styles.colTags} ${L.pinned('tags') ? styles.pin : ''}`} role="cell" data-col="tags" data-pin-edge={L.edge('tags') || undefined} style={L.style('tags')} />
     </div>
   )
 }
@@ -546,6 +526,7 @@ function TaskRowView({
   /* (REG-728) The row menu opens through the body portal, as the Quotes / Contracts twins' (REG-639): an inline menu inside the card's
      sideways scroller was clipped, and the side it opened on had to be measured (REG-286) — the portal flips on the viewport itself. */
   const kebab = useRef<HTMLSpanElement>(null)
+  const tagsCell = useRef<HTMLButtonElement>(null)   // (the calm UI build 2026-10-27) the ⋮'s Add tags anchors the picker on the row's own cell
 
   return (
     <div className={styles.row} role="row" data-kb-row data-kb-id={task.id} data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined} data-fresh={fresh || undefined}>
@@ -566,7 +547,7 @@ function TaskRowView({
         </div>
       ) : (
         <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
-          <Tooltip label={task.done ? 'Reopen' : 'Mark as completed'}>
+          <Tooltip label={task.done ? 'Reopen' : 'Mark as done'}>
             <button
               type="button" className={styles.glyph} data-done={task.done || undefined}
               aria-label={task.done ? `Reopen ${task.title}` : `Mark ${task.title} as completed`}
@@ -581,7 +562,8 @@ function TaskRowView({
           {/* (UX audit 2026-09-30, T6 — supersedes REG-472's click-to-rename) A click on the title opens the task's panel, as the rest of the
               cell, the Edit pill and the comment chip do: a designer who wanted the details landed in a text field. A double-click opens the
               panel with its Task name selected — rename there; the row menu's Rename still edits in place. */}
-          <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}
+          {/* (the calm UI build 2026-10-27) `data-kb-open` — Enter on the row — rides on the title now that the Edit pill is in the ⋮ */}
+          <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)} data-kb-open
                   onDoubleClick={touch || !onRenameInPanel ? undefined : () => onRenameInPanel(task)} aria-label={`Open ${task.title}`}>
             {/* (Dane UAT 8.16) A cut title says itself in full on hover — REG-820's `whenCut`, as the libraries' names do. */}
             <Tooltip label={task.title} whenCut><span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span></Tooltip>
@@ -644,7 +626,9 @@ function TaskRowView({
             ) : <span className={styles.leadName}>{task.lead.name}</span>}
           </NextLink>
         ) : (
-          <span className={styles.leadStudio}><Icon name="domain" size={16} weight={300} />Studio</span>
+          /* (the calm UI build 2026-10-27, 1-16) a task on no lead and no project is a general task — the scope pill's word; "Studio" also
+             names the whole studio on the Dashboard and the all-hands chat */
+          <span className={styles.leadStudio}><Icon name="domain" size={16} weight={300} />General</span>
         )}
       </div>
       )}
@@ -653,12 +637,14 @@ function TaskRowView({
           <MilestoneCell task={task} picker={milestonePicker} />
         </div>
       ) : null}
+      {/* (the calm UI build 2026-10-27, 1-07 · 2-19 · T-02) Nobody on it: the members' own grey person_add — one quiet glyph where a purple
+          "Assign" link stood on every unassigned row. Someone on it: their faces, and the person_add on a mouse only while the row is pointed
+          at or in focus (a finger keeps it); the Unassigned chip finds the rest. */}
       <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-inert={inert}>
         {task.assignees.length === 0 && !outside ? (
-          <button type="button" className={styles.assignLink} onClick={(e) => onAssign(task, e.currentTarget)}>
-            <Icon name="person_add" size={20} />
-            Assign
-          </button>
+          <Tooltip label="Assign members">
+            <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24} onClick={(e) => onAssign(task, e.currentTarget)} data-testid="task-row-assign" />
+          </Tooltip>
         ) : (
           <>
             {/* (gaps build, package C — M-03) the outside person stands in the stack with the members: two at most, then +n */}
@@ -667,10 +653,12 @@ function TaskRowView({
               {outside ? <OutsideBadge o={outside} /> : null}
               {task.assignees.length > (outside ? 1 : 2) ? <span className={styles.plusBox}>+{task.assignees.length - (outside ? 1 : 2)}</span> : null}
             </span>
-            <Tooltip label="Assign members">
-              <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24} variant="primary"
-                          onClick={(e) => onAssign(task, e.currentTarget)} />
-            </Tooltip>
+            <span className={styles.onHover}>
+              <Tooltip label="Assign members">
+                <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24}
+                            onClick={(e) => onAssign(task, e.currentTarget)} />
+              </Tooltip>
+            </span>
           </>
         )}
       </div>
@@ -687,8 +675,9 @@ function TaskRowView({
         )}
       </div>
 
-      {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise — (Dane UAT 5.13 · 5.05)
-          with its day and, when the task has one, its time: "Sat, 3 Oct ’26 · 10:00 AM". */}
+      {/* Due cell: the date (red when overdue) — (Dane UAT 5.13 · 5.05) with its day and, when the task has one, its time: "Sat, 3 Oct ’26 ·
+          10:00 AM". (the calm UI build 2026-10-27, 1-07 · 2-19) Plain text, no underline at rest; an undated task's calendar_add_on is the grey
+          glyph, on a mouse only while the row is pointed at or in focus — a finger keeps it. */}
       <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')} data-inert={inert}>
         {task.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
@@ -699,10 +688,12 @@ function TaskRowView({
             <span className={styles.dueShort}>{dueChip(task.dueAt, task.done, now)?.text}</span>
           </button>
         ) : (
-          <Tooltip label="Set due date">
-            <IconButton icon="calendar_add_on" label={`Set due date for ${task.title}`} size={24} variant="primary"
-                        onClick={(e) => onDue(task, e.currentTarget)} />
-          </Tooltip>
+          <span className={styles.onHover}>
+            <Tooltip label="Set due date">
+              <IconButton icon="calendar_add_on" label={`Set due date for ${task.title}`} size={24}
+                          onClick={(e) => onDue(task, e.currentTarget)} />
+            </Tooltip>
+          </span>
         )}
       </div>
 
@@ -713,47 +704,45 @@ function TaskRowView({
           : <Tag appearance="outlined" color="blue">OPEN</Tag>}
       </div>
 
-      {/* Tags cell: two Tag Outlined Default + "+n", or the "+ Add Tags" link; the whole cell opens the picker. */}
+      {/* Tags cell: the whole cell opens the picker. (the calm UI build 2026-10-27, 1-07 · 2-19 · T-06) The tags in the words the studio typed —
+          secondary text, "Generic, Focus +2", not capital chips (capitals are for a status); none = nothing at rest (AddTagsHint). */}
       <div className={`${styles.cell} ${styles.colTags} ${L.pinned('tags') ? styles.pin : ''}`} role="cell" data-col="tags" data-pin-edge={L.edge('tags') || undefined} style={L.style('tags')} data-inert={inert}>
-        <button type="button" className={styles.tagsBtn} aria-label={`Tags for ${task.title}`}
+        <button ref={tagsCell} type="button" className={styles.tagsBtn} aria-label={`Tags for ${task.title}`}
                 onClick={(e) => onAddTags(task, e.currentTarget)}>
           {task.tags.length === 0 ? (
-            <AddTagsLink />
+            <AddTagsHint />
           ) : (
-            <>
-              {/* The name sits in its own span so a long user-made tag ellipsises inside its chip instead of spilling the cell. */}
-              {task.tags.slice(0, 2).map((g) => (
-                <Tag key={g.id} appearance="outlined" className={styles.tagChip}><span className={styles.tagName}>{g.name}</span></Tag>
-              ))}
-              {task.tags.length > 2 ? <Tag appearance="outlined">{`+${task.tags.length - 2}`}</Tag> : null}
-            </>
+            <span className={styles.tagWords}>
+              <span className={styles.tagName}>{task.tags.slice(0, 2).map((g) => g.name).join(', ')}</span>
+              {task.tags.length > 2 ? <span className={styles.tagMore}>{`+${task.tags.length - 2}`}</span> : null}
+            </span>
           )}
         </button>
       </div>
 
-      {/* Row hover actions (frame 195 / 606:75167, REG-163): Edit + kebab, level-1 shadow, right 24. */}
+      {/* Row hover actions (frame 195 / 606:75167, REG-163): the kebab, level-1 shadow, right 24. (the calm UI build 2026-10-27, 1-07 · T-02) The
+          floating Edit pill went — it sat over the due date ("Thu, 10 Sep ’26 [Edit] ⋮" hid the time) and the row already opens on its title;
+          Edit is the ⋮'s first row, with Add tags beside it. The ⋮ is the grey house glyph, not a purple one on every row. */}
       {renaming ? null : (
         <span className={styles.actions} data-open={menuOpen || undefined}>
           <span className={styles.actionsInner}>
-          <span className={styles.float}>
-            {/* rowEdit / rowKebab: the 36px controls take a ≥40 touch target below 768 (REG-273) — a transparent
-                overlay, so the mock's pill is drawn exactly as it is on desktop. */}
-            <Button variant="primary" appearance="outlined" className={styles.rowEdit} onPress={() => onEdit(task)} data-kb-open>Edit</Button>
-          </span>
           <span className={styles.menuWrap} ref={kebab}>
             <span className={styles.float}>
               <Tooltip label="More actions" disabled={menuOpen}>
-                <IconButton icon="more_vert" label={`More actions for ${task.title}`} variant="primary" className={styles.rowKebab}
+                <IconButton icon="more_vert" label={`More actions for ${task.title}`} className={styles.rowKebab}
                             aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
               </Tooltip>
             </span>
             <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={task.title}>
-              {/* "Mark as Completed" only — the mock has no reopen item, so it is hidden for completed tasks. */}
-              {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as Completed</DropdownItem>}
+              <DropdownItem onSelect={() => { onMenuClose(); onEdit(task) }} testId="task-row-edit">Edit</DropdownItem>
+              {/* "Mark as done" only — the mock has no reopen item, so it is hidden for completed tasks (the row's ring reopens). */}
+              {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as done</DropdownItem>}
               <DropdownItem onSelect={pick('rename')}>Rename</DropdownItem>
+              {/* (the calm UI build 2026-10-27, 1-07) the tags picker from the row, wherever the Tags column stands — or rests in Column settings */}
+              <DropdownItem onSelect={() => { onMenuClose(); const el = tagsCell.current; if (el && el.getClientRects().length) onAddTags(task, el); else onEdit(task) }} testId="task-row-tags">{task.tags.length ? 'Edit tags' : 'Add tags'}</DropdownItem>
               {/* (gaps build, package C — M-03) the task to its outside person, drafted on WhatsApp */}
               {outside?.phone ? <DropdownItem onSelect={pick('send-outside')} help={`Opens WhatsApp with the task for ${outside.name}`}>Send on WhatsApp</DropdownItem> : null}
-              <DropdownItem onSelect={pick('template')}>Save as Template</DropdownItem>
+              <DropdownItem onSelect={pick('template')}>Save as a template</DropdownItem>
               <DropdownItem onSelect={pick('duplicate')}>Duplicate</DropdownItem>
               <DropdownItem tone="danger" onSelect={pick('delete')}>Delete</DropdownItem>
             </PortalMenu>

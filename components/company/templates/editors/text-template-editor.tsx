@@ -85,7 +85,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
       : gaps.length
         ? { title: `${gaps.length === 1 ? '1 place reads' : `${gaps.length} places read`} unfinished`, text: 'These would print as they are on every quote that carries this text.', rows: gaps.slice(0, 8).map((g, i) => ({ id: `gap-${i}`, label: `“${g}”`, meta: /^\[/.test(g) ? 'Fills nothing — not one of the fields' : 'Left to fill in' })) }
         : { title: 'Nothing reads unfinished', text: 'No blanks, “TBC”s or brackets that fill nothing.' }) },
-    { label: 'Where is it a default?', answer: { title: template.usedBy ? `On ${template.usedBy === 1 ? '1 quote template' : `${template.usedBy} quote templates`}` : 'Not a default yet', text: template.usedBy ? 'New quotes from them start with this text — set on each template’s New quotes tab.' : 'Pick it on a quote template’s New quotes tab and new quotes from it start with this text.',
+    { label: 'Where is it a default?', answer: { title: template.usedBy ? `On ${template.usedBy === 1 ? '1 quote template' : `${template.usedBy} quote templates`}` : 'Not a default yet', text: template.usedBy ? 'New quotes from them start with this text — set on each template’s Quote settings tab.' : 'Pick it on a quote template’s Quote settings tab and new quotes from it start with this text.',   // (the calm UI build 2026-10-27, W-274) the tab is "Quote settings"
       rows: [{ id: 'gallery', label: 'Open quote templates', href: '/company/templates/quotes' }] } },
   ]
 
@@ -93,7 +93,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
     <PageReveal skeleton={<LibraryEditorGhost kind="terms" />}>
       <div className={page.page} data-testid="text-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'T&Cs & Notes', href: '/company/templates/terms' }]} title={title.trim() || 'Untitled template'}
-                       chips={<><MetaChip>{label}</MetaChip><MetaChip>{template.usedBy === 0 ? 'Not a default yet' : `Default on ${template.usedBy} quote ${template.usedBy === 1 ? 'template' : 'templates'}`}</MetaChip></>}
+                       chips={<MetaChip kind="fact">{label}</MetaChip>}   /* (the calm UI build 2026-10-27, the UI audit's 4-11) the kind stays; the usage is the gallery card's */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => orThrow(duplicateTextTemplate(template.id))).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/terms/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
@@ -102,7 +102,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
           <TitleInput value={title} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setTitle(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={page.metaEnd}><MetaChip>{label}</MetaChip></div>   {/* (REG-729) the house tag, as the sibling editors' chips */}
+          <div className={page.metaEnd}><MetaChip kind="fact">{label}</MetaChip></div>   {/* (REG-729) the house tag, as the sibling editors' chips */}
         </div>
         <div className={styles.body}>
           <div className={styles.card}>
@@ -128,7 +128,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
           </div>
         </div>
         <ConfirmDialog open={deleteOpen} title={`Delete ${title.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
-                       message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults; new quotes from them start without it until you pick another. You can restore it from Deleted Templates.` : 'Quotes that already carry the text keep it. You can restore it from Deleted Templates.'}
+                       message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults; new quotes from them start without it until you pick another. You can restore it from Deleted templates.` : 'Quotes that already carry the text keep it. You can restore it from Deleted templates.'}
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTextTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/terms') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <MaisonAiSheet open={aiOpen} suggestions={maison} onClose={() => setAiOpen(false)} anchorRef={aiFabRef} />   {/* (pending modules S10) the shell's one sheet; the FAB's own press toggles it (REG-153) */}
         <span ref={aiFabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>

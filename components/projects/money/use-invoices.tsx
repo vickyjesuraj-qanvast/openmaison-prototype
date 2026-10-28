@@ -188,7 +188,7 @@ export function useInvoices(data: MoneyData, o: { payments: ReturnType<typeof us
       if ('error' in r) { snackbar({ message: couldnt(edit ? 'save the invoice' : 'make the invoice', refusalOf(r.error)) }); return }
       setOneOff(null)
       /* (simplify S-07) its row sits in Billing's "Outside the stages" now */
-      if ('id' in r) { setFocus(r.id); snackbar({ message: `${r.title} is a Draft — send it from Billing, under Outside the stages` }) } else snackbar({ message: `${a.title} saved` })
+      if ('id' in r) { setFocus(r.id); snackbar({ message: `${r.title} is a Draft — send it from Client payments, under Outside the stages` }) } else snackbar({ message: `${a.title} saved` })
     }, () => { setBusy(null); snackbar({ message: couldnt('save the invoice') }) })
   }
   const saveDetails = (i: InvoiceView, a: Parameters<typeof setInvoiceDetails>[1]) => {
@@ -248,8 +248,10 @@ export function useInvoices(data: MoneyData, o: { payments: ReturnType<typeof us
     if (i.state === 'awaiting' && viewer.approves && !locked) return { label: 'Approve and send', run: () => setSending(i), testId: 'invoice-approve' }
     /* (Projects round 6, F-10) a sent invoice with something owed: Record a payment */
     if ((i.state === 'sent' || i.state === 'overdue' || i.state === 'part_paid') && payments.canRecord && owed(i) > 0) return { label: 'Record a payment', run: () => payments.recordFor(i), testId: 'invoice-record' }
-    /* (simplify S-08) a sent, paid or void one opens its panel — its payments, credit notes and history in one place */
-    if (i.state === 'sent' || i.state === 'to_confirm' || i.state === 'overdue' || i.state === 'part_paid' || i.state === 'paid' || i.state === 'void' || i.state === 'credited') return { label: 'Open', run: () => (openPanel ? openPanel(i) : router.push(invoiceHref(i))), testId: 'invoice-open' }
+    /* (simplify S-08) a sent, paid or void one opens its panel — its payments, credit notes and history in one place. (the calm UI build
+       2026-10-27, 3-05 · T-02) no "Open" verb beside the ⋮: the row and its name open the panel (billing-section.tsx `nameButton`, which keeps
+       this step's mark) — a row shows a verb only for a real next step */
+    void openPanel
     return null
   }
   /** Today's row menu, as rows any ⋮ can carry (the Billing row's, the panel's) — a refusal says why in its row. */
@@ -302,9 +304,10 @@ export function useInvoices(data: MoneyData, o: { payments: ReturnType<typeof us
   }
 
   /* ── a variation order ── */
-  const voNext = (v: VariationView): Step => (v.billable && !m.stageDraftsLeft && viewer.prepares && !locked
+  /* (the calm UI build 2026-10-27, 3-05 · T-02) a verb only for a real next step — the VO's number opens it (billing-section.tsx keeps "Open"'s mark there) */
+  const voNext = (v: VariationView): Step | null => (v.billable && !m.stageDraftsLeft && viewer.prepares && !locked
     ? { label: 'Bill it', run: () => billVo(v), testId: 'vo-bill' }   /* (gaps build B, item 1) no unsent stage is left to carry it */
-    : { label: 'Open', run: () => router.push(withFrom(`/quotes/${v.id}${books ? '/preview' : ''}`, here)), testId: 'vo-open' })
+    : null)
   const voMenu = (v: VariationView): RowAction[] => {
     const out: RowAction[] = [{ label: `Preview ${v.number}`, run: () => router.push(withFrom(`/quotes/${v.id}/preview`, here)) }]
     if (v.billable && !m.stageDraftsLeft && viewer.prepares && !locked && !books) out.push({ label: `Open ${v.number}`, run: () => router.push(withFrom(`/quotes/${v.id}`, here)) })
@@ -347,7 +350,7 @@ export function useInvoices(data: MoneyData, o: { payments: ReturnType<typeof us
       {sending ? (
         <SendContractDialog open={!!sending} onClose={() => setSending(null)} title={`Send the ${sending.stageName} invoice`}
                             subtitle={`${money2(sending.amountMinor)}, ${dueTerms(sending) ? 'due on receipt' : `due ${dueIfSentToday}`}. It’s numbered${data.nextInvoiceNumber ? ` ${data.nextInvoiceNumber}` : ''} and recorded as sent, and WhatsApp opens with the message.`}
-                            link={data.portalAccess ? `${origin}${data.portalUrl}` : undefined} phoneLabel="Client phone" copyDone="Portal link copied" sendLabel="Send via WhatsApp"
+                            link={data.portalAccess ? `${origin}${data.portalUrl}` : undefined} phoneLabel="Client phone" copyDone="Portal link copied" sendLabel="Send on WhatsApp"
                             defaults={{ name: client.name, phone: client.phone }}
                             draft={(name) => invoiceMessage({ client: name, studio: data.studioName, stage: sending.stageName, amount: money2(sending.amountMinor), due: dueTerms(sending) ? null : dueIfSentToday, url: data.portalAccess ? `${origin}${data.portalUrl}` : null, number: data.nextInvoiceNumber ?? null, payTo: data.payTo ?? null, link: data.portalAccess ? null : linkOf(sending), oneOff: isExtra(sending) })}
                             notes={sendNotes(sending)} busy={busy === sending.id}

@@ -56,7 +56,7 @@ const ENDED: Record<string, string> = { design: 'Ended — the design was delete
 
 /**
  * Share with client (REG-675, Q-14; 1.0's Share + share dialog, A E-01…E-03, C-83, on Quote X-Ray's send dialog): pick up to six
- * versions from any room (the one on screen ticked), a note for the page; Create link freezes them on one link for seven days and saves
+ * versions from any room (the one on screen ticked), a note for the page; Share n versions (was Create link) freezes them on one link for seven days and saves
  * each to the lead's Files › Renders (Q-13). Then the WhatsApp draft — to the lead's number when it is a Singapore one — and Copy link.
  * Earlier links list what the client did (opened, a favourite, notes, a call back) with Renew and Stop sharing.
  * (audit 2026-09-26) A live link copies or opens again from its row; a link nobody sent says so; a stopped one wears link_off, one that
@@ -126,13 +126,16 @@ export function ShareDialog({ open, onClose, rooms, initial, lead, studio, sende
               footer={made ? (
                 <div className={styles.footRow}>
                   <Button appearance="outlined" variant="secondary" iconStart={copyIcon('message', 'content_copy')} onPress={() => { void copy('message', text, 'Couldn’t copy the message — please try again').then((ok) => { if (ok) onSent(made.id, 'copy') }) }}>{copyLabel('message', 'Copy message', 'Message copied')}</Button>
-                  <Button iconStart={<Icon name="chat" size={20} />} onPress={() => { window.open(wa, '_blank', 'noopener'); onSent(made.id, 'whatsapp'); onClose() }} data-testid="viz-open-whatsapp">Open WhatsApp</Button>
+                  {/* (the calm UI build 2026-10-27, 6-19 · W-058) every tool's send says it the same way: filled Send on WhatsApp, outlined Copy */}
+                  <Button iconStart={<Icon name="chat" size={20} />} onPress={() => { window.open(wa, '_blank', 'noopener'); onSent(made.id, 'whatsapp'); onClose() }} data-testid="viz-open-whatsapp">Send on WhatsApp</Button>
                 </div>
               ) : (
                 <div className={styles.footRow}>
                   <span className={styles.footCount}>{picked.length ? `${picked.length} of ${SHARE_MAX_VERSIONS} picked` : 'Pick a version to share'}</span>
                   <Button appearance="outlined" variant="secondary" onPress={onClose}>Cancel</Button>
-                  <Button isDisabled={!picked.length || busy} onPress={() => { void create() }} data-testid="viz-create-link">{busy ? 'Making the link…' : 'Create link'}</Button>
+                  {/* (the calm UI build 2026-10-27, 6-19 · W-160) the press says what the client gets — "Share 2 versions", the count following the
+                      picks ("Create link" said nothing of the client); it still makes the link, then the WhatsApp step */}
+                  <Button isDisabled={!picked.length || busy} onPress={() => { void create() }} data-testid="viz-create-link">{busy ? 'Making the link…' : picked.length ? `Share ${picked.length} ${picked.length === 1 ? 'version' : 'versions'}` : 'Share'}</Button>
                 </div>
               )}>
         {made ? (

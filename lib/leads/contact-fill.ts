@@ -314,7 +314,8 @@ export async function readContactFile(file: File, ctx: ContactContext): Promise<
 }
 
 /* ── the line under Auto Fill (invented copy, reg-S43B) ── */
-const WORD: Record<keyof ContactFill, string> = { channel: 'Contacted via', when: 'Date & Time', outcome: 'Outcome', nextStepWhen: 'the next call or meeting', nextStepMode: 'its mode', where: 'Where' }
+// (the calm UI build 2026-10-27 — 2-08) the fields as their labels now read: How · When · How it went
+const WORD: Record<keyof ContactFill, string> = { channel: 'How', when: 'When', outcome: 'How it went', nextStepWhen: 'the call back', nextStepMode: 'how you’ll call back', where: 'Where' }
 const list = (w: string[]) => (w.length <= 1 ? w.join('') : `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}`)
 /** The fields a read fills, in the log's order — the next step's mode rides with its day. */
 export const FILL_ORDER: readonly (keyof ContactFill)[] = ['channel', 'where', 'when', 'outcome', 'nextStepWhen', 'nextStepMode']
@@ -332,7 +333,7 @@ export function fillWords(o: { file: string; kind: ContactKind; read: ContactRea
   const missing = core.filter((k) => !(k in read.fill))
   const parts = [
     filled.length ? `Filled from ${file}: ${list(filled.map((k) => WORD[k]))}.` : `Read ${file} — nothing new to fill.`,
-    read.whenFromUpload && o.filled.includes('when') ? 'It names no time, so Date & Time is when you uploaded it.' : null,
+    read.whenFromUpload && o.filled.includes('when') ? 'It names no time, so When is the time you uploaded it.' : null,
     o.kept.length ? `Kept what you entered for ${list(o.kept.map((k) => WORD[k]))}.` : null,
     missing.length ? `Not found: ${list(missing.map((k) => WORD[k]))}.` : null,
   ]

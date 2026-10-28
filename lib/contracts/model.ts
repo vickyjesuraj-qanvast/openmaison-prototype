@@ -1,5 +1,6 @@
 /** Contract records (REG-534) — client-safe vocabulary shared by the tab, the editor, the studio list and the signing page. */
 import type { ContractStatus } from '@/lib/leads/contract-filters'
+import { displayDayShortMonth } from '@/lib/format'   // (the calm UI build 2026-10-27, 4-43) the house months — "Sep", never the locale's "Sept"
 
 export type { ContractStatus }
 /** Where a contract's Send lands: the client's signing page (the 1.0 flow — a link shared on WhatsApp, verified by a code on the phone).
@@ -26,7 +27,7 @@ export function reminderMessage(o: { clientFirst: string; studio: string; title:
 export function awaitingLine(c: { sentAt: Date | null; viewedAt: Date | null; /** (pending modules S03) */ signExpiresAt?: Date | null }, now: number): { full: string; short: string; expired?: boolean } | null {
   if (!c.sentAt) return null
   /* (pending modules S03) past its window the link no longer signs — that, not the opening, is what the studio has to act on */
-  if (c.signExpiresAt && c.signExpiresAt.getTime() <= now) { const d = c.signExpiresAt; const day = `${d.getDate()} ${d.toLocaleString('en-SG', { month: 'short' })}`; return { full: `Link expired ${day} · send it again`, short: `Link expired ${day}`, expired: true } }
+  if (c.signExpiresAt && c.signExpiresAt.getTime() <= now) { const day = displayDayShortMonth(c.signExpiresAt); return { full: `Link expired ${day} · send it again`, short: `Link expired ${day}`, expired: true } }
   const span = (at: number) => { const d = Math.floor((now - at) / 86_400_000); if (d >= 1) return `${d}d`; const h = Math.floor((now - at) / 3_600_000); return h >= 1 ? `${h}h` : '' }
   const ago = (at: number) => { const t = span(at); return t ? `${t} ago` : 'just now' }
   const sent = c.sentAt.getTime(), seen = c.viewedAt?.getTime() ?? null
@@ -36,17 +37,8 @@ export function awaitingLine(c: { sentAt: Date | null; viewedAt: Date | null; /*
   }
 }
 
-/** "Saved just now" / "Saved 2 mins ago" — the quote editor's stamp (quote-editor.tsx). */
-export function savedLabel(updatedAt: number, now: number): string {
-  const s = Math.max(0, Math.round((now - updatedAt) / 1000))
-  if (s < 45) return 'Saved just now'
-  const m = Math.round(s / 60)
-  if (m < 60) return `Saved ${m} ${m === 1 ? 'min' : 'mins'} ago`
-  const h = Math.round(m / 60)
-  if (h < 24) return `Saved ${h} ${h === 1 ? 'hour' : 'hours'} ago`
-  const d = new Date(updatedAt)
-  return `Saved ${d.getDate()} ${d.toLocaleString('en-SG', { month: 'short' })} ’${String(d.getFullYear()).slice(2)}`
-}
+/** "Saved just now" / "Saved 2 mins ago" — (the calm UI build 2026-10-27, 4-43 · W-353) the house `savedLabel` (lib/format.ts), every editor's one stamp. */
+export { savedLabel } from '@/lib/format'
 
 /** "25 August 2026" — how a contract prints a date (not the listing's "25 Aug ’26"). */
 export const longDate = (d: Date) => d.toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -65,6 +57,9 @@ export const contractLink = (c: { id: string; signToken?: string | null; bundleI
 /* ── (S42 B-03 · call B·2) The signing code, said honestly while the prototype's SMS stand-in answers (lib/auth/provider.ts) ───────────── */
 /** The client's code step — the portal's line (S34), word for word for signing. */
 export const SIGN_CODE_DEMO = 'Demo only — no text is sent: any six digits sign it.'
+/** (The calm UI build 2026-10-27, 4-20 · W-448) The Send dialog's one line in its head; the code's demo note and the link's window wait under
+ *  "How signing works" (components/contracts/editor/dialogs.tsx). */
+export const SIGN_SEND_LINE = 'Your client signs on their phone; a one-time code confirms it’s them.'
 /** The studio's Send dialogs: how the client confirms it's them. */
 export const signCodeLine = (demo: boolean) => (demo ? 'A one-time code confirms it’s them — demo only: no text is sent, any six digits sign it.' : 'A one-time code on their phone confirms it’s them.')
 /** The signing page's refusal when the provider says the code isn't the one sent. */

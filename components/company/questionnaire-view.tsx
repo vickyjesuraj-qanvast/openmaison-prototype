@@ -12,7 +12,8 @@ import { QuestionnaireGhost } from './company-ghosts'
 import { ReadOnlyNote } from './read-only-note'
 import { runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import type { StudioScopeQuestion } from '@/lib/db/schema'
-import { BANK_HELP, BANK_TYPES, BANK_TYPE_LABELS, isBankType, needsOptions, parseBankOptions } from '@/lib/company/question-bank'
+import { HowItWorks } from '@/app/settings/how-it-works'   // (the calm UI build 2026-10-27, T-05)
+import { BANK_HELP, BANK_HOW, BANK_TYPES, BANK_TYPE_LABELS, isBankType, needsOptions, parseBankOptions } from '@/lib/company/question-bank'
 import { createScopeQuestion, deleteScopeQuestion, moveScopeQuestion, reorderScopeQuestions, setScopeQuestionFlags, updateScopeQuestion } from '@/app/company/scope-questions-actions'
 import styles from './questionnaire-view.module.css'
 import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
@@ -53,16 +54,17 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
   }
   const cur = editing?.q ?? null
   return (
-    <CompanyShell title="Questionnaire" from={from} skeleton={<QuestionnaireGhost />}>
+    /* (the calm UI build 2026-10-27 — 5-29) the page's create is its one filled button, in the page header, "New question" */
+    <CompanyShell title="Questionnaire" from={from} skeleton={<QuestionnaireGhost />}
+                  actions={canEdit ? <Button iconStart={<Icon name="add" size={20} />} onPress={() => setEditing({ q: null })} data-kb="create">New question</Button> : null}>
       <div className={styles.layout} data-testid="questionnaire-bank">
-        {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins change the question bank." />}   {/* (sweep S4 #16) */}
+        {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins change the questions." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="bank-title">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}>
-              <h2 id="bank-title" className={styles.cardTitle}>Question bank</h2>
-              {canEdit ? <Button iconStart={<Icon name="add" size={20} />} onPress={() => setEditing({ q: null })}>Add question</Button> : null}
-            </div>
+            {/* (W-329) "Questions" — the page is already Questionnaire */}
+            <div className={styles.titleRow}><h2 id="bank-title" className={styles.cardTitle}>Questions</h2></div>
             <p className={styles.cardHelp}>{BANK_HELP}</p>
+            <HowItWorks label="How this works" testId="bank-how">{BANK_HOW}</HowItWorks>
           </div>
           {rows.length === 0 ? (
             <p className={styles.empty} data-testid="bank-empty">No questions yet — add the first one, and every new lead will start with it.</p>
@@ -76,7 +78,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
         </section>
       </div>
       <DefinitionDialog open={!!editing} editing={!!cur} noun="question" nameLabel="Question" nameMax={200} types={BANK_TYPES} typeLabels={BANK_TYPE_LABELS} needsOptions={needsOptions}
-                        requiredLine="Required — the homeowner must answer it" optionsTestId="question-options"
+                        requiredLine="Required — the client must answer it" optionsTestId="question-options"
                         initial={cur ? { name: cur.question, type: isBankType(cur.questionType) ? cur.questionType : 'text', options: parseBankOptions(cur.options), required: cur.isRequired } : null}
                         onClose={() => setEditing(null)}
                         onSave={async (d) => {

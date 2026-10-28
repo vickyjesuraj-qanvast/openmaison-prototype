@@ -11,6 +11,8 @@
  * - **The client sees a snapshot** (Q-15): `clientRows` is what a share stores; `scheduleChanges` is what Share changes lists.
  */
 
+import { moneyCard } from '../format'   // (the calm UI build 2026-10-27, 3-23) a sum on a card, the house's one way
+
 export const DAY_MS = 86_400_000
 
 /* ── Days ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -473,7 +475,7 @@ export type PaymentOption = { ref: string; name: string; pct: number
   /** (B-23) Due on signing (the deposit): paid before the work, so a milestone is never tied to it. */
   onSigning?: boolean
   /** (B-20) Where the stage's invoice stands, as Money reads it (`invoiceState`), and its due day — null when no invoice is out. */
-  invoice?: { state: string; dueDay: number | null } | null
+  invoice?: { state: string; dueDay: number | null; /** (the calm UI build 2026-10-27, 3-23 — additive) what waits to be confirmed on it */ toConfirmMinor?: number } | null
   /** (S44O — UAT row 297) a fixed fee first (a quote's MI-021 or a split's fee first): it bills this amount, never a share */
   fixedMinor?: number | null
 }
@@ -504,7 +506,8 @@ export function nextPayment(list: Milestone[], payments: PaymentOption[], today:
 export function nextPaymentWords(n: { payment: PaymentOption; day: number; overdue: boolean; passed: boolean }): string {
   const pct = payShareWord(n.payment), state = n.payment.invoice?.state   // (S44O — row 297) a fixed fee says its amount
   if (n.overdue) return `${pct} overdue since ${dayMonth(n.day)}`
-  if (state === 'to_confirm') return `${pct} · payment to confirm`
+  /* (the calm UI build 2026-10-27, 3-23 · W-571) a payment to confirm says its sum — "S$ 13,370 to confirm" — not the share and a phrase */
+  if (state === 'to_confirm') { const sum = n.payment.invoice?.toConfirmMinor || n.payment.amountMinor; return sum ? `${moneyCard(sum)} to confirm` : `${pct} to confirm` }
   if (state === 'part_paid') return `${pct} part paid · due ${dayMonth(n.day)}`
   return `${pct} ${state === 'sent' || n.passed ? 'due' : 'on'} ${dayMonth(n.day)}`
 }

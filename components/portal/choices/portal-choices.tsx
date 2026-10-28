@@ -79,13 +79,22 @@ export function PortalChoicesView({ data, homes }: { data: PortalData; homes: Po
   }
   const homeLabel = (h: PortalChoicesHome) => { const home = data.homes.find((x) => x.id === h.homeId); return home ? (home.place ? `Your home at ${home.place}` : home.title) : '' }
   const waiting = all.filter((c) => c.status === 'shared').length
+  /* (the calm UI build 2026-10-27, 3-48 · W-171 · T-17) only a no on the page: say what happens next, never "has your answers" while the client
+     still waits — "Your designer is finding other options for the bathroom tiles." */
+  const noes = all.filter((c) => c.status === 'declined')
+  const backLine = () => {
+    const others = noes.filter((c) => c.answer?.kind !== 'reject')
+    if (noes.length === 1 && others.length === 1) return `Your designer is finding other options for the ${others[0]!.title.charAt(0).toLowerCase()}${others[0]!.title.slice(1)}.`
+    if (others.length === noes.length) return `Your designer is finding other options for ${noes.length} choices.`
+    return `${data.look.studio} has your answers and will be in touch.`
+  }
   return (
     <PageReveal skeleton={<PortalChoicesGhost />}>
       <PortalFrame look={data.look} slug={data.slug} tab="choices" visitor={visitor} paused={data.paused} needs={data.needs}>
         <div className={portal.hello}>
           {/* (fix-F, F-30 · F-31) the tab's own word, as Schedule · Updates · Money head; no lede over an empty page, and "Pick" — a desk taps nothing */}
           <h1 className={portal.h1}>Choices</h1>
-          {all.length ? <p className={portal.lede}>{waiting ? `${waiting === 1 ? 'One choice waits' : `${waiting} choices wait`} for you. Pick the one you like, then confirm.` : all.some((c) => c.status === 'chosen') ? `What you chose with ${data.look.studio}.` : `${data.look.studio} has your answers.`}</p> : null}   {/* (gaps build D, item 2) only a no on the page: no "you chose" */}
+          {all.length ? <p className={portal.lede}>{waiting ? `${waiting === 1 ? 'One choice waits' : `${waiting} choices wait`} for you. Pick the one you like, then confirm.` : all.some((c) => c.status === 'chosen') ? `What you chose with ${data.look.studio}.` : backLine()}</p> : null}   {/* (gaps build D, item 2) only a no on the page: no "you chose" */}
         </div>
         {!all.length ? (
           <EmptyState icon="palette" tone="plain" title="Nothing to choose yet" testId="portal-choices-empty"

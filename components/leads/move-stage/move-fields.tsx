@@ -6,6 +6,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ChannelChips, LogNotes, LogPhotos, NextStep, OutcomeChips, WhenRow, WhereChips, type LogFile } from '@/components/leads/log/log-fields'
 import { chipOfChannel, contactChannelOf, nextLabel } from '@/components/leads/log/log-plan'
+import { channelLabel } from '@/lib/leads/enums'
 import { displayDue, parseInputDateTime } from '@/lib/format'
 import type { LeadFile } from '@/lib/db/schema'
 import { AutoFillNote, LinkButton } from './fields'
@@ -36,15 +37,18 @@ export const dropFile = (l: { files: string[]; fileIds?: string[] }, id: string)
 }
 
 /** The shared frame of one log on the move: "Log n" (the desk's own words) · Auto Fill · delete (when there are several); the fields under it. */
-function MoveLogFrame({ index, onAutoFill, onDelete, note, children }: {
-  index: number; onAutoFill: () => void; onDelete?: () => void; note: string | null; children: ReactNode
+function MoveLogFrame({ index, count, onAutoFill, onDelete, note, children }: {
+  index: number
+  /** (the calm UI build 2026-10-27 — 2-30) "Log 1" only names a log among two or more */
+  count: number
+  onAutoFill: () => void; onDelete?: () => void; note: string | null; children: ReactNode
 }) {
   return (
     <section className={styles.log} data-testid={`move-log-${index}`}>
       <div className={styles.logHead}>
-        <span className={styles.logTitle}>{`Log ${index + 1}`}</span>
+        <span className={styles.logTitle}>{count > 1 ? `Log ${index + 1}` : ''}</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={onAutoFill} ariaLabel="Auto Fill from a chat or an email">Auto Fill</LinkButton>
+        <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={onAutoFill} ariaLabel="Auto fill from a chat or an email">Auto fill</LinkButton>
         {onDelete ? (
           <Tooltip label="Delete log"><IconButton icon="delete" label={`Delete log ${index + 1}`} variant="bare" iconSize={24} iconWeight={300} onClick={onDelete} /></Tooltip>
         ) : null}
@@ -74,8 +78,7 @@ const whenWords = (when: string) => { const d = parseInputDateTime(when); return
 const countWords = (n: number, one: string, many: string) => (n === 0 ? null : n === 1 ? `1 ${one}` : `${n} ${many}`)
 
 export function contactSummary(l: ContactLog): { head: string; line: string } {
-  const chip = chipOfChannel(l.channel)
-  const how = chip === 'Visit' ? 'Site visit' : l.channel ?? 'Contact'
+  const how = channelLabel(l.channel) || 'Contact'   // (the calm UI build 2026-10-27 — 2-08) one vocabulary: Visit · Other
   const next = l.nextStepWhen && nextLabel(l.outcome) ? `${nextLabel(l.outcome)} ${whenWords(l.nextStepWhen)}` : null
   return { head: `${how} · ${whenWords(l.when)}`, line: [l.outcome || 'No outcome', next, countWords(l.files.length, l.channel === 'In person' ? 'photo' : 'screenshot', l.channel === 'In person' ? 'photos' : 'screenshots')].filter(Boolean).join(' · ') }
 }
@@ -99,12 +102,12 @@ export type MoveLogProps<L> = {
 }
 
 /** An open contact log on the move — the log sheet's fields over the window's ContactLog. */
-export function MoveContactLog({ index, log, onChange, errors, onAutoFill, onDelete, note, openedAt, fileOf, onPickFile, uploading, onLibrary, first, askNextStep }: MoveLogProps<ContactLog> & { askNextStep: boolean }) {
+export function MoveContactLog({ index, count, log, onChange, errors, onAutoFill, onDelete, note, openedAt, fileOf, onPickFile, uploading, onLibrary, first, askNextStep }: MoveLogProps<ContactLog> & { askNextStep: boolean }) {
   const err = (f: string) => errors[`logs.${index}.${f}`]
   /* the window asks how, as the desk does — nothing is chosen for the reader (the log sheet's channel is the press's own) */
   const chip = chipOfChannel(log.channel)
   return (
-    <MoveLogFrame index={index} onAutoFill={onAutoFill} onDelete={onDelete} note={note}>
+    <MoveLogFrame index={index} count={count} onAutoFill={onAutoFill} onDelete={onDelete} note={note}>
       <ChannelChips value={chip} withNote={false} onChange={(c) => onChange({ channel: contactChannelOf(c) })} error={err('channel')} />
       <WhenRow value={log.when} onChange={(v) => onChange({ when: v })} now={openedAt} openedAt={openedAt} error={err('when')} />
       <OutcomeChips value={log.outcome} error={err('outcome')}
@@ -122,10 +125,10 @@ export function MoveContactLog({ index, log, onChange, errors, onAutoFill, onDel
 }
 
 /** An open meeting log on the move — Where as chips, When set to now, notes, photos. */
-export function MoveMeetingLog({ index, log, onChange, errors, onAutoFill, onDelete, note, openedAt, fileOf, onPickFile, uploading, onLibrary, first }: MoveLogProps<MeetingLog>) {
+export function MoveMeetingLog({ index, count, log, onChange, errors, onAutoFill, onDelete, note, openedAt, fileOf, onPickFile, uploading, onLibrary, first }: MoveLogProps<MeetingLog>) {
   const err = (f: string) => errors[`meetings.${index}.${f}`]
   return (
-    <MoveLogFrame index={index} onAutoFill={onAutoFill} onDelete={onDelete} note={note}>
+    <MoveLogFrame index={index} count={count} onAutoFill={onAutoFill} onDelete={onDelete} note={note}>
       <WhereChips value={log.where} onChange={(v) => onChange({ where: v })} error={err('where')} />
       <WhenRow value={log.when} onChange={(v) => onChange({ when: v })} now={openedAt} openedAt={openedAt} error={err('when')} />
       <LogNotes value={log.notes} onChange={(v) => onChange({ notes: v })} />

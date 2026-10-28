@@ -9,7 +9,8 @@ import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
 import { DangerButton, Dialog, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { modalPanel, overlayFade } from '@/lib/motion'
-import { displayDate, money, titleCaseName, phoneLocal } from '@/lib/format'
+import { displayDate, titleCaseName, phoneLocal } from '@/lib/format'
+import { budgetCell } from '@/lib/leads/row-text'
 import type { Lead } from '@/lib/db/schema'
 import type { DeletedLead } from '@/lib/leads/queries'
 import styles from './deleted-sheet.module.css'
@@ -69,7 +70,7 @@ function DeletedCard({ lead, selected, selecting, pending, heldWhy, onToggle, on
           <IconButton icon="more_vert" label={`More actions for ${titleCaseName(lead.name)}`} variant="bare" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((o) => !o)} />   {/* a card's ⋮ is a bare glyph, as the Quotes card's */}
           <PortalMenu open={menu} anchor={anchor} onClose={() => setMenu(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={titleCaseName(lead.name)}>
             <DropdownItem onSelect={() => { setMenu(false); onToggle() }}>{selected ? 'Unselect' : 'Select'}</DropdownItem>
-            <DropdownItem tone="danger" disabled={pending || !!heldWhy} title={heldWhy ? `Can’t delete forever — ${heldWhy}` : undefined} onSelect={() => { setMenu(false); onForever() }}>Delete Forever</DropdownItem>
+            <DropdownItem tone="danger" disabled={pending || !!heldWhy} title={heldWhy ? `Can’t delete forever — ${heldWhy}` : undefined} onSelect={() => { setMenu(false); onForever() }}>Delete forever</DropdownItem>
           </PortalMenu>
         </span>
       </span>
@@ -93,7 +94,6 @@ export function DeletedLeadsSheet({
   const cw = (key: string, mock: number) => deletedWidths[key] ?? mock
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<Sort>(null)
-  const [bannerOpen, setBannerOpen] = useState(true)
   const [confirm, setConfirm] = useState<{ kind: 'forever'; ids: string[] } | { kind: 'empty' } | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
@@ -102,7 +102,7 @@ export function DeletedLeadsSheet({
 
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setSelected(new Set()); setSort(null); setBannerOpen(true); setConfirm(null); setPending(new Set()) }
+    if (open) { setSelected(new Set()); setSort(null); setConfirm(null); setPending(new Set()) }
   }
   useEffect(() => { if (open) busyRef.current = false }, [open])
 
@@ -160,7 +160,7 @@ export function DeletedLeadsSheet({
   const confirmName = confirmLead ? titleCaseName(confirmLead.name) : undefined
   /* (fix-E, E-01 · E-09) A lead whose project still exists is never purged (the project would go with it, unseen): the confirms count only
      what will go and name what stays. */
-  const heldWhy = (l: DeletedLead) => (l.heldBy ? (l.heldBy.deleted ? `${l.heldBy.number} is in Deleted Projects — delete it forever there first` : `its project ${l.heldBy.number} is live — delete the project first`) : null)
+  const heldWhy = (l: DeletedLead) => (l.heldBy ? (l.heldBy.deleted ? `${l.heldBy.number} is in Deleted projects — delete it forever there first` : `its project ${l.heldBy.number} is live — delete the project first`) : null)
   const stayLine = (list: DeletedLead[]) => {
     const held = list.filter((l) => l.heldBy)
     if (!held.length) return null
@@ -178,36 +178,29 @@ export function DeletedLeadsSheet({
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
             {/* (REG-287) Focus lands on the panel on open (surface.ts) and the ring belongs to its controls — the house panel
                 (surfaceClasses.panel) carries the `outline: none`, with the look every dialog wears. */}
-            <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Leads"
+            <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted leads"
                         tabIndex={-1}>
               {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot. */}
-              <SurfaceHead title="Deleted Leads" eyebrow="Leads /" className={styles.heading} onClose={onClose}
+              <SurfaceHead title="Deleted leads" eyebrow="Leads /" className={styles.heading} onClose={onClose}
                            actions={phone ? (
                              /* (A-26) the destructive one, one press further: the head's ⋮ — never an outlined button beside ✕ */
                              <span ref={headMenuRef} className={styles.dMenu}>
                                <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={headMenu} onClick={() => setHeadMenu((o) => !o)} data-testid="deleted-head-menu" />
-                               <PortalMenu open={headMenu} anchor={headMenuRef} onClose={() => setHeadMenu(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Deleted Leads">
-                                 <DropdownItem tone="danger" disabled={deleted.length === 0} onSelect={() => { setHeadMenu(false); setConfirm({ kind: 'empty' }) }}>Empty Trash</DropdownItem>
+                               <PortalMenu open={headMenu} anchor={headMenuRef} onClose={() => setHeadMenu(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Deleted leads">
+                                 <DropdownItem tone="danger" disabled={deleted.length === 0} onSelect={() => { setHeadMenu(false); setConfirm({ kind: 'empty' }) }}>Delete all forever</DropdownItem>
                                </PortalMenu>
                              </span>
                            ) : (
                              <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
                                      isDisabled={deleted.length === 0}>
-                               Empty Trash
+                               Delete all forever
                              </Button>
                            )} />
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
-                {bannerOpen ? (
-                  <div className={styles.banner} role="status">
-                    <span>Deleted leads are permanently removed after 30 days.</span>
-                    <Tooltip label="Dismiss">
-                      <button type="button" className={styles.bannerClose} aria-label="Dismiss" onClick={() => setBannerOpen(false)}>
-                        <Icon name="close" size={20} />
-                      </button>
-                    </Tooltip>
-                  </div>
-                ) : null}
+                {/* (the calm UI build 2026-10-27 — audit 2-31, W-510 · W-575) the rule said once, in one quiet line under the title — it was an orange
+                    band (with its ✕) AND a foot note; Restore is every row's own button */}
+                <p className={styles.lead} role="status" data-testid="deleted-rule">Deleted leads are removed for good after 30 days.</p>
 
                 {phone ? (
                   rows.length === 0 ? <div className={styles.emptyRow}>No deleted leads.</div> : (
@@ -275,7 +268,7 @@ export function DeletedLeadsSheet({
                         </div>
                         <div className={styles.cell} style={{ width: cw('stage', 146) }} role="cell"><span className={styles.plain}>{l.stage}</span></div>
                         <div className={styles.cell} style={{ width: cw('source', 132) }} role="cell"><span className={styles.plain}>{l.source}</span></div>
-                        <div className={styles.cell} style={{ width: cw('budget', 138) }} role="cell"><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
+                        <div className={styles.cell} style={{ width: cw('budget', 138) }} role="cell"><span className={styles.plain}>{budgetCell(l.budgetMinor)}</span></div>
                         <div className={styles.cell} style={{ width: cw('propertyType', 158) }} role="cell"><span className={styles.plain}>{l.propertyType}</span></div>
                         <div className={styles.cell} style={{ width: cw('created', 137) }} role="cell"><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
                         <div className={styles.cell} style={{ width: cw('deleted', 137) }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
@@ -285,7 +278,7 @@ export function DeletedLeadsSheet({
                           {/* (fix-E, E-09) a lead whose project still exists says why it can't go, in place of a press that would refuse */}
                           <Tooltip label={heldWhy(l) ? `Can’t delete forever — ${heldWhy(l)}` : ''} disabled={!l.heldBy}>
                             <button type="button" className={styles.link} data-danger disabled={pending.has(l.id) || !!l.heldBy} data-testid="deleted-lead-forever"
-                                    onClick={() => setConfirm({ kind: 'forever', ids: [l.id] })}>Delete Forever</button>
+                                    onClick={() => setConfirm({ kind: 'forever', ids: [l.id] })}>Delete forever</button>
                           </Tooltip>
                         </div>
                       </div>
@@ -294,9 +287,6 @@ export function DeletedLeadsSheet({
                 </div>
                 )}
 
-                <span className={styles.note}>
-                  Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.
-                </span>
               </div>
 
               <BulkBar
@@ -304,7 +294,7 @@ export function DeletedLeadsSheet({
                 count={liveSelected.size}
                 actions={[
                   { label: 'Restore', onClick: () => { const ids = [...liveSelected]; prune(ids); void run(ids, () => onRestore(ids)) } },
-                  { label: 'Delete Forever', tone: 'danger', onClick: () => setConfirm({ kind: 'forever', ids: [...liveSelected] }) },
+                  { label: 'Delete forever', tone: 'danger', onClick: () => setConfirm({ kind: 'forever', ids: [...liveSelected] }) },
                 ]}
                 onClear={() => setSelected(new Set())}
               />
@@ -323,18 +313,18 @@ export function DeletedLeadsSheet({
                 <DangerButton disabled={busy || foreverGo === 0} onClick={() => {
                   if (confirm?.kind === 'forever') { const ids = confirm.ids; prune(ids); void run(ids, () => onDeleteForever(ids)) }
                   setConfirm(null)
-                }}>Delete Forever</DangerButton>
+                }}>Delete forever</DangerButton>
               </>}>
         <span className={styles.confirmText}>{foreverGo ? `This can’t be undone. ${foreverGo > 1 ? 'The leads and their tasks' : 'The lead and its tasks'} will be removed permanently.` : null}{stayLine(foreverList) ? <>{foreverGo ? ' ' : ''}<span data-testid="forever-stays">{stayLine(foreverList)}</span></> : null}</span>
       </Dialog>
 
       <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
-              title="Empty trash?"
+              title="Delete all forever?"
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
                 <DangerButton disabled={busy || emptyGo === 0} onClick={() => {
                   const ids = deleted.filter((l) => !l.heldBy).map((l) => l.id); setSelected(new Set()); void run(ids, () => onEmptyTrash()); setConfirm(null)
-                }}>Empty Trash</DangerButton>
+                }}>Delete all forever</DangerButton>
               </>}>
         {/* (fix-E, E-01) the count is the set it removes — never a direct project's client, never a lead whose project still exists */}
         <span className={styles.confirmText} data-testid="empty-trash-count">

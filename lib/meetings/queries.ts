@@ -182,7 +182,13 @@ export async function meetingRows(leadIds: string[] | null): Promise<MeetingRow[
       source: null, notes: !!e.notes.trim(), sharedAt: null, clientAnswer: null, createdBy: null, log: { logId: e.logId, index: e.index },
     })
   }
-  return out.sort((a, b) => b.startsAt - a.startsAt)
+  out.sort((a, b) => b.startsAt - a.startsAt)
+  /* (the calm UI build 2026-10-27, 3-14 · W-548) a Met log that is the lead's first meeting on record says so — "First meeting"; any later one
+     stays "Meeting". Display only: the row's id and its log are unchanged. */
+  const firstOfLead = new Map<string, MeetingRow>()
+  for (const r of out) if (r.status === 'held' || r.status === 'live') firstOfLead.set(r.leadId, r)   // newest first, so the last one kept is the earliest
+  for (const r of firstOfLead.values()) if (r.fromLog) r.title = 'First meeting'
+  return out
 }
 
 /** The studio's active members — the house member picker (AssigneeField) takes the row as it is. */
@@ -404,11 +410,17 @@ export async function leadMemberIds(leadId: string): Promise<string[]> {
 
 /** (Maison AI — S10's note: "prepare me for my next meeting" answers from the records) The viewer's next planned meeting: theirs first (they're in
     it), else the next on a lead they see; with its prep. */
-export async function nextMeetingFor(viewer: Awaited<ReturnType<typeof fetchViewer>>, now = Date.now()): Promise<{ row: MeetingRow; prep: Prep } | null> {
+/* (the Dashboard redesigned, 2026-10-26 — P-14, a bug B's study found) "Your next meeting" is this member's: one they are on or planned (the
+   Dashboard's own reading of "mine", and `meetingPeople`'s), never — as it fell back before — the studio's next meeting someone else runs.
+   `lead` (a client's name or first name, as "Prepare me for my meeting with Kelvin" names it) picks that client's next one among them. */
+export async function nextMeetingFor(viewer: Awaited<ReturnType<typeof fetchViewer>>, now = Date.now(), o: { lead?: string | null } = {}): Promise<{ row: MeetingRow; prep: Prep } | null> {
   const seen = await visibleLeadIds(viewer)
-  const ahead = await db.select().from(meetings).where(and(isNull(meetings.deletedAt), eq(meetings.status, 'planned'), gte(meetings.startsAt, new Date(now - 30 * 60_000)))).orderBy(asc(meetings.startsAt))
-  const mine = ahead.filter((m) => !seen || seen.has(m.leadId))
-  const next = mine.find((m) => idsOf(m.memberIds).includes(viewer.id)) ?? mine[0]
+  const ahead = await db.select({ m: meetings, leadName: leads.name }).from(meetings).innerJoin(leads, eq(leads.id, meetings.leadId))
+    .where(and(isNull(meetings.deletedAt), isNull(leads.deletedAt), eq(meetings.status, 'planned'), gte(meetings.startsAt, new Date(now - 30 * 60_000)))).orderBy(asc(meetings.startsAt))
+  const mine = ahead.filter(({ m }) => (!seen || seen.has(m.leadId)) && (idsOf(m.memberIds).includes(viewer.id) || m.createdBy === viewer.id))
+  const want = (o.lead ?? '').trim().toLowerCase()
+  const named = want ? mine.filter(({ leadName }) => { const n = leadName.trim().toLowerCase(); return n === want || n.split(/\s+/)[0] === want }) : []
+  const next = (named[0] ?? (want ? undefined : mine[0]))?.m
   if (!next) return null
   const room = await fetchMeetingRoom(next.id)
   if (!room) return null

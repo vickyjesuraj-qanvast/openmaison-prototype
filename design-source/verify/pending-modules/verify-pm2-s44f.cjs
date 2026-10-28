@@ -189,9 +189,9 @@ const lineCost = (flight, id) => { const m = flight.match(new RegExp(`"id":"${id
     console.log('2 · Confirmed by hand records "marked" and who (NB-04)')
     const markConfirmed = async () => {
       await go(p, `/quotes/${Q7}`)
-      await p.getByRole('button', { name: /^Sent to Client/ }).first().click(); await settle(p, 300)
+      await p.getByRole('button', { name: /^With client/ }).first().click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) T-01: the status set on screen
       await p.getByRole('menuitemradio', { name: /^Confirmed/ }).click(); await settle(p, 400)
-      await p.getByRole('dialog').getByRole('button', { name: 'Mark Confirmed' }).click(); await settle(p, 1800)
+      await p.getByRole('dialog').getByRole('button', { name: /^Mark “?Confirmed/ }).click(); await settle(p, 1800)   // (the calm UI build 2026-10-27, a deliberate change) T-01: the dialog names the status in its words
     }
     await markConfirmed()
     ok(sql(`select status || '|' || confirmed_via || '|' || confirmed_marked_by from quotes where id = '${Q7}'`) === 'Confirmed|marked|dane', 'the mark records Confirmed · marked · Dane', sql(`select status || '|' || quote(confirmed_via) || '|' || quote(confirmed_marked_by) from quotes where id = '${Q7}'`))
@@ -335,7 +335,7 @@ update quote_payments set pct = 35 where id = '${PAY.mid}'; update quote_payment
     for (const [where, url] of [['the editor', `/quotes/${Q7}`], ['Preview', `/quotes/${Q7}/preview`]]) {
       await go(p, url)
       await p.getByTestId('quote-send').click(); await settle(p, 300)
-      await p.getByRole('menuitem', { name: /^Send for confirmation/ }).click(); await settle(p, 700)
+      await p.getByRole('menuitem', { name: /^Ask to confirm/ }).click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) W-358
       const msg = await p.getByRole('dialog', { name: 'Send for confirmation' }).getByLabel('Message to the client').inputValue()
       ok(/the revised quote OM-10007 \(version 3\)/.test(msg) && /What changed in version 3 \(from version 2\):/.test(msg) && /• Removed “Kitchen backsplash, glass”/.test(msg), `${where}: the message carries what changed since version 2`, msg.slice(0, 160))
       ok(/• Removed “Painting, whole unit”/.test(msg) && !/hidden/.test(msg), `${where}: a line hidden from the client reads as removed — never “hidden”`)
@@ -346,7 +346,7 @@ update quote_payments set pct = 35 where id = '${PAY.mid}'; update quote_payment
     setView({ changesSince: 'all' })
     await go(p, `/quotes/${Q7}`)
     await p.getByTestId('quote-send').click(); await settle(p, 300)
-    await p.getByRole('menuitem', { name: /^Send for confirmation/ }).click(); await settle(p, 700)
+    await p.getByRole('menuitem', { name: /^Ask to confirm/ }).click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) W-358
     { const msg = await p.getByRole('dialog', { name: 'Send for confirmation' }).getByLabel('Message to the client').inputValue()
       ok(/rate S\$250\.00 → S\$260\.00/.test(msg), 'a price on every line: the message names the rate that moved') }
     await p.keyboard.press('Escape'); await settle(p, 300)

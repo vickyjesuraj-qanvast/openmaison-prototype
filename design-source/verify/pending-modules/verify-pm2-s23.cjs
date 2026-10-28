@@ -173,22 +173,24 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, `/leads/${KEVIN}/meetings`, 1800)
       const tabs = (await p.locator('[role="tablist"]').first().locator('[role="tab"]').allInnerTexts()).map((t) => t.replace(/\d+$/, '').trim())
       const at = tabs.indexOf('Meetings')
-      ok(at > 0 && tabs[at - 1] === 'Notes & Logs' && tabs[at + 1] === 'Questionnaire', 'the lead’s tabs: Meetings between Notes & Logs and Questionnaire', tabs.join(' · '))
+      ok(at > 0 && tabs[at - 1] === 'Notes & logs' && tabs[at + 1] === 'Questionnaire', 'the lead’s tabs: Meetings between Notes & logs and Questionnaire', tabs.join(' · '))   // (the calm UI build 2026-10-27, a deliberate change)
       const row = p.getByTestId('meeting-row').filter({ hasText: 'First consultation' }).first()
       ok(await row.isVisible(), 'Kevin’s Met log, written up, is one row — the meeting')
-      ok(/Written up from notes/.test(await row.innerText()) && /Held/.test(await row.getByTestId('meeting-status').innerText()), '…held, written up from notes')
-      ok(/Brief to save/.test(await row.getByTestId('meeting-waits').innerText().catch(() => '')), '…its brief waits to be saved, said in the row')
-      ok(/^\d+ · (Hot|Warm|Cool|Cold)$/.test((await row.getByTestId('meeting-score').innerText()).trim()), '…with its deal score and tier')
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-20) the studio's words: "From notes", "Summary not saved"; the deal score rests in
+         Column settings (its card on the meeting page keeps it, in words — "Maybe · 53") */
+      ok(/From notes/.test(await row.innerText()) && /Held/.test(await row.getByTestId('meeting-status').innerText()), '…held, written up from notes')
+      ok(/Summary not saved/.test(await row.getByTestId('meeting-waits').innerText().catch(() => '')), '…its summary waits to be saved, said in the row')
+      ok(!(await row.getByTestId('meeting-score').first().isVisible().catch(() => false)), '…the deal score off the row by default (Column settings keeps it)')   // a hidden column's cell is drawn with display: none
       const metRows = Number(sql(`select count(*) from stage_logs s, json_each(s.payload, '$.meetings') j where s.lead_id = '${KEVIN}' and s.to_stage = 'Met' and json_extract(j.value, '$.meetingId') = '${KM}'`))
       ok(metRows === 1, 'the meeting IS the Met log — the Met step’s entry holds it, no second record')
       const waits = Number(sql(`select count(*) from meetings where lead_id = '${KEVIN}' and deleted_at is null and status = 'held' and brief_at is not null and brief_saved_at is null`))
       const badge = (await p.locator('[role="tab"]').filter({ hasText: 'Meetings' }).first().innerText()).replace(/\D/g, '')
       ok(Number(badge || 0) === waits, 'the tab’s count is what waits on you (briefs to save)', `badge ${badge} · waits ${waits}`)
-      ok(await p.getByRole('button', { name: /Briefs to save \(\d+\)/ }).isVisible(), 'the to-do chip says it: Briefs to save (n)')
+      ok(await p.getByRole('button', { name: /Summaries to save · \d+/ }).isVisible(), 'the to-do chip says it: Summaries to save · n')   // (the calm UI build 2026-10-27, a deliberate change)
       await shot(p, '01-kevin-tab-1440')
 
       await go(p, `/leads/${OLIVIA}/meetings`)
-      ok(await p.getByTestId('meetings-empty').isVisible() && /Meet with the co-pilot beside you/.test(await p.getByTestId('meetings-empty').innerText()), 'a lead with no meeting: the first-run card')
+      ok(await p.getByTestId('meetings-empty').isVisible() && /No meetings yet/.test(await p.getByTestId('meetings-empty').innerText()), 'a lead with no meeting: the first-run card')   // (the calm UI build 2026-10-27, a deliberate change)
       ok(await p.getByTestId('meetings-empty').getByRole('button', { name: 'Plan a meeting' }).isVisible() && await p.getByTestId('meetings-empty').getByRole('button', { name: 'Start a meeting now' }).isVisible(), '…its buttons: Plan a meeting · Start a meeting now')
 
       await go(p, '/meetings', 1800)
@@ -223,7 +225,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       ok(await d.isVisible(), 'Plan a meeting opens the house dialog')
       await d.getByTestId('plan-save').click(); await settle(p, 400)
       ok(await d.getByRole('alert').count() >= 1, 'saved with no date: the field says so (dates are picked, never typed)')
-      const day = await pickNextMonth(p, d, 'Date & time', 16)
+      const day = await pickNextMonth(p, d, 'Date and time', 16)   // (the calm UI build 2026-10-27, a deliberate change)
       await d.getByTestId('plan-save').click()
       const s = await waitSnack(p, /Meeting planned for/)
       ok(/Meeting planned for .* — a reminder task is on it/.test(s), 'planned — "a reminder task is on it"', s)
@@ -259,7 +261,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, `/meetings/${JM}`, 1800)
       ok(await p.getByTestId('meeting-room').getAttribute('data-status') === 'planned', 'Alex’s first consultation with Jonathan opens on its Before view')
       ok(await p.getByTestId('room-start').isVisible() && await p.getByTestId('room-invite').isVisible(), '…Start the meeting is the one filled button, Send the invitation beside it')
-      ok(/25 AI credits for each 10 minutes, and asks before each next 10/.test(await p.getByTestId('room-price').innerText()), 'the co-pilot’s price is said before Start (Q-45)')
+      ok(/25 AI credits per 10 minutes — it asks before going on/.test(await p.getByTestId('room-price').innerText()), 'Meeting Copilot’s price is said before Start (Q-45)')   // (the calm UI build 2026-10-27, a deliberate change)
       ok(/Before the meeting/i.test(await p.locator('[data-card="room-prep"]').innerText()) && /Still to find out/i.test(await p.locator('[data-card="room-prep"]').innerText()), 'the prep: what is known and what is still to find out')
       await shot(p, '04-room-before-1440')
       popups.length = 0
@@ -327,8 +329,8 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       ok(sql(`select status from meetings where id = '${LIVE}'`) === 'planned' && Number(sql(`select count(*) from credit_ledger`)) === ledger0, '…nothing starts and nothing is charged')
       await p.getByTestId('room-consent').click(); await settle(p, 300)
       await p.getByTestId('room-start').click()
-      const s = await waitSnack(p, /co-pilot is on/)
-      ok(/The co-pilot is on · 25 AI credits for the first 10 minutes/.test(s), 'Start: "The co-pilot is on · 25 AI credits for the first 10 minutes"', s)
+      const s = await waitSnack(p, /Meeting Copilot is on/)   // (the calm UI build 2026-10-27, a deliberate change) — one spelling
+      ok(/Meeting Copilot is on · 25 AI credits for the first 10 minutes/.test(s), 'Start: "Meeting Copilot is on · 25 AI credits for the first 10 minutes"', s)
       await settle(p, 1800)
       const m = one(`select status, consent_at, consent_by, blocks, started_at from meetings where id = '${LIVE}'`)
       ok(m.status === 'live' && m.consent_at && m.consent_by === 'dane' && m.blocks === 1, 'live, with the consent on record (who, when)')
@@ -358,10 +360,10 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       /* the check-in: nine and a half minutes in */
       sql(`update meetings set started_at = ${Date.now() - 9.5 * 60_000} where id = '${LIVE}'`)
       await go(p, `/meetings/${LIVE}`, 2200)
-      ok(/10 minutes in — keep the co-pilot on\?/.test(await p.getByTestId('room-check-in').innerText().catch(() => '')) && /25 AI credits for the next 10 minutes/.test(await p.getByTestId('room-check-in').innerText().catch(() => '')), 'ten minutes in, it asks before the next 10 — with the price')
+      ok(/10 minutes in — keep Meeting Copilot on\?/.test(await p.getByTestId('room-check-in').innerText().catch(() => '')) && /25 AI credits for the next 10 minutes/.test(await p.getByTestId('room-check-in').innerText().catch(() => '')), 'ten minutes in, it asks before the next 10 — with the price')
       await p.getByTestId('room-keep-going').click()
       const k = await waitSnack(p, /carries on/)
-      ok(/The co-pilot carries on · 25 AI credits for the next 10 minutes/.test(k), 'Keep going: "The co-pilot carries on · 25 AI credits …"', k)
+      ok(/Meeting Copilot carries on · 25 AI credits for the next 10 minutes/.test(k), 'Keep going: "Meeting Copilot carries on · 25 AI credits …"', k)   // (the calm UI build 2026-10-27, a deliberate change)
       await settle(p, 1000)
       ok(Number(sql(`select blocks from meetings where id = '${LIVE}'`)) === 2 && Number(sql(`select count(*) from credit_ledger where ref_id = 'meeting:${LIVE}:2' and reason = 'spend'`)) === 1, '…block 2 on the ledger')
       /* End */
@@ -369,7 +371,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await p.getByTestId('room-end').click(); await settle(p, 500)
       await dialog(p, 'End the meeting?').getByRole('button', { name: 'End the meeting' }).click()
       const e = await waitSnack(p, /Meeting held/, 12000)
-      ok(/Meeting held — the brief is ready · Co-pilot \d+ min · 50 AI credits/.test(e), 'End: the receipt — the minutes and the credits', e)
+      ok(/Meeting held — the summary is ready · Meeting Copilot \d+ min · 50 AI credits/.test(e), 'End: the receipt — the minutes and the credits', e)   // (the calm UI build 2026-10-27, a deliberate change)
       await settle(p, 2000)
       const h = one(`select status, ended_at, brief_json, source from meetings where id = '${LIVE}'`)
       const brief = h && h.brief_json ? JSON.parse(h.brief_json) : null
@@ -423,7 +425,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       ok(await c.getByTestId('meeting-link').getAttribute('data-state') === 'held' && /We met/.test(words) && !/Met Kevin/.test(words), 'the client reads the summary on their link, said to them')
       const span = await c.getByTestId('meeting-link').evaluate((el) => Math.round(el.getBoundingClientRect().width))
       ok(span === 1440, 'the client’s page fills the window at 1440 (its letterhead the whole width, the column centred)', `${span}`)
-      ok(!/comparing studios|another studio|other quote|concern|deal score|\b\d+ · (Hot|Warm|Cool|Cold)\b/i.test(words), '…never the concerns, the competitors or the score', words.slice(0, 200).replace(/\s+/g, ' '))
+      ok(!/comparing studios|another studio|other quote|concern|deal score|\b\d+ · (Hot|Warm|Cool|Cold)\b|\b(Very likely|Likely|Maybe|Unlikely) · \d+/i.test(words), '…never the concerns, the competitors or the score', words.slice(0, 200).replace(/\s+/g, ' '))
       ok(await c.getByTestId('meeting-link-estimate').count() === 0, '…and no estimate unless it was ticked')
       await shot(c, '09-client-notes-1440', true)
       await p.getByRole('button', { name: 'More actions' }).first().click(); await settle(p, 400)
@@ -467,8 +469,8 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await d.getByTestId('writeup-notes').locator('textarea').first().fill('Client: We would like a Japandi look, budget around 60k.\nClient: Only the kitchen and the bathroom for now.')
         .catch(async () => { await d.getByTestId('writeup-notes').fill('Client: We would like a Japandi look, budget around 60k.\nClient: Only the kitchen and the bathroom for now.') })
       await p.getByTestId('writeup-save').click()
-      const s = await waitSnack(p, /Brief made/, 12000)
-      ok(/Brief made from the notes/.test(s) && /Move to Met/.test(s), 'the brief is made — and, Jonathan not at Met yet, the snackbar offers Move to Met', s)
+      const s = await waitSnack(p, /Summary made/, 12000)   // (the calm UI build 2026-10-27, a deliberate change) — "summary", not "brief"
+      ok(/Summary made from your notes/.test(s) && /Move to Met/.test(s), 'the summary is made — and, Jonathan not at Met yet, the snackbar offers Move to Met', s)
       await settle(p, 1200)
       const w = sql(`select id from meetings where lead_id = '${JONATHAN}'`).split('\n').filter((x) => x && !before.has(x))[0]
       ok(!!w && sql(`select status || ':' || source from meetings where id = '${w}'`) === 'held:notes' && Number(sql(`select count(*) from credit_ledger`)) === ledger0, 'held, written up from notes — nothing charged')
@@ -501,8 +503,8 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await rd.getByTestId('writeup-consent').click(); await settle(p, 200)
       await rd.getByTestId('writeup-notes').locator('textarea').first().fill('Client: We want to redo the kitchen, budget around 40k.').catch(async () => { await rd.getByTestId('writeup-notes').fill('Client: We want to redo the kitchen, budget around 40k.') })
       await p.getByTestId('writeup-save').click()
-      const rs = await waitSnack(p, /Brief made/, 15000)
-      ok(/Brief made from the recording’s transcript/.test(rs), 'the brief is made from the transcript', rs)
+      const rs = await waitSnack(p, /Summary made/, 15000)   // (the calm UI build 2026-10-27, a deliberate change)
+      ok(/Summary made from the recording’s transcript/.test(rs), 'the summary is made from the transcript', rs)
       await settle(p, 1200)
       const rm = sql(`select id from meetings where lead_id = '${OLIVIA}'`).split('\n').filter((x) => x && !before2.has(x))[0]
       const rf = sql(`select id from lead_files where lead_id = '${OLIVIA}'`).split('\n').filter((x) => x && !files0.has(x))[0]
@@ -521,16 +523,17 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await menuItem(p, 'Contact Log').click(); await settle(p, 900)
       const ed = p.locator('main')
       await ed.getByRole('radio', { name: 'WhatsApp' }).first().click().catch(async () => { await ed.getByText('WhatsApp', { exact: true }).first().click() }); await settle(p, 200)
-      await ed.getByRole('combobox', { name: /Outcome/ }).click(); await settle(p, 300)
-      await p.locator('[role="option"]').filter({ hasText: 'Meeting scheduled' }).first().click(); await settle(p, 400)
-      await ed.getByRole('button', { name: /^Date & Time/ }).first().click(); await settle(p, 400)   // when they were contacted: today, from the picker
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-08) the desk's contact log speaks the log sheet's words: How · When · How it went
+         (chips, was the Outcome select), the call back's "Date and time" and "Call back by" (was Preferred mode; "In person" reads "Visit"), "Save log" */
+      await ed.getByRole('radiogroup', { name: 'How it went', exact: true }).getByRole('radio', { name: 'Meeting scheduled', exact: true }).click(); await settle(p, 400)
+      await ed.getByRole('button', { name: /^When/ }).first().click(); await settle(p, 400)   // when they were contacted: today, from the picker
       await p.locator('button[aria-label="Today"]').last().click(); await settle(p, 300)
       await p.keyboard.press('Escape').catch(() => {}); await settle(p, 250)
-      const day = await pickNextMonth(p, ed, 'Date & Time', 20, 1)
-      await ed.getByRole('combobox', { name: /Preferred mode/ }).click(); await settle(p, 300)
-      await p.locator('[role="option"]').filter({ hasText: 'In person' }).first().click(); await settle(p, 300)
+      const day = await pickNextMonth(p, ed, 'Date and time', 20, 0)
+      await ed.getByRole('combobox', { name: /Call back by/ }).click(); await settle(p, 300)
+      await p.locator('[role="option"]').filter({ hasText: 'Visit' }).first().click(); await settle(p, 300)
       await shot(p, '11-contact-log-1440')
-      await p.getByRole('button', { name: 'Save', exact: true }).first().click()
+      await p.getByRole('button', { name: 'Save log', exact: true }).first().click()
       const saved = await waitSnack(p, /Contact log saved/)
       ok(/Contact log saved · a meeting is planned for /.test(saved), 'the save says the meeting is planned', saved)
       await settle(p, 1500)

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { Dropzone, FieldError } from '@/components/leads/move-stage/fields'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
@@ -13,7 +12,7 @@ import { PLAN_ACCEPT } from '@/components/projects/floor-plan/plan-picture'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { withFrom } from '@/lib/nav'
 import { planNameOf } from '@/lib/projects/floor-plan-model'
-import { roomSummary, roomsForType, scaleOk, sizeAt, startingArea, type PlaceRoom } from '@/lib/planner/photo'
+import { roomSentence, roomsForType, scaleOk, sizeAt, startingArea, type PlaceRoom } from '@/lib/planner/photo'
 import { floorPlanPhotoFolder, readPhotoTarget, readPhotoTargets, startFromFloorPlan, type PhotoOption, type PhotoTarget, type PhotoTargetFacts } from '@/app/planner/photo-actions'
 import { cornersStart, readPlanFile, readPlanUrl, squareByCorners, straightenPlan, type ReadPlan, type Straightened } from './straighten-photo'
 import { CornerEditor } from './corner-editor'
@@ -177,7 +176,7 @@ export function PhotoDialog({ open, onClose, target, from = { kind: 'upload' }, 
   const planScale = facts?.plan?.scale ?? null
   const mmPerPx = !out ? null : planScale ? planScale : sizeOf({ src: out.data, width: out.width, height: out.height, share: out.share, read: out.read }, sizeBy, area, measured)
   const startArea = facts ? startingArea(facts.propertyType, facts.areaSqft) : null
-  const summary = useMemo(() => roomSummary(rooms), [rooms])
+  const summary = useMemo(() => roomSentence(rooms), [rooms])
   const basis = facts ? roomsForType(facts.propertyType).basis : ''
   const forLabel = options?.find((o) => sameTarget(o.target, picked))?.label ?? ''
 
@@ -217,7 +216,7 @@ export function PhotoDialog({ open, onClose, target, from = { kind: 'upload' }, 
     : facts ? `For ${facts.name} — the photo is kept in their Files › Floor plans.` : 'From a floor-plan photo, in two steps.'
 
   return (
-    <Dialog open={open} onClose={() => { if (busy !== 'saving') onClose() }} title="Make a 3D picture" subtitle={step === 1 ? sub : 'Check the rooms and how big it is, then place the rooms on the plan.'} size="modal" width={800} closeOnScrim={false}
+    <Dialog open={open} onClose={() => { if (busy !== 'saving') onClose() }} title="Trace a floor-plan photo" subtitle={step === 1 ? sub : 'Check the rooms and how big it is, then place the rooms on the plan.'} size="modal" width={800} closeOnScrim={false}
             actions={<span className={styles.step} data-testid="photo-step">{`Step ${step} of 2`}</span>}
             footer={step === 1 ? (
               <>
@@ -289,7 +288,7 @@ export function PhotoDialog({ open, onClose, target, from = { kind: 'upload' }, 
             <section className={styles.section} aria-label="The rooms" data-testid="photo-rooms">
               <div className={styles.headRow}><h3 className={styles.h}>The rooms</h3>
                 <Button variant="secondary" appearance="text" size="sm" onPress={() => setRoomsOpen((v) => !v)} aria-expanded={roomsOpen} data-testid="photo-rooms-change">{roomsOpen ? 'Done' : 'Change the rooms'}</Button></div>
-              <div className={styles.chips} data-testid="photo-summary">{summary.map((c) => <MetaChip key={c}>{c}</MetaChip>)}</div>
+              <p className={styles.summary} data-testid="photo-summary">{summary}</p>   {/* (the calm UI build, 6-08 · 6-22) one plain sentence, not capital chips */}
               <p className={styles.note}>{`Started from ${basis}${facts?.propertyType ? ' — the flat type on record' : ''}. Take away what the plan doesn’t have, add what it does — you place each one on the plan next.`}</p>
               {roomsOpen ? (
                 <>

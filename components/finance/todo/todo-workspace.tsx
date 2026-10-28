@@ -9,7 +9,6 @@ import { Button, SearchBar } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Chips } from '@/components/om/chips'
-import { MetaChip } from '@/components/om/meta-chip'
 import { ScopePill } from '@/components/om/scope-pill'
 import { ChipRail } from '@/components/om/chip-rail'
 import { EmptyState } from '@/components/om/empty-state'
@@ -17,31 +16,29 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSheetLayout } from '@/components/om/sheet'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
-import { CreditsTable } from '@/components/company/plan/credits-table'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { Row } from '@/components/projects/overview/row'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { useSnackbar } from '@/components/om/snackbar'
 import { NoteDialog } from '@/components/templates/editor/review-bar'
 import { GHOST_MIN_MS } from '@/components/shell/page-reveal'
-import type { TableColumnDef } from '@/components/om/table-columns'
 import { withFrom } from '@/lib/nav'
-import { displayDate } from '@/lib/format'
+import { displayDate, moneyCard } from '@/lib/format'
 import { money2 } from '@/lib/quotes/math'
 import { waLink } from '@/lib/portal/model'
 import { reminderMessage } from '@/lib/projects/payments-model'
 import { payable } from '@/lib/finance/costs'
 import { owedOldestFirst, ruleWords, type CommissionAsk } from '@/lib/finance/commission'
-import { RECENT_KIND, RECENT_SHOWN, TODO_GROUP, groupLine, recentRows, todoGroupsFor, todoInputOf, todoRows, type RecentRow, type TodoData, type TodoGroupKey, type TodoRow } from '@/lib/finance/todo'
+import { RECENT_KIND, RECENT_SHOWN, TODO_GROUP, groupLine, listDay, recentRows, recentWhen, todoGroupsFor, todoInputOf, todoRows, type RecentRow, type TodoData, type TodoGroupKey, type TodoKind, type TodoRow } from '@/lib/finance/todo'
 import { ENTITY_PARAM, entityChip, entityMenu, entityOf, entityPillLabel, matchesEntity } from '@/lib/finance/entity-scope'
-import { ago } from '@/lib/templates/ago'
 import { todoHref } from '@/lib/finance/sections'
 import { confirmPayment, markNotReceived, remindInvoice, undoConfirmPayment, undoNotReceived } from '@/app/projects/payment-actions'
 import { answerCommissionAsk, payMemberCommission, undoMemberCommission } from '@/app/finance/books-actions'
 import { retryXero } from '@/app/finance/xero-actions'
-import { ENTITY_COL, RowMenu, entityCell, type Next, type RowAction } from '../cost-tables'
+import { RowMenu, type Next, type RowAction } from '../cost-tables'
 import { useCosts } from '../use-costs'
 import { PayMemberDialog, RuleDialog, type PayMemberTarget } from '../books/commission-dialogs'
-import money from '@/components/projects/money/money.module.css'
 import plan from '@/components/company/plan/plan.module.css'
 import fin from '../finance.module.css'
 import t from './todo.module.css'
@@ -56,45 +53,25 @@ import t from './todo.module.css'
  * Commission's dialogs; a member's pay through Pay {member} (S-12). "Who owes us" is listed here and owned by the project's Money — its rows
  * open there with the way back. `?open=<id>` (the bell, the search) lands on the row. The rows are lib/finance/todo.ts's — no number of its own.
  */
-type Cols = 'approve' | 'pay' | 'collect' | 'quiet'
-const DEFS: Record<Cols, readonly TableColumnDef[]> = {
-  approve: [
-    { key: 'what', label: 'What', track: 'minmax(260px, 260fr)', locked: true },
-    { key: 'project', label: 'Project', track: 'minmax(170px, 170fr)' },
-    { key: 'asked', label: 'Asked by', track: 'minmax(140px, 140fr)' },
-    { key: 'amount', label: 'Amount', track: 'minmax(130px, 130fr)' },
-    { key: 'know', label: 'What to know', track: 'minmax(240px, 240fr)' },
-    { key: 'next', label: 'Next step', track: 'minmax(190px, 190fr)' },
-  ],
-  pay: [
-    { key: 'to', label: 'To', track: 'minmax(210px, 210fr)', locked: true },
-    { key: 'for', label: 'For', track: 'minmax(200px, 200fr)' },
-    { key: 'project', label: 'Project', track: 'minmax(170px, 170fr)' },
-    { key: 'due', label: 'Due', track: 'minmax(170px, 170fr)' },
-    { key: 'amount', label: 'Amount', track: 'minmax(140px, 140fr)' },
-    { key: 'next', label: 'Next step', track: 'minmax(170px, 170fr)' },
-  ],
-  collect: [
-    { key: 'client', label: 'Client', track: 'minmax(190px, 190fr)', locked: true },
-    { key: 'invoice', label: 'Invoice', track: 'minmax(230px, 230fr)' },
-    { key: 'project', label: 'Project', track: 'minmax(170px, 170fr)' },
-    { key: 'due', label: 'Due', track: 'minmax(180px, 180fr)' },
-    { key: 'amount', label: 'Amount', track: 'minmax(140px, 140fr)' },
-    { key: 'next', label: 'Next step', track: 'minmax(210px, 210fr)' },
-  ],
-  quiet: [
-    { key: 'what', label: 'What', track: 'minmax(280px, 280fr)', locked: true },
-    { key: 'project', label: 'Project', track: 'minmax(170px, 170fr)' },
-    { key: 'when', label: 'When', track: 'minmax(150px, 150fr)' },
-    { key: 'amount', label: 'Amount', track: 'minmax(130px, 130fr)' },
-    { key: 'know', label: 'What to know', track: 'minmax(220px, 220fr)' },
-    { key: 'next', label: 'Next step', track: 'minmax(170px, 170fr)' },
-  ],
+/* (the calm UI build 2026-10-27 — 5-08 · 5-10 · 5-13 · 5-24 · 5-25 · 5-49, his "make it absolutely simple") To do — the tab now named **Needs your
+   attention** — is ONE list grouped by its section heads, no tables: each row is the house Row (components/projects/overview/row.tsx — the project's
+   and the Dashboard's Needs you), its title in the page's ink opening the record, ONE line under it that wraps (what it is · the project · who asked
+   and when or when it is due — red only when it is ours and late — · why it waits, the old "What to know"), the amount at its end, ONE text verb
+   and the ⋮ with the rest (the record's own steps, unchanged). Every column the tables had is a fact on the row's line, the Issued by chip
+   included; the chips have no counts (each head keeps its count); Recently says the kind in words. A client's payment asks before it is
+   confirmed (the audit's B3 — the same action after the confirm). Every action, testid and `data-todo` / `data-kind` / `data-focus` mark stays. */
+const KIND_ICON: Record<TodoKind, string> = {
+  po: 'description', po_balance: 'payments', bill: 'receipt_long', expense: 'shopping_cart', claim: 'shopping_cart', invoice: 'request_quote',
+  confirm: 'check_circle', check: 'check_circle', remind: 'request_quote', send: 'send', ask: 'workspace_premium', commission: 'workspace_premium', xero: 'account_balance',
 }
-const colsOf = (g: TodoGroupKey): Cols => (g === 'approve' || g === 'waiting' ? 'approve' : g === 'pay' ? 'pay' : g === 'collect' ? 'collect' : 'quiet')   // (parity map, MO-098) Waiting for approval reads as To approve
+/** The WhatsApp glyph the house draws beside a channel's verb (the Dashboard's Remind, the identity block's) */
+const WhatsAppGlyph = () => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img src="/figma-assets/whatsapp-grey.svg" width={16} height={16} alt="" className={t.channel} />
+)
 const HERE = todoHref()
 const DAY = 86_400_000
-type Act = { label: string; run: () => void; testId?: string } | null
+type Act = { label: string; run: () => void; testId?: string; channel?: boolean } | null
 
 export function TodoWorkspace({ data, open }: { data: TodoData; open: string | null }) {
   const f = data.finance
@@ -126,6 +103,7 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
   const [busy, setBusy] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null)
   const [refusing, setRefusing] = useState<TodoRow | null>(null)
+  const [confirming, setConfirming] = useState<TodoRow | null>(null)   // (the calm UI build, B3) a client's payment asks first
   const [answering, setAnswering] = useState<CommissionAsk | null>(null)
   const [declining, setDeclining] = useState<CommissionAsk | null>(null)
   const [payingMember, setPayingMember] = useState<PayMemberTarget | null>(null)
@@ -155,7 +133,6 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
   const q = query.trim().toLowerCase()
   const shown = rows.filter((r) => !q || r.hay.includes(q))
   const of = (g: TodoGroupKey) => shown.filter((r) => r.group === g)
-  const counts = Object.fromEntries(groups.map((g) => [g, rows.filter((r) => r.group === g).length])) as Record<TodoGroupKey, number>
 
   /* ── what each row does ── */
   const moneyHref = (r: TodoRow, extra = '') => withFrom(`/projects/${r.projectId}/money?open=${encodeURIComponent(r.invoiceId ?? r.ref)}${extra}`, HERE)
@@ -216,19 +193,23 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
 
   const action = (r: TodoRow): Act => {
     if (r.group === 'waiting') return null   // (parity map, MO-098) an Owner's or an Admin's to approve — the row says so where the button would be
-    const fromNext = (n: Next): Act => (n ? { label: n.label, run: n.run, testId: n.testId } : null)
+    /* (the calm UI build 2026-10-27 — 5-13) a PO waiting for approval reads "Approve" on its row, as the project's Needs you does; the press is the
+       same (its send dialog opens) and the record's own label stays "Approve and send" — the Money tab's `&do=approve` landing reads it */
+    const fromNext = (n: Next): Act => (n ? { label: n.testId === 'po-next-approve' ? 'Approve' : n.label, run: n.run, testId: n.testId } : null)
     switch (r.kind) {
       case 'po': { const p = po(r.ref); return p ? fromNext(c.poNext(p)) : null }
       case 'bill': { const b = bill(r.ref); return b ? fromNext(c.billNext(b)) : null }
       case 'po_balance': { const p = po(r.ref); if (!p || !f.viewer.pays) return null; const owed = payable({ po: p, bills: f.summary.bills }); return { label: owed.advanceDueMinor ? 'Pay the advance' : 'Pay', run: () => c.payPo(p), testId: 'todo-pay-po' } }
       case 'expense': case 'claim': { const e = expense(r.ref); return e ? fromNext(c.expenseNext(e)) : null }
-      case 'invoice': return { label: 'Review on Money', run: () => go(moneyHref(r, '&do=approve')), testId: 'todo-review-invoice' }
-      case 'confirm': return { label: 'Confirm', run: () => confirm(r), testId: 'todo-confirm' }
-      case 'check': return { label: 'Check', run: () => confirm(r), testId: 'todo-check' }
-      case 'remind': return { label: 'Remind on WhatsApp', run: () => remind(r), testId: 'todo-remind' }
+      /* (the calm UI build 2026-10-27 — 5-08 · W-584) one short verb a row: Review · Confirm (it asks first) · Remind (WhatsApp's glyph) · Pay — the
+         row names who */
+      case 'invoice': return { label: 'Review', run: () => go(moneyHref(r, '&do=approve')), testId: 'todo-review-invoice' }
+      case 'confirm': return { label: 'Confirm', run: () => setConfirming(r), testId: 'todo-confirm' }
+      case 'check': return { label: 'Check', run: () => setConfirming(r), testId: 'todo-check' }
+      case 'remind': return { label: 'Remind', run: () => remind(r), testId: 'todo-remind', channel: true }
       case 'send': return { label: data.sendsNow === false ? 'Submit for approval' : 'Send', run: () => go(moneyHref(r, '&send=1')), testId: 'todo-send' }   // (pending modules S06) the step it opens, in its words
       case 'ask': { const a = ask(r.ref); return a ? { label: 'Answer', run: () => setAnswering(a), testId: 'todo-answer' } : null }
-      case 'commission': return { label: `Pay ${r.title.split(/\s+/)[0]}`, run: () => payMember(r.ref), testId: 'todo-pay-member' }
+      case 'commission': return { label: 'Pay', run: () => payMember(r.ref), testId: 'todo-pay-member' }
       case 'xero': return { label: 'Retry', run: () => retry(r), testId: 'todo-xero-retry' }
       default: return null
     }
@@ -259,39 +240,43 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
     return null
   }
 
-  /* ── the cells ── */
-  const first = (r: TodoRow) => {
+  /* ── the row ── */
+  const titleOf = (r: TodoRow) => {
     const o = opener(r)
-    const title = o && 'href' in o ? <Link href={o.href} className={money.nameLink} title={r.title}>{r.title}</Link>
-      : o ? <button type="button" className={money.nameLink} onClick={o.press} title={r.title} data-testid="todo-open">{r.title}</button>
-      : <span className={money.name}>{r.title}</span>
-    return <span className={money.stack}>{title}{r.sub ? <span className={money.sub} title={r.sub}>{r.sub}</span> : null}</span>
+    return o && 'href' in o ? <Link href={o.href} className={t.title} data-kb-open="">{r.title}</Link>
+      : o ? <button type="button" className={t.title} onClick={o.press} data-testid="todo-open" data-kb-open="">{r.title}</button>
+      : <span className={t.titleText}>{r.title}</span>
   }
-  const amount = (r: TodoRow) => (r.amountMinor === null ? <span className={money.none}>--</span>
-    : <span className={money.stack}><span className={money.num}>{money2(r.amountMinor)}</span>{r.amountSub ? <span className={money.sub}>{r.amountSub}</span> : null}</span>)
-  const next = (r: TodoRow) => {
+  /* the one line under the title: what it is · the project · who asked or when it is due · why it waits — it wraps, never cut (T-12) */
+  const captionOf = (r: TodoRow) => {
+    const chipName = entityChip(r.entity, options)
+    const when = r.group === 'approve' || r.group === 'waiting'
+      ? (r.asker ? `Asked by ${r.asker}${r.askedAt ? ` ${listDay(r.askedAt, data.now)}` : ''}` : null)
+      : r.dueWords ?? r.when
+    /* (T-04) a row titled by its client says the project without the client's name again — "Executive Condo", not "Executive Condo — Ryan D’Souza" */
+    const tail = ` — ${r.title}`
+    const project = r.project.endsWith(tail) ? r.project.slice(0, -tail.length) : r.project
+    const parts: { key: string; node: ReactNode }[] = [
+      ...(r.about ? [{ key: 'about', node: r.about }] : []),
+      ...(r.sub ? [{ key: 'sub', node: r.sub }] : []),
+      ...(project && project !== '--' ? [{ key: 'project', node: project }] : []),
+      ...(chipName ? [{ key: 'entity', node: chipName }] : []),   // (parity map, MO-079) the Issued by column, now a fact on the line
+      ...(when ? [{ key: 'when', node: r.late && r.dueWords ? <span className={t.late}>{when}</span> : when }] : []),
+      ...(r.amountSub ? [{ key: 'amountSub', node: r.amountSub }] : []),
+      ...(r.know ? [{ key: 'know', node: r.know }] : []),
+    ]
+    return parts.length ? <span className={t.caption}>{parts.map((x, i) => <span key={x.key}>{i ? ' · ' : ''}{x.node}</span>)}</span> : undefined
+  }
+  const rowView = (r: TodoRow) => {
     const a = action(r)
     return (
-      <span className={money.rowActions}>
-        {a ? <Button appearance="text" onPress={a.run} isDisabled={busy === r.key} data-testid={a.testId}>{a.label}</Button> : null}
-        <RowMenu label={`More for ${r.title}`} title={r.title} items={menu(r)} />
-      </span>
+      <Row two icon={KIND_ICON[r.kind]} tone={r.group === 'approve' ? 'approve' : undefined} className={t.row}
+           name={titleOf(r)} caption={captionOf(r)}
+           meta={r.amountMinor === null ? undefined : <span className={t.amount}>{moneyCard(r.amountMinor)}</span>}
+           actions={a ? [{ label: a.label, onPress: () => a.run(), busy: busy === r.key, testId: a.testId, icon: a.channel ? <WhatsAppGlyph /> : undefined }] : []}
+           after={<span className={t.more}><RowMenu label={`More for ${r.title}`} title={r.title} items={menu(r)} /></span>}
+           attrs={{ 'data-todo': r.key, 'data-kind': r.kind, 'data-focus': focus === r.key ? '' : undefined, 'data-kb-row': '', 'data-kb-id': r.key }} />
     )
-  }
-  const cell = (r: TodoRow, key: string): ReactNode => {
-    switch (key) {
-      case 'what': case 'to': case 'client': return first(r)
-      case 'project': return <span className={money.text} title={r.project}>{r.project}</span>
-      case 'asked': return r.asker ? <span className={money.stack}><span className={money.text}>{r.asker}</span>{r.askedAt ? <span className={money.sub}>{displayDate(new Date(r.askedAt))}</span> : null}</span> : <span className={money.none}>--</span>
-      case 'for': case 'invoice': return <span className={money.text} title={r.about ?? undefined}>{r.about ?? '--'}</span>
-      case 'due': return r.dueWords ? <span className={`${money.num}${r.late ? ` ${t.late}` : ''}`}>{r.dueWords}</span> : <span className={money.none}>--</span>
-      case 'when': return r.when ? <span className={money.text}>{r.when}</span> : <span className={money.none}>--</span>
-      case 'amount': return amount(r)
-      case 'know': return r.know ? <span className={t.know} title={r.know}>{r.know}</span> : <span className={money.none}>--</span>
-      case 'entity': return entityCell(entityChip(r.entity, options))   // (parity map, MO-079)
-      case 'next': return next(r)
-      default: return null
-    }
   }
 
   /* ── the page ── */
@@ -318,7 +303,8 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
       </PortalMenu>
     </span>
   )
-  const chipOptions = [{ value: 'all', label: `All · ${rows.length}` }, ...groups.map((g) => ({ value: g, label: `${TODO_GROUP[g].chip} · ${counts[g]}` }))]
+  /* (the calm UI build 2026-10-27 — 5-08 · T-07) the chips without counts — each group's head says its count, the tab carries the total */
+  const chipOptions = [{ value: 'all', label: 'All' }, ...groups.map((g) => ({ value: g, label: TODO_GROUP[g].chip }))]
   const chips = <Chips label="Show" options={chipOptions} value={chip} onChange={(v) => setChip(v as 'all' | TodoGroupKey)} testId="todo-chips" />
   /* (MO-079) the scope pill — a studio with one entity never sees it */
   const entityPill = options.length ? (
@@ -329,13 +315,6 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
       </PortalMenu>
     </>
   ) : null
-  /* (MO-079) with two or more entities, every group's table gains the Issued by column after Project */
-  const defsOf = (g: TodoGroupKey): readonly TableColumnDef[] => {
-    const d = DEFS[colsOf(g)]
-    if (!options.length) return d
-    const at = d.findIndex((x) => x.key === 'project') + 1
-    return [...d.slice(0, at), ENTITY_COL, ...d.slice(at)]
-  }
   /* (parity map, MO-084 · FB-009) Recently — each row opens its record: money out's panel here, money in's on its project's Money */
   const openRecent = (r: RecentRow): { press: () => void } | { href: string } | null => {
     if (r.kind === 'po') { const p = po(r.ref); return p ? { press: () => c.openPo(p) } : null }
@@ -352,21 +331,21 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
       <ul className={t.recent}>
         {recentShown.map((r) => {
           const o = openRecent(r)
-          const title = o && 'href' in o ? <Link href={o.href} className={money.nameLink} title={r.title}>{r.title}</Link>
-            : o ? <button type="button" className={money.nameLink} onClick={o.press} title={r.title}>{r.title}</button> : <span className={money.name}>{r.title}</span>
+          const title = o && 'href' in o ? <Link href={o.href} className={t.title} title={r.title}>{r.title}</Link>
+            : o ? <button type="button" className={t.title} onClick={o.press} title={r.title}>{r.title}</button> : <span className={t.titleText}>{r.title}</span>
           const chipName = entityChip(r.entity, options)
+          /* (the calm UI build 2026-10-27 — 5-24 · W-531 · W-460) the kind in words on the second line, never a CAPS tag; "Yesterday", never "1d ago" */
           return (
             <li key={r.key} className={t.recentRow} data-testid="todo-recent" data-kind={r.kind}>
-              <span className={t.recentKind}><MetaChip>{RECENT_KIND[r.kind]}</MetaChip></span>
-              <span className={t.recentText}>{title}<span className={money.sub} title={r.project}>{r.project}{chipName ? ` · ${chipName}` : ''} · {ago(r.at, data.now)}</span></span>
-              <span className={`${money.num} ${t.recentAmount}`}>{r.amountMinor === null ? '--' : money2(r.amountMinor)}</span>
+              <span className={t.recentText}>{title}<span className={t.recentSub}>{RECENT_KIND[r.kind]} · {r.project}{chipName ? ` · ${chipName}` : ''} · {recentWhen(r.at, data.now)}</span></span>
+              <span className={t.recentAmount}>{r.amountMinor === null ? '—' : moneyCard(r.amountMinor)}</span>
             </li>
           )
         })}
       </ul>
       {recent.length > RECENT_SHOWN ? (
-        <div className={money.toggleRow}>
-          <button type="button" className={money.toggle} aria-expanded={recentOpen} onClick={() => setRecentOpen((x) => !x)} data-testid="todo-recent-more">
+        <div className={t.toggleRow}>
+          <button type="button" className={t.toggle} aria-expanded={recentOpen} onClick={() => setRecentOpen((x) => !x)} data-testid="todo-recent-more">
             {recentOpen ? 'Show less' : `Show ${recent.length - RECENT_SHOWN} more`}
             <span data-chev><Icon name={recentOpen ? 'keyboard_arrow_up' : 'expand_more'} size={20} /></span>
           </button>
@@ -374,7 +353,7 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
       ) : null}
     </section>
   ) : null
-  const search = <SearchBar appearance="outlined" size="md" placeholder="Search what, who, project…" aria-label="Search To do" value={query} onChange={setQuery} />
+  const search = <SearchBar appearance="outlined" size="md" placeholder="Search what, who, project…" aria-label="Search Needs your attention" value={query} onChange={setQuery} />   // (the calm UI build, T-01) the tab's own name
   const visible = chip === 'all' ? groups : groups.filter((g) => g === chip)
   const nothing = rows.length === 0
   const noMatch = !nothing && q && visible.every((g) => of(g).length === 0)
@@ -396,28 +375,33 @@ export function TodoWorkspace({ data, open }: { data: TodoData; open: string | n
         </div>
       )}
       {nothing ? (
-        <EmptyState icon="task" tone="plain" testId="todo-empty" title="Nothing needs you"
+        <EmptyState icon="task" tone="plain" testId="todo-empty" title="You’re all caught up"
                     help={runs ? 'New purchase orders, bills, claims and client payments land here as they come in — each with what to do on its row.' : 'Your drafts, what is sent back to you, vendors’ answers and your claims land here.'} />
       ) : noMatch ? (
         <TabSearchEmpty noun="rows" searching onClearAll={() => { setQuery(''); setChip('all') }} />
       ) : visible.map((g) => {
         const list = of(g)
-        if (!list.length) {
-          /* a group with nothing in it keeps its head line only (F1 §6.3 ⑦) */
-          return (
-            <section key={g} className={plan.section} aria-label={TODO_GROUP[g].title} data-testid={`todo-${g}`}>
-              <div className={plan.sectionHead}><div className={plan.sectionTitles}><h2 className={plan.sectionTitle}>{TODO_GROUP[g].title}</h2><span className={plan.sectionHelp}>{q ? 'Nothing here matches' : TODO_GROUP[g].empty}</span></div></div>
-            </section>
-          )
-        }
+        /* a group with nothing in it keeps its head line only (F1 §6.3 ⑦) */
         return (
-          <CreditsTable key={g} table={`finance-todo-${colsOf(g)}`} title={TODO_GROUP[g].title} help={groupLine(g, list)} testId={`todo-${g}`} defs={defsOf(g)} rows={list} rowKey={(r) => r.key} cell={cell} empty={TODO_GROUP[g].empty}
-                        rowAttrs={(r) => ({ 'data-todo': r.key, 'data-kind': r.kind, 'data-focus': focus === r.key ? '' : undefined })} />
+          <section key={g} className={plan.section} aria-labelledby={`todo-${g}-title`} data-testid={`todo-${g}`}>
+            <div className={plan.sectionHead}><div className={plan.sectionTitles}><h2 id={`todo-${g}-title`} className={plan.sectionTitle}>{TODO_GROUP[g].title}</h2>
+              <span className={plan.sectionHelp}>{list.length ? groupLine(g, list) : q ? 'Nothing here matches' : TODO_GROUP[g].empty}</span></div></div>
+            {list.length ? (
+              <ul className={t.list} aria-label={TODO_GROUP[g].title} data-kb-list={TODO_GROUP[g].title.toLowerCase()}>
+                {list.map((r) => <li key={r.key} className={t.item}>{rowView(r)}</li>)}
+              </ul>
+            ) : null}
+          </section>
         )
       })}
       {recently}
 
       {c.dialogs}
+      {/* (the calm UI build 2026-10-27 — the audit's B3, his OK) a client's payment is confirmed after one question: the same action, never one press */}
+      <ConfirmDialog open={!!confirming} tone="primary" confirmLabel="Confirm"
+                     title={confirming ? `Confirm ${(moneyOf(confirming)?.client ?? 'the client').split(/\s+/)[0]}’s payment?` : 'Confirm the payment?'}
+                     message={confirming ? `${money2(confirming.amountMinor ?? 0)}${confirming.about ? ` — ${confirming.about}` : ''}. ${confirming.kind === 'check' ? 'It counts already; confirm it once you see it in the studio’s account.' : 'Confirm it once you see it in the studio’s account.'}` : undefined}
+                     onCancel={() => setConfirming(null)} onConfirm={() => { const r = confirming; setConfirming(null); if (r) confirm(r) }} />
       <NoteDialog open={!!refusing} title="Not received" label="Why — the client reads it" action="Mark not received" required maxLength={300} busy={!!refusing && busy === refusing.key}
                   help="It stays on the record; the invoice is owed again." onClose={() => setRefusing(null)} onSubmit={(reason) => { if (refusing) refuse(refusing, reason) }} />
       <RuleDialog open={!!answering} title="Approve the ask" subtitle={answering ? `${person(answering.memberId)} on ${f.projects.find((p) => p.id === answering.projectId)?.name ?? 'the project'} — change the rate first if you like. It applies from today.` : undefined}

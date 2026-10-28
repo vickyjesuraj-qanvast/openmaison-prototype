@@ -6,35 +6,60 @@ export type DatePreset = 'today' | '7d' | '30d' | 'month' | 'custom'   // (REG-6
 /** (REG-608, parity L-22) 1.0's quick filters, minus Hot (no temperature, Q-10) and Needs attention (no 2.0 meaning); every ticked one must hold. */
 export type QuickFilter = 'overdue' | 'unassigned' | 'unseen'
 export const QUICK_FILTERS: { key: QuickFilter; label: string; help: string }[] = [
-  { key: 'overdue', label: 'Overdue follow-ups', help: 'An open task past its due date (not On Hold or Lost)' },
-  { key: 'unassigned', label: 'Unassigned', help: 'No member yet' },
-  { key: 'unseen', label: 'Unseen', help: 'Nobody has opened it' },
+  { key: 'overdue', label: 'Overdue follow-ups', help: 'An open task past its due date (not On Hold or Lost, and not yet a project)' },
+  { key: 'unassigned', label: 'Unassigned', help: 'No member yet (not Lost)' },
+  { key: 'unseen', label: 'Not opened yet', help: 'Nobody has opened it' },   // (the calm UI build 2026-10-27 — W-418) not software's "Unseen"
 ]
 
 /**
  * (UX audit L3, supersedes the pane-only reach of REG-608) Morning triage where the eye is: the scope pill's menu carries these beside the
- * stages — "Mine", then the Needs attention group (the three quick filters with their counts). One of them, or a stage, scopes the listing;
+ * stages — "Mine", then the To do group (the three quick filters with their counts; it was "Needs attention" — a project's word, REG-914). One of them, or a stage, scopes the listing;
  * the pill names it ("Overdue follow-ups (4)") and wears the applied dot.
  */
 export type AttentionScope = QuickFilter | 'mine' | 'today'
-export const ATTENTION_LABEL: Record<AttentionScope, string> = { mine: 'Mine', overdue: 'Overdue follow-ups', unassigned: 'Unassigned', unseen: 'Unseen', today: 'To call today' }
+export const ATTENTION_LABEL: Record<AttentionScope, string> = { mine: 'Mine', overdue: 'Overdue follow-ups', unassigned: 'Unassigned', unseen: 'Not opened yet', today: 'To call today' }
 
 /** (UX audit L3) ONE rule for an overdue lead — the pill's count, its list and the Filters modal's quick filter: an open task due before
- *  today (the red Overdue tag's own rule, `isOverdue`) on a lead still being worked. Parked (On Hold) and Lost leads are left out. */
+ *  today (the red Overdue tag's own rule, `isOverdue`) on a lead still being worked. Parked (On Hold) and Lost leads are left out.
+ *  (the Dashboard redesigned, 2026-10-26 — P-13 "one fact, one number", his Build mark) …and so is a lead that has handed over to its project
+ *  (S42 D-11 · REG-1360's one home: a Won lead's tasks carry on as its project's, REG-920 — counted on the project, never as a lead's
+ *  follow-up). Maison AI kept that rule alone, so the Dashboard said "3 leads have an overdue follow-up" beside its "2". */
+export const handedOver = (r: Pick<LeadRow, 'project'>): boolean => !!r.project
 export const isOverdueLead = (r: LeadRow, now: number): boolean =>
-  r.stage !== 'On Hold' && r.stage !== 'Lost' && r.tasks.some((t) => isOverdue(t.dueAt, now))
+  r.stage !== 'On Hold' && r.stage !== 'Lost' && !handedOver(r) && r.tasks.some((t) => isOverdue(t.dueAt, now))
 
 /** (leads on the move, P-05 — his marks 2026-10-23) "To call today": an open task due by the end of today — overdue or due today — on a lead
- *  still being worked (On Hold and Lost left out, as `isOverdueLead`). The phone listing's chip and the pill's To do row on a phone. */
+ *  still being worked (On Hold, Lost and — the Dashboard redesigned, P-13 — one handed over to its project left out, as `isOverdueLead`). The
+ *  phone listing's chip and the pill's To do row on a phone. */
 export const isCallTodayLead = (r: LeadRow, now: number): boolean =>
-  r.stage !== 'On Hold' && r.stage !== 'Lost' && r.tasks.some((t) => !!t.dueAt && startOfDay(t.dueAt) <= startOfDay(new Date(now)))
+  r.stage !== 'On Hold' && r.stage !== 'Lost' && !handedOver(r) && r.tasks.some((t) => !!t.dueAt && startOfDay(t.dueAt) <= startOfDay(new Date(now)))
+
+/** (the Dashboard redesigned, 2026-10-26 — P-13 "one fact, one number"; B's ST-12, "no member yet" three ways) ONE rule for a lead with no member
+ *  yet — the listing's Unassigned scope and quick filter, the Dashboard's row, Maison AI: nobody on it, and not Lost (a lost lead is no one's to
+ *  pick up — Maison AI already left it out; the listing and the Dashboard asked to assign it). A Won lead always has its owner (REG-334). */
+export const isUnassignedLead = (r: Pick<LeadRow, 'assignees' | 'stage'>): boolean => r.assignees.length === 0 && r.stage !== 'Lost'
+
+/** (the Dashboard redesigned, 2026-10-26 — P-13 "one 'not contacted'"; B's ST-13) ONE rule for a new lead nobody has contacted in time — the
+ *  bell's "{name} has had no contact yet" (lib/notifications/queries.ts `derivedDue`) and the Dashboard's row: still New, no contact by the
+ *  listing's own rule (`lastContactOf` — a log, a Contacted entry, a meeting held), and older than the studio's delay (Settings › Notifications,
+ *  `NotificationRules.untouchedMinutes`). */
+export const isUntouchedLead = (r: { stage: string; createdAt: Date; contacted: boolean }, now: number, minutes: number): boolean =>
+  r.stage === 'New' && !r.contacted && r.createdAt.getTime() <= now - minutes * 60_000
+
+/** (the Dashboard redesigned, 2026-10-26 — P-13) "Added in the last 7 days" — the listing's own Last 7 days (today and the six days before it,
+ *  by calendar day: the Date filter's preset), the ONE week every count of new leads reads: the Dashboard, Maison AI, the Leads listing. Maison
+ *  AI counted a rolling 7 × 24 hours, so it said 5 where the page said 4. */
+export const addedInLast7Days = <T extends Pick<LeadRow, 'createdAt'>>(rows: T[], now: number): T[] => {
+  const today = startOfDay(new Date(now))
+  return rows.filter((r) => { const t = r.createdAt.getTime(); return t >= today - 6 * 86_400_000 && t < today + 86_400_000 })
+}
 
 /** Does the row belong to the attention scope? `unseen` is the caller's (the listing's band: nobody has opened it, here or on the server). */
 export function inAttention(r: LeadRow, key: AttentionScope, ctx: { now: number; viewerId: string; unseen: (r: LeadRow) => boolean }): boolean {
   switch (key) {
     case 'mine': return r.assignees.some((m) => m.id === ctx.viewerId)
     case 'overdue': return isOverdueLead(r, ctx.now)
-    case 'unassigned': return r.assignees.length === 0
+    case 'unassigned': return isUnassignedLead(r)
     case 'unseen': return ctx.unseen(r)
     case 'today': return isCallTodayLead(r, ctx.now)
   }
@@ -83,7 +108,7 @@ export function applyFilters(rows: LeadRow[], f: LeadFilters, now: number): Lead
   let out = rows
   /* (REG-608) Quick filters AND together, as 1.0's do. */
   if (f.quick.includes('overdue')) out = out.filter((r) => isOverdueLead(r, now))   /* (UX audit L3) the one rule — parked and Lost leads out */
-  if (f.quick.includes('unassigned')) out = out.filter((r) => r.assignees.length === 0)
+  if (f.quick.includes('unassigned')) out = out.filter(isUnassignedLead)
   if (f.quick.includes('unseen')) out = out.filter((r) => r.seenAt === null)
   if (f.propertyTypes.length) out = out.filter((r) => f.propertyTypes.includes(r.propertyType))
   if (f.sources.length) out = out.filter((r) => f.sources.includes(r.source))

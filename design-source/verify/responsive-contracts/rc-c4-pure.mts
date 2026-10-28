@@ -29,7 +29,7 @@ const opened = contractSinceWords(c({ status: 'Sent to Client', sentAt: new Date
 ok(opened.join(' · ') === 'sent 2d ago · opened 3h ago', `opened ("${opened.join(' · ')}")`)
 const expired = contractSinceWords(c({ status: 'Sent to Client', sentAt: new Date(NOW - 9 * DAY), signExpiresAt: new Date(NOW - DAY) }), NOW).map((w) => w.text)
 ok(expired.join(' · ') === 'sent 9d ago · not opened', `an expired link’s since is still when it went and whether it was opened — the chip says it expired ("${expired.join(' · ')}")`)
-ok(/^signed \d+ \w+ ’\d\d$/.test(contractSinceWords(c({ status: 'Signed', signedAt: new Date(NOW - 40 * DAY) }), NOW)[0]!.text), 'Signed says the day it was signed')
+ok(/^\d+ \w+ ’\d\d$/.test(contractSinceWords(c({ status: 'Signed', signedAt: new Date(NOW - 40 * DAY) }), NOW)[0]!.text), 'Signed says the day it was signed')   // (the calm UI build 2026-10-27, a deliberate change) 4-26: the chip says Signed, the since its day alone
 ok(contractSinceWords(c({ status: 'Draft', updatedAt: new Date(NOW - 3_600_000) }), NOW)[0]!.text === 'edited today' && contractSinceWords(c({ status: 'Draft', updatedAt: new Date(NOW - DAY) }), NOW)[0]!.text === 'edited yesterday', 'a Draft says when it was last edited (today · yesterday)')
 ok(contractSinceWords(c({ status: 'Sent to Client', toRead: true, sentAt: new Date(NOW - DAY) }), NOW)[0]!.text === 'sent to read 1d ago', 'a letter to read says it went to be read')
 
@@ -42,7 +42,7 @@ ok(contractSignsLine(c({ status: 'Draft', toRead: true }), null, false) === 'A l
 // ── a template's words (P-10) ──
 const agreement = agreementHtml()
 const facts = galleryFacts({ kind: 'document', usedBy: 5, body: agreement }, '14 Aug ’26')
-ok(/^\d+ headings · used by 5 · edited 14 Aug ’26$/.test(facts), `the row's facts ("${facts}")`)
+ok(/* (the calm UI build 2026-10-27, a deliberate change) 4-36: the row counts clauses, as the desk card */ /^\d+ clauses · used by 5 · edited 14 Aug ’26$/.test(facts), `the row's facts ("${facts}")`)
 ok(galleryFacts({ kind: 'document', usedBy: 0, body: agreement }, 'today').includes('not used yet'), 'unused says "not used yet"')
 ok(galleryFacts({ kind: 'pdf', usedBy: 2, body: '', size: '1 KB' }, 'today') === 'PDF · 1 KB · added to signings · used by 2 · edited today', 'a standard PDF says what it is')
 ok(stateWords({ isDefault: true, useAtHandover: true }) === 'Default · At handover' && stateWords({ isDefault: false, useAtHandover: false }) === null, 'the standing as words, or nothing')

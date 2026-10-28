@@ -246,9 +246,12 @@ async function measure(b, opts, url, blocks, max = 30) {
       ok(await p.locator('[data-card="hangout-chat"]').count() === 3, 'today’s chats, each a card')
       await shot(p, '03-chats-1440')
       const lim = chat(p, 'Lim Wei Ling')
-      ok(/With Germaine · Morning, 11:00 AM – 3:00 PM · Table 7/.test(await lim.getByTestId('chat-facts').innerText()), 'a chat says who, when and which table', await lim.getByTestId('chat-facts').innerText())
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-26) a waiting chat's head is its shift ("BOOKED ON YOUR PAGE" went); the facts say who
+         and which table */
+      ok(/With Germaine · Table 7/.test(await lim.getByTestId('chat-facts').innerText()) && /Morning, 11:00 AM – 3:00 PM/.test(await lim.innerText()), 'a chat says who, when and which table', await lim.getByTestId('chat-facts').innerText())
       const fit = one(`select match_score from hangout_meetings where lead_id = '${LIM}'`).match_score
-      ok((await lim.getByTestId('chat-prefs').innerText()).startsWith(`Fits you ${fit}% · BTO 4-Room`), '…how well they fit (1.0’s 0–100 score) and what they told the studio', await lim.getByTestId('chat-prefs').innerText())
+      const fitWords = fit >= 70 ? 'Good match' : fit >= 40 ? 'Fair match' : 'Weak match'   // (the calm UI build 2026-10-27, a deliberate change) — "Fits you 80%" in words (W-191)
+      ok((await lim.getByTestId('chat-prefs').innerText()).startsWith(`${fitWords} · BTO 4-Room`), '…how well they fit (1.0’s 0–100 score, in words) and what they told the studio', await lim.getByTestId('chat-prefs').innerText())
       await lim.getByTestId('chat-start').click(); await waitSnack(p, /Chat with Lim Wei Ling started/)
       ok(sql(`select status || '|' || started_by from hangout_meetings where lead_id = '${LIM}'`) === 'in-progress|dane', 'Start: on now, who started it')
       await settle(p, 800)
@@ -344,7 +347,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       /* …and Last contact says the same — one rule (`lastContactOf`): the Lead stages card names the meeting */
       await go(p, '/leads/plead-hangout', 1600)
       const lc = p.getByTestId('last-contact')
-      ok(await lc.getAttribute('data-empty') === null && /In person · Meeting held/.test(await lc.innerText()), 'the Lead stages card’s Last contact is the meeting held at the Hangout (one rule with the bell)', await lc.innerText().catch(() => ''))
+      ok(await lc.getAttribute('data-empty') === null && /Visit · Meeting held/.test(await lc.innerText()), 'the Lead stages card’s Last contact is the meeting held at the Hangout (one rule with the bell)', await lc.innerText().catch(() => ''))   // (the calm UI build 2026-10-27, a deliberate change) — the channel in the log's words, "Visit" (2-08)
     }
 
     // ── 5 · the public page ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -442,7 +445,9 @@ async function measure(b, opts, url, blocks, max = 30) {
     if (want(6)) {
       console.log('6 · Public profile — the card, the work (upload, from a project), order, Undo; who may')
       await go(p, '/company/members', 1500)
-      await p.locator('[data-member-id="germaine"] [data-testid="member-about"]').click(); await settle(p, 2000)
+      /* (the calm UI build 2026-10-27, a deliberate change — audit 5-01) a member row's Public profile is a row of its ⋮ now (`member-about` rides on it) */
+      await p.locator('[data-member-id="germaine"] [data-testid="member-more"]').click(); await settle(p, 400)
+      await p.locator('[role="menu"] [data-testid="member-about"]').getByRole('menuitem').click(); await settle(p, 2000)
       ok(new URL(p.url()).pathname === '/company/members/germaine/profile' && /Germaine’s public profile/.test(await p.locator('h1').first().innerText()), 'Members › Public profile opens their page (the About page dialog’s place)')
       await p.getByLabel('Years in interior design').fill('11'); await p.getByLabel('Job title').fill('Lead designer')
       ok(/Lead designer · 11 years in interior design/.test(await p.getByTestId('card-preview').innerText()), 'How clients see it follows the draft')
@@ -522,7 +527,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       await p.keyboard.press('Escape'); await settle(p, 400)
       await go(p, `/qanvast-ops/hangouts/${PAST}?view=results`, 1400)
       await p.locator('button[aria-label="Maison AI"]').first().click(); await settle(p, 700)
-      await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Which designer converted most here?' }).first().click(); await settle(p, 800)
+      await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Which member converted most here?' }).first().click(); await settle(p, 800)
       ok(/Germaine/.test(await p.locator('[role="dialog"]').last().innerText()) && /1 converted of 1 chat/.test(await p.locator('[role="dialog"]').last().innerText()), 'Maison AI answers from the Hangout’s records (S10’s rule — each row opens what it names)')
       await p.keyboard.press('Escape'); await settle(p, 300); await p.keyboard.press('Escape'); await settle(p, 300)
       await go(p, '/leads', 1200)

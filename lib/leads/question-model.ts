@@ -1,5 +1,6 @@
 import type { Question } from '@/lib/db/schema'
 import { MSG } from '@/lib/forms'
+import { displayDate, isSgPhone, parseInputDate, phoneLocal } from '@/lib/format'
 
 /* Lead Details › Questionnaire (931-46769) — pure model shared by the cards, the summary and the actions. */
 
@@ -17,6 +18,27 @@ export function answerText(q: Pick<Question, 'type' | 'answer'>): string {
   if (q.type === 'multi') return parseMulti(q.answer).join(', ')
   return q.answer
 }
+
+/** (the calm UI build 2026-10-27 — 2-18) The answer as the studio's card shows it — in the house formats by what it is: a date (the date
+    question's stored "28/11/2026") reads "28 Nov ’26"; a Singapore number typed as an answer reads grouped, "8123 4567". The stored answer is
+    unchanged (`answerText` is what the edit box and the portal read). */
+export function answerShown(q: Pick<Question, 'type' | 'answer'>): string {
+  const t = answerText(q)
+  if (q.type === 'date') { const d = parseInputDate(t); return d ? displayDate(d) : t }
+  const digits = t.replace(/\s+/g, '')
+  if (/^\d+$/.test(digits) && isSgPhone(digits)) return phoneLocal(digits)
+  return t
+}
+
+/** (2-18 · W-065) The questionnaire in one line — the tab's summary and the Overview's card say the same: "7 of 11 answered · none by Olivia
+    yet" · "7 of 11 answered · 2 by Olivia". `client` = the client's first name ("the client" when it isn't known). */
+export function answeredLine(s: { total: number; clientAnswered: number; studioAnswered: number }, client: string): string {
+  const who = client.trim() || 'the client'
+  const answered = s.clientAnswered + s.studioAnswered
+  return `${answered} of ${s.total} answered · ${s.clientAnswered ? `${s.clientAnswered} by ${who}` : `none by ${who} yet`}`
+}
+/** The client's first name, as the questionnaire's words use it ("Ask Olivia"). */
+export const clientFirst = (name: string | null | undefined): string => (name ?? '').trim().split(/\s+/)[0] ?? ''
 
 /** Overview card counts (858:25077) derived from the questions — null when the lead has none. */
 export function summarise(qs: Pick<Question, 'answeredBy'>[]): { total: number; clientAnswered: number; studioAnswered: number } | null {

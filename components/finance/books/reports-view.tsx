@@ -6,16 +6,16 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { Chips } from '@/components/om/chips'
 import { StatTile } from '@/components/om/stat-tile'
 import { TextField } from '@/components/om/text-field'
+import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { CreditsTable } from '@/components/company/plan/credits-table'
+import { PickPill } from '@/components/company/reports/report-pill'
 import { ScopePill } from '@/components/om/scope-pill'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ENTITY_PARAM, ENTITY_SCOPE_WORD, entityMenu, entityOf, entityOptions, entityPillLabel } from '@/lib/finance/entity-scope'
-import { useSheetLayout } from '@/components/om/sheet'
 import { FINANCE_REPORT_COOKIE, rememberReport } from '@/lib/finance/report-memory'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import type { TableColumnDef } from '@/components/om/table-columns'
@@ -29,6 +29,8 @@ import { marginCell } from '@/lib/finance/profit'
 import { money2 } from '@/lib/quotes/math'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import b from './books.module.css'
+import rp from '@/components/company/reports/report-pill.module.css'
+import ins from '@/components/leads/insights/insights-view.module.css'   // (the calm UI build 2026-10-27) the Reports tabs' one bar
 
 /**
  * (gaps build F2 — F2-Q12, Q-35; 1.0 G-491) Finance › Reports, for Owners and Admins: a report and a period — Profit and loss · Owed to you · You
@@ -59,7 +61,6 @@ function ReportTableView({ t, reportKey }: { t: ReportTable; reportKey: string }
 export function ReportsView({ books, report, period, project, entity }: { books: BooksData; report: string | null; period: string | null; project: string | null
   /** (parity map, FB-105) `?entity=` — the Issued by scope the address asks for */ entity?: string | null }) {
   const snackbar = useSnackbar()
-  const phone = useSheetLayout()
   /* (pending modules S41b-1 — 1.0: "project-pl, studio-pl, margin-alerts, project-profitability → COST_HIDDEN") a role the Owner keeps from
      profit and margin reads every report but Profit and loss and Profitability — the server sent no profit to draw them from */
   const profits = books.profits !== false
@@ -114,14 +115,14 @@ export function ReportsView({ books, report, period, project, entity }: { books:
     const thin = books.projects.filter((p) => p.money.contractMinor > 0 && p.profit.tier).sort((x, y) => x.profit.marginPct - y.profit.marginPct).slice(0, 5)
     return {
       owed: {
-        title: invoices.length ? `${invoices.length} invoice${invoices.length === 1 ? '' : 's'} not paid in full` : 'Nothing is owed',
-        /* (parity map, FB-004) the tiles are Owed to you · You owe · Net now — what is overdue is read from the invoices themselves */
-        text: invoices.length ? `${owed.tiles[0]?.value ?? ''} owed · ${late ? `${money2(late)} of it overdue` : 'nothing overdue'}.` : undefined,
-        rows: invoices.map((r) => ({ id: r.id, label: `${cellText(r.cells.project ?? null)} · ${cellText(r.cells.invoice ?? null)}`, meta: `${cellText(r.cells.amount ?? null, 'money')} still owed${r.cells.late && r.cells.late !== 'Current' ? ` · ${String(r.cells.late)} late` : ''}`, href: r.href })),
+        title: invoices.length ? `${invoices.length} invoice${invoices.length === 1 ? '' : 's'} not paid in full` : 'Nothing to collect',
+        /* (parity map, FB-004) the tiles are To collect · To pay · Net now — what is overdue is read from the invoices themselves */
+        text: invoices.length ? `${owed.tiles[0]?.value ?? ''} to collect · ${late ? `${money2(late)} of it overdue` : 'nothing overdue'}.` : undefined,
+        rows: invoices.map((r) => ({ id: r.id, label: `${cellText(r.cells.project ?? null)} · ${cellText(r.cells.invoice ?? null)}`, meta: `${cellText(r.cells.amount ?? null, 'money')} to collect${r.cells.late && r.cells.late !== 'Current' ? ` · ${String(r.cells.late)} late` : ''}`, href: r.href })),
       },
       thin: {
         title: thin.length ? 'The thinnest margins' : 'No margin to compare yet',
-        text: thin.length ? 'Contract value less committed costs, by project.' : 'A margin is read once a project has a contract value and its costs.',
+        text: thin.length ? 'Expected margin — contract value less committed costs, by project.' : 'A margin is read once a project has a contract value and its costs.',
         rows: thin.map((p) => ({ id: p.id, label: `${p.name} · ${p.number}`, meta: `${marginCell(p.profit).text} · ${money2(p.profit.profitMinor)} profit`, href: `/projects/${p.id}/money` })),
       },
     }
@@ -141,11 +142,14 @@ export function ReportsView({ books, report, period, project, entity }: { books:
   return (
     <>
       <div className={b.block}>
-        {phone
-          ? <span className={b.search} data-testid="report-chips"><TextField label="Report" mode="select" options={reports.map((x) => x.label)} value={reports.find((x) => x.key === key)?.label ?? ''} onChange={(label) => pickReport(reports.find((x) => x.label === label)?.key ?? key)} /></span>
-          : <Chips label="Report" options={reports.map((x) => ({ value: x.key, label: x.label }))} value={key} onChange={pickReport} testId="report-chips" />}
-        <div className={b.toolbar}>
-          {usesPeriod ? <span className={b.search} data-testid="report-period"><TextField label="Period" mode="select" options={PERIODS.map((x) => x.label)} value={PERIODS.find((x) => x.value === per)?.label ?? ''} onChange={(label) => pickPeriod(PERIODS.find((x) => x.label === label)?.value ?? per)} /></span> : null}
+        {/* (the calm UI build 2026-10-27 — 5-20 · 5-19, T-10) the phone's one control at every width: "Report: Profit and loss ▾" (each report's
+            line under its name in the menu — ten equal chips gave no starting point and looked like filters), then "Period: This year ▾" —
+            the house scope pill the other Reports tabs and Plan › Usage wear; the project's select and Issued by after them, Export at the end */}
+        <div className={`${ins.pickBar} ${ins.flush}`}>
+          <span className={ins.picks}>
+          <PickPill name="Report" testId="report-chips" wide options={reports.map((x) => ({ value: x.key, label: x.label, help: x.help }))} value={key} onChange={pickReport} />
+          {usesPeriod ? <PickPill name="Period" testId="report-period" options={PERIODS.map((x) => ({ value: x.value, label: x.label }))} value={per} onChange={pickPeriod}
+                                  scoped={per !== (key === 'gst' ? 'this_quarter' : 'this_year')} /> : null}
           {key === 'statement' ? (
             <span className={b.search}><TextField label="Project" mode="select" options={choices.map((c) => c.label)} value={choices.find((c) => c.id === projectId)?.label ?? ''} onChange={pickProject} searchable /></span>
           ) : null}
@@ -159,7 +163,8 @@ export function ReportsView({ books, report, period, project, entity }: { books:
               </PortalMenu>
             </span>
           ) : null}
-          <span className={b.toolEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (key === 'expenses' && expLocked) { openPlanLock('expense_management'); return } setExporting(true) }} data-testid="report-export">Export</Button></span>
+          </span>
+          <span className={ins.pickEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (key === 'expenses' && expLocked) { openPlanLock('expense_management'); return } setExporting(true) }} data-testid="report-export">Export</Button></span>
         </div>
       </div>
       <div className={b.head} data-testid="report-head">
@@ -170,7 +175,9 @@ export function ReportsView({ books, report, period, project, entity }: { books:
       {key === 'expenses' && expLocked ? <ProLocked feature="expense_management" kept="Your expenses are kept and still count in Profit and loss, Cash flow, GST and Vendor spend" testId="report-expenses-locked" /> : <>
       {r.tiles.length ? (
         <div className={r.tiles.length === 3 ? b.tiles3 : b.tiles} data-testid="report-tiles">
-          {r.tiles.map((t) => <StatTile key={t.label} label={t.label} value={t.value} help={t.help} grade={t.grade} />)}
+          {/* (the calm UI build 2026-10-27 — 5-07) a tile that says how it counts says it on its value's hover and focus (the house tile's) */}
+          {r.tiles.map((t) => <StatTile key={t.label} label={t.label} figure={t.value} help={t.help} grade={t.grade}
+                                        value={t.how ? <Tooltip label={t.how}><span tabIndex={0} className={rp.tileValue}>{t.value}</span></Tooltip> : t.value} />)}
         </div>
       ) : null}
       {r.tables.map((t) => <ReportTableView key={`${key}-${t.key}`} t={t} reportKey={key} />)}

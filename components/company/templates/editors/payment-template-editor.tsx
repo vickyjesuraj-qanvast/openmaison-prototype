@@ -6,6 +6,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
+import { paymentScheduleName } from '@/lib/templates/payment-name'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -17,7 +18,7 @@ import { MaisonAiSheet } from '@/components/shell/maison-ai'
 import type { MaisonSuggestion } from '@/lib/maison-ai'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { savedLabel } from '@/lib/contracts/model'
-import { DEFAULT_SPLIT_ID, splitWord, sumPct, type SplitRow } from '@/lib/quotes/payments'
+import { DEFAULT_SPLIT_ID, sumPct, type SplitRow } from '@/lib/quotes/payments'
 import type { PaymentTemplateEditorData } from '@/lib/company/payment-templates'
 import { deletePaymentTemplate, duplicatePaymentTemplate, savePaymentTemplate } from '@/app/company/payment-templates-actions'
 import { LibraryHeader } from '../library-header'
@@ -41,7 +42,9 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
   const router = useRouter()
   const snackbar = useSnackbar()
   const isDefault = template.id === DEFAULT_SPLIT_ID
-  const [name, setName] = useState(template.name)
+  /* (the calm UI build 2026-10-27, W-509) the seeded default reads "10/30/30/30"; its stored name is only written once someone renames it */
+  const [name, setName] = useState(paymentScheduleName(template.id, template.name))
+  const named = useRef(false)
   const [rows, setRows] = useState<SplitRow[]>(template.rows.length ? template.rows : [{ name: 'Deposit', description: 'Upon signing', pct: 50 }, { name: 'Completion', description: 'Handover', pct: 50 }])
   const [draftPct, setDraftPct] = useState<{ i: number; text: string } | null>(null)
   const [updatedAt, setUpdatedAt] = useState(template.updatedAt.getTime())
@@ -51,7 +54,7 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
   const [aiOpen, setAiOpen] = useState(false)
 
   const dirty = useRef(false)
-  const latest = useRef({ name, rows }); useEffect(() => { latest.current = { name, rows } })
+  const latest = useRef({ name, rows }); useEffect(() => { latest.current = { name: named.current ? name : template.name, rows } })
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flush = useCallback(async () => {
     if (timer.current) { clearTimeout(timer.current); timer.current = null }
@@ -75,33 +78,33 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
      it back) —, what a S$100,000 quote asks at each step, and where the split is a default. *(invented copy: the answers' titles and lines)* */
   const aiFabRef = useRef<HTMLSpanElement>(null)
   const EXAMPLE = 100_000
-  const shareRows = rows.map((r, i) => ({ id: `m-${i}`, label: `${r.name || `Milestone ${i + 1}`} · ${fmtPct(r.pct)}%`, meta: i === 0 ? 'On approval' : r.description ?? 'Estimated', share: Math.max(0, Math.min(1, r.pct / 100)) }))
+  const shareRows = rows.map((r, i) => ({ id: `m-${i}`, label: `${r.name || `Payment ${i + 1}`} · ${fmtPct(r.pct)}%`, meta: i === 0 ? 'On signing' : r.description ?? 'Estimated', share: Math.max(0, Math.min(1, r.pct / 100)) }))
   const last = rows[rows.length - 1]
   const diff = Math.round((100 - total) * 100) / 100
   const maison: MaisonSuggestion[] = [
     over || under
       ? { label: 'Does the split add up?', propose: () => Promise.resolve(!last || last.pct + diff < 0
           ? { title: `It comes to ${fmtPct(total)}%`, text: `${over ? 'Over' : 'Short of'} 100% by ${fmtPct(Math.abs(diff))}% — change the shares so they add up to the quote.`, rows: shareRows }
-          : { title: `It comes to ${fmtPct(total)}%`, text: `${over ? `${fmtPct(-diff)}% over` : `${fmtPct(diff)}% short`} — ${last.name || 'the last milestone'} can take the difference, so the schedule closes the quote exactly.`,
-              lines: [`${last.name || 'The last milestone'}: ${fmtPct(last.pct)}% → ${fmtPct(last.pct + diff)}%`, 'Undo puts it back'], confirm: `Make it ${fmtPct(last.pct + diff)}%`,
+          : { title: `It comes to ${fmtPct(total)}%`, text: `${over ? `${fmtPct(-diff)}% over` : `${fmtPct(diff)}% short`} — ${last.name || 'the last payment'} can take the difference, so the schedule closes the quote exactly.`,
+              lines: [`${last.name || 'The last payment'}: ${fmtPct(last.pct)}% → ${fmtPct(last.pct + diff)}%`, 'Undo puts it back'], confirm: `Make it ${fmtPct(last.pct + diff)}%`,
               run: async () => {
                 const was = rows
                 setRows((rs) => rs.map((r, k) => (k === rs.length - 1 ? { ...r, pct: Math.round((r.pct + diff) * 100) / 100 } : r))); queue()
-                snackbar({ message: `${last.name || 'The last milestone'} is ${fmtPct(last.pct + diff)}% — the split adds up to 100%`, actionLabel: 'Undo', onAction: () => { setRows(was); queue() } })
+                snackbar({ message: `${last.name || 'The last payment'} is ${fmtPct(last.pct + diff)}% — the split adds up to 100%`, actionLabel: 'Undo', onAction: () => { setRows(was); queue() } })
                 return true
               } }) }
       : { label: 'Does the split add up?', answer: { title: 'It adds up to 100%', text: 'The schedule closes the quote exactly.', rows: shareRows } },
-    { label: 'What a S$100,000 quote asks at each step', answer: { title: 'On a S$100,000 quote', text: 'Each milestone’s share of the total — the first on approval, the rest across the renovation.',
-      rows: rows.map((r, i) => ({ id: `x-${i}`, label: `${r.name || `Milestone ${i + 1}`} · S$${Math.round(EXAMPLE * r.pct / 100).toLocaleString('en-SG')}`, meta: `${fmtPct(r.pct)}% · ${i === 0 ? 'on approval' : (r.description ?? 'estimated').toLowerCase()}`, share: Math.max(0, Math.min(1, r.pct / 100)) })) } },
+    { label: 'What a S$100,000 quote asks at each step', answer: { title: 'On a S$100,000 quote', text: 'Each payment’s share of the total — the first on signing, the rest across the renovation.',
+      rows: rows.map((r, i) => ({ id: `x-${i}`, label: `${r.name || `Payment ${i + 1}`} · S$${Math.round(EXAMPLE * r.pct / 100).toLocaleString('en-SG')}`, meta: `${fmtPct(r.pct)}% · ${i === 0 ? 'on signing' : (r.description ?? 'estimated').toLowerCase()}`, share: Math.max(0, Math.min(1, r.pct / 100)) })) } },
     { label: 'Where is it used?', answer: { title: isDefault ? 'The studio’s default split' : template.usedBy ? `The default on ${template.usedBy === 1 ? '1 quote template' : `${template.usedBy} quote templates`}` : 'Not a default yet',
-      text: isDefault ? 'A quote whose template names no split starts with this one.' : template.usedBy ? 'New quotes from them start with this split. Quotes already on it keep their schedule when you change it.' : 'Pick it on a quote template’s New quotes tab and new quotes from it start with this split.' } },
+      text: isDefault ? 'A quote whose template names no split starts with this one.' : template.usedBy ? 'New quotes from them start with this split. Quotes already on it keep their schedule when you change it.' : 'Pick it on a quote template’s Quote settings tab and new quotes from it start with this split.'   /* (the calm UI build 2026-10-27, W-274) the tab is "Quote settings" */ } },
   ]
 
   return (
     <PageReveal skeleton={<LibraryEditorGhost kind="payments" />}>
       <div className={page.page} data-testid="payment-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Payment schedules', href: '/company/templates/payments' }]} title={name.trim() || 'Untitled split'}
-                       chips={<><MetaChip>{splitWord(rows)}</MetaChip>{isDefault ? <MetaChip>Studio default</MetaChip> : null}{template.usedBy ? <MetaChip>Default on {template.usedBy} quote {template.usedBy === 1 ? 'template' : 'templates'}</MetaChip> : null}</>}
+                       chips={isDefault ? <MetaChip kind="fact">Studio default</MetaChip> : null}   /* (the calm UI build 2026-10-27, the UI audit's 4-11 · 4-17) the one standing mark; the split is the name and the table, the usage the gallery card's (and Maison AI's "Where is it used?") */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicatePaymentTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/payments/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
@@ -109,37 +112,36 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
                          <DropdownItem tone="danger" disabled={isDefault} help={isDefault ? 'The studio default cannot be deleted' : undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>   {/* (REG-728) the reason in the row */}
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
-          <TitleInput value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={page.metaEnd}><span className={styles.note}>{rows.length} {rows.length === 1 ? 'milestone' : 'milestones'} · {splitWord(rows)}</span></div>
+          <TitleInput value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { named.current = true; setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
         </div>
         <div className={styles.body}>
           <div className={styles.card}>
-            <div className={styles.cardHead}><span className={styles.cardTitle}>Milestones</span><span className={styles.cardHelp}>Shares of the quote’s total. The first is due on approval; the rest are estimated across the renovation.</span></div>
+            <div className={styles.cardHead}><span className={styles.cardTitle}>Payments</span><span className={styles.cardHelp}>Shares of the quote’s total. The first is due on signing; the rest are estimated across the renovation.</span></div>
             <div className={styles.cardBody}>
               <span className={styles.bar} aria-hidden>{rows.map((r, i) => <span key={i} className={styles.seg} style={{ flex: `${Math.max(r.pct, 1)} 0 0` }} />)}</span>
-              <div className={styles.milestones} role="table" aria-label="Milestones">
-                <span className={styles.mHead} /><span className={styles.mHead}>Milestone</span><span className={styles.mHead}>Description</span><span className={styles.mHead}>Share</span><span className={styles.mHead}>Due</span><span className={styles.mHead} />
+              <div className={styles.milestones} role="table" aria-label="Payments">
+                <span className={styles.mHead} /><span className={styles.mHead}>Payment</span><span className={styles.mHead}>Description</span><span className={styles.mHead}>Share</span><span className={styles.mHead}>Due</span><span className={styles.mHead} />
                 {rows.map((r, i) => (
                   <div key={i} className={styles.mRow} role="row" data-testid="milestone-row">
                     <span className={styles.stepNo}>{i + 1}</span>
-                    <TextField label="Milestone" size="s" value={r.name} onChange={(v) => patch(i, { name: v })} />
+                    <TextField label="Payment" size="s" value={r.name} onChange={(v) => patch(i, { name: v })} />
                     <TextField label="Description" size="s" value={r.description ?? ''} onChange={(v) => patch(i, { description: v || null })} />
                     <TextField label="Share (%)" size="s" numeric="amount" maxLength={6} value={draftPct?.i === i ? draftPct.text : fmtPct(r.pct)}
                                onChange={(v) => { setDraftPct({ i, text: v }); const n = Number(v); if (v.trim() !== '' && Number.isFinite(n)) patch(i, { pct: Math.max(0, Math.min(100, n)) }) }}
                                onBlur={() => setDraftPct(null)} />
-                    <span className={styles.mDue}>{i === 0 ? 'On approval' : 'Estimated'}</span>
+                    <span className={styles.mDue}>{i === 0 ? 'On signing' : 'Estimated'}</span>
                     <Tooltip label="Remove"><IconButton icon="delete" label={`Remove ${r.name}`} onClick={() => remove(i)} /></Tooltip>
                   </div>
                 ))}
                 <span /><span className={styles.mTotal}>Total</span><span className={styles.mTotalPct} data-over={over || undefined} data-under={under || undefined}>{fmtPct(total)}%</span>
                 <span className={styles.mTotalNote} data-over={over || undefined}>{over ? `${fmtPct(total - 100)}% over — the schedule would ask for more than the quote` : under ? `${fmtPct(100 - total)}% short — the last payment will not close the quote` : 'Adds up to the quote'}</span>
               </div>
-              <Button variant="secondary" appearance="outlined" className={styles.addRow} iconStart={<Icon name="add" size={20} />} onPress={add}>Add a milestone</Button>
+              <Button variant="secondary" appearance="outlined" className={styles.addRow} iconStart={<Icon name="add" size={20} />} onPress={add}>Add a payment</Button>
             </div>
           </div>
         </div>
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this split'}?`} confirmLabel="Delete" tone="danger"
-                       message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted Templates.'}
+                       message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted templates.'}
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deletePaymentTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/payments') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <MaisonAiSheet open={aiOpen} suggestions={maison} onClose={() => setAiOpen(false)} anchorRef={aiFabRef} />   {/* (pending modules S10) the shell's one sheet; the FAB's own press toggles it (REG-153) */}
         <span ref={aiFabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>

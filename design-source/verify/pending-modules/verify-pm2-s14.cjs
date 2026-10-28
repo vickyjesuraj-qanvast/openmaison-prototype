@@ -25,6 +25,7 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s14')
@@ -70,7 +71,7 @@ const SHALINI_P = sql(`select p.id from projects p join leads l on l.id = p.lead
   const panel = (p) => sheet(p).locator('[data-testid="maison-answer"],[data-testid="maison-proposal"]').first()
   const waitPanel = (p) => p.waitForFunction(() => { const a = document.querySelector('[data-testid="maison-answer"],[data-testid="maison-proposal"]'); return !!a && !/Looking through your records/.test(a.textContent || '') }, null, { timeout: 15000 }).catch(() => {})
   const askReview = async (p) => { await fab(p); await sheet(p).getByRole('button', { name: 'Ask for a review' }).first().click(); await waitPanel(p); await settle(p, 300); return panel(p) }
-  const reach = (p, row, role) => p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach')
+  const reach = async (p, row, role) => { await openRoles(p); return p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach') }   // (the calm UI build 2026-10-27, a deliberate change) the drawer first
 
   /* open one page and wait before the snapshot (a first page's own lazy writes land first) */
   { const C0 = await desk(); const p0 = await C0.newPage(); await go(p0, '/settings'); await settle(p0, 1500); await C0.close() }
@@ -99,7 +100,7 @@ const SHALINI_P = sql(`select p.id from projects p join leads l on l.id = p.lead
     console.log('1 · Roles & access — Who sees leads moved in')
     await go(d, '/settings')
     ok(await d.getByRole('tab', { name: 'Roles & access' }).getAttribute('aria-selected') === 'true' && await d.getByRole('tab', { name: 'Studio', exact: true }).count() === 0, 'Settings opens on Roles & access — no tab named “Studio” beside the Company panel’s group of that name')
-    ok(await d.getByRole('heading', { level: 2, name: 'Roles & access' }).count() === 1 && /Who sees which leads in Demo Studio, and what each role may do/.test(await text(d.getByTestId('settings-studio'))), 'the module’s head says what it holds')
+    ok(await d.getByRole('heading', { level: 2, name: 'Roles & access' }).count() === 1 && /Who sees which leads in Demo Studio, and what each role (may|can) do/ /* (the calm UI build 2026-10-27, a deliberate change) */.test(await text(d.getByTestId('settings-studio'))), 'the module’s head says what it holds')
     const order = await d.evaluate(() => { const v = document.querySelector('[data-testid="lead-visibility"]'), r = document.querySelector('[data-testid="studio-roles"]'); return !!v && !!r && !!(v.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING) && !!v.closest('[data-testid="settings-studio"]') })
     ok(order, 'Who sees leads sits in Roles & access, above Who may do what')
     ok(/its project, quotes, contracts, files and X.Ray readings, and its row in Qanvast Ops/.test(await text(d.getByTestId('lead-visibility'))), 'its help names everything it decides')
@@ -124,7 +125,7 @@ const SHALINI_P = sql(`select p.id from projects p join leads l on l.id = p.lead
     const mineNames = sql(`select l.name from leads l join lead_assignees a on a.lead_id = l.id where l.source = 'Qanvast' and l.deleted_at is null and a.member_id = '${designer}'`).split('\n').filter(Boolean)
     const others = sql(`select name from leads l where source = 'Qanvast' and deleted_at is null and not exists (select 1 from lead_assignees a where a.lead_id = l.id and a.member_id = '${designer}')`).split('\n').filter(Boolean)
     ok(!!designer && mineNames.length === qMine(designer) && mineNames.every((n) => shownNames.some((s) => s.includes(n))) && others.every((n) => !shownNames.some((s) => s.includes(n))), `a Designer who sees only their own leads sees only their own Qanvast leads (${mineNames.length} of ${qAll})`)
-    ok(new RegExp(`All Leads[^0-9]*${mineNames.length}\\b`).test(await d.locator('body').innerText()) || !(await d.getByText(/All Leads/).count()), '…and its counts count those')
+    ok(new RegExp(`All leads[^0-9]*${mineNames.length}\\b`, 'i').test(await d.locator('body').innerText()) || !(await d.getByText(/All leads/i).count()) /* (the calm UI build 2026-10-27, a deliberate change) B2 2-11: "All leads · n" */, '…and its counts count those')
     await shot(d, '02-qanvast-ops-designer-own-1440')
     as('dane'); await go(d, '/qanvast-ops')
     const ownerNames = await d.getByTestId('qanvast-row').allInnerTexts()
@@ -145,13 +146,13 @@ const SHALINI_P = sql(`select p.id from projects p join leads l on l.id = p.lead
 
     /* the doors */
     await go(d, '/settings?section=leads')
-    ok(await d.getByTestId('lead-visibility').count() === 0 && /Who sees which leads — and each lead’s project, quotes and contracts — is set under/.test(await text(d.getByTestId('leads-visibility-pointer'))), 'Lead management keeps no copy — one line points at its home')
+    ok(await d.getByTestId('lead-visibility').count() === 0 && /Who sees leads/.test(await text(d.getByTestId('leads-visibility-pointer'))) /* (the calm UI build 2026-10-27, a deliberate change) B5 5-17: the door's words; the sentence is its tooltip */, 'Lead management keeps no copy — one line points at its home')
     await d.getByTestId('leads-visibility-link').click(); await d.waitForURL(/section=studio/); await settle(d, 1500)
     ok(/section=studio/.test(d.url()) && new URL(d.url()).hash === '#lead-visibility' && await inView(d.getByTestId('lead-visibility')), '…its link lands on Roles & access › Who sees leads')
     await go(d, '/settings?section=leads#lead-visibility'); await d.waitForURL(/section=studio/, { timeout: 8000 }).catch(() => {}); await settle(d, 1500)
     ok(/section=studio/.test(d.url()) && new URL(d.url()).hash === '#lead-visibility' && await inView(d.getByTestId('lead-visibility')), 'an old link to Lead management’s #lead-visibility lands on its new place')
     await go(d, '/settings?section=projects')
-    ok(/section=studio/.test(await d.getByTestId('projects-visibility-link').getAttribute('href')) && (await d.getByTestId('projects-visibility-link').getAttribute('href')).endsWith('#lead-visibility') && /Roles & access › Who sees leads/.test((await d.getByTestId('projects-visibility-link').innerText()).replace(/ /g, ' ')), 'Settings › Projects’ pointer: Roles & access › Who sees leads')
+    ok(/section=studio/.test(await d.getByTestId('projects-visibility-link').getAttribute('href')) && (await d.getByTestId('projects-visibility-link').getAttribute('href')).endsWith('#lead-visibility') && /Who sees leads/ /* (the calm UI build 2026-10-27, a deliberate change) B5 5-17 */.test((await d.getByTestId('projects-visibility-link').innerText()).replace(/ /g, ' ')), 'Settings › Projects’ pointer: Roles & access › Who sees leads')
     await go(d, '/company/members')
     ok(/section=studio/.test(await d.getByTestId('members-visibility-link').getAttribute('href')) && /Roles & access/.test(await d.getByTestId('members-visibility-link').innerText()), 'Company › Members’ line points there too')
     const s1 = await search(d, 'who sees leads')

@@ -82,10 +82,10 @@ export function ChooseTemplateDialog({
   const needle = q.trim().toLowerCase()
   const shown = needle ? browse.hereEntries.filter((t) => t.name.toLowerCase().includes(needle)) : browse.hereEntries
   return (
-    <TemplateShell open={open} kind="choose" title="Choose Template" onClose={onClose}
+    <TemplateShell open={open} kind="choose" title="Choose a template" onClose={onClose}
                    footer={<>
                      <FootStart>
-                       <Button variant="secondary" appearance="outlined" onPress={onManage}>Manage Templates</Button>
+                       <Button variant="secondary" appearance="outlined" onPress={onManage}>Manage templates</Button>
                      </FootStart>
                      <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
                      <Button isDisabled={!picked} onPress={() => { if (picked) onSelect(picked) }}>Select</Button>
@@ -155,14 +155,14 @@ export function SaveTemplateDialog({
       : { templateId: target!.id, keepMembers, keepDescription })
   }
   return (
-    <TemplateShell open={open} kind="save" title="Save as Template" onClose={onClose}
+    <TemplateShell open={open} kind="save" title="Save as a template" onClose={onClose}
                    footer={<>
                      <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
                      <Button isDisabled={!canSave} onPress={save}>Save</Button>
                    </>}>
       <RadioGroup aria-label="Template" className={styles.radioRow} value={mode} onChange={(v) => setMode(v as 'new' | 'existing')}>
-        <Radio value="new">New Template</Radio>
-        <Radio value="existing">Existing Template</Radio>
+        <Radio value="new">New template</Radio>
+        <Radio value="existing">Existing template</Radio>
       </RadioGroup>
       {mode === 'new'
         ? <TextField label="Task template name" required value={name} onChange={setName} autoFocus />
@@ -182,11 +182,11 @@ export function SaveTemplateDialog({
       <div className={styles.keep}>
         <span className={styles.groupTitle}>Task details to keep in this template</span>
         <div className={styles.keepRow}>
-          <span className={styles.keepLabel}>Team Members</span>
-          <Switch size="sm" isSelected={keepMembers} onChange={setKeepMembers} aria-label="Keep team members" />
+          <span className={styles.keepLabel}>Members</span>
+          <Switch size="sm" isSelected={keepMembers} onChange={setKeepMembers} aria-label="Keep members" />
         </div>
         <div className={styles.keepRow}>
-          <span className={styles.keepLabel}>Task Description</span>
+          <span className={styles.keepLabel}>Task description</span>
           <Switch size="sm" isSelected={keepDescription} onChange={setKeepDescription} aria-label="Keep task description" />
         </div>
       </div>

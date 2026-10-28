@@ -10,6 +10,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'ks')
@@ -44,7 +45,7 @@ const setting = (k) => { const v = sql(`select value from settings where key='${
     console.log('S-20 · Settings › Projects opens on What waits for an Owner or an Admin')
     await go('/settings?section=projects')
     const card = p.locator('[data-testid="owner-approvals"]')
-    ok(await card.count() === 1 && /What waits for an Owner or an Admin/.test(await card.innerText()), 'the card is there, by its name')
+    ok(await card.count() === 1 && /What waits for an Owner or an Admin|Approvals/.test(await card.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) 5-33: "Approvals" */, 'the card is there, by its name')
     ok(inOrder(await tops(['owner-approvals', 'project-numbering', 'handover-setting', 'schedule-settings'])), 'it is the module’s first card: approvals · Project numbers · Stages and handover · Schedule')
     const rows = ['update-review-row', 'invoice-approval-row', 'schedule-rule-completionApproval', 'schedule-rule-shareApproval', 'handover-review-row', 'cost-approvals-row']
     ok((await Promise.all(rows.map((r) => card.locator(`[data-testid="${r}"]`).count()))).every((n) => n === 1), 'six rows: updates (+ who reviews) · invoices · Done · shares · handover · POs and expenses')
@@ -66,7 +67,7 @@ const setting = (k) => { const v = sql(`select value from settings where key='${
     const moneyIn = p.getByTestId('finance-money-in')
     ok(inOrder(await tops(['invoice-settings', 'invoice-paper-settings', 'payment-settings', 'credit-settings'])) && await moneyIn.locator('[data-testid="invoice-settings"], [data-testid="invoice-paper-settings"], [data-testid="payment-settings"], [data-testid="credit-settings"]').count() === 4, 'Money in: Invoices · Invoice paper · Client payments · Credit notes')
     ok(await p.getByTestId('finance-money-out').locator('[data-testid="cost-settings"]').count() === 1 && await p.getByTestId('finance-commission').locator('[data-testid="commission-settings"]').count() === 1, 'Money out: Costs · Commission: Commission')
-    const links = await p.locator('[data-testid="settings-finance"] [data-testid="module-links"]').innerText()
+    const links = await p.locator('[data-testid="module-related"] [data-testid="module-links"]').innerText()   // (the calm UI build 2026-10-27, a deliberate change) B5 5-17: the Related line
     ok(/Profile/.test(links) && /Payment schedules/.test(links) && /Vendors/.test(links) && /\bCommission\b/.test(links), 'Kept in Company: Profile · Payment schedules · Vendors · Commission')   // (simplify S-11) the tab's one name
     const docs = p.getByTestId('document-numbers')
     ok((await Promise.all(['invoice-number-example', 'receipt-number-example', 'cn-number-example', 'po-number-example'].map((t) => docs.getByTestId(t).innerText()))).every((t, i) => new RegExp(`^${['INV', 'RCT', 'CN', 'PO'][i]}-`).test(t)), 'Document numbers: INV · RCT · CN · PO, each with its next number')
@@ -93,6 +94,7 @@ const setting = (k) => { const v = sql(`select value from settings where key='${
 
     console.log('Who may do what names the new places')
     await go('/settings?section=studio')
+    await openRoles(p)   // (the calm UI build 2026-10-27, a deliberate change)
     const href = (k) => p.getByTestId(`may-link-${k}`).getAttribute('href')
     ok(/section=projects.*#invoice-approval/.test(await href('invoice-send')) && /section=projects.*#done-approval/.test(await href('project-milestone-done')) && /section=projects.*#handover-review/.test(await href('project-handover')) && /#update-settings/.test(await href('project-update')), 'the project approvals: Projects › What waits for an Owner or an Admin, each on its row')
     ok(/section=finance.*#credit-settings/.test(await href('credit-issue')) && /section=finance.*#payment-settings/.test(await href('payment-confirm')), 'Credit notes · Client payments: Finance')

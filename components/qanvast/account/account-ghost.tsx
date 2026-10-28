@@ -7,7 +7,7 @@ import tile from '@/components/om/stat-tile.module.css'
 import chart from '@/components/market-insights/chart.module.css'
 import { StatTiles } from '@/components/om/stat-tile'
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
-import { GhostChips, GhostHead, GhostTable, GhostTabs, Line, Para, Slot, Words, cycle, type Col, type PhoneRows } from '@/components/shell/ghost-kit'
+import { GhostChip, GhostChips, GhostHead, GhostTable, GhostTabs, Line, Para, Slot, Words, cycle, type Col, type PhoneRows } from '@/components/shell/ghost-kit'
 import { QANVAST_TAB_ITEMS } from '@/components/qanvast/qanvast-tabs'
 import empty from '@/components/om/empty-state.module.css'
 import { useSeedFlag, useViewerShape } from '@/lib/ghost-shape'
@@ -28,9 +28,11 @@ export function CreditsGhost({ view }: { view: CreditViewKey }) {
       <GhostTabs labels={QANVAST_TAB_ITEMS.map((t) => t.label)} active={QANVAST_TAB_ITEMS.findIndex((t) => t.label === 'Lead credits')} />   {/* (S43E, F3-03 W3-04) the open tab’s place, so the strip never jumps sideways at the hand-over (S42 A-10’s rule, here too) */}
       <div className={pageStyles.content}>
         {owner ? <>
+        {/* (the calm UI build 2026-10-27, 2-10) the views as the second-level tabs, then the bar of the view's tools and its "?" */}
+        <div className={styles.viewTabsWrap}><GhostTabs labels={CREDIT_VIEWS.map((v) => v.label)} active={Math.max(0, CREDIT_VIEWS.findIndex((v) => v.value === view))} /></div>
         <div className={styles.bar}>
-          <div className={styles.views}><GhostChips labels={CREDIT_VIEWS.map((v) => v.label)} rail /></div>
-          {view === 'transactions' ? <div className={styles.tools}><Slot kind="btn" w={160} /></div> : null}
+          <div className={styles.views} />
+          <div className={styles.tools}>{view === 'transactions' ? <Slot kind="btn" w={160} /> : null}<GhostChip label="Demo" /></div>   {/* (the calm UI build 2026-10-27) the stand-in's Demo chip (DemoNote) */}
         </div>
         {view === 'overview' ? <CreditsOverviewGhost /> : view === 'transactions' ? (
           <div className={styles.statement}><TableSection title={W.statement('October 2026')} titleBar help={W.statementHelp} rows={8} phone={{ card: 132, lines: 4 }} cols={[
@@ -139,8 +141,10 @@ export function ReviewsGhost({ view }: { view: ReviewViewKey }) {
       <GhostTabs labels={QANVAST_TAB_ITEMS.map((t) => t.label)} active={QANVAST_TAB_ITEMS.findIndex((t) => t.label === 'Reviews')} />
       <div className={pageStyles.content}>
         {owner ? <>
+        <div className={styles.viewTabsWrap}><GhostTabs labels={REVIEW_VIEWS.map((v) => v.label)} active={Math.max(0, REVIEW_VIEWS.findIndex((v) => v.value === view))} /></div>
         <div className={styles.bar}>
-          <div className={styles.views}><GhostChips labels={REVIEW_VIEWS.map((v) => v.label)} widths={[104]} rail /></div>
+          <div className={styles.views} />
+          <div className={styles.tools}><GhostChip label="Demo" /></div>   {/* (the calm UI build 2026-10-27) the stand-in's Demo chip (DemoNote) */}
         </div>
         {view === 'reviews' ? <ReviewsListGhost /> : view === 'ranking' ? <RankingGhost /> : <FeedbackGhost />}
         </> : <GateGhost words={GATE_WORDS.reviews} />}
@@ -161,7 +165,7 @@ function ReviewsListGhost() {
       <div className={styles.list}>
         <div className={styles.filters}>
           <div className={styles.filterRail}><GhostChips widths={[48, 176, 82]} rail /></div>
-          <div className={styles.filterTools}><Slot kind="btn" w={120} /><Slot kind="btn" w={140} /></div>
+          <div className={styles.filterTools}><Slot kind="btn" w={200} /></div>
         </div>
         {[0, 1, 2].map((i) => (
           <section key={i} className={styles.card}>
@@ -195,8 +199,11 @@ function ReviewsListGhost() {
   )
 }
 
-function SectionHead({ title, help }: { title: string; help: string }) {
-  return <div className={styles.sectionHead}><div className={styles.sectionTitles}><Words as="h2" className={styles.sectionTitle}>{title}</Words><Words as="p" className={styles.sectionHelp}>{help}</Words></div></div>
+function SectionHead({ title, help, extra = false }: { title: string; help: string; /** (the calm UI build 2026-10-27, 2-42) the page's "?" beside the title */ extra?: boolean }) {
+  const head = extra
+    ? <h2 className={styles.sectionTitle} aria-hidden><Words>{title}</Words><Slot kind="icon" /></h2>
+    : <Words as="h2" className={styles.sectionTitle}>{title}</Words>
+  return <div className={styles.sectionHead}><div className={styles.sectionTitles}>{head}<Words as="p" className={styles.sectionHelp}>{help}</Words></div></div>
 }
 
 function RankingGhost() {
@@ -208,11 +215,9 @@ function RankingGhost() {
         <Words className={styles.link}>{`${W.rankLink} ↗`}</Words>
       </section>
       <section className={styles.section}>
-        <SectionHead title={W.factors} help={W.factorsHelp} />
-        <StatTiles>{ghostTiles([{ label: 'Reviews', value: 16, help: 'Written by homeowners · in 2026: 4*^' }, { label: 'Rating', value: 44, help: 'The average of those reviews · in 2026: 5.0*^' }, { label: 'Projects', value: 16, help: 'Published on Qanvast · in 2026: 5*' }, { label: 'Board pins', value: 40, help: 'Project photos homeowners saved · in 2026: 96*' }])}</StatTiles>
-        <Words as="p" className={styles.foot}>* SuperTrust 2027 will be based on these numbers. Find out more</Words>
-        <Words as="p" className={styles.foot}>^ This year’s reviews are counted by when the project was finished in 2026, not when the review was written.</Words>
-        <div className={styles.tips}><Words className={styles.textButton}>{W.askHomeowners}</Words><Words className={styles.foot}>Publishing more of your work helps your rank — add it on Your public profile</Words></div>
+        <SectionHead title={W.factors} help={W.factorsHelp} extra />
+        <StatTiles>{ghostTiles([{ label: 'Reviews', value: 16, help: 'Written by clients · in 2026: 4' }, { label: 'Rating', value: 44, help: 'The average of those reviews · in 2026: 5.0' }, { label: 'Projects', value: 16, help: 'Published on Qanvast · in 2026: 5' }, { label: 'Board pins', value: 40, help: 'Project photos clients saved · in 2026: 96' }])}</StatTiles>
+        <div className={styles.tips}><Words className={styles.textButton}>{W.askHomeowners}</Words><Words className={styles.foot}>Publishing more of your work helps your rank — add it on Your public profile</Words><Words className={styles.footLink}>About SuperTrust</Words></div>
       </section>
       <section className={styles.section}><SectionHead title={W.views} help={W.viewsHelp} /><StatTiles>{ghostTiles([{ label: 'Profile views', value: 40, help: 'Up 8% on last week' }, { label: 'Project views', value: 52, help: 'Down 3% on last week' }, { label: 'Review views', value: 40, help: 'Up 12% on last week' }])}</StatTiles></section>
       <section className={styles.section}>

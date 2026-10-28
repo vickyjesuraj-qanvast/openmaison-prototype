@@ -16,10 +16,12 @@ export function BetaTag() {
  * (REG-2800 · REG-708's rule) Floorplan to 3D Isometric's ghost — its landing as the page draws it, on the page's own classes (the Visualizer
  * welcome's hero and sample row, the drop box, the two looks) with its own words as bars, so the loader and the reveal hand over without a jump.
  */
-export function FloorplanGhost() {
+export function FloorplanGhost({ live = false }: { /** an image model answers — the header then has no prototype info glyph */ live?: boolean }) {
   return (
     <GhostSheet label="Loading Floorplan to 3D Isometric" l1>
-      <div className={k.head}><span className={k.headTitle}><Bone w={258} h={28} /></span><span className={k.headActions}><Bone w={44} h={24} r={4} /></span></div>
+      {/* (the calm UI build, 6-22) Beta, and the prototype's info glyph beside it while no image model answers */}
+      {/* (the calm UI build 2026-10-27, 6-22 · W-125) …beside the title, as the page's header `after` (ghost-kit's .headAfter) */}
+      <div className={k.head}><span className={k.headTitle}><Bone w={258} h={28} /><span className={k.headAfter}><span className={styles.headActions}><Bone w={44} h={24} r={4} />{!live ? <Bone w={36} h={36} r={4} /> : null}</span></span></span></div>
       <div className={styles.content} aria-hidden>
         <div className={welcome.welcome}>
           <div className={welcome.hero}>

@@ -13,7 +13,8 @@ import header from '@/components/quotes/editor/editor-header.module.css'
  * `done` = inert with `sendHint`.
  */
 export type SendKind = 'approval' | 'client' | 'confirmed' | 'done'
-/** (UX audit Q2) `other` = "Sent it another way": the client has it by other means — the quote is marked Sent to Client, nothing goes out. */
+/** (UX audit Q2) `other` = "Mark as sent" (was "Sent it another way"): the client has it by other means — the quote is marked Sent to Client
+    (on screen: With client), nothing goes out; since the calm UI build it asks first (4-22). */
 export type SendMode = 'next' | 'confirmation' | 'signature' | 'other'
 
 /**
@@ -43,14 +44,16 @@ export function SendButton({ kind, canSend, hint, status, onSend, variation = fa
                 aria-haspopup="menu" aria-expanded={open} onPress={() => setOpen((o) => !o)} data-testid="quote-send">Send</Button>
         {/* (REG-728) Rows with a description: the 320 width, the description as the house row's second line. */}
         <Dropdown open={open} onClose={() => setOpen(false)} align={align} side={side} width={MENU_WIDTH.detail} sheetTitle="Send">
+          {/* (the calm UI build 2026-10-27, the UI audit's 4-21 · W-358 · W-360 · W-362) three verbs that say what happens; the dialogs they open keep
+              their titles (Send for confirmation · Which agreement should they sign? · Mark as sent?) */}
           {variation
-            ? <DropdownItem onSelect={pick('confirmation')} help="The client approves the change on a link — the contract value moves once they do">Send for confirmation</DropdownItem>
-            : <DropdownItem onSelect={pick('confirmation')} help="The client confirms the quote on a link — no signature yet">Send for confirmation</DropdownItem>}
-          {variation ? null : <DropdownItem onSelect={pick('signature')} help="Add the T&Cs and raise the agreement to sign">Send for signature</DropdownItem>}
+            ? <DropdownItem onSelect={pick('confirmation')} help="Your client approves the change on a link. The contract value moves once they do.">Ask to approve</DropdownItem>
+            : <DropdownItem onSelect={pick('confirmation')} help="Your client taps Confirm on a link. No signature yet.">Ask to confirm</DropdownItem>}
+          {variation ? null : <DropdownItem onSelect={pick('signature')} help="Your client signs an agreement made from this quote.">Send to sign</DropdownItem>}
           {markable ? (
             <>
               <DropdownDivider />
-              <DropdownItem onSelect={pick('other')} help="The client has it already — marks it Sent to Client, sends nothing">Sent it another way</DropdownItem>
+              <DropdownItem onSelect={pick('other')} help="You sent it yourself; nothing goes out.">Mark as sent</DropdownItem>
             </>
           ) : null}
         </Dropdown>
@@ -59,8 +62,8 @@ export function SendButton({ kind, canSend, hint, status, onSend, variation = fa
   }
   if (canSend && kind === 'confirmed') {
     return (
-      <Tooltip label="Add the T&Cs and send the agreement for signature">
-        <span><Button variant="primary" onPress={() => onSend('signature')} data-testid="quote-send">Send for signature</Button></span>
+      <Tooltip label="Your client signs an agreement made from this quote">
+        <span><Button variant="primary" onPress={() => onSend('signature')} data-testid="quote-send">Send to sign</Button></span>
       </Tooltip>
     )
   }

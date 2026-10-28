@@ -7,7 +7,8 @@ import { AiSheet } from '@/components/leads/ai-sheet'
 import { useSnackbar } from '@/components/om/snackbar'
 import { TextField } from '@/components/om/text-field'
 import { IconButton } from '@/components/om/icon-button'
-import { isProposal, suggestionLabel, useMaisonAiState, useMaisonAsk, useMaisonList, type MaisonAnswer, type MaisonAsk, type MaisonRow, type MaisonSuggestion } from '@/lib/maison-ai'
+import { isProposal, suggestionLabel, useMaisonAiState, useMaisonAsk, useMaisonDocked, useMaisonList, type MaisonAnswer, type MaisonAsk, type MaisonRow, type MaisonSuggestion } from '@/lib/maison-ai'
+import { DASHBOARD } from '@/lib/dashboard/model'
 import { answerQuestion } from '@/lib/maison-ai/answer'   // (parity map, TD-107 · SC-060 · FB-118 · PR-059)
 import { clearAskHistory, fetchAskHistory, rememberAsk, restoreAskHistory } from '@/lib/maison-ai/history'   // (pending modules S10)
 import { MAX_QUESTION, matchSuggestion } from '@/lib/maison-ai/intents'
@@ -17,10 +18,10 @@ import answerStyles from './maison-answer.module.css'
 import { MaisonFab } from './maison-fab'
 import { usePlanRunner } from './maison-plans'
 import { openShortcuts } from '@/lib/keys/store'
-import { useMediaQuery } from '@/lib/breakpoint'
 import { leaveThen } from '@/components/company/leave-guard'   // (pending modules S16) unsaved Company / Settings edits ask before the move (REG-791)
 
-/** (REG-715, Q-03) The door to the ? panel every page's Maison AI offers — where there is a keyboard to use it. */
+/** (REG-715, Q-03) The door to the ? panel Maison AI offered — (the calm UI build 2026-10-27, 1-19) no longer listed in the sheet; still
+    understood when it is pressed or asked for. */
 const KEYS_SUGGESTION = 'Keyboard shortcuts for this page'
 type Asked = Awaited<ReturnType<typeof fetchAskHistory>>[number]
 const NO_SUGGESTIONS: readonly MaisonSuggestion[] = []
@@ -153,8 +154,9 @@ export function MaisonAiSheet({ open, onClose, anchorRef, suggestions, labels: l
     if (!r.run && !r.href) return
     close(); if (r.run) r.run(); else if (r.href) { const href = r.href; leaveThen(() => router.push(href)) }
   }
-  const touch = useMediaQuery('(hover: none)')
-  const offered = touch ? labels : [...labels, KEYS_SUGGESTION]
+  /* (the calm UI build 2026-10-27 — the audit's 1-19) the sheet is Maison AI's alone: "Keyboard shortcuts for this page" left it — the ? key,
+     ⌘K's Go to › Keyboard shortcuts and the bell's arrival note open the panel; a question that names it is still answered (`pick` below) */
+  const offered = labels
   const clear = async () => {
     const before = history ?? []
     setHistory([])
@@ -165,7 +167,7 @@ export function MaisonAiSheet({ open, onClose, anchorRef, suggestions, labels: l
   }
   const askBox = (
     <form className={answerStyles.ask} onSubmit={(e) => { e.preventDefault(); askNow(question) }} noValidate data-testid="maison-ask">
-      <TextField label="Ask Maison AI" value={question} onChange={setQuestion} maxLength={MAX_QUESTION} autoComplete="off" helper="Answers from your records"
+      <TextField label="Ask Maison AI" value={question} onChange={setQuestion} maxLength={MAX_QUESTION} autoComplete="off"
                  trailing={<IconButton icon="send" label="Ask" variant="bare" onClick={() => askNow(question)} disabled={!question.trim()} data-testid="maison-ask-send" />} />
     </form>
   )
@@ -196,21 +198,28 @@ export function MaisonAiSheet({ open, onClose, anchorRef, suggestions, labels: l
 export function MaisonAi() {
   const { suggestions, raised, resolve } = useMaisonAiState()
   const [open, setOpen] = useState(false)
+  /* (the Dashboard redesigned 2026-10-26 — his Q-02, lane D4) On the Dashboard Maison AI is docked at the page's foot (components/maison-ai/dock):
+     the floating button and its sheet step aside there, at every width — from the page's first paint (its address), and for as long as the dock
+     is mounted — and a question asked from the page is the dock's. Every other page keeps both, as before. */
+  const docked = useMaisonDocked()
   /* a question asked from the page (the milestone panel) opens the sheet with it asked — each one once */
   const fromPage = useMaisonAsk()
   const [handled, setHandled] = useState(fromPage?.n ?? 0)
   const [incoming, setIncoming] = useState<MaisonAsk | null>(null)
-  if (fromPage && fromPage.n !== handled) { setHandled(fromPage.n); setIncoming(fromPage); setOpen(true) }
+  if (fromPage && fromPage.n !== handled) { setHandled(fromPage.n); if (!docked) { setIncoming(fromPage); setOpen(true) } }
   const fabRef = useRef<HTMLDivElement>(null)   // the sheet exempts the FAB from outside presses so the FAB toggles (REG-153)
   const pathname = usePathname()
   const [lastPath, setLastPath] = useState(pathname)
   if (pathname !== lastPath) { setLastPath(pathname); setOpen(false) }
+  if (docked || pathname === DASHBOARD) return null
   return (
     <>
       <MaisonAiSheet open={open} onClose={() => setOpen(false)} anchorRef={fabRef} labels={suggestions} resolve={resolve}
                      incoming={incoming} />
       <div ref={fabRef} style={{ display: 'contents' }}>
-        <MaisonFab onPress={() => setOpen((o) => !o)} raised={raised} quietTop={pathname === '/dashboard'} />   {/* (S42 audit A-12) the Dashboard's first screen has its own Ask box */}
+        {/* (the calm UI build 2026-10-27 — the audit's 3-09 · 1-43, B3's ask) a project's page on a phone starts with the button tucked, as its
+            first screen is the project itself */}
+        <MaisonFab onPress={() => setOpen((o) => !o)} raised={raised} quietTop={pathname.startsWith('/projects/')} />
       </div>
     </>
   )

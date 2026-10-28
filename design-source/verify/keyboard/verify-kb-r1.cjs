@@ -32,7 +32,7 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   ok(await panel.isVisible(), '? opens the Keyboard shortcuts panel')
   const text = await panel.innerText()
   ok(/On this page · Leads/i.test(text), 'it opens on this page', text.split('\n').slice(0, 4).join(' | '))
-  ok(/Create New Lead/.test(text) && /Next lead/.test(text) && /Filters/.test(text) && /Switch the view/.test(text), 'the listing’s keys, in the page’s words')
+  ok(/Create New Lead|New lead/.test(text) /* (the calm UI build 2026-10-27, a deliberate change) B2: C reads "New lead" */ && /Next lead/.test(text) && /Filters/.test(text) && /Switch the view/.test(text), 'the listing’s keys, in the page’s words')
   ok(/Everywhere/i.test(text) && /Go to Tasks/.test(text) && /Search the studio/.test(text), 'and the keys that work everywhere')
   const main = await p.locator('#om-main > *').first().boundingBox()
   const pbox = await panel.boundingBox()
@@ -132,7 +132,7 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   /* 9 · the single-key switch: letters stop, arrows and ⌘ keys keep working */
   await p.keyboard.press('Meta+Slash'); await settle(500)
   ok(await panel.isVisible(), '⌘/ opens the panel too')
-  await panel.getByRole('switch', { name: 'Single-key shortcuts' }).click({ force: true }); await settle(300)
+  await panel.getByRole('switch', { name: 'Use single keys' })   /* (the calm UI build 2026-10-27, a deliberate change) plain words for the switch */.click({ force: true }); await settle(300)
   ok(/· off/.test(await panel.innerText()), 'switched off, the single keys read “off”')
   await p.keyboard.press('Escape'); await settle(300)
   await focusPage()
@@ -141,7 +141,7 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   await p.keyboard.press('ArrowDown'); await settle(300)
   ok(await cursor.isVisible().catch(() => false), 'but ↓ still moves')
   await p.keyboard.press('Meta+Slash'); await settle(400)
-  await panel.getByRole('switch', { name: 'Single-key shortcuts' }).click({ force: true }); await settle(300)
+  await panel.getByRole('switch', { name: 'Use single keys' })   /* (the calm UI build 2026-10-27, a deliberate change) plain words for the switch */.click({ force: true }); await settle(300)
   await p.keyboard.press('Escape'); await settle(200)
 
   ok(errs.length === 0, 'no page errors', errs.join(' | ').slice(0, 300))

@@ -66,7 +66,7 @@ const menuPick = async (page, button, item) => {
   await tryFlow('Create New Lead', async () => { await page.keyboard.press('c'); await check(page, 'Create New Lead', { shot: 'o01-lead-form' }); await page.getByRole('button', { name: 'Close' }).last().click(); await page.waitForTimeout(400) })
   await tryFlow('Filters', async () => { await page.keyboard.press('f'); await check(page, 'Filters', { shot: 'o02-filters' }); await esc(page) })
   await tryFlow('Deleted Leads', async () => { await menuPick(page, page.getByRole('button', { name: 'More options' }).first(), 'Deleted Leads'); await check(page, 'Deleted Leads', { shot: 'o03-deleted-leads' }); await esc(page) })
-  await tryFlow('Import from File', async () => { await menuPick(page, page.locator('[data-kb="create"] button').first(), 'Import from File'); await check(page, 'Import Leads', { shot: 'o04-import' }); await esc(page) })
+  await tryFlow('Import from File', async () => { await menuPick(page, page.locator('[data-kb="create"] button').first(), /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33: New lead ▾ › Import a file */ 'Import a file'); await check(page, 'Import Leads', { shot: 'o04-import' }); await esc(page) })
   await tryFlow('Assign popover', async () => { await vis(page, '[data-kb-row] [data-kb="assign"] button').click(); await check(page, 'Assign popover', { popover: true, shot: 'o05-assign' }); await esc(page) })
 
   console.log('1440 — a lead')
@@ -79,7 +79,7 @@ const menuPick = async (page, button, item) => {
     await check(page, 'Move stage', { shot: 'o06-move-stage' }); await esc(page, 2)
   })
   await page.goto(`${BASE}/leads/${LEAD}/tasks`, { waitUntil: 'networkidle' }); await page.waitForTimeout(1000)
-  await tryFlow('Use Template', async () => { await menuPick(page, vis(page, '[data-kb="create"]'), 'Use Template'); await check(page, 'Use Template', { shot: 'o07-use-template' }); await esc(page) })
+  await tryFlow('Use Template', async () => { await menuPick(page, vis(page, '[data-kb="create"]'), /* (the calm UI build 2026-10-27, a deliberate change) B2: New task ▾ › From a template */ 'From a template'); await check(page, 'Use Template', { shot: 'o07-use-template' }); await esc(page) })
   await tryFlow('Task drawer', async () => { const row = page.locator('[data-kb-row]').first(); await row.hover(); await row.locator('[data-kb-open]').click(); await check(page, 'Task drawer', { shot: 'o08-task-drawer' }); await esc(page) })
   await tryFlow('Delete Task confirm', async () => {
     await page.locator('[data-kb-row] [data-kb-select] input, [data-kb-row] [data-kb-select]').first().click({ force: true }); await page.waitForTimeout(400)

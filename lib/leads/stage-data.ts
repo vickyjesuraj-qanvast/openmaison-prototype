@@ -185,7 +185,8 @@ export function validateStage(stage: Stage, d: WizardData, asks: StageAsks = {})
 
 /** The window's field names, in the words its labels use — a refusal names the field it is about. */
 const FIELD_WORD: Record<string, string> = {
-  channel: 'Contacted via', when: 'Date & Time', outcome: 'Outcome', nextStepWhen: 'the next call or meeting', nextStepMode: 'Preferred mode', files: 'the proof of contact',
+  // (the calm UI build 2026-10-27 — 2-08) the labels' new words: How · When · How it went · Call back by
+  channel: 'How', when: 'When', outcome: 'How it went', nextStepWhen: 'the call back', nextStepMode: 'Call back by', files: 'the proof of contact',
   where: 'Where', assignees: 'Members', quote: 'the quote', quoteAmount: 'Quote amount', wonQuote: 'the signed quote', wonQuoteAmount: 'Quote amount',
   wonContract: 'the signed contract', milestones: 'the payment split', projectType: 'Project type',
 }
@@ -208,9 +209,10 @@ export function stageRefusal(stage: Stage, errors: StageErrors): string | null {
  * call or a message leaves screenshots. One wording for the Move stage window and the Notes tab.
  */
 export function attachLabel(channel: string | null | undefined): string {
-  if (channel === 'In person') return 'Attach photos from the visit'
-  if (channel === 'WhatsApp' || channel === 'Email' || channel === 'SMS') return 'Attach screenshots of your messages'
-  return 'Attach screenshots of your call attempts'   // Call, Others, nothing chosen yet — the wording REG-324 kept
+  // (the calm UI build 2026-10-27 — W-486) shorter, and the log's own verb: the row's link is Attach
+  if (channel === 'In person') return 'Add photos from the visit'
+  if (channel === 'WhatsApp' || channel === 'Email' || channel === 'SMS') return 'Add screenshots of the messages'
+  return 'Add a screenshot'   // Call, Others, nothing chosen yet
 }
 
 /** Per-stage completeness — drives rail states and Save validation (A1). */

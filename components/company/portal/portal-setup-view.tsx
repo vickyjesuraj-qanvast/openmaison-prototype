@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { CompanyShell } from '@/components/company/company-shell'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
-import { Card } from '@/components/leads/detail/card'
+import { PortalCard as Card } from './portal-card'   // (the calm UI build 2026-10-27 — 5-23) the Company card head
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -136,7 +136,8 @@ export function PortalSetupView({ data, from }: { data: PortalSetup; from?: stri
        privacy notice; done once it does */
     {
       key: 'privacy', title: 'Privacy notice', done: !!data.links.privacy,
-      line: privacyStepLine(data.links),
+      /* (the calm UI build 2026-10-27 — 5-37) the why (PDPA) is said once, on the Privacy and terms card the press brings into view */
+      line: data.links.privacy ? privacyStepLine(data.links) : 'Not linked yet.',
       action: mayRun ? { label: data.links.privacy ? 'Change' : 'Add the link', run: toLinks } : null,
     },
     {
@@ -155,7 +156,8 @@ export function PortalSetupView({ data, from }: { data: PortalSetup; from?: stri
           {mayRun ? (settings.paused
             ? <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => void pause(false)} data-testid="portal-go-live">Go live again</Button>
             : <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => setPausing(true)} data-testid="portal-pause">Pause the portal</Button>) : null}
-          {testHref ? <Button onPress={openTest} iconStart={<Icon name="open_in_new" size={20} />} data-testid="portal-test">{testLabel}</Button> : null}
+          {/* (5-37 · T-03) outlined — the checklist's Try it yourself keeps the same press; the page's one job is not this */}
+          {testHref ? <Button variant="secondary" appearance="outlined" onPress={openTest} iconStart={<Icon name="open_in_new" size={20} />} data-testid="portal-test">{testLabel}</Button> : null}
         </>
       }>
       <div className={styles.page} data-testid="portal-setup">

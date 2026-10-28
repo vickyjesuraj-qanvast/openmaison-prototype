@@ -74,7 +74,7 @@ export function YourNotifications({ data, hasEmail }: { data: YourNotices; hasEm
     try {
       const r = await sendMySummaryNow()
       if ('error' in r) { snackbar({ message: couldnt('send your summary', refusalOf(r.error)) }); return }
-      if (r.status === 'nothing') { snackbar({ message: 'Nothing to sum up — no new notices and nothing due' }); return }
+      if (r.status === 'nothing') { snackbar({ message: 'Nothing to sum up — no new notifications and nothing due' }); return }
       if (r.summary) setLast(r.summary)
       const to = r.summary?.toAddress
       snackbar({ message: r.status === 'held' ? 'Your summary waits — OpenMaison has paused the studio’s messages' : r.status === 'no_address' ? 'Your summary has no email to go to' : `Your summary went${to ? ` to ${to}` : ''} — ${summaryCounts(r.summary?.subject)}`,
@@ -89,8 +89,9 @@ export function YourNotifications({ data, hasEmail }: { data: YourNotices; hasEm
     <section id="notifications" className={profile.card} aria-labelledby="you-notices" data-testid="profile-notifications">
       <div className={profile.cardHead}>
         <h2 id="you-notices" className={profile.cardTitle}>{NOTICES_CARD.title}</h2>
+        {/* (the calm UI build 2026-10-27 — the audit's 1-29 · 1-41) one line, the ghost's own words (NOTICES_CARD.help) — was "Which notices go out at all is the studio's choice" */}
         {data.studioRules
-          ? <p className={profile.cardHelp}>What reaches you, and how. Which notices go out at all is the studio’s choice, in <HelpLink href="/settings?section=notifications" testId="notices-studio-link">Settings › Notifications</HelpLink>.</p>
+          ? <p className={profile.cardHelp}>What reaches you, and how — the studio chooses which go out, in <HelpLink href="/settings?section=notifications" testId="notices-studio-link">Settings › Studio notifications</HelpLink>.</p>
           : <p className={profile.cardHelp}>{NOTICES_CARD.helpBooks}</p>}
       </div>
       <div className={styles.noticeBlock} data-testid="notices-email">

@@ -114,29 +114,32 @@ export function GhostField({ helper, say, size, w }: { helper?: W | boolean; say
   )
 }
 
-/** One action in a header or a toolbar: a width is a button, 'icon' a 36 square, `{ fold }` a labelled button that folds into its glyph on a phone. */
-export type Action = number | 'icon' | { fold: number }
-const isAction = (a: unknown): a is Action => typeof a === 'number' || a === 'icon' || (typeof a === 'object' && a !== null && 'fold' in a)
-const act = (a: Action, i: number) => (typeof a === 'object' ? <Slot key={i} kind="btnFold" w={a.fold} /> : <Slot key={i} kind={a === 'icon' ? 'icon' : 'btn'} w={a === 'icon' ? undefined : a} />)
+/** One action in a header or a toolbar: a width is a button, 'icon' a 36 square, `{ fold }` a labelled button that folds into its glyph on a phone,
+    `{ desk }` (the calm UI build 2026-10-27, additive) a labelled button a phone doesn't draw there (Tools › Quotes' New quote — the toolbar's
+    glyph on a phone). */
+export type Action = number | 'icon' | { fold: number } | { desk: number }
+const isAction = (a: unknown): a is Action => typeof a === 'number' || a === 'icon' || (typeof a === 'object' && a !== null && ('fold' in a || 'desk' in a))
+const act = (a: Action, i: number) => (typeof a === 'object' ? ('fold' in a ? <Slot key={i} kind="btnFold" w={a.fold} /> : <Slot key={i} kind="btn" w={a.desk} desk />) : <Slot key={i} kind={a === 'icon' ? 'icon' : 'btn'} w={a === 'icon' ? undefined : a} />)
 
-/** The L1 page header (PageHeader): the title, the actions at the right; on a phone the actions wrap under the title when they do not fit. */
-export function GhostHead({ title, actions = [] }: { title: number; actions?: Action[] }) {
+/** The L1 page header (PageHeader): the title, the actions at the right; on a phone the actions wrap under the title when they do not fit.
+    `after` (the calm UI build 2026-10-27, additive) — PageHeader's `after`: what sits beside the title (a status, an info glyph). */
+export function GhostHead({ title, actions = [], after = [] }: { title: number; actions?: Action[]; after?: Action[] }) {
   return (
     <div className={k.head}>
-      <span className={k.headTitle}><Bone w={title} h={28} /></span>
+      <span className={k.headTitle}><Bone w={title} h={28} />{after.length ? <span className={k.headAfter}>{after.map(act)}</span> : null}</span>
       {actions.length ? <span className={k.headActions}>{actions.map(act)}</span> : null}
     </div>
   )
 }
 
 /** The L2 page header (PageHeaderL2): the back arrow, the crumb over the title, the actions. */
-export function GhostHead2({ crumb = 96, title, chips = [], actions = [] }: { crumb?: number; title: number; chips?: number[]; actions?: Action[] }) {
+export function GhostHead2({ crumb = 96, title, chips = [], actions = [] }: { crumb?: number; /** (the calm UI build 2026-10-27, 6-34) none: PageHeaderL2's crumb-only form */ title?: number; chips?: number[]; actions?: Action[] }) {
   return (
     <div className={k.head2}>
       <Bone w={24} h={24} r={4} />
       <span className={k.head2Title}>
         <span className={k.crumb}><Line w={crumb} lh={16} h={10} /></span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Line w={title} lh={24} h={20} />{chips.map((c, i) => <Slot key={i} kind="chip" w={c} className={k.crumb} />)}</span>
+        {title !== undefined || chips.length ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{title !== undefined ? <Line w={title} lh={24} h={20} /> : null}{chips.map((c, i) => <Slot key={i} kind="chip" w={c} className={k.crumb} />)}</span> : null}
       </span>
       {actions.length ? <span className={k.headActions}>{actions.map(act)}</span> : null}
     </div>

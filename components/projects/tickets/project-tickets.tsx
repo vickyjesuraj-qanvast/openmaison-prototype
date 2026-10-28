@@ -20,10 +20,13 @@ import styles from './tickets.module.css'
 
 export type TicketScope = 'open' | 'done' | 'all'
 export const scopeOf = (t: TicketRow, s: TicketScope) => (s === 'all' ? true : s === 'open' ? isLive(t.status) : !isLive(t.status))
+/** (the calm UI build 2026-10-27, 1-22 · 1-25 · 3-39 · W-296 · W-342 · W-580) the house Chips (an in-list filter, 1-26) with the house count —
+    "Open · 3 · Closed · 1 · All · 4", never "(n)", never a zero; "Closed" holds the resolved and the closed (its value stays `done`). */
+const counted = (label: string, n: number) => (n > 0 ? `${label} · ${n}` : label)
 export const scopeChips = (list: TicketRow[]) => [
-  { value: 'open', label: `Open (${list.filter((t) => isLive(t.status)).length})` },
-  { value: 'done', label: `Resolved and closed (${list.filter((t) => !isLive(t.status)).length})` },
-  { value: 'all', label: `All (${list.length})` },
+  { value: 'open', label: counted('Open', list.filter((t) => isLive(t.status)).length) },
+  { value: 'done', label: counted('Closed', list.filter((t) => !isLive(t.status)).length) },
+  { value: 'all', label: counted('All', list.length) },
 ]
 
 /**
@@ -52,7 +55,7 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
   }
   useEffect(() => {
     if (!param) return
-    if (!data.tickets.some((x) => x.id === param)) snackbar({ message: 'This ticket isn’t there any more' })
+    if (!data.tickets.some((x) => x.id === param)) snackbar({ message: 'This issue isn’t there any more' })   // (the calm UI build 2026-10-27, 3-37) "Issues" on screen
     const next = new URLSearchParams(params.toString()); next.delete('open')
     const q = next.toString()
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
@@ -69,16 +72,16 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
   const add = async (i: NewTicketInput) => {
     try {
       const r = await createTicket(data.project.id, i)
-      if ('error' in r) { snackbar({ message: couldnt('add the ticket', refusalOf(r.error)) }); return false }
+      if ('error' in r) { snackbar({ message: couldnt('add the issue', refusalOf(r.error)) }); return false }
       setAdding(false); setScope('open'); setOpenId(r.id)
       snackbar({ message: `${r.number} added — ${first} sees it on their page` })
       router.refresh(); return true
-    } catch { snackbar({ message: 'Couldn’t add the ticket — please try again' }); return false }
+    } catch { snackbar({ message: 'Couldn’t add the issue — please try again' }); return false }
   }
   return (
     <div className={styles.tab} data-testid="project-tickets">
       <div className={styles.bar}>
-        {views ?? <h2 className={styles.title}>Tickets</h2>}
+        {views ?? <h2 className={styles.title}>Issues</h2>}
         <div className={styles.actions}>
           {data.tickets.length ? (
             <span className={styles.filterWrap}>
@@ -88,7 +91,8 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
               {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
             </span>
           ) : null}
-          {data.mayChange && data.tickets.length ? <Button iconStart={<Icon name="add" size={20} />} onPress={() => setAdding(true)} data-testid="new-ticket">New ticket</Button> : null}
+          {/* (the calm UI build 2026-10-27, 3-12 · 1-11 · T-03) "New issue", outlined — a tab body's create; the page's one filled button is the header's */}
+          {data.mayChange && data.tickets.length ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setAdding(true)} data-testid="new-ticket">New issue</Button> : null}
         </div>
       </div>
       {data.tickets.length ? (
@@ -96,18 +100,18 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
           <Chips label="Show" options={scopeChips(data.tickets)} value={scope} onChange={(v) => pickScope(v as TicketScope)} testId="ticket-scope" />
           {list.length ? (
             <div className={styles.list} data-testid="ticket-list">
-              {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} onOpen={() => setOpenId(t.id)} />)}
+              {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} scope={scope} onOpen={() => setOpenId(t.id)} />)}
             </div>
           ) : (
-            <EmptyState icon="handyman" tone="plain" testId="tickets-none" title={filterCount ? 'No tickets match the filters' : scope === 'open' ? 'Nothing open' : 'Nothing here yet'}
-                        help={filterCount ? 'Clear a filter to see more.' : scope === 'open' ? `Every ticket on this project is resolved or closed. ${first} can report another on their page.` : 'Resolved and closed tickets land here.'}
+            <EmptyState icon="handyman" tone="plain" testId="tickets-none" title={filterCount ? 'No issues match the filters' : scope === 'open' ? 'Nothing open' : 'Nothing here yet'}
+                        help={filterCount ? 'Clear a filter to see more.' : scope === 'open' ? `Every issue on this project is resolved or closed. ${first} can report another on their page.` : 'Resolved and closed issues land here.'}
                         primary={filterCount ? { label: 'Clear the filters', onPress: () => setFilters(EMPTY_TICKET_FILTERS) } : null} />
           )}
         </>
       ) : (
-        <EmptyState icon="handyman" testId="tickets-empty" title="No tickets yet"
+        <EmptyState icon="handyman" testId="tickets-empty" title="No issues yet"
                     help={`When ${first} reports a problem on their page — a leak, a scratch, a door that sticks — it lands here with their photos, and you answer it here. You can add one for them too.`}
-                    primary={data.mayChange ? { label: 'New ticket', icon: 'add', onPress: () => setAdding(true) } : null} />
+                    primary={data.mayChange ? { label: 'New issue', icon: 'add', onPress: () => setAdding(true) } : null} />
       )}
       {open ? (
         <TicketDrawer ticket={open} lines={data.threads[open.id] ?? []} team={data.team} mayChange={data.mayChange} me={data.me} now={data.now}

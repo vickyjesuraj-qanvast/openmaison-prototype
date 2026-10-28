@@ -85,7 +85,7 @@
 .messageBox textarea { min-height: 140px; }
 .fieldsAnchor { display: inline-flex; align-self: flex-start; }   /* (sweep S4 #21) the Insert a field menu's anchor */
 .preview { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
-.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
+.previewLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }   /* (the calm UI build, 5-23 · T-06) a label, not a status: sentence case, as every Settings sub-group label */
 @media (max-width: 767px) {
   .eventHead { display: none; }
   .eventRow { grid-template-columns: 1fr; gap: var(--om-spacing-2); }
@@ -96,7 +96,10 @@
 
 /* (REG-607) Reasons: two chip lists under one card, a gate suffix on a Lost reason, the gate field beside the add row. */
 .reasonGroup { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.reasonLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; }   /* (REG-729) no letter-spacing on an uppercase caption */
+/* (the calm UI build 2026-10-27, 5-23 · T-06 — capitals only for a status) a sub-group label inside a Settings card — How leads move, Also in the
+   number, Variation orders are billed, On the paper … — and a module's group label (Finance's) is sentence case, semibold 14, in ink; never
+   the grey caps caption (the lead Overview's card head keeps that look, on the lead and project Overview only) */
+.reasonLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .reasonGate { color: var(--om-color-on-surface-secondary); }
 /* (held calls 2026-10-24, W6-04 — his "fix all of it") doubled: the house field's own `flex: 1` (text-field.module.css `.field`) won or lost by
    the order the build put the two sheets in — production let the field fill the row, `next dev` held this 200. The 200 holds now in both (a
@@ -113,9 +116,11 @@
 
 /* (REG-645, settings parity Q-01 · Q-03 · Q-04 · Q-08) A module's head: the read-only line, the Company pages that hold its records; the
    Studio module's cards — the team by role, the issuing entities and Who may do what on the event table. */
-.moduleLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--om-spacing-1); margin-top: var(--om-spacing-1); }
-.moduleLinks > span:first-child { margin-right: var(--om-spacing-1); }
-.moduleLinks + .moduleLinks { margin-top: 0; }   /* (pending modules S46C · M2) Your profile's line right under the Kept in Company links */
+/* (the calm UI build 2026-10-27, 5-17) A module's last line — *Related:* and its doors (ModuleRelated): the house text links in one wrapping
+   line, each group inline so a door's wrapper keeps its box (the probes' and the key layer's handles), 44 under a finger (HelpLink standalone) */
+.related { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-4); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.relatedWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.relatedGroup { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-4); min-width: 0; }
 .settingHeadRow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); }
 .settingHeadRow > .settingHead { flex: 1 1 320px; min-width: 0; }
 /* (responsive audit 2026-10-23, W4-01) A phone: the head's button keeps to the card — "Change in Default Quote PDF › New quotes" ran 60px
@@ -193,3 +198,23 @@
 .cardGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .cardStack { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .groupLabel { composes: reasonLabel; margin: 0; }
+
+/* (the calm UI build 2026-10-27, T-05) A card's rules folded behind *How … works* (how-it-works.tsx): the text button sits on the help line's
+   left edge (its own padding paid back), the paragraph under it. */
+.how { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-2)); }
+.how > p { margin: 0 0 0 var(--om-spacing-2); }
+
+/* (the calm UI build 2026-10-27, 5-05) Notifications' events table gains a sixth track — each event's *Edit wording* — at each width, above the
+   house tracks' weight (0,2,0); a phone keeps the stack, the verb on its own line at the row's start. The drawer lists the event's two messages. */
+.wording .eventHead, .wording .eventRow { grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) repeat(3, 88px) minmax(120px, auto); }
+.wordingCell { justify-content: flex-end; }
+@media (min-width: 768px) and (max-width: 1024px) {
+  .wording .eventHead, .wording .eventRow { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) repeat(3, 72px) minmax(104px, auto); }
+}
+@media (max-width: 767px) {
+  .wording .eventHead, .wording .eventRow { grid-template-columns: 1fr; }
+  .wording .wordingCell { justify-content: flex-start; margin-left: calc(-1 * var(--om-spacing-2)); }
+}
+.wordingList { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* (the calm UI build, 5-05) a door in a module head — Notifications' Sent messages: the house text link's face, for its ghost's words */
+.headDoor { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }

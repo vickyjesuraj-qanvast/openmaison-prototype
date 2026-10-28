@@ -1,5 +1,6 @@
 'use client'
 
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 import { useMemo, useRef, useState } from 'react'
 import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
@@ -34,7 +35,7 @@ const TABS: { key: Group; label: string }[] = [
   { key: 'sort', label: 'Sort' },
   { key: 'date', label: 'Date' },
   { key: 'status', label: 'Status' },
-  { key: 'due', label: 'Due' },
+  { key: 'due', label: 'Follow up' },   /* (the calm UI build 2026-10-27, 4-13) the list's column is Follow up; the key stays */
   { key: 'valid', label: 'Valid until' },   /* (UX audit Q5) */
 ]
 const SORTS: { key: QuoteSort; label: string }[] = [
@@ -149,11 +150,11 @@ export function QuotesFiltersModal({
                 </section>
                 <section className={styles.sheetGroup} aria-label="Status">
                   <span className={styles.sectionTitle}>Status</span>
-                  <Chips multiple label="Status" options={quoteStatuses(approval).map((s) => ({ value: s, label: s }))} value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as QuoteStatus[] }))} />
+                  <Chips multiple label="Status" options={quoteStatuses(approval).map((s) => ({ value: s, label: quoteStatusLabel(s) }))} value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as QuoteStatus[] }))} />
                 </section>
-                <section className={styles.sheetGroup} aria-label="Due">
-                  <span className={styles.sectionTitle}>Due</span>
-                  <Chips label="Due" options={DUES.map((s) => ({ value: s.key, label: s.label }))} value={draft.due} onChange={(v) => setDraft((d) => ({ ...d, due: v as QuoteDue }))} />
+                <section className={styles.sheetGroup} aria-label="Follow up">
+                  <span className={styles.sectionTitle}>Follow up</span>
+                  <Chips label="Follow up" options={DUES.map((s) => ({ value: s.key, label: s.label }))} value={draft.due} onChange={(v) => setDraft((d) => ({ ...d, due: v as QuoteDue }))} />
                 </section>
                 <section className={styles.sheetGroup} aria-label="Valid until">
                   <span className={styles.sectionTitle}>Valid until</span>
@@ -237,7 +238,7 @@ export function QuotesFiltersModal({
             </div>
             )}
             <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
-              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_QUOTE_FILTERS)}>Clear All</Button>
+              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_QUOTE_FILTERS)}>Clear all</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
             </SurfaceFoot>

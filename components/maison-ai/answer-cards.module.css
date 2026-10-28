@@ -1,0 +1,61 @@
+/*
+ * (the Dashboard redesigned 2026-10-26 — P-10 · lane D4) The answer cards (answer-cards.tsx), the same in the docked field and the sheet: each
+ * block on the card grammar — surface-bg plates on radius 8, the house type tokens, 12 between blocks. The figures ARE the house StatTile; the
+ * timeline IS the house Timeline; the doors are the design system's quiet buttons. Width-aware by the container, never the window: the sheet is
+ * 320 wide at a desk and the dock 760.
+ */
+.cards { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; container: maison-cards / inline-size; }
+
+/* a record: the client as one card */
+.record { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); min-width: 0; }
+.recordHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.recordWho { display: flex; flex-direction: column; min-width: 0; }
+.recordName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.recordLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--om-spacing-1) var(--om-spacing-3); }
+.fact { display: flex; flex-direction: column; min-width: 0; }
+.fact dt { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.fact dd { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.points { margin: 0; padding-left: var(--om-spacing-5); list-style: disc; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+
+/* figures: the house tiles in a row that fits its container — and a long figure is fitted to its tile at every width (the tile's own steps,
+   stat-tile.module.css `data-fit`, which the house turns on only on a phone; here the container is narrow at a desk too) */
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--om-spacing-2); min-width: 0; }
+.figures > [data-fit] { container: stat-tile / inline-size; }
+
+/* a small chart: bars on one baseline, each bar's figure above it and its period under it (secondary ink — the bar carries the colour) */
+.chart { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.chartLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--om-spacing-2); }
+.barCol { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-1); min-width: 0; }
+.barValue { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.barTrack { height: 64px; display: flex; align-items: flex-end; border-bottom: var(--om-border-1) solid var(--om-color-on-surface-border); }
+.bar { display: block; width: 100%; border-radius: var(--om-radius-1) var(--om-radius-1) 0 0; background: var(--om-color-primary-variant-hover); }
+.barLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-align: center; overflow-wrap: anywhere; }
+
+/* a comparison: three columns — what, this, that */
+.compare { display: flex; flex-direction: column; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); min-width: 0; }
+.compareRow { display: grid; grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-2); padding: var(--om-spacing-1) 0; align-items: baseline; }
+.compareRow + .compareRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.compareRow[data-head] { padding-bottom: var(--om-spacing-2); }
+.compareHead { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.compareLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.compareValue { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+.timeline { min-width: 0; }
+.timelineText { overflow-wrap: anywhere; }
+
+/* doors: the quiet buttons in one wrapping line */
+.doors { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
+.group { display: inline-flex; }
+
+/* a narrow card (the sheet at a desk, a phone): the comparison's label takes its own line */
+@container maison-cards (max-width: 340px) {
+  .compareRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .compareRow > .compareLabel { grid-column: 1 / -1; }
+  .compareRow[data-head] > :first-child { display: none; }
+}
+@media (hover: none) {
+  .doors { gap: var(--om-spacing-2) var(--om-spacing-2); }
+}

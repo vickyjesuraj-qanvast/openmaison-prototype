@@ -197,7 +197,7 @@ export function VersionsStrip({ original, versions, viewKey, compareKey, inFligh
           </div>
         ))}
         {!live.length && !inFlight ? (
-          <span className={styles.none}>Your renders land here<span className={styles.noneMore}>{sketch ? ' — pick a style, then Render from sketch.' : ' — pick a finish or a style, then Generate.'}</span></span>
+          <span className={styles.none}>Your versions land here<span className={styles.noneMore}>{sketch ? ' — pick a style, then Render from sketch.' : ' — pick a finish or a style, then Generate.'}</span></span>
         ) : null}
       </div>
     </div>

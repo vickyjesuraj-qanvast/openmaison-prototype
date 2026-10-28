@@ -25,7 +25,7 @@ import own from './library-gallery.module.css'
  * entries (`title` · `noun` · `nameLabel` — Deleted Items, not Deleted Templates), and a member who may only read restores nothing
  * that isn't theirs (`restoreBlock`) and deletes nothing for good (`purgeBlock`).
  */
-export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, ariaLabel, glyph, meta, usage, keepReason, onClose, onRestore, onDeleteForever, onEmptyTrash, title = 'Deleted Templates', noun = { one: 'template', many: 'templates' }, nameLabel = 'Template', restoreBlock, purgeBlock = null, purgeRule, foreverNote, byLabel = 'Made by', usageLabel = 'Used by' }: {
+export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, ariaLabel, glyph, meta, usage, keepReason, onClose, onRestore, onDeleteForever, onEmptyTrash, title = 'Deleted templates', noun = { one: 'template', many: 'templates' }, nameLabel = 'Template', restoreBlock, purgeBlock = null, purgeRule, foreverNote, byLabel = 'Made by', usageLabel = 'Used by' }: {
   open: boolean; rows: T[]; crumb: string; ariaLabel: string
   /** (REG-664) The person column's head (a quote template keeps no author: its sheet names who deleted it) and the usage column's. */
   byLabel?: string; usageLabel?: string
@@ -116,9 +116,9 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
                                {rows.length > 0 && deletable.length === 0 ? (
                                  /* (verify round 3) one reason for every row says it; rows kept for different reasons (a preset beside Dane's template) never
                                     read "still in use" when a rule keeps them — each row says its own reason */
-                                 <Tooltip label={(() => { const k = [...new Set(rows.map(kept))]; return k.length === 1 && k[0] ? (rows.length > 1 && rows.every((t) => !!ruled(t)) ? plural(k[0]) : k[0]) : rows.some((t) => !!ruled(t)) ? `None of these ${noun.many} can be deleted for good — each row says why` : `Every deleted ${noun.one} is still in use — restore them instead` })()}><span><Button variant="secondary" appearance="outlined" isDisabled>Empty Trash</Button></span></Tooltip>
+                                 <Tooltip label={(() => { const k = [...new Set(rows.map(kept))]; return k.length === 1 && k[0] ? (rows.length > 1 && rows.every((t) => !!ruled(t)) ? plural(k[0]) : k[0]) : rows.some((t) => !!ruled(t)) ? `None of these ${noun.many} can be deleted for good — each row says why` : `Every deleted ${noun.one} is still in use — restore them instead` })()}><span><Button variant="secondary" appearance="outlined" isDisabled>Delete all forever</Button></span></Tooltip>
                                ) : (
-                                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>Empty Trash</Button>
+                                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>Delete all forever</Button>
                                )}
                              </span>
                            } />
@@ -158,9 +158,9 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
                             <Tooltip label={locked}><button type="button" className={styles.link} aria-disabled="true" onClick={(e) => e.preventDefault()}>Restore</button></Tooltip>
                           ) : <button type="button" className={styles.link} disabled={pending.has(t.id)} onClick={() => { prune([t.id]); void run([t.id], () => onRestore([t.id])) }}>Restore</button>}
                           {reason ? (
-                            <Tooltip label={reason}><button type="button" className={styles.link} data-danger aria-disabled="true" onClick={(e) => e.preventDefault()}>Delete Forever</button></Tooltip>
+                            <Tooltip label={reason}><button type="button" className={styles.link} data-danger aria-disabled="true" onClick={(e) => e.preventDefault()}>Delete forever</button></Tooltip>
                           ) : (
-                            <button type="button" className={styles.link} data-danger disabled={pending.has(t.id)} onClick={() => setConfirm({ kind: 'forever', ids: [t.id] })}>Delete Forever</button>
+                            <button type="button" className={styles.link} data-danger disabled={pending.has(t.id)} onClick={() => setConfirm({ kind: 'forever', ids: [t.id] })}>Delete forever</button>
                           )}
                         </div>
                       </div>
@@ -169,7 +169,7 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
                 </div>
               </div>
               <DetailBulkBar inset count={liveSelected.size}
-                             actions={[{ label: 'Restore', onClick: () => { const ids = [...liveSelected].filter((id) => { const t = rows.find((x) => x.id === id); return t && !noRestore(t) }); prune(ids); if (ids.length) void run(ids, () => onRestore(ids)) } }, ...(purgeBlock ? [] : [{ label: 'Delete Forever', tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: purgeable([...liveSelected]) }) }])]}
+                             actions={[{ label: 'Restore', onClick: () => { const ids = [...liveSelected].filter((id) => { const t = rows.find((x) => x.id === id); return t && !noRestore(t) }); prune(ids); if (ids.length) void run(ids, () => onRestore(ids)) } }, ...(purgeBlock ? [] : [{ label: 'Delete forever', tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: purgeable([...liveSelected]) }) }])]}
                              onClear={() => setSelected(new Set())} />
             </motion.div>
           </motion.div>
@@ -178,7 +178,7 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
       <Dialog nested open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}   /* (sweep S5 #27) over the open sheet: the lighter scrim */
               title={confirm?.kind === 'forever' && confirm.ids.length !== 1 ? `Delete ${confirm.ids.length} ${noun.many} forever?` : `Delete this ${noun.one} forever?`} subtitle={confirmTarget?.title}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
-                <DangerButton disabled={busy || (confirm?.kind === 'forever' && confirm.ids.length === 0)} onClick={() => { if (confirm?.kind === 'forever' && confirm.ids.length) { const ids = confirm.ids; prune(ids); void run(ids, () => onDeleteForever(ids)) } setConfirm(null) }}>Delete Forever</DangerButton></>}>
+                <DangerButton disabled={busy || (confirm?.kind === 'forever' && confirm.ids.length === 0)} onClick={() => { if (confirm?.kind === 'forever' && confirm.ids.length) { const ids = confirm.ids; prune(ids); void run(ids, () => onDeleteForever(ids)) } setConfirm(null) }}>Delete forever</DangerButton></>}>
         <span className={styles.confirmText}>
           {(() => {
             if (confirm?.kind !== 'forever') return ''
@@ -191,9 +191,9 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
           })()}
         </span>
       </Dialog>
-      <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400} title="Empty trash?"
+      <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400} title="Delete all forever?"
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
-                <DangerButton disabled={busy} onClick={() => { const ids = deletable.map((t) => t.id); setSelected(new Set()); void run(ids, () => onEmptyTrash(ids.length)); setConfirm(null) }}>Empty Trash</DangerButton></>}>
+                <DangerButton disabled={busy} onClick={() => { const ids = deletable.map((t) => t.id); setSelected(new Set()); void run(ids, () => onEmptyTrash(ids.length)); setConfirm(null) }}>Delete all forever</DangerButton></>}>
         <span className={styles.confirmText}>{[`This can’t be undone. ${deletable.length} deleted ${deletable.length === 1 ? noun.one : noun.many} will be removed permanently${rows.length > deletable.length ? `; ${stayLine(rows.filter((t) => !!kept(t)))}` : ''}.`, foreverNote?.(deletable) ?? null].filter(Boolean).join(' ')}</span>
       </Dialog>
     </>

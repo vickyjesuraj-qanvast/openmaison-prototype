@@ -144,11 +144,11 @@ export function CreditBlockDialog({ open, onClose, summary, refusal, what, neede
     /* §5.6: all of it used → "You’ve used your 600 for September"; some left but not enough → "Needs 20 — you can use 15" */
     title = refusal.remaining > 0 ? `Needs ${fmtCredits(refusal.needed)} — you can use ${fmtCredits(refusal.remaining)}` : `You’ve used your ${fmtCredits(refusal.cap)} for ${month}`
     body = <>
-      <p className={styles.p}>This {noun} needs <b>{fmtCredits(refusal.needed)}</b>{refusal.remaining > 0 ? <> and you have <b>{fmtCredits(refusal.remaining)}</b> of your {fmtCredits(refusal.cap)} left this month</> : null}. The studio’s credits are untouched — {owner} sets each person’s monthly amount.</p>
+      <p className={styles.p}>This {noun} needs <b>{fmtCredits(refusal.needed)}</b>{refusal.remaining > 0 ? <> and you have <b>{fmtCredits(refusal.remaining)}</b> of your {fmtCredits(refusal.cap)} left this month</> : null}. The studio’s credits are untouched — {owner} sets each member’s monthly limit.</p>
       <Meter used={refusal.cap - refusal.remaining} of={refusal.cap} tone="warn" line={`${fmtCredits(refusal.cap - refusal.remaining)} of ${fmtCredits(refusal.cap)} used · yours refreshes ${refreshLine(s.periodEnd, s.now)}`} />
       {asked || s.openAsk ? <p className={styles.asked}><Icon name="check_circle" size={18} fill weight={300} />Asked {owner} · we’ll tell you when it’s answered. Your changes are kept.</p> : null}
     </>
-    foot = s.viewer.canSetAmounts ? <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button><Button onPress={() => { onClose(); leaveThen(() => router.push(planHref(`?member=${s.viewer.id}`))) }}>Change my monthly amount</Button></>
+    foot = s.viewer.canSetAmounts ? <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button><Button onPress={() => { onClose(); leaveThen(() => router.push(planHref(`?member=${s.viewer.id}`))) }}>Change my monthly limit</Button></>
       : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>{smaller ? <Button variant="secondary" appearance="outlined" onPress={() => { onClose(); smaller.run() }}>{smaller.label}</Button> : null}{asked || s.openAsk ? null : <Button isDisabled={pending} onPress={() => ask('monthly')}>{`Ask ${owner} for more`}</Button>}</>
   } else if (refusal.error === 'insufficient_credits') {
     const bal = refusal.balance

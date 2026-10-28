@@ -42,8 +42,11 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
     const sub = Number(sql(`select sum(round(qty * (cost_minor + markup_minor) * (1 - discount_pct / 100.0))) from quote_items where quote_id='${Q8[0]}' and kind='item' and status <> 'Declined' and optional = 0 and (print_as is null or print_as = 'behalf')`))
     const yours = Number(sql(`select json_extract(result_json, '$.yoursMinor') from quote_comparisons where id='${id}'`))
     ok('Yours is the quote’s own subtotal', Math.abs(sub - yours) <= 1, `${yours} vs ${sub}`)
-    const foot = await page.getByTestId('xray-summary').innerText()
-    ok('the summary says the basis and the quote’s own total', /before discounts and GST/.test(foot) && /OM-10008 comes to S\$68,176\.23/.test(foot))
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-03: the footnote is the difference tile's How we counted, its money in the card's whole dollars */
+    await page.getByTestId('xray-counted').click(); await page.waitForTimeout(300)
+    const foot = await page.getByTestId('xray-counted-words').innerText()
+    ok('the summary says the basis and the quote’s own total', /before discounts and GST/.test(foot) && /OM-10008 comes to S\$\s?68,176\b/.test(foot))
+    await page.getByTestId('xray-counted').click(); await page.waitForTimeout(200)
     await shot('01-summary')
   })
 
@@ -62,8 +65,11 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
     const r = JSON.parse(sql(`select result_json from quote_comparisons where id='${id}'`))
     ok('three points of 1.0’s kinds', r.points.length === 3 && r.points.every((p) => ['missing', 'cheaper', 'below', 'unpriced', 'material', 'brand'].includes(p.kind)), r.points.map((p) => p.kind).join(','))
     ok('the heaviest first: the vinyl flooring they leave out', /vinyl flooring/i.test(r.points[0].say))
-    const says = await page.locator('[data-testid="xray-points"] li [class*="__say"]').allInnerTexts()
+    const says = await page.locator('[data-testid="xray-points"] li [class*="__say"]:not([class*="__sayRow"])').allInnerTexts()   // (the calm UI build 2026-10-27, a deliberate change) — 6-23: the sentence sits in a row with its Why
     ok('Say this never names Flo Design', says.length === 3 && says.every((t) => !/Flo Design/.test(t)), says.join(' / ').slice(0, 160))
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-23: a point's evidence is behind its Why */
+    for (const w of await page.getByTestId('xray-points').getByTestId('xray-why').all()) await w.click()
+    await page.waitForTimeout(300)
     ok('the evidence, for the studio, does', /Flo Design/.test(await page.getByTestId('xray-points').innerText()))
     ok('“Priced well below ours”, not “below market”', !/below market/i.test(await page.getByTestId('xray-points').innerText()))
     await shot('02-points')
@@ -71,8 +77,11 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
 
   await step('the draft follows the screen', async () => {
     const pts = page.getByTestId('xray-points')
-    await pts.getByRole('button', { name: 'Say it as a question' }).first().click()
-    const q = await pts.locator('li').filter({ has: page.getByRole('button', { name: 'Say it as a point' }) }).first().locator('[class*="__say"]').innerText()
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-23: one "Say it as a question" in the card head turns every point that has a question form */
+    await pts.getByRole('button', { name: 'Say it as a question' }).first().click(); await page.waitForTimeout(300)
+    ok('the head’s toggle now reads Say it as a point', await pts.getByRole('button', { name: 'Say it as a point' }).count() === 1)
+    const q = (await pts.locator('li [class*="__say"]:not([class*="__sayRow"])').allInnerTexts()).find((t) => /\?\s*”?$/.test(t.trim())) ?? ''
+    ok('a point now reads as its question', !!q, q.slice(0, 60))
     await pts.getByRole('button', { name: 'Send to client' }).click()
     const dlg = page.getByRole('dialog', { name: 'Send to client' }); await dlg.waitFor(); await page.waitForTimeout(400)
     // REG-790 (UX audit C12): Send to client is the contract Send dialog — recipient fields + "Message to the client", Send via WhatsApp, Reset message
@@ -88,7 +97,11 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
     const card = await page.getByTestId('xray-brands').innerText()
     ok('no “both quotes name it” for a brand only theirs names', !/both quotes name/i.test(card))
     ok('Hafary: checked, nothing to flag', /We also checked Hafary in their quote — nothing to flag\./.test(card))
-    ok('sources read as sources, no open-in-new glyph', /Sources · renotalk\.com/.test(card) && (await page.getByTestId('xray-brands').locator('text=open_in_new').count()) === 0)
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-23: a brand's sources are behind its Sources button */
+    for (const b of await page.getByTestId('xray-brands').getByTestId('xray-sources').all()) await b.click()
+    await page.waitForTimeout(300)
+    const withSources = await page.getByTestId('xray-brands').innerText()
+    ok('sources read as sources, no open-in-new glyph', /Sources · renotalk\.com/.test(withSources) && (await page.getByTestId('xray-brands').locator('text=open_in_new').count()) === 0)
     await shot('04-brands')
   })
 
@@ -113,7 +126,7 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
     const first = JSON.parse(sql(`select result_json from quote_comparisons where id='${id}'`))
     ok('Yours drops the FOC line’s amount', first.yoursMinor - r.yoursMinor === 75000, `${first.yoursMinor} → ${r.yoursMinor}`)
     const row = page.getByTestId('xray-row').filter({ hasText: 'Haulage and debris disposal' })
-    ok('its row shows the word, no difference', (await row.locator('[data-col="yours"]').innerText()).trim() === 'FOC' && (await row.locator('[data-col="diff"]').innerText()).trim() === '--')
+    ok('its row shows the word, no difference', (await row.locator('[data-col="yours"]').innerText()).trim() === 'FOC' && (await row.locator('[data-col="diff"]').innerText()).trim() === '')   // (the calm UI build 2026-10-27, a deliberate change) — 6-05: an empty Difference is blank, not '--'
     sql(`update quote_items set print_as=null where id='${hid}'`)
   })
 

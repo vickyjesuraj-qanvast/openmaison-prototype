@@ -95,7 +95,8 @@ async function measure(b, opts, url, blocks, max = 30) {
   const state = (p) => card(p).getAttribute('data-state')
   const dialog = (p) => p.getByTestId('qanvast-dialog')
   const press = async (p, id, ms = 1800) => { await p.getByTestId(id).click(); await settle(p, ms) }
-  const openProfile = async (p) => { await go(p, '/company/profile', 1400); await card(p).scrollIntoViewIfNeeded(); await settle(p, 300) }
+  /* (the calm UI build 2026-10-27, a deliberate change) Listed on Qanvast is on Profile's Registrations tab (5-36) */
+  const openProfile = async (p) => { await go(p, '/company/profile?tab=registrations', 1400); await card(p).scrollIntoViewIfNeeded(); await settle(p, 300) }
   const sheet = (p) => p.locator('[role="dialog"][aria-label="Maison AI suggestions"]')
   const fab = async (p) => { await p.locator('button[aria-label="Maison AI"]').last().click(); await settle(p, 700) }
   const waitPanel = (p) => p.waitForFunction(() => { const a = document.querySelector('[data-testid="maison-answer"],[data-testid="maison-proposal"]'); return !!a && !/Looking through your records/.test(a.textContent || '') }, null, { timeout: 15000 }).catch(() => {})
@@ -105,7 +106,8 @@ async function measure(b, opts, url, blocks, max = 30) {
     await p.keyboard.type(q, { delay: 20 }); await settle(p, 900)
     return p.getByRole('dialog', { name: /search/i }).or(p.locator('[data-global-search]')).first()
   }
-  const reach = (p, row, role) => p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach')
+  const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) Who may do what is Roles & access' drawer now (5-04)
+  const reach = async (p, row, role) => { await openRoles(p); return p.locator(`[data-testid="may-${row}"] [role="cell"][data-label="${role}"]`).getAttribute('data-reach') }
   const addProof = async (p, kind, files) => { await dialog(p).getByTestId(`qanvast-proof-${kind}`).locator('input[type="file"]').setInputFiles(files); await settle(p, 2600) }
   const hook = (p, body, auth = `Bearer ${SECRET}`) => p.request.post(`${BASE}/api/webhooks/qanvast-listing`, { data: typeof body === 'string' ? body : JSON.stringify(body), headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) }, failOnStatusCode: false })
 
@@ -147,11 +149,11 @@ async function measure(b, opts, url, blocks, max = 30) {
     ok(outside.length === 1 && outside[0].kind === 'outside' && outside[0].status === 'verified' && outside[0].submitted_at === firstQ && outside[0].description === null && outside[0].answered_via === null,
       'R145: listed before OpenMaison, dated by the first Qanvast lead, no words made up, no answer claimed', outside)
     await openProfile(d)
-    const order = await d.evaluate(() => { const r = document.querySelector('[data-testid="registrations"]'), q = document.querySelector('[data-testid="qanvast-listing"]'), e = document.querySelector('[data-testid="entities"]'); return !!r && !!q && !!e && !!(r.compareDocumentPosition(q) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(q.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) })
-    ok(order, 'the card sits after Registrations & accreditations, before Issuing entities')
+    const order = await d.evaluate(() => { const r = document.querySelector('[data-testid="registrations"]'), q = document.querySelector('[data-testid="qanvast-listing"]'), e = document.querySelector('[data-testid="entities"]'); return !!r && !!q && !e && !!(r.compareDocumentPosition(q) & Node.DOCUMENT_POSITION_FOLLOWING) })
+    ok(order, 'the card sits after Registrations & accreditations, on their tab (Issuing entities are Bank & entities’ — (the calm UI build 2026-10-27, a deliberate change) 5-36)')
     const c1 = await text(card(d))
     ok(await state(d) === 'listed' && /listed on qanvast/i.test(c1) && /\bLISTED\b/i.test(c1) && /Listed before your studio used OpenMaison — what Qanvast shows isn’t on record here yet\./.test(c1), 'it reads Listed — before OpenMaison, said plainly', c1)
-    ok(/^Simulated on this prototype — your application is kept here and isn’t sent to Qanvast/.test(await text(d.getByTestId('qanvast-simulated'))), 'the stand-in says so in its own line')
+    ok(/^Simulated on this prototype — your application is kept here and isn’t sent to Qanvast/.test(await d.getByTestId('qanvast-simulated').getAttribute('aria-label') ?? '') && /^(info\s*)?Demo$/i.test((await text(d.getByTestId('qanvast-simulated'))).trim()) /* (the calm UI build 2026-10-27, a deliberate change) 2-09: the house DemoNote — its glyph's ligature rides innerText */, 'the stand-in says so — a quiet Demo chip, its sentence the chip’s tooltip and name ((the calm UI build 2026-10-27, a deliberate change) 5-16)')
     ok(await d.getByTestId('qanvast-update').count() === 1 && await d.getByTestId('qanvast-apply').count() === 0 && await d.getByTestId('qanvast-what').count() === 0 && await d.getByTestId('qanvast-demo').count() === 0,
       'Listed: Update your listing is the press; no What Qanvast has (nothing on record) and no demo plays (nothing waits)')
     await shot(d, '01-listed-outside-1440'); await card(d).screenshot({ path: path.join(dir, '01b-card-listed-outside.png') })
@@ -298,8 +300,9 @@ async function measure(b, opts, url, blocks, max = 30) {
     const focus = await d.evaluate(() => { const a = document.activeElement; const l = a?.id ? document.querySelector(`label[for="${a.id}"]`) : null; return { label: l?.textContent ?? '', inDetails: !!a?.closest('#details') } })
     ok(await dialog(d).count() === 0 && focus.inDetails && /^UEN/.test(focus.label), 'Add your UEN: the dialog steps aside, Company details’ UEN field takes the focus', focus)
     await d.keyboard.type('201234567M'); await settle(d, 300)
-    await d.getByRole('button', { name: 'Save changes' }).click(); await settle(d, 2200)
+    await d.getByRole('button', { name: 'Save', exact: true }).click(); await settle(d, 2200)   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     ok(BRAND().uen === '201234567M', 'saved on Company details')
+    await d.locator('[aria-label="Profile sections"]').getByText('Registrations', { exact: true }).click(); await settle(d, 1200)   // (the calm UI build 2026-10-27, a deliberate change) back to the card's tab (5-36) — the application's words kept
     await card(d).scrollIntoViewIfNeeded()
     await press(d, 'qanvast-apply', 900)
     ok(await dialog(d).locator('textarea').nth(1).inputValue() === 'Kitchens that cook.' && /UEN 201234567M/.test(await text(dialog(d).locator('[data-fact="studio"]'))), 'back in the application: the words kept, the UEN read from the record')
@@ -312,7 +315,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       'Waiting for Qanvast: who sent it and when; Withdraw the application; the demo’s plays', c6)
     await card(d).screenshot({ path: path.join(dir, '07-card-waiting.png') })
     await go(d, '/company/integrations')
-    ok(/not listed/i.test(await text(d.locator('section[aria-labelledby="int-qanvast"]'))) && /Once Qanvast lists your studio/.test(await text(d.getByTestId('int-qanvast-help'))), 'Integrations: Qanvast Not listed — with the door to apply')
+    ok(/not (listed|connected)/i.test(await text(d.locator('section[aria-labelledby="int-qanvast"]'))) && /Once Qanvast lists your studio/.test(await text(d.getByTestId('int-qanvast-help'))), 'Integrations: Qanvast Not listed — with the door to apply')   // (the calm UI build 2026-10-27, a deliberate change) Integrations' two status words, Connected · Not connected (5-14)
     await shot(d, '08-integrations-not-listed-1440')
     /* Maison AI while it waits */
     await fab(d)
@@ -336,7 +339,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       await openProfile(d)
       const c7 = await text(card(d))
       ok(await state(d) === 'listed' && /Listed since/.test(c7) && !/played in the demo/.test(c7), 'the card: Listed — Qanvast’s own answer, not a play', c7)
-      ok(/not listed/i.test(await (async () => { await go(d, '/company/integrations'); return text(d.locator('section[aria-labelledby="int-qanvast"]')) })()) === false, 'Integrations: Connected again')
+      ok(/not (listed|connected)/i.test(await (async () => { await go(d, '/company/integrations'); return text(d.locator('section[aria-labelledby="int-qanvast"]')) })()) === false, 'Integrations: Connected again')   // (the calm UI build 2026-10-27, a deliberate change) Not connected is the other status word (5-14)
     } else {
       const w = await hook(d, { application: a6.id, status: 'verified' }, 'Bearer x')
       ok(w.status() === 503, 'with no QANVAST_WEBHOOK_SECRET on the server, the webhook is off (503)')
@@ -427,7 +430,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       await c.close()
     }
     for (const [o, tag] of [[{ viewport: { width: 1440, height: 2600 } }, '1440'], [{ viewport: { width: 390, height: 4200 }, isMobile: true, hasTouch: true }, '390']]) {
-      const r = await measure(b, o, '/company/profile', ['qanvast-listing.'], 12)
+      const r = await measure(b, o, '/company/profile?tab=registrations', ['qanvast-listing.'], 12)   // (the calm UI build 2026-10-27, a deliberate change) 5-36
       if (r.none) { ok(false, `the ghost of Profile at ${tag} held`); continue }
       const off = r.rows.filter((x) => Math.abs(x.dy) > 3 || Math.abs(x.dx) > 3)
       ok(off.length === 0 && r.rows.length >= 4, `the ghost of Listed on Qanvast at ${tag} lands where the card does`, off.slice(0, 6).map((x) => `${x.k}#${x.i} dx${x.dx} dy${x.dy}`).join(' · ') || `${r.rows.length} measured`)

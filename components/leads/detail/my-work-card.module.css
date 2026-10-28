@@ -1,8 +1,5 @@
 /* MY WORK card (858:24989 · 858:24505 · 858:24171). Spec: design-source/context/lead-overview/05-*.txt. */
 
-/* Head meta "· Wed, 26 Aug": dot + date, body-s secondary, 4 apart (the Card head paints the colour/type). */
-.headMeta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
-
 /* Group label row: H g4, 12/20/0/20 (8 top for the first group → 28 tall, else 32); subheading-m in the group's tone. */
 .groupLabel {
   display: flex; align-items: center; gap: var(--om-spacing-1);

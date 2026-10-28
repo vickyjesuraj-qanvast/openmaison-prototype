@@ -19,7 +19,7 @@ export function ReviseDialog({ open, version, number, message, onClose, onRevise
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Not now</Button><Button onPress={() => onRevise(note.trim())} data-testid="revise-confirm">Start version {version + 1}</Button></>}>
       <DialogMessage>{message}</DialogMessage>
       <TextField label="Client’s request (optional)" value={note} onChange={setNote} maxLength={200} autoFocus
-                 helper={`What the client asked to change — kept with version ${version} of ${number} in Version History`}
+                 helper={`What the client asked to change — kept with version ${version} of ${number} in Version history`}
                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onRevise(note.trim()) } }} />
     </Dialog>
   )

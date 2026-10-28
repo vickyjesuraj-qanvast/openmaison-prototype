@@ -219,8 +219,8 @@ function Home({ h, data, many, preview }: { h: PortalFloorPlanHome; data: Portal
           <div className={styles.filter}>
             <Chips label="Whose marks" options={[{ value: 'both', label: 'Both' }, { value: 'client', label: 'Mine' }, { value: 'studio', label: studio }]} value={filter.who} onChange={(v) => setFilter({ ...filter, who: v as MarkFilter['who'] })} testId="portal-plan-who" />
             <label className={styles.switchRow}>
-              <Switch size="sm" isSelected={filter.resolved} onChange={(v: boolean) => setFilter({ ...filter, resolved: v })} aria-label="Show resolved marks" />
-              <span className={styles.switchText}><span>Show resolved marks</span></span>
+              <Switch size="sm" isSelected={filter.resolved} onChange={(v: boolean) => setFilter({ ...filter, resolved: v })} aria-label="Show fixed marks" />
+              <span className={styles.switchText}><span>Show fixed marks</span></span>   {/* (the calm UI build 2026-10-27, W-372) the studio's word too */}
             </label>
           </div>
           <div className={styles.list} data-testid="portal-plan-marks">

@@ -48,7 +48,7 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
     snackbar({ message: `${SIGN_LABEL[key]} added ${placeWords(row)}`, actionLabel: 'Undo', onAction: () => api.replaceAll(r.prev) })
   }
   return (
-    <Drawer open={open} onClose={onClose} title="eSignatures" label="eSignatures">
+    <Drawer open={open} onClose={onClose} title="Signatures" label="Signatures">   {/* (the calm UI build 2026-10-27, 4-19 · W-182) the plain word */}
       {/* (pending modules S03) a PDF has no document to place a field in — its Insert pressed nothing; the client signs it on the page */}
       {uploaded ? <p className={styles.signNote}>A PDF is read and signed on the page itself: the client ticks your words, then signs under it.</p> : narrow ? (
         <>
@@ -56,19 +56,20 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
           <SignatureFieldsPanel html={docHtml} hasStudioSignature={hasStudioSignature} locked={locked} nested onPlace={place} />
         </>
       ) : <>
-      <div className={styles.signEyebrow}>Fillable fields</div>
+      {/* (the calm UI build 2026-10-27, 4-19 · W-187 · W-588) "Signature boxes", and what to do with them in one line under it */}
+      <div className={styles.signEyebrow}>Signature boxes</div>
+      <p className={`${styles.signNote} ${styles.signLead}`}>Put a box where each person signs.</p>
       <div className={styles.signRows}>
         {SIGN_FIELDS.map((f) => (
           <div key={f.key} className={styles.signRow} data-testid="esign-field">
             <span className={styles.signText}>
               <span className={styles.signLabel}>{f.label}</span>
-              <span className={styles.signHelp}>{f.key === 'studio-signature' && !hasStudioSignature ? 'Set your signature up in a quote’s Signature section first' : f.help}</span>
+              <span className={styles.signHelp}>{f.key === 'studio-signature' && !hasStudioSignature ? 'Set your signature up on Your profile first' : f.help}</span>
             </span>
             <Button variant="secondary" appearance="outlined" isDisabled={locked} onPress={() => onInsert(signField(f.key as SignKey))}>Insert</Button>
           </div>
         ))}
       </div>
-      <p className={styles.signNote}>Place the fields where the parties sign. The client’s field is where they sign online once you send the link.</p>
       </>}
       {gates && onGates ? <BeforeSigningPanel gates={gates} onGates={onGates} uploaded={uploaded} locked={locked} /> : null}
     </Drawer>

@@ -80,7 +80,7 @@ export function TaskCard({ task, now, unseen, fresh, selected, selectMode, descr
               <NextLink href={withFrom(task.lead.project ? `/projects/${task.lead.project.id}/tasks` : `/leads/${task.lead.id}/tasks`, '/tasks')} className={styles.forLink}>
                 {task.lead.project ? `${task.lead.project.name} · ${task.lead.project.number}` : task.lead.name}
               </NextLink>
-            ) : <span className={styles.studio}><Icon name="domain" size={16} weight={300} />Studio</span>}
+            ) : <span className={styles.studio}><Icon name="domain" size={16} weight={300} />General</span>}   {/* (the calm UI build 2026-10-27, 1-16) */}
           </span>
         ) : null}
         <span className={styles.meta}>
@@ -107,10 +107,10 @@ export function TaskCard({ task, now, unseen, fresh, selected, selectMode, descr
       <span className={styles.menu} ref={kebab}>
         <IconButton icon="more_vert" label={`More actions for ${task.title}`} variant="bare" aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} data-testid="task-card-menu" />
         <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={task.title}>
-          {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as Completed</DropdownItem>}
+          {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as done</DropdownItem>}   {/* (the calm UI build 2026-10-27, W-044) */}
           <DropdownItem onSelect={pick('rename')}>Rename</DropdownItem>
           {outside?.phone ? <DropdownItem onSelect={pick('send-outside')} help={`Opens WhatsApp with the task for ${outside.name}`}>Send on WhatsApp</DropdownItem> : null}
-          <DropdownItem onSelect={pick('template')}>Save as Template</DropdownItem>
+          <DropdownItem onSelect={pick('template')}>Save as a template</DropdownItem>
           <DropdownItem onSelect={pick('duplicate')}>Duplicate</DropdownItem>
           <DropdownItem tone="danger" onSelect={pick('delete')}>Delete</DropdownItem>
         </PortalMenu>

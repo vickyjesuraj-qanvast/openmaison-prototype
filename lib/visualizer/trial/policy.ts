@@ -54,8 +54,10 @@ export const SAMPLE_ONLY: Partial<Record<TrialTool, string>> = {
 }
 
 /* ── the allowance, in 1.0's words ── */
-/** 1.0's quota line: "2 of 3 free renders left" · "No free renders left". */
-export const allowanceLine = (left: number, limit = TRIAL_LIMIT) => (left <= 0 ? 'No free renders left' : `${left} of ${limit} free renders left`)
+/** 1.0's quota line: "2 of 3 free versions left" · "No free versions left". (the calm UI build 2026-10-27, 6-07 · W-463) the trial's editor
+    counts what the studio's editor calls each picture Generate makes — a *version* (1.0 said "renders"); the website's own pages keep
+    "renders", marketing's word. The count and the cookie are unchanged. */
+export const allowanceLine = (left: number, limit = TRIAL_LIMIT) => (left <= 0 ? 'No free versions left' : `${left} of ${limit} free versions left`)
 
 /** Why the server refused a render — 1.0's three answers (503 trial_disabled · 429 rate_limited · 402 signup_required), and the bot check's
     (1.0's spec §4 — Turnstile, never wired there; only a real check refuses, lib/visualizer/trial/server.ts `setBotCheck`). */
@@ -63,7 +65,7 @@ export type TrialRefusal = 'off' | 'fast' | 'used' | 'check'
 export const REFUSAL_WORDS: Record<TrialRefusal, string> = {
   off: 'This trial isn’t available right now — please check back later.',
   fast: 'You’re going a little fast — give it a moment and try again.',
-  used: `You’ve used all ${TRIAL_LIMIT} free renders`,
+  used: `You’ve used all ${TRIAL_LIMIT} free versions`,
   check: 'We couldn’t check this browser — reload the page and try again.',
 }
 export type TrialAnswer = { ok: true; left: number } | { error: string; reason: TrialRefusal; left: number }

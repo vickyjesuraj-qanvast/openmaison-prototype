@@ -3,15 +3,15 @@
 import { ClientUpdateCard } from '@/components/projects/updates/client-card'
 import { rangeLabel } from '@/lib/projects/schedule-model'
 import { portalPath } from '@/lib/portal/model'
-import { PAUSED_LABEL, standsLine, standsTitle, type ScheduleSummary } from '@/lib/portal/schedule-model'
+import { PAUSED_LABEL, doneWords, standsLine, standsTitle, type ScheduleSummary } from '@/lib/portal/schedule-model'
 import type { PortalUpdate } from '@/lib/portal/updates'
 import p from '../portal.module.css'
 import styles from './project.module.css'
 
 /**
  * (Projects round 4b, boards 1 · 7) "Where the work stands" on the portal's home, from the schedule as last shared (never the live one): on a
- * phone board 1's "Carpentry is under way", a bar of one segment per stage and "3 of 7 stages done. Handover is planned for Fri 13 Nov."; at a
- * desk board 7's "3 of 7 stages done" with the Schedule link and each stage's dot and dates. (simplify S-25) A Blocked stage reads Paused here
+ * phone board 1's "Carpentry is under way", a bar of one segment per stage and "3 of 7 milestones done. Handover is planned for Fri 13 Nov."; at a
+ * desk board 7's "3 of 7 milestones done" with the Schedule link and each stage's dot and dates. (simplify S-25) A Blocked stage reads Paused here
  * too ("Electrical & plumbing is paused", its dot and segment in the paused tone) — the Schedule page's rule (`isPausedStage`).
  */
 export function StandsCard({ summary, slug, place }: { summary: ScheduleSummary; slug: string; place: string | null }) {
@@ -26,7 +26,7 @@ export function StandsCard({ summary, slug, place }: { summary: ScheduleSummary;
       </div>
       <div className={styles.standsDesk}>
         <div className={styles.standsHead}>
-          <h2 className={p.h3}>{`${s.done} of ${s.total} ${s.total === 1 ? 'stage' : 'stages'} done`}</h2>
+          <h2 className={p.h3}>{doneWords(s)}</h2>   {/* (the calm UI build 2026-10-27, 3-04 · W-030) "2 of 7 milestones done" */}
           <a className={p.link} href={portalPath(slug, 'schedule')}>Schedule</a>
         </div>
         <ul className={styles.standsList}>

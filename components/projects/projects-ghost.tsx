@@ -1,7 +1,7 @@
 'use client'
 
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
-import { GhostChips, GhostHead, GhostTable, Line, Slot, Words } from '@/components/shell/ghost-kit'
+import { GhostHead, GhostTable, Line, Slot, Words } from '@/components/shell/ghost-kit'
 import { FirstRunCardGhost } from '@/components/company/templates/library-gallery.skeleton'
 import { useFirstRunShape } from '@/lib/ghost-shape'
 import { useSearchParams } from 'next/navigation'
@@ -18,7 +18,7 @@ import cardStyles from './project-cards.module.css'
 import styles from './projects-workspace.module.css'
 
 /** The tiles the listing always shows, in their own words (the fifth, the total, is the Owners' and Admins'). */
-export const TILE_LABELS = ['In progress', 'Needs attention', 'Waiting on client', 'Completing this month'] as const
+export const TILE_LABELS = ['In progress', 'Needs your attention', 'Waiting on client', 'Completing this month'] as const   // (the calm UI build 2026-10-27, T-01)
 
 /** The phone cards' name bones — the listing ghost's widths, cycled. */
 const CARD_NAME_W = [176, 152, 196, 164]
@@ -50,7 +50,7 @@ export function ProjectsGhost() {
   const contractors = workload && (!insights || params.get('of') === 'contractors' || (params.get('of') !== 'members' && storedOf))
   return (
     <GhostSheet label="Loading projects" l1>
-      <GhostHead title={92} actions={first ? ['icon'] : views && insights ? [{ fold: 128 }, { fold: 126 }, 'icon'] : [{ fold: 128 }, 'icon']}   /* New project · Insights · ⋮ */ />
+      <GhostHead title={92} actions={first ? ['icon'] : [{ fold: 128 }, 'icon']}   /* New project · ⋮ — (the calm UI build 2026-10-27, 1-30) Reports is the ⋮'s row */ />
       <div className={`${pageStyles.content} ${sk.cardsCanvas}`} aria-hidden>
         {first ? (
           <>
@@ -59,21 +59,23 @@ export function ProjectsGhost() {
           </>
         ) : (
           <>
-            <StatTiles className={styles.tiles}>   {/* (parity P-30) the house row, as the page */}
+            {/* (the calm UI build 2026-10-27, 3-38 · 3-11) the page's: five boxed cards at a desk and a tablet, none on Workload; a phone's one line */}
+            {workload ? null : <p className={`${styles.phoneTiles} ${sk.mobileOnly}`}><Line w={248} lh={44} h={12} /></p>}
+            {workload ? null : <StatTiles className={`${styles.tiles} ${sk.notMobile}`}>   {/* (parity P-30) the house row, as the page */}
               {TILE_LABELS.map((l, i) => (
-                <div key={l} className={tile.tile} data-wrap="">
+                <div key={l} className={tile.tile} data-wrap="" data-look="card">
                   <Words className={tile.label}>{l}</Words>
-                  <Line w={[18, 14, 14, 10][i]!} lh={24} h={20} />
+                  <Line w={[18, 14, 14, 10][i]!} lh={36} h={24} />
                 </div>
               ))}
               {/* the Owners' and Admins' fifth: the open projects' contract value, with its line */}
-              <div className={styles.valueTile}><div className={tile.tile}><Words className={tile.label}>Contract value</Words><Line w={96} lh={24} h={20} /><Words className={tile.help}>Open projects</Words></div></div>
-            </StatTiles>
+              <div className={styles.valueTile}><div className={tile.tile} data-look="card"><Words className={tile.label}>Contract value</Words><Line w={96} lh={36} h={24} /><Words className={tile.help}>Open projects</Words></div></div>
+            </StatTiles>}
             <div className={toolbar.bar}>
               <span className={toolbar.left}><Slot kind="pill" w={176} /></span>
               <span className={toolbar.right}>{/* (parity Q-08) the 280 box from 768 up — 44 on a touch pointer, as the page's — the glyph on a phone */}<Slot kind="fieldS" w={280} className={sk.notMobile} /><Slot kind="icon" className={sk.mobileOnly} /><Slot kind="icon" />{workload ? null : <Slot kind="icon" desk />}{views ? <Slot kind="btn" w={82} /> : null}</span>
             </div>
-            {contractors ? <ContractorsGhost chips={insights} bySite={bySite} /> : workload ? <><GhostChips labels={['Members', 'Contractors']} /><WorkloadGhost /></> : (
+            {contractors ? <ContractorsGhost chips={insights} bySite={bySite} /> : workload ? <><Slot kind="btn" w={204} /><WorkloadGhost /></> : (
               <>
                 <GhostTable head={56} row={64} rows={6} className={sk.notMobile} cols={[
                   /* (parity P-22) the page's 40 track and its first column's 12 (REG-820): the kit pads 16, so the track gives the 4 back — the name lands at 52 */

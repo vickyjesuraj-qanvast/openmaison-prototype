@@ -202,7 +202,7 @@ export async function creditsAnswer(c: Ctx, question: string): Promise<MaisonAns
   if (/\b(refresh|refreshes|reset|resets|renew|renews|top up again)\b/.test(q)) return { title: `They refresh on ${refresh}`, text: s.balance === null
       ? `The studio’s month of AI credits starts again then — ${s.owner.name} manages them. You have used ${fmtCredits(s.memberUsed)} AI credits this month.`
       : `${fmtCredits(s.balance)} left now. On ${refresh} the plan’s ${fmtCredits(s.allowance ?? 0)} for the month arrive; top-ups never run out.`, link }
-  if (s.balance === null) return { title: `You have used ${fmtCredits(s.memberUsed)} AI credits this month`, text: `${s.memberCapRemaining != null ? `${fmtCredits(s.memberCapRemaining)} left of your monthly amount. ` : ''}The studio’s AI credits refresh on ${refresh} — ${s.owner.name} manages them.`, link }
+  if (s.balance === null) return { title: `You have used ${fmtCredits(s.memberUsed)} AI credits this month`, text: `${s.memberCapRemaining != null ? `${fmtCredits(s.memberCapRemaining)} left of your monthly limit. ` : ''}The studio’s AI credits refresh on ${refresh} — ${s.owner.name} manages them.`, link }
   const out = runOutAt({ used: s.usedThisPeriod ?? 0, balance: s.balance, periodStart: s.periodStart, periodEnd: s.periodEnd, now: c.now })
   const rows: MaisonRow[] = [
     row(c, 'plan', `${fmtCredits(s.planCredits ?? 0)} from the plan · ${fmtCredits(s.topupCredits ?? 0)} top-up`, `Top-ups never run out`, null),

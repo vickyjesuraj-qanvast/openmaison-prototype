@@ -86,7 +86,7 @@ const planOf = (id) => JSON.parse(sql(`select plan from space_layouts where id='
     console.log('2 · A layout from a Singapore flat, furnished')
     await d.getByRole('button', { name: /^New/ }).first().click(); await settle(d, 300)
     /* (parity map, TD-076 — a deliberate change of this rule) with the studio's own templates (R95) the row reads "From a template or a flat…" */
-    await d.getByRole('menuitem', { name: /From a (flat template|template or a flat)/ }).click(); await settle(d, 600)
+    await d.getByRole('menuitem', { name: /From a (flat template|template or a flat|ready-made flat)/ }).click(); await settle(d, 600)   // (the calm UI build 2026-10-27, a deliberate change) — 6-30
     const dlg = d.getByTestId('planner-new-dialog')
     ok(await dlg.locator('[data-testid="planner-template"]').count() >= 7, 'the dialog offers the six flats and Blank')
     await shot(d, '02-new-layout')

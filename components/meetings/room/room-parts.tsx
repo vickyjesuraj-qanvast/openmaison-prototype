@@ -12,7 +12,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { Row } from '@/components/projects/overview/row'
 import { groupDigits, moneyCard } from '@/lib/format'
 import { CATEGORIES } from '@/lib/meetings/checklists'
-import { DIMENSIONS, TIER_LINES, tierOf, type Dims, type Estimate, type Profile, type Upsell } from '@/lib/meetings/model'
+import { DIMENSIONS, TIER_LABEL, TIER_LINES, tierOf, type Dims, type Estimate, type Profile, type Upsell } from '@/lib/meetings/model'
 import type { ChecklistRow, Tip } from '@/lib/meetings/engine'
 import { kindLabel } from '@/lib/meetings/objections'
 import type { PortfolioMatch } from '@/lib/meetings/portfolio'
@@ -27,13 +27,13 @@ import styles from './room.module.css'
  */
 
 /** Tips as you talk — the newest three, the rest under "Earlier"; each says what was said, the studio's answer, its one button, and closes. */
-export function TipsCard({ tips, onDismiss, onAct, paused, studio, lockedActions }: { tips: Tip[]; onDismiss: (t: Tip) => void; onAct: (t: Tip) => void; paused: boolean; studio: string; /** (pending modules S21) action kinds the studio's plan locks — they wear the Pro tag */ lockedActions?: string[] }) {
+export function TipsCard({ tips, onDismiss, onAct, paused, lockedActions }: { tips: Tip[]; onDismiss: (t: Tip) => void; onAct: (t: Tip) => void; paused: boolean; /** (the calm UI build 2026-10-27, W-172) unused — the answer reads "Our answer" */ studio?: string; /** (pending modules S21) action kinds the studio's plan locks — they wear the Pro tag */ lockedActions?: string[] }) {
   const [more, setMore] = useState(false)
   const shown = more ? tips : tips.slice(0, 3)
   return (
     <Card title="Tips as you talk" meta={tips.length ? `· ${tips.length}` : undefined} testId="meeting-tips">
       <div className={styles.cardBody}>
-        {paused ? <p className={styles.line}>The co-pilot is paused — tips come back when it’s on again.</p>
+        {paused ? <p className={styles.line}>Meeting Copilot is paused — tips come back when it’s on again.</p>
           : !tips.length ? <p className={styles.line} data-testid="tips-empty">Listening for a price, another studio, a deadline or a doubt — a tip shows here when one comes up.</p>
           : shown.map((t) => (
             <div key={t.key} className={styles.tip} data-kind={t.kind} data-testid="meeting-tip">
@@ -46,14 +46,15 @@ export function TipsCard({ tips, onDismiss, onAct, paused, studio, lockedActions
               <p className={styles.said}>They said: “{t.said}”</p>
               {t.answer ? (
                 <div className={styles.answer} data-testid="tip-answer">
-                  <span className={styles.answerHead}>{studio}’s answer · “{t.answer.title}”</span>
+                  {/* (the calm UI build 2026-10-27, 2-21 · W-172) the studio reading it is the studio — "Our answer" */}
+                  <span className={styles.answerHead}>Our answer · “{t.answer.title}”</span>
                   <span>{t.answer.text}</span>
                 </div>
               ) : null}
               {t.action ? <span className={styles.tipAct}><Button appearance="text" onPress={() => onAct(t)}>{t.action.label}{lockedActions?.includes(t.action.kind) ? <> <ProTag /></> : null}</Button></span> : null}
             </div>
           ))}
-        {tips.length > 3 && !paused ? <Row icon={more ? 'keyboard_arrow_up' : 'expand_more'} name={more ? 'Show fewer' : `Earlier tips (${tips.length - 3})`} onPress={() => setMore((m) => !m)} toggle /> : null}
+        {tips.length > 3 && !paused ? <Row icon={more ? 'keyboard_arrow_up' : 'expand_more'} name={more ? 'Show fewer' : `Earlier tips · ${tips.length - 3}`} onPress={() => setMore((m) => !m)} toggle /> : null}
       </div>
     </Card>
   )
@@ -75,7 +76,9 @@ export function ChecklistCard({ rows, closing, onToggle, readOnly = false }: { r
               <span className={styles.groupLabel}>{c.label}</span>
               {list.map((r) => (
                 <div key={r.id} className={styles.checkRow} data-ticked={r.ticked || undefined} data-testid="checklist-row">
-                  <Checkbox isSelected={r.ticked} isDisabled={readOnly} onChange={(on: boolean) => onToggle(r.id, on)}>{r.label}</Checkbox>
+                  {/* (the calm UI build 2026-10-27, 2-48) before the meeting a row is what to ask, in body text — never a greyed, disabled box */}
+                  {readOnly ? <span className={styles.checkPlain}><Icon name={r.ticked ? 'check_box' : 'check_box_outline_blank'} size={20} weight={300} />{r.label}</span>
+                    : <Checkbox isSelected={r.ticked} onChange={(on: boolean) => onToggle(r.id, on)}>{r.label}</Checkbox>}
                   {r.auto ? <Tooltip label={r.evidence ? `Heard: “${r.evidence}”` : 'Ticked from what was said'}><span className={styles.spark} data-testid="checklist-auto" aria-label="Ticked from what was said"><Icon name="auto_awesome" size={16} /></span></Tooltip> : null}
                 </div>
               ))}
@@ -95,7 +98,8 @@ export function ScoreCard({ score, dims, hidden = false }: { score: number; dims
   return (
     <Card title="Deal score" testId="meeting-score">
       <div className={styles.cardBody}>
-        <div className={styles.scoreLine}><span className={styles.score} data-testid="score-number">{score}</span><span className={styles.tier} data-tier={tier}>{tier}</span><span className={styles.line}>{TIER_LINES[tier]}</span></div>
+        {/* (the calm UI build 2026-10-27, 2-20 · W-040) the tier in a studio's words — "Maybe" — the key stays the tone (data-tier) */}
+        <div className={styles.scoreLine}><span className={styles.score} data-testid="score-number">{score}</span><span className={styles.tier} data-tier={tier}>{TIER_LABEL[tier]}</span><span className={styles.line}>{TIER_LINES[tier]}</span></div>
         {open ? DIMENSIONS.map((d) => (
           <div key={d.key} className={styles.dim}>
             <span className={styles.dimLabel}>{d.label}</span>
@@ -132,8 +136,10 @@ export function EstimateCard({ estimate, addOns, onDraft, draftLabel, showAddOns
   )
 }
 
-/** What the meeting heard about the client — the brief's profile. */
-export function HeardRows({ p, tags }: { p: Profile; tags: string[] }) {
+/** What the meeting heard about the client — the summary's profile. (the calm UI build 2026-10-27, 2-21) `noConcerns` where the Concerns card says
+    them with their answers (the held meeting's page); `foldTags` keeps the tags behind "Show details". */
+export function HeardRows({ p, tags, noConcerns = false, foldTags = false }: { p: Profile; tags: string[]; noConcerns?: boolean; foldTags?: boolean }) {
+  const [details, setDetails] = useState(false)
   const rows: { icon: string; name: string; meta: string }[] = [
     ...(p.propertyType ? [{ icon: 'home', name: 'Home', meta: p.areaSqft ? `${p.propertyType} · ${groupDigits(String(p.areaSqft))} sq ft` : p.propertyType }] : p.areaSqft ? [{ icon: 'home', name: 'Size', meta: `${groupDigits(String(p.areaSqft))} sq ft` }] : []),
     ...(p.rooms.length ? [{ icon: 'kitchen', name: 'Rooms', meta: p.rooms.join(', ') }] : []),
@@ -143,13 +149,14 @@ export function HeardRows({ p, tags }: { p: Profile; tags: string[] }) {
     ...(p.keyCollection ? [{ icon: 'key', name: 'Key collection', meta: p.keyCollection }] : []),
     ...(p.decisionMakers ? [{ icon: 'group', name: 'Who decides', meta: p.decisionMakers }] : []),
     ...(p.household.length ? [{ icon: 'people_alt', name: 'At home', meta: p.household.join(', ') }] : []),
-    ...(p.concerns.length ? [{ icon: 'flag', name: 'Concerns', meta: p.concerns.join(', ') }] : []),
+    ...(p.concerns.length && !noConcerns ? [{ icon: 'flag', name: 'Concerns', meta: p.concerns.join(', ') }] : []),
     ...(p.competitors.length ? [{ icon: 'store', name: 'Also talking to', meta: p.competitors.join(', ') }] : []),
   ]
   return (
     <div className={styles.group} data-testid="heard-rows">
       {rows.length ? rows.map((r) => <Row key={r.name} icon={r.icon} name={r.name} meta={r.meta} wrap />) : <p className={styles.line}>Nothing about the home or the budget was heard yet.</p>}
-      {tags.length ? <p className={styles.tags} data-testid="heard-tags">{tags.map((t) => <span key={t} className={styles.tag}>{t}</span>)}</p> : null}
+      {tags.length && foldTags ? <Row icon={details ? 'keyboard_arrow_up' : 'expand_more'} name={details ? 'Hide details' : 'Show details'} onPress={() => setDetails((d) => !d)} toggle testId="heard-tags-toggle" /> : null}
+      {tags.length && (!foldTags || details) ? <p className={styles.tags} data-testid="heard-tags">{tags.map((t) => <span key={t} className={styles.tag}>{t}</span>)}</p> : null}
     </div>
   )
 }
@@ -218,7 +225,7 @@ export function PortfolioDialog({ open, onClose, matches, all, client }: { open:
 }
 
 /** The objections the client raised, each with the answer the studio saved for it. */
-export function ObjectionRows({ objections, studio }: { objections: { kind: string; said: string; answer: string | null; answerTitle: string | null; competitor: string | null }[]; studio: string }) {
+export function ObjectionRows({ objections }: { objections: { kind: string; said: string; answer: string | null; answerTitle: string | null; competitor: string | null }[]; /** (the calm UI build 2026-10-27, W-172) unused — "Our answer" */ studio?: string }) {
   if (!objections.length) return <p className={styles.line}>No doubts came up.</p>
   return (
     <div className={styles.group} data-testid="brief-objections">
@@ -226,7 +233,7 @@ export function ObjectionRows({ objections, studio }: { objections: { kind: stri
         <div key={i} className={styles.concern} data-kind="objection">
           <div className={styles.tipHead}><Icon name="flag" size={20} weight={300} className={styles.tipIcon} /><span className={styles.tipTitle}>{kindLabel(o.kind)}{o.competitor ? ` · ${o.competitor}` : ''}</span></div>
           <p className={styles.said}>They said: “{o.said}”</p>
-          {o.answer ? <div className={styles.answer}><span className={styles.answerHead}>{studio}’s answer{o.answerTitle ? ` · “${o.answerTitle}”` : ''}</span><span>{o.answer}</span></div> : <p className={styles.note}>No answer saved for this kind yet — Settings › Meetings › Objection answers.</p>}
+          {o.answer ? <div className={styles.answer}><span className={styles.answerHead}>Our answer{o.answerTitle ? ` · “${o.answerTitle}”` : ''}</span><span>{o.answer}</span></div> : <p className={styles.note}>No answer saved for this kind yet — Settings › Meetings › Answers to concerns.</p>}
         </div>
       ))}
     </div>

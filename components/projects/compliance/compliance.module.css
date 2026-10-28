@@ -41,6 +41,19 @@
 .row[data-state='not_needed'] .itemTitle { color: var(--om-color-on-surface-secondary); }
 .meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .toggle { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); display: inline-flex; align-items: center; gap: 2px; }
+/* (the calm UI build 2026-10-27, 3-29) the title is the press that opens the detail — plain words, the chevron after them */
+.itemOpen { display: inline-flex; align-items: flex-start; gap: 2px; padding: 0; margin: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: var(--om-radius-1); }
+.itemOpen:hover .itemTitle { color: var(--om-color-primary-default); }
+.itemOpen:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.itemChev { flex-shrink: 0; margin-top: 2px; color: var(--om-color-on-surface-secondary); }
+@media (hover: none) and (max-width: 1024px) { .itemOpen { min-height: 44px; align-items: center; } }
+.level { color: var(--om-color-on-surface-secondary); }
+.level[data-level='mandatory'] { color: var(--om-color-on-surface-default); }
+/* (the calm UI build 2026-10-27, 3-29) a project's phase is plain headed lists — no frame and no head per category; the rows keep their rule */
+.list { display: flex; flex-direction: column; }
+.list .row.row { padding-left: 0; padding-right: 0; }
+.phaseLine { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.menuRow { display: contents; }
 
 .press { display: inline-flex; }
 .menuWrap { position: relative; display: inline-flex; }

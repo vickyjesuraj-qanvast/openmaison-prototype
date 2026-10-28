@@ -11,9 +11,11 @@ export const STAGE_MOVEMENTS = ['linear', 'flexible'] as const
 export type StageMovement = (typeof STAGE_MOVEMENTS)[number]
 export const DEFAULT_STAGE_MOVEMENT: StageMovement = 'linear'
 
+/* (the calm UI build 2026-10-27, 5-32 · W-240 · W-192 · W-625) the two policies in a studio owner's words — the display labels only: the
+   stored keys stay 'linear' · 'flexible' (STAGE_MOVEMENTS), and every rule reads the keys */
 export const STAGE_MOVEMENT_OPTIONS: { key: StageMovement; title: string; help: string }[] = [
-  { key: 'linear', title: 'Linear', help: 'Stages are completed one at a time. Changing a lead’s stage opens the Move stage window and asks for that stage’s details before it moves on.' },
-  { key: 'flexible', title: 'Flexible', help: 'Leads move instantly to any stage, with no details asked up front. Stage details can be added later from the lead’s journey.' },
+  { key: 'linear', title: 'One stage at a time', help: 'Stages are completed one at a time. Changing a lead’s stage opens the Move stage window and asks for that stage’s details before it moves on.' },
+  { key: 'flexible', title: 'Any stage, any time', help: 'Leads move instantly to any stage, with no details asked up front. Stage details can be added later from the lead’s stages.' },
 ]
 
 export function parseStageMovement(v: unknown): StageMovement {
@@ -233,7 +235,8 @@ export const parseLeadVisibility = (v: unknown): LeadVisibility => (v === 'assig
    one home is Settings › Roles & access; its help names everything it decides, and every other place points there with these words.
    *(invented copy)* */
 export const VISIBILITY_HREF = '/settings?section=studio#lead-visibility'
-export const VISIBILITY_HELP = 'It decides who sees each lead and everything on it — its project, quotes, contracts, files and X‑Ray readings, and its row in Qanvast Ops. Owners and Admins always see every lead and assign anyone.'
+/* (the calm UI build, W-534) in plain words — that Owners and Admins see everything, the second choice card says */
+export const VISIBILITY_HELP = 'Who can see a lead, and its project, quotes and files.'
 export const VISIBILITY_POINTER = 'Who sees which leads — and each lead’s project, quotes and contracts — is set under'
 
 /* ── (REG-602) Lead capture — the website's email intake and Meta Lead Ads ────────────────────────── */

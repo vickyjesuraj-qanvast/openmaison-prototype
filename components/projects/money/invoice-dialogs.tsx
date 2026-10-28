@@ -156,7 +156,7 @@ export function OneOffDialog({ open, initial, gstRate, termsDays, handoverDay, t
   }
   return (
     <Dialog open={open} onClose={onClose} title={initial ? `Edit ${initial.stageName}` : 'New one-off invoice'} size="form" width={800} closeOnScrim={false}
-            subtitle="Billed outside the payment stages — counted in Invoiced and Collected, never in the contract value. It goes as a Draft, then the stage invoices’ way: approval, send, payment, receipt."
+            subtitle="Billed outside the payment schedule — counted in Invoiced and Collected, never in the contract value. It goes as a Draft, then the stage invoices’ way: approval, send, payment, receipt."
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={save} isDisabled={busy} data-testid="oneoff-save">{busy ? 'Saving…' : initial ? 'Save' : 'Save as Draft'}</Button></>}>
       <div className={styles.fields} data-testid="oneoff-dialog">
         <div>
@@ -346,7 +346,7 @@ export function SplitDialog({ open, split, valueMinor, busy, onClose, onSave }: 
         <label className={own.switchRow} data-testid="split-fee-first" data-off={split?.feeFirst ? undefined : ''}>
           <Switch size="sm" isSelected={f.feeFirst} isDisabled={!split?.feeFirst && !f.feeFirst} onChange={(v: boolean) => setF((x) => ({ ...x, feeFirst: v }))} aria-label="The first stage is a fixed amount" />
           <span>The first stage is a fixed amount <span className={styles.sub}>{split?.feeFirst ? '· a design fee — the shares split what it leaves' : '· off for the studio — an Owner or an Admin switches it on in Settings › Finance › Invoices'}</span></span></label>
-        <div className={own.lines} role="list" aria-label="Payment stages" data-testid="split-rows">
+        <div className={own.lines} role="list" aria-label="Payments" data-testid="split-rows">
           {f.rows.map((r, i) => (
             <div key={r.id} className={own.splitRow} role="listitem" data-testid="split-row">
               <TextField className={own.lineDesc} label="Stage" value={r.name} onChange={(v) => setRow(r.id, { name: v })} maxLength={60} size="s" />

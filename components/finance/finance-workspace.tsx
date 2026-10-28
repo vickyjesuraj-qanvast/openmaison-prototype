@@ -42,6 +42,9 @@ import fin from './finance.module.css'
  * kind's own status chips moved into one scope pill ("Status: All ▾", the galleries' REG-666 pattern), and below it the kind's table exactly as
  * it was (`cost-tables.tsx`), its help line keeping the Owners' figures. One New ▾ (Purchase order · Supplier bill · Expense) for every kind.
  * The old tabs' addresses land here on their kind (app/company/finance/<old>/page.tsx). **Vendors** is its own tab, as it was.
+ * (the calm UI build 2026-10-27 — 5-06 · 5-27 · 5-28) the tab reads **Costs** and its kinds Purchase orders · Supplier bills · Expenses · Payments
+ * made (the chip and its list's title the same words); one toolbar order on every Finance tab — search · kind chips (no counts) · Status pill ·
+ * New ▾ at the end — and Vendors' chips without counts.
  */
 const STATUS: Record<MoneyOutKind, { value: string; label: string }[]> = {
   'purchase-orders': [{ value: 'todo', label: 'With the studio' }, { value: 'out', label: 'With the vendor' }, { value: 'done', label: 'Done' }],
@@ -58,6 +61,8 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
   const runs = data.viewer.runs
   const c = useCosts({ summary: s, vendors: data.vendors, projects: data.projects, fixed: null, rules: data.rules, viewer: data.viewer, people: data.people, trades: data.trades, gstRate: data.gstRate, now: data.now, studio: data.studio, entities: data.entities, categories: data.categories })
   const projectName = (id: string | null) => (id ? data.projects.find((p) => p.id === id)?.name ?? '' : 'Studio overhead')
+  /* (the calm UI build 2026-10-27, 5-26) one Project cell everywhere — the client, then the number and the project's words */
+  const projectOf = (id: string | null) => { const p = id ? data.projects.find((x) => x.id === id) : null; return p ? { number: p.number, name: p.name, client: p.client } : null }
   const expLocked = usePlanLock('expense_management').locked   // (pending modules S19) expenses are Pro
   const vp = useVendorPanel({ vendors: c.vendors, summary: s, trades: data.trades, viewer: data.viewer, projectName, initial: tab === 'vendors' ? params.get('open') : null, crew })
   /* the kind rides the address; a link to another kind of this tab moves the switch with it (the render-phase adjust) */
@@ -140,25 +145,29 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
     } catch (e) { snackbar({ message: couldnt('add the vendor', refusalOf(e)) }) } finally { setBusy(false) }
   }
 
-  const count = (label: string, n: number) => `${label} · ${n}`
   const newBtn = (label: string, run: () => void, testId: string, show = true) => (show ? <Button iconStart={<Icon name="add" size={20} />} onPress={run} data-kb="create" data-kb-label={label} data-testid={testId}>{label}</Button> : null)
 
   if (tab === 'vendors') {
     const active = vendors.filter((v) => v.isActive && !v.mergedInto), inactive = vendors.filter((v) => !v.isActive || v.mergedInto)
     const onSite = active.filter((v) => !!v.contractor)   // (S45B · H-UHD-2 — 1.0's Contractors filter) the vendors who work on site
     const shown = chip === 'inactive' ? inactive : chip === 'all' ? active : chip === 'contractors' ? onSite : vendors
+    /* (the calm UI build 2026-10-27 — 5-27 · 5-43 · W-216, T-07) the chips without counts; Inactive (and All, which is then Active again) only while
+       a vendor is inactive — a choice that would show nothing is not offered; the Status column only where the list can hold more than one state */
+    const offerInactive = inactive.length > 0 || chip === 'inactive' || chip === 'everyone'
+    const chipOptions = [{ value: 'all', label: 'Active' }, ...(onSite.length || chip === 'contractors' ? [{ value: 'contractors', label: 'Contractors' }] : []),
+      ...(offerInactive ? [{ value: 'inactive', label: 'Inactive' }, { value: 'everyone', label: 'All' }] : [])]
     const counts = (id: string) => { const b = s.byVendor.find((x) => x.vendorId === id); return { pos: s.pos.filter((p) => p.vendorId === id).length, committed: b?.committedMinor ?? 0, owed: b?.owedMinor ?? 0, overdue: b?.overdueMinor ?? 0 } }
     return (
       <FinanceFrame tab="vendors" runs={runs} todoCount={todoCount}>
         <div className={fin.page} data-testid="finance-vendors">
           <div className={fin.toolbar}>
             <span className={fin.search}><SearchBar appearance="outlined" size="md" placeholder="Search vendors, trades, people" aria-label="Search vendors, trades, people" value={query} onChange={setQuery} /></span>
-            <Chips label="Show" options={[{ value: 'all', label: count('Active', active.length) }, ...(onSite.length || chip === 'contractors' ? [{ value: 'contractors', label: count('Contractors', onSite.length) }] : []), { value: 'inactive', label: count('Inactive', inactive.length) }, { value: 'everyone', label: count('All', vendors.length) }]} value={chip} onChange={setChip} testId="finance-chips" />
+            <Chips label="Show" options={chipOptions} value={chip} onChange={setChip} testId="finance-chips" />
             <span className={fin.toolEnd}>{newBtn('New vendor', () => setAdding(true), 'finance-new-vendor')}</span>
           </div>
-          <VendorTable table="finance-vendors" vendors={shown} counts={counts} figures={data.viewer.seesFigures} open={vp.open} menu={vp.menu} focus={c.focus}
+          <div className={fin.grows}><VendorTable table="finance-vendors" vendors={shown} counts={counts} figures={data.viewer.seesFigures} open={vp.open} menu={vp.menu} focus={c.focus} status={chip === 'inactive' || chip === 'everyone'}
                        help={data.viewer.changesVendor ? 'The studio’s sub-contractors and suppliers. Merge a duplicate into the one that stays; deactivate one you no longer use.' : 'The studio’s sub-contractors and suppliers — add one when you need it.'}
-                       empty={q ? 'No vendor matches.' : 'No vendors yet — add the studio’s first.'} />
+                       empty={q ? 'No vendor matches.' : 'No vendors yet — add the studio’s first.'} /></div>
           <VendorDialog open={adding} initial={null} trades={data.trades} bank={data.viewer.seesBank} busy={busy} onClose={() => setAdding(false)} onSave={(i) => { void addVendor(i) }} />
         </div>
         {c.dialogs}
@@ -198,9 +207,10 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
   const placeholder = kind === 'purchase-orders' ? 'Search POs, vendors, projects' : kind === 'bills' ? 'Search bills, vendors, projects' : kind === 'expenses' ? 'Search expenses, projects, people' : 'Search payments, vendors, people'
   const search = <SearchBar appearance="outlined" size="md" placeholder={placeholder} aria-label={placeholder} value={query} onChange={setQuery} />
   const kindChips = <Chips label="Kind" options={kinds.map((k) => ({ value: k.key, label: k.label }))} value={kind} onChange={(v) => pickKind(v as MoneyOutKind)} testId="money-out-kinds" />
+  /* (the calm UI build 2026-10-27, 5-10) the pill keeps its name on a phone — "Status: All ▾", never a bare "All ▾" */
   const statusPill = (
     <>
-      <span ref={statusAnchor}><ScopePill label={`Status: ${statusLabel}`} short={statusLabel} open={statusOpen} scoped={chip !== 'all'} onClick={() => setStatusOpen((o) => !o)} /></span>
+      <span ref={statusAnchor}><ScopePill label={`Status: ${statusLabel}`} open={statusOpen} scoped={chip !== 'all'} onClick={() => setStatusOpen((o) => !o)} /></span>
       <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Status">
         <DropdownItem role="menuitemradio" checked={chip === 'all'} onSelect={() => { setStatusOpen(false); setChip('all') }}>All · {allCount}</DropdownItem>
         {STATUS[kind].map((x) => <DropdownItem key={x.value} role="menuitemradio" checked={chip === x.value} onSelect={() => { setStatusOpen(false); setChip(x.value) }}>{x.label} · {countOf(x.value)}</DropdownItem>)}
@@ -230,16 +240,16 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
   /* (MO-079) the studio's sum said for the entity picked — the same records, the scope's share (costsOf's numbers, added, never recomputed) */
   const scopedCommitted = scope ? pos.reduce((x, p) => x + p.committedMinor, 0) + bills.reduce((x, b) => x + b.committedMinor, 0) + expenses.reduce((x, e) => x + e.committedMinor, 0) : 0
   const scopedOwed = scope ? pos.reduce((x, p) => x + p.balanceMinor, 0) + bills.filter((b) => !b.poId).reduce((x, b) => x + b.balanceMinor, 0) + expenses.reduce((x, e) => x + e.owedMinor, 0) : 0
-  const scopedHelp = scope ? `${money2(scopedCommitted)} committed under ${scope.label} · ${money2(scopedOwed)} still to pay` : ''
+  const scopedHelp = scope ? `${money2(scopedCommitted)} committed under ${scope.label} · ${money2(scopedOwed)} to pay` : ''   // (the calm UI build, 5-06) "to pay" — the one word
   let table: React.ReactNode = null
   if (kind === 'purchase-orders') {
     const shown = chip === 'todo' ? posTodo : chip === 'out' ? posOut : chip === 'done' ? posDone : pos
-    table = <PoTable table="finance-pos" pos={shown} vendors={c.vendors} studio projectName={projectName} open={c.openPo} next={c.poNext} menu={c.poMenu} focus={c.focus} billRef={billRef} entityOf={chipOf?.po}
-                     help={data.viewer.seesFigures ? (scope ? scopedHelp : `${money2(s.committedMinor)} committed across the studio · ${money2(s.owedMinor)} still to pay${s.overdueMinor ? ` · ${money2(s.overdueMinor)} overdue` : ''}`) : 'The POs of the projects you work on.'}
+    table = <PoTable table="finance-pos" pos={shown} vendors={c.vendors} studio projectName={projectName} projectOf={projectOf} open={c.openPo} next={c.poNext} menu={c.poMenu} focus={c.focus} billRef={billRef} entityOf={chipOf?.po}
+                     help={data.viewer.seesFigures ? (scope ? scopedHelp : `${money2(s.committedMinor)} committed across the studio · ${money2(s.owedMinor)} to pay${s.overdueMinor ? ` · ${money2(s.overdueMinor)} overdue` : ''}`) : 'The POs of the projects you work on.'}
                      empty={q ? 'No PO matches.' : 'No purchase orders yet — a project’s team raises them from its Money tab, or here.'} />
   } else if (kind === 'bills') {
     const shown = chip === 'unpaid' ? bills.filter((b) => b.state !== 'paid') : chip === 'overdue' ? bills.filter((b) => b.state === 'overdue') : chip === 'paid' ? bills.filter((b) => b.state === 'paid') : bills
-    table = <BillTable table="finance-bills" bills={shown} vendors={c.vendors} pos={s.pos} studio projectName={projectName} open={c.openBill} next={c.billNext} menu={c.billMenu} focus={c.focus} entityOf={chipOf?.bill}
+    table = <BillTable table="finance-bills" bills={shown} vendors={c.vendors} pos={s.pos} studio projectName={projectName} projectOf={projectOf} open={c.openBill} next={c.billNext} menu={c.billMenu} focus={c.focus} entityOf={chipOf?.bill}
                        help={runs ? 'Supplier bills on every project and the studio’s overhead. Drop a bill’s PDF and it is read for you.' : 'Supplier bills on the projects you work on.'}
                        empty={q ? 'No bill matches.' : 'No supplier bills recorded yet.'} />
   } else if (kind === 'expenses' && expLocked) {
@@ -248,12 +258,12 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
     table = <ProLocked feature="expense_management" kept={expenses.length ? `Your ${expenses.length} ${expenses.length === 1 ? 'expense is' : 'expenses are'} kept and still count in the reports` : null} testId="expenses-locked" />
   } else if (kind === 'expenses') {
     const shown = chip === 'waiting' ? expenses.filter((e) => e.state === 'pending' || e.state === 'sent_back') : chip === 'payback' ? expenses.filter((e) => e.state === 'to_pay_back') : chip === 'mine' ? expenses.filter((e) => e.createdBy === data.viewer.id || e.claimantId === data.viewer.id) : expenses
-    table = <ExpenseTable table="finance-expenses" expenses={shown} people={data.people} studio projectName={projectName} open={c.openExpense} next={c.expenseNext} menu={c.expenseMenu} focus={c.focus} entityOf={chipOf?.expense}
+    table = <ExpenseTable table="finance-expenses" expenses={shown} people={data.people} studio projectName={projectName} projectOf={projectOf} open={c.openExpense} next={c.expenseNext} menu={c.expenseMenu} focus={c.focus} entityOf={chipOf?.expense}
                           help={`${runs ? 'Every expense and claim — on projects and the studio’s overhead.' : 'Your expenses and claims, and those on the projects you work on.'}${data.viewer.seesFigures && s.claimsOwedMinor ? ` ${money2(s.claimsOwedMinor)} to pay back to the team.` : ''}`}
                           empty={q ? 'No expense matches.' : 'No expenses logged yet.'} />
   } else {
     const shown = chip === 'vendors' ? payouts.filter((p) => p.kind !== 'claim') : chip === 'claims' ? payouts.filter((p) => p.kind === 'claim') : payouts
-    table = <PayoutTable table="finance-payouts" payouts={shown} label={payoutLabel} to={payoutTo} projectName={projectName} menu={c.payoutMenu} focus={c.focus} entityOf={chipOf?.payout}
+    table = <PayoutTable table="finance-payouts" payouts={shown} label={payoutLabel} to={payoutTo} projectName={projectName} projectOf={projectOf} menu={c.payoutMenu} focus={c.focus} entityOf={chipOf?.payout}
                          help={`${money2(s.paidMinor - s.expenses.filter((e) => e.status === 'approved' && e.paidBy !== 'member').reduce((x, e) => x + e.amountMinor, 0))} paid out — a payment is recorded from its PO, bill or claim.`}
                          empty={q ? 'No payment matches.' : 'Nothing paid out yet — pay from a PO, a bill or a claim.'} />
   }
@@ -275,7 +285,7 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
             {newMenu}
           </div>
         )}
-        <div className={fin.kindBody} data-testid={`finance-${legacy}`}>{table}</div>
+        <div className={`${fin.kindBody} ${fin.grows}`} data-testid={`finance-${legacy}`}>{table}</div>
       </div>
       {c.dialogs}
       {vp.node}

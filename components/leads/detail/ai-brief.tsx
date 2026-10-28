@@ -3,14 +3,14 @@
 import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, Tag } from '@/components/ds'
+import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Bone } from '@/components/shell/skeleton'
 import { GhostField, Line, Slot, Words } from '@/components/shell/ghost-kit'
 import { MaisonAnswerPanel, type MaisonView } from '@/components/shell/maison-answer'
 import { duration, ease } from '@/lib/motion'
 import { isProposal, type MaisonRow, type MaisonSuggestion } from '@/lib/maison-ai'
-import { briefsFor, type Brief, type BriefLead } from '@/lib/leads/briefs'
+import { OPEN_PROJECT, briefsFor, type Brief, type BriefLead } from '@/lib/leads/briefs'
 import styles from './ai-brief.module.css'
 
 /**
@@ -27,8 +27,11 @@ import styles from './ai-brief.module.css'
  * and Back, Not now or a done proposal return to the brief. Words with nothing behind them still reach `onAction` (the house "Coming soon").
  * `briefs` hands the card a record's own briefs (a project's, P-02) in place of the lead's `briefsFor(stage, lead)`.
  */
-function BriefCard({ brief, onAction, view, onBack, onRow, onDone, ask }: {
+function BriefCard({ brief, onAction, view, onBack, onRow, onDone, ask, single = false }: {
   brief: Brief; onAction: (label: string) => void
+  /** (the calm UI build 2026-10-27 — audit 2-01) the lead's one card: no tag (the stages card says where the lead is), one action — the
+   *  other is the Maison AI sheet's, as are the other briefs' */
+  single?: boolean
   /** The pressed action's answer or proposal, in the body's place. */
   view: MaisonView | null; onBack: () => void; onRow: (r: MaisonRow) => void; onDone: () => void
   /** (pending modules S22) the Dashboard's Ask box, between the brief and its two buttons */
@@ -40,9 +43,11 @@ function BriefCard({ brief, onAction, view, onBack, onRow, onDone, ask }: {
         <div className={styles.eyebrow}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/figma-assets/brief-sparkle.svg" width={17} height={17} alt="" className={styles.sparkle} />
-          <span className={styles.eyebrowText}>MAISON AI BRIEF</span>
+          {/* (the calm UI build 2026-10-27 — W-247 · T-06) the eyebrow says "Maison AI" once, in sentence case */}
+          <span className={styles.eyebrowText}>Maison AI</span>
         </div>
-        <Tag appearance="filled" color="yellow" className={styles.tag}>{brief.tag}</Tag>
+        {/* (T-06) a brief's tag is not a status: grey sentence-case words, never the CAPS yellow tag — and none on the lead's one card */}
+        {single || !brief.tag ? null : <span className={styles.tagText}>{brief.tag}</span>}   {/* (the calm UI build — B3's 3-30) an empty tag draws nothing */}
       </div>
       {view ? (
         <div className={styles.answer} data-testid="brief-answer">
@@ -55,7 +60,7 @@ function BriefCard({ brief, onAction, view, onBack, onRow, onDone, ask }: {
           </p>
           {ask ? <div className={styles.ask}>{ask}</div> : null}
           <div className={styles.actions}>
-            {brief.actions.map((label) => (
+            {(single ? [brief.actions.find((a) => a !== OPEN_PROJECT) ?? brief.actions[0]] : brief.actions).map((label) => (
               <Button key={label} variant="primary" appearance="outlined" onPress={() => onAction(label)}>{label}</Button>
             ))}
           </div>
@@ -72,7 +77,11 @@ export function AiBrief({
   actions,
   briefs: given,
   ask,
+  single = false,
 }: {
+  /** (the calm UI build 2026-10-27 — audit 2-01) the lead's Overview: ONE card with one action and no Show more — the other briefs' actions
+   *  are the Maison AI sheet's (the page registers them). A record's own `briefs` (a project's) keep their stack. */
+  single?: boolean
   stage: string
   /** The lead whose stage's briefs the card shows — (pending modules S22) not needed when `briefs` are given (the Dashboard's). */
   lead?: BriefLead
@@ -123,9 +132,9 @@ export function AiBrief({
     onAction(label)
   }
   const first = briefs[0]
-  const rest = briefs.slice(1)
+  const rest = single ? [] : briefs.slice(1)
   if (!first) return null
-  const card = (b: Brief) => <BriefCard key={b.tag} brief={b} onAction={(label) => press(b.tag, label)} view={viewOf(b.tag)} onBack={back} onRow={row} onDone={back} ask={b === first ? ask : undefined} />
+  const card = (b: Brief) => <BriefCard key={b.tag} brief={b} single={single} onAction={(label) => press(b.tag, label)} view={viewOf(b.tag)} onBack={back} onRow={row} onDone={back} ask={b === first ? ask : undefined} />
 
   return (
     <section className={styles.block} aria-label="Maison AI brief" data-expanded={open || undefined}>
@@ -164,21 +173,22 @@ export function AiBrief({
  * box, two lines of the brief, the two buttons — then the Show more row. The lead Overview's ghost draws it; a record with the brief (a project's
  * Overview, P-02) draws the same one.
  */
-export function AiBriefGhost({ more = true, ask = false }: { more?: boolean; /** (pending modules S22) the Dashboard's Ask box under the brief */ ask?: boolean }) {
+export function AiBriefGhost({ more = false, ask = false, single = true }: { more?: boolean; /** (pending modules S22) the Dashboard's Ask box under the brief */ ask?: boolean
+  /** (the calm UI build 2026-10-27) the lead's one card — no tag, one button; a project's stack passes `single={false}` */ single?: boolean }) {
   return (
     <div className={styles.block} aria-hidden>
       <div className={styles.card}>
         <div className={styles.head}>
           <div className={styles.eyebrow}>
             <Bone w={17} h={17} r="50%" />
-            <Words className={styles.eyebrowText}>MAISON AI BRIEF</Words>
+            <Words className={styles.eyebrowText}>Maison AI</Words>
           </div>
-          <Slot kind="chip" w={156} className={styles.tag} />
+          {single ? null : <Line w={156} lh={16} h={10} className={styles.tagText} />}
         </div>
         <div className={styles.body}>
           <div className={styles.ghostText}><Line w="94%" lh={20} h={12} /><Line w="62%" lh={20} h={12} /></div>
           {ask ? <div className={styles.ask}><GhostField say="Answers from your records" /></div> : null}
-          <div className={styles.actions}><Slot kind="btn" w={168} /><Slot kind="btn" w={196} /></div>
+          <div className={styles.actions}><Slot kind="btn" w={168} />{single ? null : <Slot kind="btn" w={196} />}</div>
         </div>
       </div>
       {more ? <div className={styles.toggleRow}><Line w={92} lh={20} h={12} /></div> : null}

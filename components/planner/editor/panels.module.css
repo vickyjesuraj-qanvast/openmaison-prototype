@@ -12,6 +12,8 @@
 .card { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
 .cardHead { display: flex; align-items: center; gap: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); }
 .cardTitle { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+/* (the calm UI build, 6-16) a card head with a second line (the floor plan's name) and its ⋮ at the end */
+.cardHeadText { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
 .cardText { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .switchRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; }
 .link { align-self: flex-start; min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subtitle-s); color: var(--om-color-primary-default); }

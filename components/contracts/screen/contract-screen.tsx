@@ -12,6 +12,7 @@ import { ScreenBar } from '@/components/quotes/screen/screen-bar'
 import { Fold } from '@/components/quotes/screen/quote-screen'
 import type { ContractMoment, ContractNext, ContractPrimary } from '@/lib/contracts/next-step'
 import { displayDate, displayDateTime, phoneDigits, phoneLocal } from '@/lib/format'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01) a quote's state in the one set of words
 import qs from '@/components/quotes/screen/quote-screen.module.css'
 import styles from './contract-screen.module.css'
 
@@ -101,12 +102,12 @@ export function ContractScreen({
                        <DropdownItem onSelect={pick('markSigned')} disabled={signed} title={signed ? 'It is signed' : undefined}>Mark as signed…</DropdownItem>
                        {status === 'Sent to Client' ? <DropdownItem onSelect={pick('stop')} help="Back to Draft — the client’s link stops opening">Stop the signing link</DropdownItem> : null}
                        {signed ? null : <DropdownItem onSelect={pick('recipient')}>Edit recipient</DropdownItem>}
-                       <DropdownItem onSelect={pick('automation')}>Automation</DropdownItem>
+                       <DropdownItem onSelect={pick('automation')}>Reminders…</DropdownItem>
                        <DropdownDivider />
                        <DropdownLabel>Share</DropdownLabel>
-                       <DropdownItem onSelect={pick('copy')} help={status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy signing link</DropdownItem>
-                       <DropdownItem onSelect={pick('template')} disabled={menu.uploaded} title={menu.uploaded ? 'An uploaded PDF has no document to save' : undefined}>Save as Template</DropdownItem>
-                       <DropdownItem onSelect={pick('duplicate')}>Duplicate and Edit</DropdownItem>
+                       <DropdownItem onSelect={pick('copy')} help={status === 'Draft' ? 'Copying it sends the contract' : undefined}>Copy signing link</DropdownItem>
+                       <DropdownItem onSelect={pick('template')} disabled={menu.uploaded} title={menu.uploaded ? 'An uploaded PDF has no document to save' : undefined}>Save as template</DropdownItem>
+                       <DropdownItem onSelect={pick('duplicate')}>Duplicate and edit</DropdownItem>
                        <DropdownDivider />
                        <DropdownLabel>Export</DropdownLabel>
                        <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
@@ -133,12 +134,12 @@ export function ContractScreen({
             </button>
             <span className={qs.anchor} style={{ display: 'flex' }}>
               <button type="button" className={styles.row} style={{ flex: 1 }} onClick={onQuoteRow} aria-haspopup={signed ? undefined : 'menu'} data-testid="hero-quote"
-                      aria-label={quote ? `Quote ${quote.number} · ${quote.amountText} · ${quote.status}${quote.gone ? ` — the quote was ${quote.gone}` : ''}` : 'No quote named'}>
+                      aria-label={quote ? `Quote ${quote.number} · ${quote.amountText} · ${quoteStatusLabel(quote.status)}${quote.gone ? ` — the quote was ${quote.gone}` : ''}` : 'No quote named'}>
                 <span className={styles.rowIcon}><Icon name="request_quote" size={20} weight={300} /></span>
                 <span className={styles.rowText}>
                   {quote ? <>
                     <span className={styles.rowValue}>{quote.number} · {quote.amountText}</span>
-                    <MetaChip color={quote.status === 'Signed' ? 'green' : quote.status === 'Draft' || quote.status === 'Sent for Approval' ? 'yellow' : 'default'}>{quote.status}</MetaChip>
+                    <MetaChip color={quote.status === 'Signed' ? 'green' : quote.status === 'Draft' || quote.status === 'Sent for Approval' ? 'yellow' : 'default'}>{quoteStatusLabel(quote.status)}</MetaChip>
                     {quote.gone ? <span className={styles.rowWarn} title={`The quote was ${quote.gone}`}><Icon name="warning" size={16} /></span> : null}
                   </> : <span className={styles.rowLabel}>No quote named</span>}
                 </span>
@@ -189,7 +190,7 @@ export function ContractScreen({
             </ul>
             {editLink('gates', 'Edit the rules')}
           </Fold>
-          <Fold title="Automation" meta={[folds.automation.reminders ? 'Follow-up task 3 days after sending' : null, folds.automation.thankYou ? 'Thank-you task when signed' : null].filter(Boolean).join(' · ') || 'Off'} testId="fold-automation">
+          <Fold title="Reminders" meta={[folds.automation.reminders ? 'Follow-up task 3 days after sending' : null, folds.automation.thankYou ? 'Thank-you task when signed' : null].filter(Boolean).join(' · ') || 'Off'} testId="fold-automation">
             <ul className={styles.foldRows}>
               <li className={styles.foldRow}><span>Remind me to follow up</span><span className={styles.foldRowMeta} data-on={folds.automation.reminders ? '' : undefined}>{folds.automation.reminders ? 'on' : 'off'}</span></li>
               <li className={styles.foldRow}><span>Remind me to thank the client</span><span className={styles.foldRowMeta} data-on={folds.automation.thankYou ? '' : undefined}>{folds.automation.thankYou ? 'on' : 'off'}</span></li>

@@ -39,6 +39,14 @@
 .notes::placeholder { color: var(--om-color-on-surface-disabled); }
 .notesBar { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; padding: 0 var(--om-spacing-2); }
 .standIn { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; padding: 0 var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 2-09) the one line, then its "?" — the prototype's note in the house tooltip; the 44 box sits on the line */
+.standIn { align-items: center; }
+.standInText { flex: 1; min-width: 0; }
+/* (the calm UI build 2026-10-27, 2-21 · T-06) the header's day and place beside the status tag: sentence-case secondary words, not a tag */
+.headMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+/* (the calm UI build 2026-10-27, 2-48) before the meeting the checklist reads as what to ask — the house body text, not a disabled control */
+.checkPlain { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.checkPlain > :global(.msr), .checkPlain > :global(.mso) { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .saved { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .tools { display: flex; gap: var(--om-spacing-3); flex-wrap: wrap; padding: 0 var(--om-spacing-2) var(--om-spacing-2); }
 

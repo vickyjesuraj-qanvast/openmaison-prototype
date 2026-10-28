@@ -72,7 +72,7 @@ export function WithClientCard({ d, onInvite, onAsk, onPost, onOpenTab, onOpenIt
     )),
     ...studioWaits.map((x, i) => <Row key={`${x.key}-${i}`} two icon="hourglass_top" name={x.text} caption={x.caption} onPress={onOpenItem(x)} testId="with-waiting" />),
     ...(running ? [
-      <Row key="last-told" two icon="article" name={wc.lastTold ? `Last told ${first} ${lastDays === 0 ? 'today' : lastDays === 1 ? 'yesterday' : `${dayWords(lastDays!)} ago`}` : `${first} hasn’t had an update yet`}
+      <Row key="last-told" two icon="article" name={wc.lastTold ? `Last update to ${first}: ${lastDays === 0 ? 'today' : lastDays === 1 ? 'yesterday' : `${dayWords(lastDays!)} ago`}` : `${first} hasn’t had an update yet`}   /* (the calm UI build 2026-10-27, W-537) */
            caption={wc.lastTold ? `“${wc.lastTold.title}”` : undefined}
            href={wc.lastTold ? link(`/projects/${p.id}/updates?open=${encodeURIComponent(wc.lastTold.id)}`) : undefined}
            actions={d.mayChange ? [{ label: 'Post an update', onPress: onPost, testId: 'with-post' }] : undefined} testId="with-last-told" />,

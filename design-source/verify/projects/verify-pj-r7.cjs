@@ -10,6 +10,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'r7')
@@ -78,6 +79,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     ok(!/As Schedule defaults says/.test(await p.locator('[data-testid="schedule-settings"]').innerText()), 'no "As Schedule defaults says" — a type with no pick shows the studio default')
     await shot('settings-projects-1440', true)
     await go('/settings?section=studio')
+    await openRoles(p)   // (the calm UI build 2026-10-27, a deliberate change)
     const may = async (k) => (await p.locator(`[data-testid="may-${k}"]`).count()) ? p.locator(`[data-testid="may-${k}"]`).innerText() : ''
     const rowsTxt = await Promise.all(['project-see', 'project-create', 'project-change', 'project-schedule', 'project-update', 'project-update-approve', 'project-choices', 'project-vo', 'project-handover', 'project-handover-anyway', 'project-handover-review', 'project-reopen', 'project-delete', 'portal-access', 'portal-setup', 'invoice-send'].map(may))
     ok(rowsTxt.every(Boolean), 'Who may do what lists every project action the server checks (16 rows)')
@@ -104,12 +106,16 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await p.locator('[data-testid="handover-checklist"]').waitFor({ timeout: 8000 })
     ok(await p.locator('[data-testid="check-milestones"]').getAttribute('data-met') === 'no' && /aren’t done yet|isn’t done yet/.test(await p.locator('[data-testid="check-milestones"]').innerText()), 'unmet: the milestones not done, by name')
     ok(await p.locator('[data-testid="check-money"]').getAttribute('data-met') === 'no' && /still to collect|isn’t invoiced yet|wait for approval/.test(await p.locator('[data-testid="check-money"]').innerText()), 'unmet: money outstanding, read from the money module')
-    ok(await p.locator('[data-testid="check-milestones-go"]').count() === 1 && await p.locator('[data-testid="check-money-go"]').count() === 1, 'each unmet item has its own button')
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-17) one verb on a row, the rest in its ⋮: Money's verb is its fix (Send the invoice), its
+       door (Open Money) one press away in the ⋮ */
+    const moneyGo = async () => { if (!(await p.locator('[data-testid="check-money-go"]').count())) { await p.locator('[data-testid="check-money-more"]').click(); await p.waitForTimeout(300) } return p.locator('[data-testid="check-money-go"]').first() }
+    ok(await p.locator('[data-testid="check-milestones-go"]').count() === 1 && await (await moneyGo()).count() === 1, 'each unmet item has its own button')
+    await p.keyboard.press('Escape'); await p.waitForTimeout(200)
     /* (simplify S-19) the Hand over sheet's new row — no ticket waits on the studio — deferrable as every row is */
     ok(await p.locator('[data-testid="check-tickets"]').count() === 1, 'S-19: the checklist carries "No ticket waits on the studio"')
-    ok(/Complete anyway/.test(await primary().innerText()), 'an Owner gets Complete anyway')
+    ok(/Hand over anyway/.test(await primary().innerText()), 'an Owner gets Hand over anyway')   // (the calm UI build 2026-10-27, a deliberate change) was Complete anyway
     await p.waitForTimeout(600); await shot('handover-checklist-1440')
-    await p.locator('[data-testid="check-money-go"]').click()
+    await (await moneyGo()).click()
     await p.waitForURL(/\/money/, { timeout: 8000 }); await p.waitForTimeout(900)
     ok(/\/projects\/[^/]+\/money/.test(p.url()) && !(await handover().count()), 'an item’s button closes the dialog and opens the tab that fixes it')
     await stageTo('Completed')
@@ -131,7 +137,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
        final bill, an expense — the server takes them), never the Bill {client} group */
     { const nw = p.locator('[data-testid="money-new"]')
       let billGroup = 0
-      if (await nw.count()) { await nw.click(); await p.waitForTimeout(300); billGroup = await p.getByRole('menuitem', { name: /^(Variation order|One-off invoice|Record an invoice made elsewhere)/ }).count(); await p.keyboard.press('Escape'); await p.waitForTimeout(200) }
+      if (await nw.count()) { await nw.click(); await p.waitForTimeout(300); billGroup = await p.getByRole('menuitem', { name: /^(Variation order|Invoice$|One-off invoice|Record an invoice made elsewhere)/ }).count();   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */ await p.keyboard.press('Escape'); await p.waitForTimeout(200) }
       ok(billGroup === 0 && await p.locator('[data-testid="invoice-send"], [data-testid="invoice-submit"], [data-testid="money-rebalance"]').count() === 0, 'the Money tab offers no New variation order, no Send, no Re-size — what the server refuses (REG-1069)') }
     ok(/Its schedule, choices and agreed money are read-only until you reopen it — payments, updates, tasks and its team stay open/.test(await bar().innerText()) && await p.locator('[data-testid="handover-bar-reopen"]').count() === 1, 'the bar names Reopen as the way back')
     const draftRow = p.locator('[data-testid="money-stages"] [role="row"]').filter({ hasText: /^Completion/ }).first()
@@ -141,7 +147,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await p.keyboard.press('Escape')
     ok(sql(`select count(*) from quotes where project_id='${ryan}' and kind='variation' and created_at >= ${T0}`) === '0', 'nothing was made')
     await go(`/projects/${ryan}/choices`)
-    ok(await p.getByRole('button', { name: /^Add a choice$/ }).count() === 0 && await p.locator('[data-testid="choice-share"], [data-testid="choice-choose"], [data-testid="choice-change"], [data-testid="choice-add-option"], [data-testid="choice-draft-vo"]').count() === 0, 'the Choices tab reads only — nothing to add, share, pick or draft (REG-1069)')
+    ok(await p.getByRole('button', { name: /^(Add a choice|New choice)$/ }).count() === 0 && await p.locator('[data-testid="choice-share"], [data-testid="choice-choose"], [data-testid="choice-change"], [data-testid="choice-add-option"], [data-testid="choice-draft-vo"]').count() === 0, 'the Choices tab reads only — nothing to add, share, pick or draft (REG-1069)')   // (the calm UI build 2026-10-27, a deliberate change) New choice was Add a choice
     await shot('completed-choices-1440')
     await go(`/projects/${ryan}/money`)
     await go(`/projects/${ryan}/schedule`)
@@ -216,7 +222,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     await go(`/projects/${tPid}`)
     await kebab(); await menu(/^Delete\b/).click(); await p.waitForTimeout(1200)
-    ok(/Deleted Projects/.test(await p.locator('[data-testid="delete-project-dialog"]').innerText()), 'a project with no money: Delete says where it goes')
+    ok(/Deleted projects/i.test(await p.locator('[data-testid="delete-project-dialog"]').innerText()), 'a project with no money: Delete says where it goes')   /* (the calm UI build 2026-10-27, a deliberate change) sentence case; Delete forever is the row's ⋮ (3-47 · 3-40) */
     await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Delete' }).click(); await p.waitForTimeout(2000)
     ok(/\/projects($|\?)/.test(p.url().replace(BASE, '')) && sql(`select deleted_at is not null from projects where id='${tPid}'`) === '1' && sql(`select deleted_at is not null from leads where id='${tLead}'`) === '1', 'soft: the project and its direct client record go to the trash; the page leaves for the listing')
     const undo = snack().getByRole('button', { name: 'Undo' })
@@ -229,7 +235,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await go(`/projects/${tPid}`)
     ok(/\/projects$/.test(p.url().replace(BASE, '')), 'a deleted project’s address lands on the listing')
     await p.locator('[data-testid="projects-workspace"] button[aria-label="More options"]').first().click(); await p.waitForTimeout(300)
-    await p.getByText('Deleted Projects', { exact: true }).click(); await p.waitForTimeout(1500)
+    await p.getByText(/^Deleted projects$/i).click(); await p.waitForTimeout(1500)   /* (the calm UI build 2026-10-27, a deliberate change) sentence case; Delete forever is the row's ⋮ (3-47 · 3-40) */
     const sheet = p.locator('[data-testid="deleted-projects"]')
     ok(await sheet.locator('[data-testid="deleted-project"]').filter({ hasText: tName }).count() === 1 && /Tan Wei Ling[\s\S]*Dane/.test(await sheet.innerText()), 'the Deleted projects sheet: this one, and the seeded one deleted by Dane')
     await shot('deleted-sheet-1440')
@@ -240,9 +246,10 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await kebab(); await menu(/^Delete\b/).click(); await p.waitForTimeout(1000)
     await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Delete' }).click(); await p.waitForTimeout(2000)
     await p.locator('[data-testid="projects-workspace"] button[aria-label="More options"]').first().click(); await p.waitForTimeout(300)
-    await p.getByText('Deleted Projects', { exact: true }).click(); await p.waitForTimeout(1500)
-    await sheet.locator('[data-testid="deleted-project"]').filter({ hasText: tName }).getByRole('button', { name: 'Delete Forever' }).click(); await p.waitForTimeout(400)
-    await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Delete Forever' }).click(); await p.waitForTimeout(1800)
+    await p.getByText(/^Deleted projects$/i).click(); await p.waitForTimeout(1500)   /* (the calm UI build 2026-10-27, a deliberate change) sentence case; Delete forever is the row's ⋮ (3-47 · 3-40) */
+    await sheet.locator('[data-testid="deleted-project"]').filter({ hasText: tName }).locator('[data-testid="deleted-project-more"]').click(); await p.waitForTimeout(400)   /* (the calm UI build 2026-10-27, a deliberate change) sentence case; Delete forever is the row's ⋮ (3-47 · 3-40) */
+    await p.locator('[data-testid="deleted-project-forever"] [role="menuitem"]').click(); await p.waitForTimeout(400)
+    await p.locator('[role="dialog"]').last().getByRole('button', { name: /^Delete forever$/i }).click(); await p.waitForTimeout(1800)
     ok(sql(`select count(*) from projects where id='${tPid}'`) === '0' && sql(`select count(*) from leads where id='${tLead}'`) === '0', 'Delete Forever, after its confirm: the project and its direct client record are gone')
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     as('sarah')
@@ -268,7 +275,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await go(`/leads/${aishaLead}`)
     ok(/Make the project again/.test(await p.locator('[data-testid="header-primary"]').innerText()), 'the Won lead stays Won; its primary reads Make the project again')
     await p.locator('[data-testid="header-primary"] button').click(); await p.waitForTimeout(500)
-    ok(/is in Deleted Projects/.test(await p.locator('[role="dialog"]').last().innerText()), 'it asks first, naming the deleted one and the way to keep it')
+    ok(/is in Deleted [Pp]rojects/.test(await p.locator('[role="dialog"]').last().innerText()), 'it asks first, naming the deleted one and the way to keep it')
     await shot('make-again-1440')
     await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Cancel' }).click()
     sql(`update projects set deleted_at = NULL, deleted_by = NULL where id='${aisha}'`)
@@ -298,7 +305,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await stageTo('Completed')
     await p.locator('[data-testid="handover-checklist"]').waitFor({ timeout: 8000 })
     const items = await p.locator('[data-testid="handover-checklist"] [data-met]').evaluateAll((els) => els.map((e) => `${e.getAttribute('data-testid')}:${e.getAttribute('data-met')}`))
-    ok(items.length >= 3 && items.every((x) => /:yes$/.test(x)) && !/Complete anyway/.test(await primary().innerText()), `her checklist, read in the app: every item met (${items.join(' · ')})`)
+    ok(items.length >= 3 && items.every((x) => /:yes$/.test(x)) && !/Complete anyway|Hand over anyway/.test(await primary().innerText()), `her checklist, read in the app: every item met (${items.join(' · ')})`)
     await p.waitForTimeout(600); await shot('shalini-checklist-1440')
     await p.locator('[role="dialog"]').last().getByRole('button', { name: 'Cancel' }).click(); await p.waitForTimeout(300)
     /* put her ending back at once — the phone below reads her completed bar */

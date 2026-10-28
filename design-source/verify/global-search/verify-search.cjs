@@ -77,7 +77,7 @@ const check = (ok, what, detail = '') => { if (ok) pass++; else fail++; console.
   check(/\/tasks\?open=|\/leads\/[^/]+\/tasks\?open=/.test(page.url()) && await page.getByRole('dialog').first().isVisible().catch(() => false), 'a task opens with its panel', page.url().replace(BASE, ''))
   const noteTitle = q(`SELECT n.title FROM lead_notes n JOIN leads l ON l.id = n.lead_id WHERE n.kind = 'note' AND n.title IS NOT NULL AND n.title != '' AND l.deleted_at IS NULL LIMIT 1`)
   if (noteTitle) {
-    await open(noteTitle, 'Notes & Logs')
+    await open(noteTitle, 'Notes & logs')   // (the calm UI build 2026-10-27, a deliberate change) T-13: the scope reads as the tab
     const sel = await page.locator('[data-testid="note-item"][data-selected], [data-testid="note-item"] [aria-current="true"]').first().innerText().catch(() => '')
     check(/\/notes\?open=/.test(page.url()) && sel.includes(noteTitle.slice(0, 12)), 'a note opens on itself', noteTitle)
   }

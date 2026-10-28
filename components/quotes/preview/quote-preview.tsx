@@ -8,6 +8,7 @@ import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01) the status set on screen
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
 import { TextField } from '@/components/om/text-field'
@@ -285,7 +286,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
           </div>
           <ul className={styles.issues}>
             <li className={styles.issue}>
-              <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was {kept.status} at {money2(kept.amountMinor)}{kept.note ? ` · the client’s request: ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
+              <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was “{quoteStatusLabel(kept.status)}” at {money2(kept.amountMinor)}{kept.note ? ` · the client’s request: ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
               <Button appearance="text" onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Open version {kept.current}</Button>
             </li>
           </ul>
@@ -373,8 +374,8 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
             <div className={styles.reading}>
               {/* the cards' head: the count, and the way to the paper — the confirmation page's own row (quote-stage.tsx) and the Quote screen's */}
               <div className={styles.readHead}>
-                <span className={styles.readCount}>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
-                <Button appearance="text" iconStart={<Icon name="description" size={20} />} onPress={() => togglePaper(true)} data-testid="view-as-printed">As printed</Button>
+                <span className={styles.readCount}>{lineCount} {lineCount === 1 ? 'item' : 'items'}</span>
+                <Button appearance="text" iconStart={<Icon name="description" size={20} />} onPress={() => togglePaper(true)} data-testid="view-as-printed">See it as printed</Button>
               </div>
               <ReadingCards sections={reading.sections} optional={reading.optional} amounts={reading.amounts} totalMinor={totals.totalMinor} after={reading.after} afterTitle={reading.afterTitle} schedule={reading.schedule} />
             </div>
@@ -403,20 +404,22 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
             : quote.project ? [{ label: 'Projects', href: '/projects' }, { label: quote.project.name, href: `/projects/${quote.project.id}` }, { label: 'Money', href: `/projects/${quote.project.id}/money` }, { label: quote.number, href: back }] : [{ label: quote.leadName, href: `/leads/${quote.leadId}/quotes` }, { label: quote.number, href: back }]} />   {/* (REG-536); (fix-D, D-44) a variation order's trail is its project's, as in the editor */}
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{kept ? `Version ${kept.version}` : compare ? `Version ${compare.version}` : 'Preview'}</h1>
+            {/* (the calm UI build 2026-10-27, the UI audit's 4-08 · 4-11) One Preview bar for every paper: ← · {client} / {number} · Preview · ONE status
+                chip · Copy link · Download PDF · Send. The template and the page count are quiet words after the chip (the template still a press
+                that opens the picker); capitals are for the status. */}
             <span className={styles.chips}>
+              <MetaChip>{quoteStatusLabel(status)}</MetaChip>
               {fixed ? <MetaChip>Read-only</MetaChip> : null}
-              {/* (REG-729) The template as the house tag (MetaChip), a press that opens the picker — the editor header's contract chip. */}
-              {readOnly ? <MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip> : <Tooltip label="Change template">
-                <button type="button" className={styles.chipBtn} onClick={openPicker} aria-haspopup="dialog" aria-label={tplLock.locked ? 'Change template, Pro feature' : 'Change template'}><MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip></button>
+              {readOnly ? <span className={styles.templateWords}><Icon name="style" size={16} weight={300} />{template ? `${template.name} · v${template.version}` : 'Studio default'}</span> : <Tooltip label="Change template">
+                <button type="button" className={`${styles.chipBtn} ${styles.templateWords}`} onClick={openPicker} aria-haspopup="dialog" aria-label={tplLock.locked ? 'Change template, Pro feature' : 'Change template'}><Icon name="style" size={16} weight={300} />{template ? `${template.name} · v${template.version}` : 'Studio default'}</button>
               </Tooltip>}
-              <MetaChip>{status}</MetaChip>
-              {pages ? <MetaChip>{pages} page{pages === 1 ? '' : 's'}</MetaChip> : null}
+              {pages ? <span className={styles.pageWords}>{pages} page{pages === 1 ? '' : 's'}</span> : null}
             </span>
           </div>
         </div>
         <div className={styles.actions}>
           {costs ? <label className={styles.internal}><Switch size="sm" isSelected={internal} onChange={(v: boolean) => setInternal(v)} aria-label="Internal copy" /> Internal copy</label> : null}
-          {fixed || readOnly ? null : <Button appearance="outlined" variant="secondary" iconStart={<Icon name="visibility" size={20} />} onPress={() => setPanel((o) => !o)} aria-pressed={panel}>What your client sees{changed ? ` · ${changed}` : ''}</Button>}
+          {fixed || readOnly ? null : <Button appearance="text" variant="secondary" iconStart={<Icon name="visibility" size={20} />} onPress={() => setPanel((o) => !o)} aria-pressed={panel}>What your client sees{changed ? ` · ${changed}` : ''}</Button>}   {/* (4-08) quote-only, a text button beside the bar's own pair */}
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name={copied ? 'check' : 'link'} size={20} />} onPress={() => { void copy() }}>{copied ? 'Copied' : 'Copy link'}</Button>
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name="download" size={20} />} onPress={() => printPaper()}>Download PDF</Button>
           {readOnly || (compare && !kept) ? null /* (S44F) comparing the current version: the bar's Stop comparing is the way back */ : fixed ? <Button onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Current version</Button>

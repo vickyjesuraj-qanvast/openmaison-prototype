@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { isDeletedProject } from '@/lib/projects/handover'
-import { readFrom } from '@/lib/nav'
+import { readFrom, withFrom } from '@/lib/nav'
+import { runsStudio } from '@/lib/settings/roles'
 import { fetchProjectDetail, projectLeadId } from '@/lib/projects/queries'
 import { PROJECT_ACTIVITY_CHIPS, PROJECT_TABS, isProjectTab, projectBase } from '@/lib/projects/tabs'
 import { ProjectFrame } from '@/components/projects/project-frame'
@@ -148,7 +149,9 @@ export default async function ProjectTabPage({ params, searchParams }: { params:
   if (tab === 'questionnaire') {
     const [d, data] = await Promise.all([fetchProjectDetail(id), fetchLeadQuestions(leadId)])
     if (!d) notFound()
-    return <ProjectFrame d={d} tab={tab} origin={origin} body={<LeadQuestionnaire data={data} noun="project" views={<ProjectViews slug="questionnaire" />} />} />   // (parity P-12)
+    /* (the calm UI build 2026-10-27 — B2's request) the empty state's way to Company › Questionnaire for whoever may set the bank up (Owners, Admins) */
+    const setUpHref = runsStudio(d.viewer.role) ? withFrom('/company/questionnaire', `/projects/${id}/questionnaire`) : null
+    return <ProjectFrame d={d} tab={tab} origin={origin} body={<LeadQuestionnaire data={data} noun="project" setUpHref={setUpHref} views={<ProjectViews slug="questionnaire" />} />} />   // (parity P-12)
   }
   const [d, data] = await Promise.all([fetchProjectDetail(id), fetchLeadActivity(leadId, { projectId: id })])
   if (!d) notFound()

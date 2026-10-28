@@ -28,7 +28,7 @@ export const DIMENSIONS: { key: Dimension; label: string; options: readonly stri
   { key: 'area', label: 'Area / district', options: DISTRICTS, labelOf: (v) => v },
 ]
 export const PRIORITIES: { key: Priority; label: string }[] = [{ key: 'must', label: 'Must match' }, { key: 'nice', label: 'Nice to have' }]
-export const DONT_CARE = 'Don’t care'
+export const DONT_CARE = 'Any'   // (the calm UI build 2026-10-27 — W-514) a display label only; a dimension left on it is simply not stored
 export const WEIGHT: Record<Priority, number> = { must: 3, nice: 1 }
 
 export function parsePreferences(v: string | null | undefined): LeadPreferences {

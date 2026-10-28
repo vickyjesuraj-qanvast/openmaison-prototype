@@ -7,12 +7,14 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
-import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
-import { displayDate, moneySGD } from '@/lib/format'
+import { CONTACT_CHANNELS_SHOWN, CONTACT_MODES, OUTCOMES, SCHEDULE, channelLabel } from '@/lib/leads/enums'
+import { displayDate, displayDue, moneySGD, parseInputDateTime } from '@/lib/format'
+import { clientStageName } from '@/lib/portal/model'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { LeadFile, Member } from '@/lib/db/schema'
 import { AutoFillNote, ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
 import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT } from '@/lib/leads/stage-data'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27) the one status map every quote screen reads
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
@@ -60,6 +62,9 @@ function AttachedTiles({ names, ids, fileOf, onRemove }: { names: string[]; ids?
   )
 }
 const dropAt = <T,>(xs: T[] | undefined, j: number): T[] | undefined => (xs ? xs.filter((_, k) => k !== j) : xs)
+/** (the calm UI build 2026-10-27 — T-11 · 2-24) A locked log's moment in the house words, "Fri, 4 Sep ’26 · 1:45 PM" — the field's input form
+    ("4/9/2026, 1:45 PM") reads as 9 April to some; an unparsable value is shown as it is. */
+const shownWhen = (v: string): string => { const d = v ? parseInputDateTime(v) : null; return d ? displayDue(d) : v }
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
@@ -123,9 +128,12 @@ export function NewPanel({
  *  The read-only scope is per log (user 2026-08-29: after Add Log only the new log is open; older logs stay read-only until their own Edit).
  *  Header controls sit outside the scope so they stay live while the body is disabled. */
 function LogShell({
-  index, collapsed, onToggle, readOnly, onAutoFill, onEdit, onDelete, note = null, children,
+  index, count, collapsed, onToggle, readOnly, onAutoFill, onEdit, onDelete, note = null, children,
 }: {
-  index: number; collapsed: boolean; onToggle: () => void; readOnly: boolean
+  index: number
+  /** (the calm UI build 2026-10-27 — 2-30) how many logs the step holds: "Log 1" only names a log among two or more */
+  count: number
+  collapsed: boolean; onToggle: () => void; readOnly: boolean
   onAutoFill: () => void; onEdit?: () => void
   /** (S43B · F1-01) what Auto Fill read for this log — said at the top of its body */
   note?: string | null
@@ -136,13 +144,13 @@ function LogShell({
   return (
     <div className={styles.logCard} data-collapsed={collapsed || undefined} data-readonly={readOnly || undefined}>
       <div className={styles.logHead}>
-        <span className={styles.logTitle}>Log {index + 1}</span>
+        <span className={styles.logTitle}>{count > 1 ? `Log ${index + 1}` : ''}</span>
         {!collapsed && !readOnly ? (
           /* (REG-291) The Maison AI mark — the FAB's own sparkle, as the AI brief / sheet / Notes bar use.
              sparkle.svg, the mock's asset here, is a different four-pointed shape; Auto Fill is a Maison AI
              action, so it now carries the same mark everywhere it appears. */
           // eslint-disable-next-line @next/next/no-img-element
-          <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={onAutoFill}>Auto Fill</LinkButton>
+          <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={onAutoFill}>Auto fill</LinkButton>
         ) : null}
         {!collapsed && readOnly && onEdit ? (
           <LinkButton icon="edit" onClick={onEdit}>Edit</LinkButton>
@@ -167,8 +175,9 @@ function LogShell({
 }
 
 function LogCard({
-  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, askNextStep = false, onAttach, fileOf, note = null,
+  index, count, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, askNextStep = false, onAttach, fileOf, note = null,
 }: {
+  count: number
   /** (S43B · F1-01) what Auto Fill read for this log */
   note?: string | null
   /** (pending modules S05) Attach opens the lead's files (the house Attach files modal); the tiles are the files themselves */
@@ -187,22 +196,26 @@ function LogCard({
 }) {
   const err = (f: string) => errors[`logs.${index}.${f}`]
   return (
-    <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
+    <LogShell index={index} count={count} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
               readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete} note={note}>
-      {/* (REG-320, user 2026-09-02) Where this log lives afterwards — only here, the Notes tab is already that place. */}
+      {/* (REG-320, user 2026-09-02) Where this log lives afterwards — only here, the Notes tab is already that place. (the calm UI build
+          2026-10-27 — 2-30) in the tab's own name, once: there is no screen called "Lead Details". */}
       <p className={fieldStyles.callout}>
         <Icon name="info" size={16} weight={300} />
-        <span>This log is saved under Lead Details › Notes & Logs › Contact Log.</span>
+        <span>Saved to Notes &amp; logs.</span>
       </p>
-      <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={log.channel}
+      {/* (the calm UI build 2026-10-27 — T-01 · 2-08) the log sheet's words at every width: How · When · How it went (chips, as the phone has
+          them); the stored values unchanged (`channelLabel`) */}
+      <ChoiceChips label="How" required options={CONTACT_CHANNELS_SHOWN} value={log.channel} render={channelLabel}
                    onChange={(v) => onChange({ channel: v })} error={err('channel')} />
       <div className={styles.fieldPair}>
-        {/* (UX audit 2026-09-30, L9) a day picked without a time takes the time it is now, never a silent 10:00 AM */}
-        <DateTimeField label="Date & Time" value={log.when} required today={today} defaultNow
+        {/* (UX audit 2026-09-30, L9) a day picked without a time takes the time it is now, never a silent 10:00 AM. (2-24) A locked log reads
+            the house date, not the field's input form "4/9/2026, 1:45 PM" — nothing can be typed while it is read-only. */}
+        <DateTimeField label="When" value={readOnly ? shownWhen(log.when) : log.when} required today={today} defaultNow
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
-        <TextField label="Outcome" required value={log.outcome} mode="select" options={OUTCOMES}
-                   onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
       </div>
+      <ChoiceChips label="How it went" required options={OUTCOMES} value={log.outcome || null}
+                   onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
       {/* (REG-319 / REG-324, mock 781:58313) The optional schedule block — heading + helper (V g4), then the pair — appears
           once an outcome is chosen; the empty log (780:89150) offers no schedule yet. */}
       {log.outcome ? (
@@ -213,10 +226,11 @@ function LogCard({
             <span className={fieldStyles.sectionHelper}>{askNextStep && log.outcome !== 'Not interested' ? 'Your studio asks for the next call or meeting — a task will remind you.' : SCHEDULE.helper}</span>
           </div>
           <div className={styles.fieldPair}>
-            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today} required={askNextStep && log.outcome !== 'Not interested'}
+            <DateTimeField label="Date and time" value={readOnly ? shownWhen(log.nextStepWhen) : log.nextStepWhen} today={today} required={askNextStep && log.outcome !== 'Not interested'}
                            onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
-            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
-                       onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
+            {/* (2-08 · 2-30) "Preferred mode" → "Call back by", worded by `channelLabel`, the stored mode kept */}
+            <TextField label="Call back by" value={channelLabel(log.nextStepMode)} mode="select" options={CONTACT_MODES.map(channelLabel)}
+                       onChange={(v) => onChange({ nextStepMode: CONTACT_MODES.find((m) => channelLabel(m) === v) ?? v })} error={err('nextStepMode')} />
           </div>
         </div>
       ) : null}
@@ -279,7 +293,7 @@ export function ContactedPanel({
   return (
     <>
       {data.logs.map((log, i) => (
-        <LogCard key={i} index={i} log={log} errors={errors} today={today} askNextStep={askNextStep && !lockedLog?.(i)} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
+        <LogCard key={i} index={i} count={data.logs.length} log={log} errors={errors} today={today} askNextStep={askNextStep && !lockedLog?.(i)} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
                  readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                  onDelete={onDeleteLog && data.logs.length > 1 ? () => onDeleteLog(i) : undefined}
                  onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
@@ -290,8 +304,9 @@ export function ContactedPanel({
 
 /** Met (780:90234, updated 2026-09-04): the same log list — Where · Date & Time / Remarks / rule / meeting documents (REG-325). */
 function MeetingCard({
-  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, onAttach, fileOf, note = null,
+  index, count, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, onAttach, fileOf, note = null,
 }: {
+  count: number
   /** (S43B · F1-01) what Auto Fill read for this log */
   note?: string | null
   onAttach?: () => void
@@ -307,12 +322,12 @@ function MeetingCard({
 }) {
   const err = (f: string) => errors[`meetings.${index}.${f}`]
   return (
-    <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
+    <LogShell index={index} count={count} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
               readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete} note={note}>
       <div className={styles.fieldPair}>
         <TextField label="Where" required value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
                    onChange={(v) => onChange({ where: v })} error={err('where')} />
-        <DateTimeField label="Date & Time" value={log.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) */
+        <DateTimeField label="When" value={readOnly ? shownWhen(log.when) : log.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) · (2-24) */
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
       </div>
       {/* (REG-325, 780:90234 updated) Remarks before the rule; the Attach row is the log's last section, its link "Attach". */}
@@ -366,7 +381,7 @@ export function MetPanel({
   return (
     <>
       {data.meetings.map((m, i) => (
-        <MeetingCard key={i} index={i} log={m} errors={errors} today={today} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
+        <MeetingCard key={i} index={i} count={data.meetings.length} log={m} errors={errors} today={today} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
                      readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                      onDelete={onDeleteLog && data.meetings.length > 1 ? () => onDeleteLog(i) : undefined}
                      onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
@@ -405,7 +420,7 @@ export function approvedQuoteRows(docs: StageDocuments, rule: SendRule | null = 
   return docs.quotes
     .filter((q) => OUT.includes(q.status) || (rule !== null && (q.status === 'Draft' || q.status === 'Sent for Approval')))   // (REG-587)
     .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor, hold: rule ? quoteHold(q, rule) : null,
-                   meta: [q.number, moneySGD(q.amountMinor), q.approvedAt ? `Approved on ${displayDate(new Date(q.approvedAt))}` : q.status] }))
+                   meta: [q.number, moneySGD(q.amountMinor), q.approvedAt ? `Approved on ${displayDate(new Date(q.approvedAt))}` : quoteStatusLabel(q.status)] }))   // (the calm UI build — 4-04) the status in its display words
 }
 /** Won (780:92744): the quotes the client signed. */
 export function signedQuoteRows(docs: StageDocuments): SystemRow[] {
@@ -437,7 +452,7 @@ function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreat
       <span>No system generated {noun}.</span>
       {onCreate && !ro ? (
         <button type="button" className={fieldStyles.link} onClick={onCreate}>
-          {noun === 'quotes' ? 'Create Quote' : 'Create Contract'}
+          {noun === 'quotes' ? 'New quote' : 'New contract'}
           <Icon name="chevron_right" size={20} />
         </button>
       ) : null}
@@ -476,7 +491,7 @@ export function AttachTabs({
       <div className={styles.tabBar} role="tablist">
         {(['system', 'upload'] as const).map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} className={styles.tab} onClick={() => onTab(t)}>
-            {t === 'system' ? 'From System' : 'Upload'}
+            {t === 'system' ? 'From system' : 'Upload'}
             {tab === t ? <span className={styles.tabInk} /> : null}
           </button>
         ))}
@@ -732,7 +747,7 @@ export function WonPanel({
           <div key={m.name} className={styles.msRow}>
             <span className={styles.msIndex}>{i + 1}</span>
             <span className={styles.msText}>
-              <span className={styles.msName}>{m.name}</span>
+              <span className={styles.msName}>{clientStageName(m.name)}</span>   {/* (the calm UI build 2026-10-27 — 3-49) one spelling, "Mid-project"; the stored name kept */}
               <span className={styles.msMeta}>{m.meta}</span>
             </span>
             <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>

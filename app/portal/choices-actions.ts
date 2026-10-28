@@ -72,7 +72,7 @@ export async function chooseOption(slug: string, input: { selectionId: string; o
   const vo = price && drafter ? await draftVariationForPick(s.id, { memberId: drafter, eventActorId: null }).then((r) => ('error' in r ? null : r), () => null) : null
   await logProjectEvent(db, p.leadId, p.id, 'project_choice_chosen', { id: s.id, title: s.title, name: p.name, number: p.number, option: opt.name, by: 'client', price, gst, thumb, hex: opt.hex, note: note || null, person: who.visitor.name, ...(wait ? { waitEnded: wait.title } : {}), ...(vo ? { vo: vo.number } : {}) }, { actorId: null })
   const team = await db.select({ id: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, p.leadId))
-  const body = [contractLine(price, gst), note ? `“${note.length > 120 ? `${note.slice(0, 119)}…` : note}”` : null, wait ? `${wait.title} no longer waits` : null, vo ? `${vo.number} drafted — send it from Money` : null].filter(Boolean).join(' · ') || p.name   // (simplify S-21) (invented copy)
+  const body = [contractLine(price, gst), note ? `“${note.length > 120 ? `${note.slice(0, 119)}…` : note}”` : null, wait ? `${wait.title} no longer waits` : null, vo ? `${vo.number} drafted — send it from Payments` : null].filter(Boolean).join(' · ') || p.name   // (simplify S-21) (invented copy)
   await notify('choice_made', team.map((t) => t.id), { title: `${who.visitor.name} chose ${opt.name} for ${s.title}`, body, href: `/projects/${p.id}/choices?open=${encodeURIComponent(s.id)}`, leadId: p.leadId, actorId: null })
   await fileSelectionReceipt(s.id)   // (gaps build D, item 7) the pick's receipt — in Files › Choices and the portal's Documents
   revalidateLead(p.leadId)

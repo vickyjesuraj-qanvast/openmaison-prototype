@@ -12,6 +12,8 @@ import { ExportDialog } from '@/components/leads/export-dialog'
 import { Avatar } from '@/components/om/avatar'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { Tooltip } from '@/components/om/tooltip'
 import { MetaChip } from '@/components/om/meta-chip'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { ScopePill } from '@/components/om/scope-pill'
@@ -29,6 +31,8 @@ import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import { displayDateTimeDot } from '@/lib/format'
 import { ago } from '@/lib/templates/ago'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
+import { setCountPref, setFlagPref } from '@/lib/prefs'
+import { USAGE_SHAPE } from './usage-shape'
 import { withFrom } from '@/lib/nav'
 import { PLAN_TABS } from '@/lib/company/sections'
 import type { Usage, UsageLead, UsageMember, UsageRange, UsageRow, UsageTool } from '@/lib/credits/queries'
@@ -46,6 +50,8 @@ const AI_SUGGESTIONS: MaisonSuggestion[] = [{ label: 'Who used the most this mon
 const PAGE = 20
 const plural = (n: number, one: string, many = `${one}s`) => `${fmtCredits(n)} ${n === 1 ? one : many}`
 const amountWords = (n: number | null) => (n == null ? 'No limit' : `${fmtCredits(n)} a month`)
+/** (the calm UI build 2026-10-27 — W-273) the default for new members as its pill says it: "New members’ limit: None" */
+const defaultWords = (n: number | null) => (n == null ? 'None' : `${fmtCredits(n)} a month`)
 /* (pending modules S23 · S19, joined at the lanes' merge) a meeting's co-pilot time counts in the words as it does in the number — 10 minutes a block */
 const workLine = (r: { renders: number; quotes: number; copilot: number }) => [r.renders ? plural(r.renders, 'render') : null, r.quotes ? plural(r.quotes, 'quote read', 'quotes read') : null, r.copilot ? `${fmtCredits(r.copilot * 10)} min of the Meeting Copilot` : null].filter(Boolean).join(' · ') || 'Nothing yet'
 
@@ -53,7 +59,7 @@ const MEMBER_DEFS = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
   { key: 'used', label: 'Used', track: 'minmax(240px, 240fr)' },
   { key: 'credits', label: 'AI credits', track: 'minmax(120px, 120fr)' },
-  { key: 'amount', label: 'Monthly amount', track: 'minmax(170px, 170fr)' },
+  { key: 'amount', label: 'Monthly limit', track: 'minmax(170px, 170fr)' },   /* (the calm UI build 2026-10-27 — 5-38 · W-265) */
   { key: 'state', label: 'Status', track: 'minmax(170px, 170fr)' },
 ] as const
 const TOOL_DEFS = [
@@ -121,8 +127,8 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
       const r = await setMonthlyAmount(memberId, amount)
       if ('error' in r) { setAmounts((a) => ({ ...a, [memberId]: before })); snackbar({ message: r.error }); return }
       router.refresh(); void refreshCredits()
-      snackbar({ key: `amount-${memberId}`, message: amount == null ? `${name} has no monthly amount` : `${name} can use ${fmtCredits(amount)} AI credits a month`, ...(opts.undo === false ? {} : { actionLabel: 'Undo', onAction: () => { void setAmount(memberId, before, { undo: false, from: amount }) } }) })
-    } catch { setAmounts((a) => ({ ...a, [memberId]: before })); snackbar({ message: `Couldn’t change ${name}’s monthly amount` }) }
+      snackbar({ key: `amount-${memberId}`, message: amount == null ? `${name} has no monthly limit` : `${name} can use ${fmtCredits(amount)} AI credits a month`, ...(opts.undo === false ? {} : { actionLabel: 'Undo', onAction: () => { void setAmount(memberId, before, { undo: false, from: amount }) } }) })
+    } catch { setAmounts((a) => ({ ...a, [memberId]: before })); snackbar({ message: `Couldn’t change ${name}’s monthly limit` }) }
   }
   const setDefaultAmount = async (amount: number | null) => {
     const before = defaultAmount
@@ -132,8 +138,8 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
       const r = await setDefaultMonthlyAmount(amount)
       if ('error' in r) { setDefault(before); snackbar({ message: r.error }); return }
       router.refresh()
-      snackbar({ key: 'amount-default', message: amount == null ? 'New members start with no monthly amount' : `New members start with ${fmtCredits(amount)} AI credits a month`, actionLabel: 'Undo', onAction: () => { setDefault(before); void setDefaultMonthlyAmount(before).then(() => router.refresh()) } })
-    } catch { setDefault(before); snackbar({ message: 'Couldn’t change the amount for new members' }) }
+      snackbar({ key: 'amount-default', message: amount == null ? 'New members start with no monthly limit' : `New members start with ${fmtCredits(amount)} AI credits a month`, actionLabel: 'Undo', onAction: () => { setDefault(before); void setDefaultMonthlyAmount(before).then(() => router.refresh()) } })
+    } catch { setDefault(before); snackbar({ message: 'Couldn’t change the limit for new members' }) }
   }
   const pick = (target: string | 'default', amount: number | null) => { setMenu(null); if (target === 'default') void setDefaultAmount(amount); else void setAmount(target, amount) }
   const current = (target: string | 'default') => (target === 'default' ? defaultAmount : amounts[target] ?? null)
@@ -173,6 +179,31 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
     return downloadBlob(buildTable('OpenMaison — AI credits', head, body, format), `openmaison-ai-credits-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.${format.toLowerCase()}`)
   }
 
+  /* (the calm UI build 2026-10-27 — 5-38, T-08 · T-14) By member shows the members who used AI in the period, have a limit or asked for more;
+     the others fold under the table, one text button away ("7 members haven’t used AI this month") — every row stays, and a member a link
+     points at (`?member=`) always shows. The Status column stands only while someone has one. */
+  const statusOf = (m: UsageMember): 'ask' | 'at' | 'near' | null => {
+    const cap = amounts[m.id] ?? null
+    if (asks.some((a) => a.memberId === m.id && a.kind === 'monthly')) return 'ask'
+    if (cap != null && m.used >= cap) return 'at'
+    if (cap != null && m.used >= cap * 0.8) return 'near'
+    return null
+  }
+  const inUse = (m: UsageMember) => m.used > 0 || (amounts[m.id] ?? null) != null || statusOf(m) !== null || focus === m.id
+  const [everyone, setEveryone] = useState(false)
+  const quiet = usage.members.filter((m) => !inUse(m))
+  const memberRows = everyone ? usage.members : usage.members.filter(inUse)
+  const statusOn = usage.members.some((m) => statusOf(m) !== null)
+  const memberDefs = useMemo(() => (statusOn ? MEMBER_DEFS : MEMBER_DEFS.filter((d) => d.key !== 'state')), [statusOn])
+  const span = usage.range === 'this' ? 'this month' : usage.range === 'last' ? 'last month' : `in the ${rangeLabel.toLowerCase()}`
+  const quietWords = `${quiet.length} ${quiet.length === 1 ? 'member hasn’t' : 'members haven’t'} used AI ${span}`
+  /* (REG-708 · REG-817) the ghost draws By member as the page drew it on its opening period: its rows, the fold, the Status column */
+  const shownCount = usage.members.filter(inUse).length
+  useEffect(() => {
+    if (usage.range !== 'this' || !trusted) return
+    setCountPref(USAGE_SHAPE.members, shownCount); setCountPref(USAGE_SHAPE.quiet, quiet.length); setFlagPref(USAGE_SHAPE.status, statusOn)
+  }, [usage.range, trusted, shownCount, quiet.length, statusOn])
+
   const memberCell = (m: UsageMember, key: string) => {
     const cap = amounts[m.id] ?? null
     switch (key) {
@@ -183,16 +214,22 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
         return <span className={styles.used}><span className={styles.meter} aria-hidden><i data-tone={tone} style={{ width: `${Math.max(m.used > 0 ? 3 : 0, Math.min(100, (cap != null ? m.used / Math.max(1, cap) : m.used / top) * 100))}%` }} /></span><span className={styles.usedLine}>{workLine(m)}</span></span>
       }
       case 'credits': return <span className={styles.credit}>{fmtCredits(m.used)}</span>
+      /* (the calm UI build 2026-10-27 — 5-38, T-02) the limit reads as text; setting it is the row's ⋮ (the same menu of quick picks and
+         "Another amount…" the select opened), so a column of selects no longer runs down the table */
       case 'amount': return owner ? (
-        /* (REG-729) the house compact select trigger, its cell size (28) */
-        <SelectTrigger size="s" className={styles.amount} data-none={cap == null || undefined} label={`${m.name}’s monthly amount`} value={amountWords(cap)} open={menu?.memberId === m.id}
-                       onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: m.id, el: e.currentTarget }) }} data-testid="member-amount" />
+        <span className={styles.limitCell}>
+          <span className={styles.amount} data-none={cap == null || undefined} data-testid="member-limit">{amountWords(cap)}</span>
+          <Tooltip label="Set a limit" disabled={menu?.memberId === m.id}>
+            <IconButton icon="more_vert" variant="bare" label={`Set ${m.name}’s monthly limit`} aria-haspopup="menu" aria-expanded={menu?.memberId === m.id}
+                        onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: m.id, el: e.currentTarget }) }} data-testid="member-amount" />
+          </Tooltip>
+        </span>
       ) : <span className={cap == null ? styles.m : undefined}>{amountWords(cap)}</span>
       case 'state': {
-        const ask = asks.find((a) => a.memberId === m.id && a.kind === 'monthly')
-        if (ask) return <MetaChip color="yellow" icon="person">Asked for more</MetaChip>
-        if (cap != null && m.used >= cap) return <MetaChip color="red">At their amount</MetaChip>
-        if (cap != null && m.used >= cap * 0.8) return <MetaChip color="yellow">Near it</MetaChip>
+        const state = statusOf(m)
+        if (state === 'ask') return <MetaChip color="yellow" icon="person">Asked for more</MetaChip>
+        if (state === 'at') return <MetaChip color="red">At their limit</MetaChip>
+        if (state === 'near') return <MetaChip color="yellow">Near it</MetaChip>
         return <span className={styles.m}>—</span>
       }
       default: return null
@@ -266,7 +303,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
           <>
             <div className={styles.tiles} data-testid="usage-tiles">
               <StatTile label={`You used · ${rangeLabel.toLowerCase()}`} value={fmtCredits(used)} help={workLine(works)} testId="tile-used" />
-              <StatTile label="Your monthly amount" value={s.memberCap == null ? 'No limit' : fmtCredits(s.memberCap)} help={s.memberCap == null ? `${s.owner.name} hasn’t set one` : `${fmtCredits(s.memberCapRemaining ?? 0)} left this month`} testId="tile-amount" />
+              <StatTile label="Your monthly limit" value={s.memberCap == null ? 'No limit' : fmtCredits(s.memberCap)} help={s.memberCap == null ? `${s.owner.name} hasn’t set one` : `${fmtCredits(s.memberCapRemaining ?? 0)} left this month`} testId="tile-amount" />
               <StatTile label="Refreshes" value={dayMonth(s.periodEnd)} help={refreshLine(s.periodEnd, s.now).split(' · ')[1]} testId="tile-refresh" />
             </div>
             <ReadOnlyNote text={`You see your own AI credits. ${s.owner.name} and the Admins see the studio’s.`} />
@@ -283,7 +320,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
                   <Icon name="person" size={20} weight={300} />
                   <span className={styles.askText}>
                     <b>{a.name} asked for more AI credits</b>
-                    <span>{a.kind === 'monthly' ? `Used their ${cap != null ? fmtCredits(cap) : 'monthly amount'} for this month` : 'The studio ran out'} · {ago(a.at, s.now)}</span>
+                    <span>{a.kind === 'monthly' ? `Used their ${cap != null ? fmtCredits(cap) : 'monthly limit'} for this month` : 'The studio ran out'} · {ago(a.at, s.now)}</span>
                   </span>
                   <span className={styles.askActions}>
                     {a.kind === 'monthly' && raise != null ? <Button onPress={() => { void setAmount(a.memberId, raise) }}>{`Raise to ${fmtCredits(raise)}`}</Button> : null}
@@ -297,15 +334,19 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
         ) : null}
 
         {trusted ? (
-          <CreditsTable table="credits-members" title="By member" testId="usage-members" defs={MEMBER_DEFS} rows={usage.members} rowKey={(m) => m.id} cell={memberCell}
-                        rowAttrs={(m) => ({ 'data-member': m.id, 'data-focus': focus === m.id ? '' : undefined })}
-                        help={owner ? 'A monthly amount keeps one person from using the studio’s month. Every active member is listed.' : `${s.owner.name} sets each person’s monthly amount.`}
-                        actions={owner ? (
-                          /* (REG-729) the house compact select trigger, its toolbar size (36) */
-                          <SelectTrigger className={styles.amount} data-none={defaultAmount == null || undefined} label={`New members: ${amountWords(defaultAmount)}`} value={<>New members: {amountWords(defaultAmount)}</>} open={menuTarget === 'default'}
-                                         onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: 'default', el: e.currentTarget }) }} data-testid="default-amount" />
-                        ) : null}
-                        empty="No members yet." />
+          <>
+            <CreditsTable table="credits-members" title="By member" testId="usage-members" defs={memberDefs} rows={memberRows} rowKey={(m) => m.id} cell={memberCell}
+                          rowAttrs={(m) => ({ 'data-member': m.id, 'data-focus': focus === m.id ? '' : undefined })}
+                          help={owner ? 'Set a monthly limit so one person can’t use up the studio’s credits.' : `${s.owner.name} sets each member’s monthly limit.`}
+                          actions={owner ? (
+                            /* (REG-729) the house compact select trigger, its toolbar size (36) — (W-273) "New members’ limit: None" */
+                            <SelectTrigger className={styles.amount} data-none={defaultAmount == null || undefined} label={`New members’ limit: ${defaultWords(defaultAmount)}`} value={<>New members’ limit: {defaultWords(defaultAmount)}</>} open={menuTarget === 'default'}
+                                           onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: 'default', el: e.currentTarget }) }} data-testid="default-amount" />
+                          ) : null}
+                          empty={quiet.length ? `No member has used AI ${span}, and none has a limit.` : 'No members yet.'} />
+            {quiet.length ? <span className={styles.more}><Button appearance="text" aria-expanded={everyone} onPress={() => setEveryone((o) => !o)} data-testid="usage-members-more"
+                                                                   iconEnd={<span className={styles.foldChev} data-open={everyone || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}>{everyone ? `Hide the ${quiet.length} who haven’t used AI` : quietWords}</Button></span> : null}
+          </>
         ) : null}
 
         <CreditsTable table="credits-tools" title="By tool" testId="usage-tools" defs={TOOL_DEFS} rows={usage.tools} rowKey={(t) => t.key} cell={toolCell}
@@ -331,7 +372,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
       </div>
 
       {/* (REG-728) standard rows: 200 */}
-      <PortalMenu open={!!menu} anchor={menuRef} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={menuTarget === 'default' ? 'New members start with' : menuTarget ? `${nameOf(menuTarget)}’s monthly amount` : ''}>
+      <PortalMenu open={!!menu} anchor={menuRef} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={menuTarget === 'default' ? 'New members start with' : menuTarget ? `${nameOf(menuTarget)}’s monthly limit` : ''}>
         {menuTarget ? (
           <>
             <DropdownItem role="menuitemradio" checked={current(menuTarget) == null} onSelect={() => pick(menuTarget, null)}>No limit</DropdownItem>
@@ -359,7 +400,7 @@ function AmountDialog({ state, name, onChange, onSave }: { state: { memberId: st
   const bad = !!state && state.value.trim() !== '' && (!Number.isFinite(n) || n < 10 || n > 1_000_000)
   const save = () => { if (!state) return; if (bad) { onChange({ ...state, tried: true }); return } onSave(state.value.trim() === '' ? null : Math.round(n)) }
   return (
-    <Dialog open={!!state} onClose={() => onChange(null)} title={name ? `${name}’s monthly amount` : 'New members start with'} size="form" width={400}
+    <Dialog open={!!state} onClose={() => onChange(null)} title={name ? `${name}’s monthly limit` : 'New members start with'} size="form" width={400}
             footer={<><Button variant="secondary" appearance="outlined" onPress={() => onChange(null)}>Cancel</Button><Button onPress={save}>Save</Button></>}>
       <TextField label="AI credits a month" value={state?.value ?? ''} numeric="digits" inputMode="numeric" maxLength={7} onChange={(v) => { if (state) onChange({ ...state, value: v }) }}
                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }}

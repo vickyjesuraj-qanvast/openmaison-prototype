@@ -35,7 +35,7 @@ import { displayDate, displayDue, displayTime, formatInputDateTime, titleCaseNam
 import { meetingStepHref, meetingStepLabel, meetingStepWords } from '@/lib/meetings/next-step'   // (S42G) the stage the studio's rule allows
 import type { LeadFile } from '@/lib/db/schema'
 import {
-  AIMS, BLOCK_MS, CHECK_IN_GRACE_MS, DEFAULT_LENGTH_MIN, DISCLOSURE, LISTENING_STAND_IN, WHERE, aimLabel, clientMeetingPath, consentLabel, firstOf, heldMinutes, tierOf, type AimKey, type MeetingState, type WhereKind,
+  AIMS, BLOCK_MS, CHECK_IN_GRACE_MS, DEFAULT_LENGTH_MIN, DISCLOSURE, LISTENING_PROTOTYPE_NOTE, LISTENING_STAND_IN, TIER_LABEL, WHERE, aimLabel, clientMeetingPath, consentLabel, firstOf, heldMinutes, tierOf, type AimKey, type MeetingState, type WhereKind,
 } from '@/lib/meetings/model'
 import { readMeeting, type Tip } from '@/lib/meetings/engine'
 import { matchPortfolio } from '@/lib/meetings/portfolio'
@@ -159,37 +159,39 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
   const keepGoing = async () => {
     const n = blocks + 1
     const r = await takeMeetingBlock(m.id, n).catch(() => null)
-    if (!r) { fail('keep the co-pilot on'); return }
-    if ('ok' in r) { setBlocks(n); setPaused(false); snackbar({ message: r.free ? `The co-pilot carries on — your free meeting covers it` : `The co-pilot carries on · ${r.charged || 25} AI credits for the next 10 minutes` }); return }
+    if (!r) { fail('keep Meeting Copilot on'); return }
+    if ('ok' in r) { setBlocks(n); setPaused(false); snackbar({ message: r.free ? `Meeting Copilot carries on — your free meeting covers it` : `Meeting Copilot carries on · ${r.charged || 25} AI credits for the next 10 minutes` }); return }
     setPaused(true)
-    if (r.error === 'free_used') { snackbar({ message: 'Your free 30 minutes of the co-pilot are used — your notes carry on. The co-pilot comes with Pro.', actionLabel: 'See plans', onAction: openPlans }); return }
+    if (r.error === 'free_used') { snackbar({ message: 'Your free 30 minutes of Meeting Copilot are used — your notes carry on. Meeting Copilot comes with Pro.', actionLabel: 'See plans', onAction: openPlans }); return }
     if (r.error === 'insufficient_credits' || r.error === 'member_cap_reached') { openCreditBlock({ refusal: r as never, what: 'meeting', needed: 25, retry: () => { void keepGoing() } }); return }
-    fail('keep the co-pilot on', refusalOf(r.error))
+    fail('keep Meeting Copilot on', refusalOf(r.error))
   }
-  const wrapUp = () => { void pauseCopilot(m.id).then(() => setPaused(true), () => fail('pause the co-pilot')) }
+  const wrapUp = () => { void pauseCopilot(m.id).then(() => setPaused(true), () => fail('pause Meeting Copilot')) }
 
   /* ── Before: what it is for, where, the consent ── */
   const [aim, setAim] = useState<AimKey>(m.aim as AimKey)
   const [aimNote, setAimNote] = useState(m.aimNote ?? '')
   const [whereKind, setWhereKind] = useState<WhereKind>(m.whereKind as WhereKind)
   const [consent, setConsent] = useState(false)
+  const [sayOpen, setSayOpen] = useState(false)   // (the calm UI build 2026-10-27, 2-48) what to tell the client, folded
   const [consentError, setConsentError] = useState(false)
   const [starting, setStarting] = useState(false)
   const start = async () => {
-    if (!consent) { setConsentError(true); snackbar({ message: `Tell ${first} about the co-pilot first — tick it in Get ready` }); return }
+    if (!consent) { setConsentError(true); snackbar({ message: `Tell ${first} about Meeting Copilot first — tick it in Get ready` }); return }
     if (starting) return
     setStarting(true)
     const r = await startMeeting(m.id, { consent, aim, aimNote, whereKind }).catch(() => null)
     setStarting(false)
     if (!r) { fail('start the meeting'); return }
-    if ('ok' in r) { snackbar({ message: r.free ? 'The co-pilot is on — your free meeting covers the first 10 minutes' : `The co-pilot is on · ${r.charged || 25} AI credits for the first 10 minutes` }); refresh(); return }
-    if (r.error === 'free_used') { snackbar({ message: 'Your free meeting with the co-pilot is used — the co-pilot comes with Pro. You can still write the meeting up after it.', actionLabel: 'See plans', onAction: openPlans }); return }
+    if ('ok' in r) { snackbar({ message: r.free ? 'Meeting Copilot is on — your free meeting covers the first 10 minutes' : `Meeting Copilot is on · ${r.charged || 25} AI credits for the first 10 minutes` }); refresh(); return }
+    if (r.error === 'free_used') { snackbar({ message: 'Your free meeting with Meeting Copilot is used — it comes with Pro. You can still write the meeting up after it.', actionLabel: 'See plans', onAction: openPlans }); return }
     if (r.error === 'insufficient_credits' || r.error === 'member_cap_reached') { openCreditBlock({ refusal: r as never, what: 'meeting', needed: 25, retry: () => { void start() } }); return }
     fail('start the meeting', refusalOf(r.error))
   }
+  /* (the calm UI build 2026-10-27, 2-48 · W-624) the price in one short line */
   const price = data.credits.free
-    ? data.credits.freeLeft > 0 ? `Your free meeting: the co-pilot is free for ${data.credits.freeLeft * 10} more minutes.` : 'Your free meeting with the co-pilot is used — the co-pilot comes with Pro.'
-    : 'The co-pilot uses 25 AI credits for each 10 minutes, and asks before each next 10.'
+    ? data.credits.freeLeft > 0 ? `Your free meeting: Meeting Copilot is free for ${data.credits.freeLeft * 10} more minutes.` : 'Your free meeting with Meeting Copilot is used — it comes with Pro.'
+    : '25 AI credits per 10 minutes — it asks before going on.'
 
   /* ── End ── */
   const [ending, setEnding] = useState(false)
@@ -202,9 +204,9 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
     const r = await endMeeting(m.id).catch(() => null)
     setEnding(false)
     if (!r || 'error' in r) { fail('end the meeting', r ? refusalOf(r.error) : null); return }
-    const receipt = r.receipt.blocks ? ` · Co-pilot ${r.receipt.minutes} min · ${r.receipt.credits ? `${r.receipt.credits} AI credits` : 'free'}` : ''
+    const receipt = r.receipt.blocks ? ` · Meeting Copilot ${r.receipt.minutes} min · ${r.receipt.credits ? `${r.receipt.credits} AI credits` : 'free'}` : ''
     const next = r.next   // (S42G) the stage the rule allows — never a "Move to Met" the Overview would refuse
-    snackbar({ message: `Meeting held — the brief is ready${receipt}`, ...(next ? { actionLabel: meetingStepLabel(next), onAction: () => router.push(meetingStepHref(data.lead.id, m.id, next)) } : {}) })
+    snackbar({ message: `Meeting held — the summary is ready${receipt}`, ...(next ? { actionLabel: meetingStepLabel(next), onAction: () => router.push(meetingStepHref(data.lead.id, m.id, next)) } : {}) })
     refresh()
   }
 
@@ -228,11 +230,11 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
       if (!a || 'error' in a) { fail('save the notes', a ? refusalOf(a.error) : null); return false }
       setNotes(v)
       const b = await remakeBrief(m.id).catch(() => null)
-      if (!b || 'error' in b) { fail('make the brief again', b ? refusalOf(b.error) : null); return false }
-      snackbar({ message: 'Notes saved — the brief is made again from them' }); refresh(); return true
+      if (!b || 'error' in b) { fail('make the summary again', b ? refusalOf(b.error) : null); return false }
+      snackbar({ message: 'Notes saved — the summary is made again from them' }); refresh(); return true
     }
     const r = await editBrief(m.id, what === 'actions' ? { actions: v.split('\n') } : { [what]: v }).catch(() => null)
-    if (!r || 'error' in r) { fail('save the brief', r ? refusalOf(r.error) : null); return false }
+    if (!r || 'error' in r) { fail('save the summary', r ? refusalOf(r.error) : null); return false }
     refresh(); return true
   }
   const [draftBusy, setDraftBusy] = useState(false)
@@ -301,7 +303,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
     if (live) {
       out.push({ label: 'What should I ask next?', answer: { title: 'Still to ask', rows: reading.checklist.filter((c) => !c.ticked).slice(0, 6).map((c) => ({ id: c.id, label: c.label, meta: c.category === 'critical' ? 'Must ask' : undefined })), text: reading.checklist.every((c) => c.ticked) ? 'Everything on the checklist is covered.' : undefined } })
       const o = reading.objections[reading.objections.length - 1]
-      if (o) out.push({ label: `How do I answer their ${kindLabel(o.kind).toLowerCase()} concern?`, answer: { title: `${kindLabel(o.kind)} concern`, text: o.answer ? `${o.answer}` : `Your studio has no answer saved for this kind yet — add one in Settings › Meetings.`, link: { label: 'Objection answers', href: '/settings?section=meetings' } } })
+      if (o) out.push({ label: `How do I answer their ${kindLabel(o.kind).toLowerCase()} concern?`, answer: { title: `${kindLabel(o.kind)} concern`, text: o.answer ? `${o.answer}` : `Your studio has no answer saved for this kind yet — add one in Settings › Meetings.`, link: { label: 'Answers to concerns', href: '/settings?section=meetings' } } })   // (the calm UI build 2026-10-27 — W-578) the Settings card's name now
       if (reading.addOns.length) out.push({ label: 'What’s missing from the scope?', answer: { title: 'Often added to these works', rows: reading.addOns.map((a) => ({ id: a.key, label: a.description, meta: `+S$ ${Math.round(a.valueMinor / 100).toLocaleString('en-SG')}` })) } })
     }
     if (held && brief) out.push({ label: 'Draft the follow-up message', answer: { title: `Follow-up for ${first}`, text: brief.followUp } })
@@ -337,11 +339,11 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
   /* (S42 audit C-04) a planned meeting is "Now" from its time to its planned end (Start a meeting now lands here), and only then has its time
      passed — the lists' rule (lib/meetings/model.ts `standingOf`); once its time has come the invitation is behind it *(invented copy: "Now")* */
   const due = dueNow(m, data.now)
-  const statusChip = live ? (paused ? `Live · ${elapsedMin} min · co-pilot paused` : `Live · ${elapsedMin} min`) : held ? 'Held' : cancelled ? 'Cancelled' : !due ? 'Upcoming'
+  const statusChip = live ? (paused ? `Live · ${elapsedMin} min · Meeting Copilot paused` : `Live · ${elapsedMin} min`) : held ? 'Held' : cancelled ? 'Cancelled' : !due ? 'Upcoming'
     : data.now < (m.endsAt ?? m.startsAt + DEFAULT_LENGTH_MIN * 60_000) ? 'Now' : 'Its time has passed'
   const primary = !data.mayChange ? null
     : planned ? <Button onPress={() => { void start() }} isDisabled={starting} data-kb="create" data-testid="room-start">{starting ? 'Starting…' : 'Start the meeting'}</Button>
-    : live ? <Button onPress={() => setConfirmEnd(true)} isDisabled={ending} data-testid="room-end">{ending ? 'Making the brief…' : 'End the meeting'}</Button>
+    : live ? <Button onPress={() => setConfirmEnd(true)} isDisabled={ending} data-testid="room-end">{ending ? 'Making the summary…' : 'End the meeting'}</Button>
     : held && brief && !m.briefSavedAt ? <Button onPress={() => setSaveOpen(true)} data-testid="room-save">Save to the lead</Button>
     : held && brief ? <Button onPress={() => { void openSend('notes') }} data-testid="room-share">{m.sharedAt && !m.shareStoppedAt ? 'Send the notes again' : 'Share the notes'}</Button>
     : null
@@ -376,11 +378,11 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
       <PortalMenu open={kebab} anchor={kebabRef} onClose={() => setKebab(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={title}>
         {planned ? <DropdownItem onSelect={() => { setKebab(false); setWriteUpOpen(true) }} help="From your notes, after it">Write it up instead</DropdownItem> : null}
         {live && blocks <= 1 && !notes.trim() ? <DropdownItem onSelect={() => { setKebab(false); void stopEarly(m.id).then((r) => { if ('error' in r) { fail('stop', refusalOf(r.error)); return } snackbar({ message: r.refunded ? `Stopped — the ${r.refunded} AI credits are back` : 'Stopped — the meeting is planned again' }); refresh() }, () => fail('stop')) }} help="Nothing said yet — its credits come back">Not starting after all</DropdownItem> : null}
-        {live && !paused ? <DropdownItem onSelect={() => { setKebab(false); wrapUp() }} help="Your notes carry on">Pause the co-pilot</DropdownItem> : null}
+        {live && !paused ? <DropdownItem onSelect={() => { setKebab(false); wrapUp() }} help="Your notes carry on">Pause Meeting Copilot</DropdownItem> : null}
         {held && brief ? <DropdownItem onSelect={() => { setKebab(false); void draftQuote() }}>{m.quoteId ? `Open the draft quote${data.quoteNumber ? ` ${data.quoteNumber}` : ''}` : 'Make a draft quote'}</DropdownItem> : null}
         {held && brief ? <DropdownItem onSelect={() => { setKebab(false); void shareWithTeam() }} help="The summary and the next steps, in the team chat — never the client’s"><span data-testid="room-share-team">Share with the team</span></DropdownItem> : null}
         {held ? <DropdownItem onSelect={() => { setKebab(false); setEdit('notes') }}>Edit the notes</DropdownItem> : null}
-        {held && brief ? <DropdownItem onSelect={() => { setKebab(false); void run('make the brief again', () => remakeBrief(m.id), 'The brief is made again from the notes', { refresh: true }) }} help="Your edits to it stay">Make the brief again</DropdownItem> : null}
+        {held && brief ? <DropdownItem onSelect={() => { setKebab(false); void run('make the summary again', () => remakeBrief(m.id), 'The summary is made again from your notes', { refresh: true }) }} help="Your edits to it stay">Make the summary again</DropdownItem> : null}
         {held && m.sharedAt && !m.shareStoppedAt ? <DropdownItem onSelect={() => { setKebab(false); stopShare() }}>Stop sharing the notes</DropdownItem> : null}
         <DropdownItem tone="danger" disabled={!data.mayDelete || live} title={live ? 'end it first' : !data.mayDelete ? 'whoever planned it, Owner or Admin' : undefined} onSelect={() => { setKebab(false); del() }}>Delete</DropdownItem>
       </PortalMenu>
@@ -394,20 +396,21 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
     <PageReveal skeleton={<MeetingRoomGhost status={m.status} data={data} />}>
       <div className={styles.page} data-testid="meeting-room" data-status={m.status}>
         <PageHeaderL2 backHref={backHref} crumbs={crumbs} title={title}
-          chips={<><MetaChip icon="event">{statusChip}</MetaChip><MetaChip icon="schedule">{displayDue(new Date(m.startsAt))}</MetaChip><MetaChip icon="home">{m.whereKind}</MetaChip></>}
+          /* (the calm UI build 2026-10-27, 2-21 · T-06) the status is the one tag; the day and the place are sentence-case words beside it */
+          chips={<><MetaChip icon="event">{statusChip}</MetaChip><span className={styles.headMeta} data-testid="room-head-meta">{displayDue(new Date(m.startsAt))} · {m.whereKind}</span></>}
           actions={footed ? null : <>{secondary}{primary}</>} titleActions={menu} />
         <div className={styles.content}>
 
         {/* ── what waits, said where it is decided ── */}
         {checkIn ? (
           <div className={styles.bannerRow} role="status" data-testid="room-check-in">
-            <span className={styles.bannerText}><b>{Math.max(1, blocks) * 10} minutes in — keep the co-pilot on?</b>{data.credits.free && data.credits.freeLeft > 0 ? 'Your free meeting covers the next 10 minutes.' : '25 AI credits for the next 10 minutes. Your notes carry on either way.'}</span>
+            <span className={styles.bannerText}><b>{Math.max(1, blocks) * 10} minutes in — keep Meeting Copilot on?</b>{data.credits.free && data.credits.freeLeft > 0 ? 'Your free meeting covers the next 10 minutes.' : '25 AI credits for the next 10 minutes. Your notes carry on either way.'}</span>
             <span className={styles.bannerActs}><Button variant="secondary" appearance="outlined" onPress={wrapUp} data-testid="room-wrap-up">Wrap up</Button><Button onPress={() => { void keepGoing() }} data-testid="room-keep-going">Keep going</Button></span>
           </div>
         ) : null}
         {live && paused ? (
           <div className={styles.bannerRow} role="status" data-testid="room-paused">
-            <span className={styles.bannerText}><b>The co-pilot is paused</b>Your notes are still saved as you type — End the meeting makes the brief from them.</span>
+            <span className={styles.bannerText}><b>Meeting Copilot is paused</b>Your notes are still saved as you type — End the meeting makes the summary from them.</span>
             <span className={styles.bannerActs}><Button variant="secondary" appearance="outlined" onPress={() => { void keepGoing() }} data-testid="room-resume">Resume · 10 minutes</Button></span>
           </div>
         ) : null}
@@ -432,7 +435,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
                   {data.prep.last ? <div className={styles.group}><span className={styles.groupLabel}>Last meeting · {displayDate(new Date(data.prep.last.at))}{data.prep.last.count > 1 ? ` · ${data.prep.last.count} so far` : ''}</span><p className={styles.prose}>{data.prep.last.summary}</p></div> : null}
                   {data.prep.concerns.length || data.prep.competitors.length ? <div className={styles.group}><span className={styles.groupLabel}>To address</span>{data.prep.concerns.map((c) => <Row key={c} icon="flag" name={`${c} concern`} />)}{data.prep.competitors.map((c) => <Row key={c} icon="store" name={`Also talking to ${c}`} />)}</div> : null}
                   <div className={styles.group}><span className={styles.groupLabel}>Focus on</span><ol className={styles.steps}>{data.prep.focus.map((x) => <li key={x}>{x}</li>)}</ol></div>
-                  {data.prep.temperature ? <div className={styles.group}><span className={styles.groupLabel}>How warm, at the last meeting</span><Row icon="trending_up" name={`${data.prep.temperature.score} · ${data.prep.temperature.tier}`} caption={data.prep.temperature.line} two /></div> : null}
+                  {data.prep.temperature ? <div className={styles.group}><span className={styles.groupLabel}>How warm, at the last meeting</span><Row icon="trending_up" name={`${TIER_LABEL[data.prep.temperature.tier]} · ${data.prep.temperature.score}`} caption={data.prep.temperature.line} two /></div> : null}
                 </div>
               </Card>
               {f.checklist ? <ChecklistCard rows={reading.checklist} closing={false} onToggle={() => {}} readOnly /> : null}
@@ -444,19 +447,21 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
                     <Chips label="What it’s for" value={aim} onChange={(a) => setAim(a as AimKey)} options={AIMS.map((a) => ({ value: a.key, label: a.label }))} disabled={!data.mayChange} testId="room-aim" />
                     <TextField label="What you want out of it (optional)" value={aimNote} onChange={setAimNote} maxLength={200} disabled={!data.mayChange} />
                     <TextField label="Where" value={whereKind} mode="select" options={[...WHERE]} onChange={(v) => setWhereKind(v as WhereKind)} disabled={!data.mayChange} />
-                    <span className={styles.groupLabel}>Tell {first} before you start</span>
-                    <p className={styles.disclosure} data-testid="room-disclosure">“{DISCLOSURE}”</p>
+                    {/* (the calm UI build 2026-10-27, 2-48 · T-05) what to say folds behind one row — the consent stays the tick */}
+                    <Row icon={sayOpen ? 'keyboard_arrow_up' : 'expand_more'} name={`What to tell ${first}`} onPress={() => setSayOpen((o) => !o)} toggle testId="room-disclosure-toggle" />
+                    {sayOpen ? <p className={styles.disclosure} data-testid="room-disclosure">“{DISCLOSURE}”</p> : null}
                     <Checkbox isSelected={consent} onChange={(on: boolean) => { setConsent(on); setConsentError(false) }} isDisabled={!data.mayChange} data-testid="room-consent">{consentLabel(first)}</Checkbox>
-                    {consentError && !consent ? <p className={styles.note} role="alert" data-testid="room-consent-error">Tick it once {first} knows — the co-pilot starts after.</p> : null}
+                    {consentError && !consent ? <p className={styles.note} role="alert" data-testid="room-consent-error">Tick it once {first} knows — Meeting Copilot starts after.</p> : null}
                     <p className={styles.price} data-testid="room-price"><Icon name="auto_awesome" size={16} />{price}</p>
-                    <p className={styles.standIn}><Icon name="info" size={16} />{LISTENING_STAND_IN}</p>
+                    <StandIn />
                   </div>
                 </Card>
               )}
               {/* (S42 C-04) a meeting whose time has come and that was never sent has no invitation to speak of — shown only when it applies */}
               {due && !m.invitedAt ? null : <Card title="Invitation" testId="room-invitation">
                 <div className={styles.cardBody}>
-                  <Row icon="event" name={whenWords(m.startsAt)} caption={m.place ?? m.whereKind} two />
+                  {/* (the calm UI build 2026-10-27, 2-24 · T-11) the house date and time, as the header says it */}
+                  <Row icon="event" name={displayDue(new Date(m.startsAt))} caption={m.place ?? m.whereKind} two />
                   <Row icon={m.invitedAt ? 'send' : 'schedule'} name={m.invitedAt ? `Sent ${displayDate(new Date(m.invitedAt))}${m.invitedVia === 'email' ? ' by email' : m.invitedVia === 'whatsapp' ? ' on WhatsApp' : ''}` : 'Not sent yet'} caption={m.clientAnswer === 'yes' ? `${first} is coming` : m.clientAnswer === 'no' ? 'The time doesn’t suit them' : m.clientViewedAt ? `${first} opened it` : undefined} two />
                 </div>
               </Card>}
@@ -469,7 +474,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
               <div data-view="notes" style={{ display: 'contents' }}>
                 <Card title="What’s being said" metaRight={savedAt ? `Saved ${displayTime(new Date(savedAt))}` : undefined} testId="room-notes">
                   <div className={styles.cardBody}>
-                    <p className={styles.standIn}><Icon name="info" size={16} />{LISTENING_STAND_IN}</p>
+                    <StandIn />
                     <div className={styles.notesBar}>
                       <Button appearance="text" onPress={() => write(`${notes}${notes && !notes.endsWith('\n') ? '\n' : ''}Client: `)} data-testid="notes-client">Client:</Button>
                       <Button appearance="text" onPress={() => write(`${notes}${notes && !notes.endsWith('\n') ? '\n' : ''}Me: `)}>Me:</Button>
@@ -513,7 +518,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
           /* ── After ── */
           <div className={styles.grid}>
             <div className={`${styles.column} ${styles.act}`}>
-              <Card title="Summary" link={data.mayChange ? { label: 'Edit', onClick: () => setEdit('summary') } : undefined} testId="brief-summary"><div className={styles.cardBody}><p className={styles.prose} data-testid="brief-summary-text">{brief.summary}</p>{brief.madeFrom !== 'live' ? <p className={styles.note}>Made from {brief.madeFrom === 'recording' ? 'the recording’s transcript' : 'the notes'}, by rule.</p> : null}</div></Card>
+              <Card title="Summary" link={data.mayChange ? { label: 'Edit', onClick: () => setEdit('summary') } : undefined} testId="brief-summary"><div className={styles.cardBody}><p className={styles.prose} data-testid="brief-summary-text">{brief.summary}</p>{brief.madeFrom !== 'live' ? <p className={styles.note}>{brief.madeFrom === 'recording' ? 'From the recording’s transcript' : 'From your notes'}</p> : null}</div></Card>
               <Card title="Next steps" link={data.mayChange ? { label: 'Edit', onClick: () => setEdit('actions') } : undefined} testId="brief-steps"><div className={styles.cardBody}><ol className={styles.steps}>{brief.actions.map((a) => <li key={a}>{a}</li>)}</ol></div></Card>
               <Card title="Message to send" link={data.mayChange ? { label: 'Edit', onClick: () => setEdit('followUp') } : undefined} testId="brief-follow-up">
                 <div className={styles.cardBody}>
@@ -521,7 +526,8 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
                   {data.mayChange ? <span className={styles.cardAct}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="chat" size={20} />} onPress={() => { window.open(`https://wa.me/65${data.lead.phone}?text=${encodeURIComponent(brief.followUp)}`, '_blank', 'noopener') }} data-testid="brief-whatsapp">Send on WhatsApp</Button><Button appearance="text" onPress={() => { void copyText(brief.followUp).then(() => snackbar({ message: 'Message copied' }), () => fail('copy the message')) }}>Copy</Button></span> : null}
                 </div>
               </Card>
-              <Card title="What we heard" testId="brief-heard"><div className={styles.cardBody}><HeardRows p={brief.profile} tags={brief.tags} /></div></Card>
+              {/* (the calm UI build 2026-10-27, 2-21 · T-04) the concerns are said once — in their card below, with the answers; the tags fold */}
+              <Card title="What we heard" testId="brief-heard"><div className={styles.cardBody}><HeardRows p={brief.profile} tags={brief.tags} noConcerns foldTags /></div></Card>
               <Card title="Concerns they raised" meta={brief.objections.length ? `· ${brief.objections.length}` : undefined} testId="brief-concerns"><div className={styles.cardBody}><ObjectionRows objections={brief.objections} studio={studio} /></div></Card>
               {state.boards.length || data.designs.length || data.readings.length || data.files.length ? (
                 <Card title="From this meeting" testId="brief-made">
@@ -538,7 +544,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
             <div className={`${styles.column} ${styles.glance}`}>
               <Card title="On the lead" testId="brief-on-lead">
                 <div className={styles.cardBody}>
-                  {m.briefSavedAt ? <Row icon="check_circle" name={`Saved to the lead ${displayDate(new Date(m.briefSavedAt))}`} caption="The details and the follow-up are on it" two /> : <Row icon="pending" name="Not saved to the lead yet" caption="Save it — the details heard and a follow-up task" two action={data.mayChange ? { label: 'Save', onPress: () => setSaveOpen(true) } : null} />}
+                  {m.briefSavedAt ? <Row icon="check_circle" name={`Saved to the lead ${displayDate(new Date(m.briefSavedAt))}`} caption="The details and the follow-up are on it" two /> : <Row icon="pending" name="Not saved to the lead yet" caption="Save to the lead adds the details heard and a follow-up task" two />}
                   {m.sharedAt && !m.shareStoppedAt ? <Row icon="link" name={`Shared with ${first} ${displayDate(new Date(m.sharedAt))}`} caption={m.clientViewedAt ? `${first} opened it` : 'Not opened yet'} two action={data.mayChange ? { label: 'Stop', onPress: stopShare } : null} /> : null}
                 </div>
               </Card>
@@ -548,26 +554,26 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
                 <div className={styles.cardBody}>
                   <Row icon="event" name={displayDue(new Date(m.startsAt))} caption={m.whereKind} two />
                   <Row icon="group" name={m.memberIds.map((id) => data.team.find((t) => t.id === id)?.name).filter(Boolean).join(', ') || 'The studio'} />
-                  <Row icon={brief.madeFrom === 'live' ? 'mic' : brief.madeFrom === 'recording' ? 'upload_file' : 'notes'} name={brief.madeFrom === 'live' ? `With the co-pilot${m.blocks ? ` · ${heldMinutes(m)} min` : ''}` : brief.madeFrom === 'recording' ? 'From a recording' : 'Written up from notes'} caption={brief.madeFrom === 'live' && m.blocks ? (m.blocks - m.freeBlocks ? `${(m.blocks - m.freeBlocks) * 25} AI credits` : 'Your free meeting') : undefined} two />
+                  <Row icon={brief.madeFrom === 'live' ? 'mic' : brief.madeFrom === 'recording' ? 'upload_file' : 'notes'} name={brief.madeFrom === 'live' ? `With Meeting Copilot${m.blocks ? ` · ${heldMinutes(m)} min` : ''}` : brief.madeFrom === 'recording' ? 'From a recording' : 'From notes'} caption={brief.madeFrom === 'live' && m.blocks ? (m.blocks - m.freeBlocks ? `${(m.blocks - m.freeBlocks) * 25} AI credits` : 'Your free meeting') : undefined} two />
                   <Row icon="check_box" name={`Checklist ${brief.checklist.done} of ${brief.checklist.total}`} caption={brief.checklist.missed.length ? `Not covered: ${brief.checklist.missed.join(', ')}` : 'Every must-ask covered'} two />
-                  {Object.keys(state.seen).length ? <Row icon="lightbulb" name={`${Object.keys(state.seen).length} tips came up`} caption={`${state.acted.length} acted on`} two /> : null}
+                  {Object.keys(state.seen).length ? <Row icon="lightbulb" name={`${Object.keys(state.seen).length} tips came up`} caption={`${state.acted.length} used`} two /> : null}
                 </div>
               </Card>
             </div>
           </div>
         ) : (
-          <Card title="Brief" testId="brief-missing"><div className={styles.cardBody}><p className={styles.line}>This meeting has no brief yet — write its notes up to make one.</p>{data.mayChange ? <span className={styles.cardAct}><Button onPress={() => setWriteUpOpen(true)}>Write it up</Button></span> : null}</div></Card>
+          <Card title="Summary" testId="brief-missing"><div className={styles.cardBody}><p className={styles.line}>This meeting has no summary yet — write its notes up to make one.</p>{data.mayChange ? <span className={styles.cardAct}><Button onPress={() => setWriteUpOpen(true)}>Write it up</Button></span> : null}</div></Card>
         )}
         </div>
         {footed && (primary || secondary) ? <div ref={footRef} className={styles.foot} data-testid="room-foot">{secondary}{primary}</div> : null}
       </div>
 
-      <ConfirmDialog open={confirmEnd} title="End the meeting?" message="The co-pilot stops and the brief is made from what was said. You can edit it after." confirmLabel="End the meeting" onCancel={() => setConfirmEnd(false)} onConfirm={() => { void end() }} />
+      <ConfirmDialog open={confirmEnd} title="End the meeting?" message="Meeting Copilot stops and the summary is made from what was said. You can edit it after." confirmLabel="End the meeting" onCancel={() => setConfirmEnd(false)} onConfirm={() => { void end() }} />
       {brief ? <SaveToLeadDialog open={saveOpen} onClose={() => setSaveOpen(false)} onSave={saveToLead} brief={brief} lead={{ propertyType: data.lead.propertyType, areaSqft: data.lead.areaSqft, budgetMinor: data.lead.budgetMinor, style: data.lead.style, keyCollection: data.lead.keyCollection }} client={first} now={data.now} existingFollowUp={data.followUp} busy={saving} /> : null}
-      {brief ? <EditTextDialog open={edit === 'summary'} onClose={() => setEdit(null)} title="Edit the summary" label="Summary" value={brief.summary} onSave={(v) => saveText('summary', v)} help="Kept when the brief is made again." /> : null}
+      {brief ? <EditTextDialog open={edit === 'summary'} onClose={() => setEdit(null)} title="Edit the summary" label="Summary" value={brief.summary} onSave={(v) => saveText('summary', v)} help="Kept when the summary is made again." /> : null}
       {brief ? <EditTextDialog open={edit === 'actions'} onClose={() => setEdit(null)} title="Edit the next steps" label="Next steps" value={brief.actions.join('\n')} onSave={(v) => saveText('actions', v)} lines /> : null}
-      {brief ? <EditTextDialog open={edit === 'followUp'} onClose={() => setEdit(null)} title={`Edit the message to ${first}`} label="Message" value={brief.followUp} onSave={(v) => saveText('followUp', v)} help="Kept when the brief is made again." /> : null}
-      <EditTextDialog open={edit === 'notes'} onClose={() => setEdit(null)} title="Edit the notes" label="What was said" value={notes} onSave={(v) => saveText('notes', v)} help="Saving makes the brief again from them — your edits to the summary, the steps and the message stay." />
+      {brief ? <EditTextDialog open={edit === 'followUp'} onClose={() => setEdit(null)} title={`Edit the message to ${first}`} label="Message" value={brief.followUp} onSave={(v) => saveText('followUp', v)} help="Kept when the summary is made again." /> : null}
+      <EditTextDialog open={edit === 'notes'} onClose={() => setEdit(null)} title="Edit the notes" label="What was said" value={notes} onSave={(v) => saveText('notes', v)} help="Saving makes the summary again from them — your edits to the summary, the steps and the message stay." />
       <WriteUpHere open={writeUpOpen} onClose={() => setWriteUpOpen(false)} data={data} />
       <MoodBoardDialog open={!!boardOpen} onClose={() => setBoardOpen(null)} heard={reading.styles} kept={state.boards} onKeep={keepBoard} client={first} style={boardOpen?.style ?? null} />
       <PortfolioDialog open={portfolioOpen} onClose={() => setPortfolioOpen(false)} matches={portfolio} all={data.portfolio.length} client={first} />
@@ -588,7 +594,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
               {hasEstimate ? <Checkbox isSelected={shareOpts.estimate} onChange={(on: boolean) => setShareOpts((o) => ({ ...o, estimate: on }))} data-testid="share-estimate">The rough estimate (a range — never a quote)</Checkbox> : null}
             </div>
           ) : null) : data.lead.email ? (
-            <div className={styles.cardAct}><span className={styles.note}>Or email it to {data.lead.email}.</span><Button appearance="text" onPress={() => { setSend(null); void inviteClient(m.id, 'email').then((x) => { if ('error' in x) fail('email the invitation', refusalOf(x.error)); else snackbar({ message: x.emailed === 'off' ? 'Your studio has the meeting email switched off — Settings › Notifications' : x.emailed === 'no_address' ? 'The lead has no email' : `Invitation emailed for ${whenWords(m.startsAt)}` }); refresh() }, () => fail('email the invitation')) }} data-testid="invite-email">Send by email</Button></div>
+            <div className={styles.cardAct}><span className={styles.note}>Or email it to {data.lead.email}.</span><Button appearance="text" onPress={() => { setSend(null); void inviteClient(m.id, 'email').then((x) => { if ('error' in x) fail('email the invitation', refusalOf(x.error)); else snackbar({ message: x.emailed === 'off' ? 'Your studio has the meeting email switched off — Settings › Studio notifications' : x.emailed === 'no_address' ? 'The lead has no email' : `Invitation emailed for ${whenWords(m.startsAt)}` }); refresh() }, () => fail('email the invitation')) }} data-testid="invite-email">Send by email</Button></div>
           ) : null}
           onSend={({ phone, message }) => {
             window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')   // on the press (REG-534)
@@ -601,7 +607,16 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
   )
 }
 
-/** Write it up instead (a planned meeting held without the co-pilot): the house write-up dialog, then the brief on this page. */
+/** (the calm UI build 2026-10-27, 2-09 · T-05) What to do while listening isn't connected — one line; the prototype's note behind its "?". */
+function StandIn() {
+  return (
+    <p className={styles.standIn} data-testid="room-stand-in"><Icon name="info" size={16} /><span className={styles.standInText}>{LISTENING_STAND_IN}</span>
+      <Tooltip label={LISTENING_PROTOTYPE_NOTE}><IconButton icon="help" label="About listening on this prototype" /></Tooltip>
+    </p>
+  )
+}
+
+/** Write it up instead (a planned meeting held without Meeting Copilot): the house write-up dialog, then the summary on this page. */
 function WriteUpHere({ open, onClose, data }: { open: boolean; onClose: () => void; data: MeetingRoomData }) {
   const { fail, refresh } = useRun()
   const snackbar = useSnackbar()
@@ -619,9 +634,9 @@ function WriteUpHere({ open, onClose, data }: { open: boolean; onClose: () => vo
         setBusy(true)
         const r = await writeUpMeeting({ leadId: data.lead.id, meetingId: m.id, notes: v.notes, aim: v.aim, whereKind: v.whereKind, startsAt: at.getTime(), memberIds: v.memberIds, recording: v.recording ? { name: v.recording.name, data: v.recording.data } : null, consent: v.consent }).catch(() => null)
         setBusy(false)
-        if (!r || 'error' in r) { fail('make the brief', r ? refusalOf(r.error) : null); return false }
+        if (!r || 'error' in r) { fail('make the summary', r ? refusalOf(r.error) : null); return false }
         const next = r.next   // (S42G)
-        snackbar({ message: 'Brief made from the notes', ...(next ? { actionLabel: meetingStepLabel(next), onAction: () => router.push(meetingStepHref(data.lead.id, m.id, next)) } : {}) })
+        snackbar({ message: 'Summary made from your notes', ...(next ? { actionLabel: meetingStepLabel(next), onAction: () => router.push(meetingStepHref(data.lead.id, m.id, next)) } : {}) })
         refresh(); return true
       }} />
   )

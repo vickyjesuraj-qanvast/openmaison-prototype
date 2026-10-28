@@ -3,6 +3,9 @@
 // note, Maison AI's door, a phone, and Windows keys. Against a production build on :3011 on a scratch DB.
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const BASE = process.env.BASE || 'http://localhost:3011'
 const OUT = process.env.OUT
 const DB = process.env.DB
@@ -123,12 +126,12 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   await p.goto(`${BASE}/leads`, { waitUntil: 'networkidle' }); await settle(900)
   const studio = p.getByRole('button', { name: /^Demo Studio/ })
   await studio.click(); await settle(500)
-  await p.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Almost out/ }).click(); await settle(1600)
+  await (await openDemo(p)).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Almost out/ }).click(); await settle(1600)
   ok(await p.locator('[data-testid="rail-credits"] [data-tone="low"] svg circle').count() >= 2, 'Almost out: the ring is a short amber arc, the spark unchanged')
   const rb = await p.locator('[data-testid="rail-credits"]').boundingBox()
   await p.screenshot({ path: `${OUT}/kb2-02-ring-low.png`, clip: { x: 0, y: Math.max(0, rb.y - 40), width: 260, height: 110 } })
   await studio.click(); await settle(500)
-  await p.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).click(); await settle(1600)
+  await (await openDemo(p)).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).click(); await settle(1600)
 
   /* H · the bell's note opens the panel; Maison AI's door */
   await focusPage()
@@ -139,10 +142,13 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   await note.first().click(); await settle(800)
   ok(await panel.isVisible(), 'the note opens the panel')
   await p.keyboard.press('Escape'); await settle(400)
-  await p.getByRole('button', { name: /Maison AI/ }).first().click(); await settle(700)
-  const door = p.getByText('Keyboard shortcuts for this page')
-  ok(await door.first().isVisible().catch(() => false), 'Maison AI offers Keyboard shortcuts for this page')
-  await door.first().click(); await settle(700)
+  /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-19) the Maison AI sheet is Maison AI's alone: the panel's doors are ?, the bell's note above and ⌘K's Go to ›
+     Keyboard shortcuts — checked here */
+  await p.keyboard.press('Meta+k'); await settle(500)
+  await p.keyboard.type('keyboard shortcuts'); await settle(900)
+  const door = p.getByRole('option', { name: /Keyboard shortcuts/ }).or(p.locator('[role="dialog"] button, [role="dialog"] a').filter({ hasText: 'Keyboard shortcuts' })).first()
+  ok(await door.isVisible().catch(() => false), '⌘K offers Go to › Keyboard shortcuts')
+  await door.click(); await settle(700)
   ok(await panel.isVisible(), 'and opens the panel')
   await p.keyboard.press('Escape'); await settle(300)
 

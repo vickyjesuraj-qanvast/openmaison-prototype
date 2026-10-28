@@ -8,11 +8,10 @@ import card from '@/components/leads/detail/card.module.css'
 import overview from '@/components/projects/project-overview.module.css'
 import { setFlagPref, useFlagPref } from '@/lib/prefs'
 import { displayDate, displayDue, groupDigits, moneyCard, titleCaseName } from '@/lib/format'
-import { AIMS, DISCLOSURE, LISTENING_STAND_IN, TIER_LINES, consentLabel, firstOf, heldMinutes, tierOf, type Profile } from '@/lib/meetings/model'
+import { AIMS, LISTENING_STAND_IN, TIER_LABEL, TIER_LINES, consentLabel, firstOf, heldMinutes, tierOf, type Profile } from '@/lib/meetings/model'
 import { meetingStepLabel, meetingStepWords } from '@/lib/meetings/next-step'   // (S42G)
 import { CATEGORIES, checklistFor } from '@/lib/meetings/checklists'
 import { kindLabel } from '@/lib/meetings/objections'
-import { whenWords } from '@/lib/meetings/words'
 import type { MeetingRoomData } from '@/lib/meetings/queries'
 import styles from './room.module.css'
 
@@ -84,7 +83,7 @@ function heardOf(p: Profile): { name: string; meta: string }[] {
     ...(p.keyCollection ? [{ name: 'Key collection', meta: p.keyCollection }] : []),
     ...(p.decisionMakers ? [{ name: 'Who decides', meta: p.decisionMakers }] : []),
     ...(p.household.length ? [{ name: 'At home', meta: p.household.join(', ') }] : []),
-    ...(p.concerns.length ? [{ name: 'Concerns', meta: p.concerns.join(', ') }] : []),
+    /* (the calm UI build 2026-10-27, 2-21) the concerns are the Concerns card's — as the page draws them */
     ...(p.competitors.length ? [{ name: 'Also talking to', meta: p.competitors.join(', ') }] : []),
   ]
 }
@@ -112,7 +111,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
   const invited = m ? !!m.invitedAt : wasInvited
   const actions = !may ? [] : s === 'planned' ? (due ? [180, 'icon' as const] : [180, 156, 'icon' as const]) : s === 'live' ? [148, 'icon' as const] : brief && !m?.briefSavedAt ? [140, 132, 'icon' as const] : [132, 'icon' as const]
   const free = data?.credits.free ?? false
-  const price = free ? (data && data.credits.freeLeft > 0 ? `Your free meeting: the co-pilot is free for ${data.credits.freeLeft * 10} more minutes.` : 'Your free meeting with the co-pilot is used — the co-pilot comes with Pro.') : 'The co-pilot uses 25 AI credits for each 10 minutes, and asks before each next 10.'
+  const price = free ? (data && data.credits.freeLeft > 0 ? `Your free meeting: Meeting Copilot is free for ${data.credits.freeLeft * 10} more minutes.` : 'Your free meeting with Meeting Copilot is used — it comes with Pro.') : '25 AI credits per 10 minutes — it asks before going on.'
   const checklist = checklistFor(m?.aim ?? 'first_consultation', data?.playbook.own ?? [])
   const checkGroups = CATEGORIES.map((c) => ({ label: c.label, items: checklist.filter((r) => r.category === c.key).map((r) => r.label) })).filter((g) => g.items.length)
   const showChecklist = data ? data.copilot.features.checklist : true
@@ -128,7 +127,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
             {prep?.last ? <div className={styles.group}><GLabel>{`Last meeting · ${displayDate(new Date(prep.last.at))}${prep.last.count > 1 ? ` · ${prep.last.count} so far` : ''}`}</GLabel><Words as="p" className={styles.prose}>{prep.last.summary}</Words></div> : null}
             {prep && (prep.concerns.length || prep.competitors.length) ? <div className={styles.group}><GLabel>To address</GLabel>{prep.concerns.map((c) => <GRow key={c} name={`${c} concern`} />)}{prep.competitors.map((c) => <GRow key={c} name={`Also talking to ${c}`} />)}</div> : null}
             <div className={styles.group}><GLabel>Focus on</GLabel><ol className={styles.steps}>{(prep ? prep.focus : ['', '', '']).map((x, i) => <li key={i}>{x ? <Words>{x}</Words> : <Line w={[260, 220, 240][i % 3]!} />}</li>)}</ol></div>
-            {prep?.temperature ? <div className={styles.group}><GLabel>How warm, at the last meeting</GLabel><GRow name={`${prep.temperature.score} · ${prep.temperature.tier}`} caption={prep.temperature.line} two /></div> : null}
+            {prep?.temperature ? <div className={styles.group}><GLabel>How warm, at the last meeting</GLabel><GRow name={`${TIER_LABEL[prep.temperature.tier]} · ${prep.temperature.score}`} caption={prep.temperature.line} two /></div> : null}
           </div>
         </GCard>
         {showChecklist ? (
@@ -148,17 +147,17 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
               <GhostChips labels={AIMS.map((a) => a.label)} />
               <GhostField />
               <GhostField />
-              {first ? <GLabel>{`Tell ${first} before you start`}</GLabel> : <span className={styles.groupLabel}><Line w={200} /></span>}
-              <Words as="p" className={styles.disclosure}>{`“${DISCLOSURE}”`}</Words>
+              {/* (the calm UI build 2026-10-27, 2-48) what to tell the client folded behind its row, as the page draws it */}
+              <GRow name={first ? `What to tell ${first}` : null} />
               {first ? <GCheck label={consentLabel(first)} /> : <span className={styles.ghostCheck}><Bone w={20} h={20} r={4} /><Line w={240} lh={24} /></span>}
               <p className={styles.price}><Bone w={16} h={16} r={4} /><Words>{price}</Words></p>
-              <p className={styles.standIn}><Bone w={16} h={16} r={4} /><Words>{LISTENING_STAND_IN}</Words></p>
+              <p className={styles.standIn}><Bone w={16} h={16} r={4} /><Words className={styles.standInText}>{LISTENING_STAND_IN}</Words><Slot kind="icon" /></p>
             </div>
           </GCard>
         )}
         {due && !invited ? null : <GCard title="Invitation">
           <div className={styles.cardBody}>
-            <GRow name={m ? whenWords(m.startsAt) : null} caption={m ? (m.place ?? m.whereKind) : null} two />
+            <GRow name={m ? displayDue(new Date(m.startsAt)) : null} caption={m ? (m.place ?? m.whereKind) : null} two />
             <GRow name={m ? (m.invitedAt ? `Sent ${displayDate(new Date(m.invitedAt))}${m.invitedVia === 'email' ? ' by email' : m.invitedVia === 'whatsapp' ? ' on WhatsApp' : ''}` : 'Not sent yet') : null} caption={m && first ? (m.clientAnswer === 'yes' ? `${first} is coming` : m.clientAnswer === 'no' ? 'The time doesn’t suit them' : m.clientViewedAt ? `${first} opened it` : undefined) : undefined} two />
           </div>
         </GCard>}
@@ -171,7 +170,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
       <div className={`${styles.column} ${styles.act}`}>
         <GCard title="What’s being said">
           <div className={styles.cardBody}>
-            <p className={styles.standIn}><Bone w={16} h={16} r={4} /><Words>{LISTENING_STAND_IN}</Words></p>
+            <p className={styles.standIn}><Bone w={16} h={16} r={4} /><Words className={styles.standInText}>{LISTENING_STAND_IN}</Words><Slot kind="icon" /></p>
             <div className={styles.notesBar}><GhostTextButton label="Client:" /><GhostTextButton label="Me:" /></div>
             <span className={`${styles.notes} ${styles.ghostNotes}`} />
             <div className={styles.tools}>{[148, 164, 148, 132, 212].map((w, i) => <Slot key={i} kind="btn" w={w} />)}</div>
@@ -192,7 +191,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
         <GCard title="Summary" link={may ? 'Edit' : null}>
           <div className={styles.cardBody}>
             {brief ? <Words as="p" className={styles.prose}>{brief.summary}</Words> : <><Line w="96%" /><Line w="92%" /><Line w="88%" /><Line w="60%" /></>}
-            {brief ? (brief.madeFrom !== 'live' ? <Words as="p" className={styles.note}>{`Made from ${brief.madeFrom === 'recording' ? 'the recording’s transcript' : 'the notes'}, by rule.`}</Words> : null) : <Line w={180} lh={16} h={10} />}
+            {brief ? (brief.madeFrom !== 'live' ? <Words as="p" className={styles.note}>{brief.madeFrom === 'recording' ? 'From the recording’s transcript' : 'From your notes'}</Words> : null) : <Line w={180} lh={16} h={10} />}
           </div>
         </GCard>
         <GCard title="Next steps" link={may ? 'Edit' : null}>
@@ -208,7 +207,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
           <div className={styles.cardBody}>
             <div className={styles.group}>
               {heard ? (heard.length ? heard.map((r) => <GRow key={r.name} name={r.name} meta={r.meta} wrap />) : <Words as="p" className={styles.line}>Nothing about the home or the budget was heard yet.</Words>) : [0, 1, 2, 3, 4].map((i) => <GRow key={i} meta={null} wrap />)}
-              {brief && brief.tags.length ? <p className={styles.tags}>{brief.tags.map((t) => <Words key={t} className={styles.tag}>{t}</Words>)}</p> : null}
+              {brief && brief.tags.length ? <GRow name="Show details" /> : null}
             </div>
           </div>
         </GCard>
@@ -220,7 +219,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
                   <div key={i} className={styles.concern}>
                     <div className={styles.tipHead}><Bone w={20} h={20} r="50%" />{o ? <Words className={styles.tipTitle}>{`${kindLabel(o.kind)}${o.competitor ? ` · ${o.competitor}` : ''}`}</Words> : <Line w={96} />}</div>
                     {o ? <Words as="p" className={styles.said}>{`They said: “${o.said}”`}</Words> : <Line w="80%" lh={16} h={10} />}
-                    {o ? (o.answer ? <div className={styles.answer}><Words className={styles.answerHead}>{`${data?.studioName || 'Your studio'}’s answer${o.answerTitle ? ` · “${o.answerTitle}”` : ''}`}</Words><Words>{o.answer}</Words></div> : <Words as="p" className={styles.note}>No answer saved for this kind yet — Settings › Meetings › Objection answers.</Words>) : <span className={styles.answer}><Line w="70%" lh={16} h={10} /><Line w="94%" lh={16} h={10} /><Line w="88%" lh={16} h={10} /></span>}
+                    {o ? (o.answer ? <div className={styles.answer}><Words className={styles.answerHead}>{`Our answer${o.answerTitle ? ` · “${o.answerTitle}”` : ''}`}</Words><Words>{o.answer}</Words></div> : <Words as="p" className={styles.note}>No answer saved for this kind yet — Settings › Meetings › Answers to concerns.</Words>) : <span className={styles.answer}><Line w="70%" lh={16} h={10} /><Line w="94%" lh={16} h={10} /><Line w="88%" lh={16} h={10} /></span>}
                   </div>
                 ))}
               </div>
@@ -244,14 +243,14 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
       <div className={`${styles.column} ${styles.glance}`}>
         <GCard title="On the lead">
           <div className={styles.cardBody}>
-            {m?.briefSavedAt ? <GRow name={`Saved to the lead ${displayDate(new Date(m.briefSavedAt))}`} caption="The details and the follow-up are on it" two /> : <GRow name="Not saved to the lead yet" caption="Save it — the details heard and a follow-up task" two />}
+            {m?.briefSavedAt ? <GRow name={`Saved to the lead ${displayDate(new Date(m.briefSavedAt))}`} caption="The details and the follow-up are on it" two /> : <GRow name="Not saved to the lead yet" caption="Save to the lead adds the details heard and a follow-up task" two />}
             {m?.sharedAt && !m.shareStoppedAt ? <GRow name={`Shared with ${first} ${displayDate(new Date(m.sharedAt))}`} caption={m.clientViewedAt ? `${first} opened it` : 'Not opened yet'} two /> : null}
           </div>
         </GCard>
         {brief ? (brief.score !== null && brief.dims && data?.copilot.features.deal_scoring ? (
           <GCard title="Deal score">
             <div className={styles.cardBody}>
-              <div className={styles.scoreLine}><Words className={styles.score}>{String(brief.score)}</Words><Words className={styles.tier}>{tierOf(brief.score)}</Words><Words className={styles.line}>{TIER_LINES[tierOf(brief.score)]}</Words></div>
+              <div className={styles.scoreLine}><Words className={styles.score}>{String(brief.score)}</Words><Words className={styles.tier}>{TIER_LABEL[tierOf(brief.score)]}</Words><Words className={styles.line}>{TIER_LINES[tierOf(brief.score)]}</Words></div>
               <GRow name="Why this score" />
             </div>
           </GCard>
@@ -269,9 +268,9 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
           <div className={styles.cardBody}>
             <GRow name={m ? displayDue(new Date(m.startsAt)) : null} caption={m ? m.whereKind : null} two />
             <GRow name={m && data ? (m.memberIds.map((id) => data.team.find((t) => t.id === id)?.name).filter(Boolean).join(', ') || 'The studio') : null} />
-            <GRow name={brief && m ? (brief.madeFrom === 'live' ? `With the co-pilot${m.blocks ? ` · ${heldMinutes(m)} min` : ''}` : brief.madeFrom === 'recording' ? 'From a recording' : 'Written up from notes') : null} caption={brief && m && brief.madeFrom === 'live' && m.blocks ? (m.blocks - m.freeBlocks ? `${(m.blocks - m.freeBlocks) * 25} AI credits` : 'Your free meeting') : brief ? undefined : null} two />
+            <GRow name={brief && m ? (brief.madeFrom === 'live' ? `With Meeting Copilot${m.blocks ? ` · ${heldMinutes(m)} min` : ''}` : brief.madeFrom === 'recording' ? 'From a recording' : 'From notes') : null} caption={brief && m && brief.madeFrom === 'live' && m.blocks ? (m.blocks - m.freeBlocks ? `${(m.blocks - m.freeBlocks) * 25} AI credits` : 'Your free meeting') : brief ? undefined : null} two />
             <GRow name={brief ? `Checklist ${brief.checklist.done} of ${brief.checklist.total}` : null} caption={brief ? (brief.checklist.missed.length ? `Not covered: ${brief.checklist.missed.join(', ')}` : 'Every must-ask covered') : null} two />
-            {m && Object.keys(m.state.seen).length ? <GRow name={`${Object.keys(m.state.seen).length} tips came up`} caption={`${m.state.acted.length} acted on`} two /> : null}
+            {m && Object.keys(m.state.seen).length ? <GRow name={`${Object.keys(m.state.seen).length} tips came up`} caption={`${m.state.acted.length} used`} two /> : null}
           </div>
         </GCard>
       </div>
@@ -280,7 +279,7 @@ export function MeetingRoomGhost({ status, data }: { status?: Status; data?: Mee
 
   return (
     <div className={styles.page} aria-hidden data-testid="meeting-room-ghost">
-      <GhostHead2 crumb={112} title={220} chips={[132, 168, 96]} actions={actions} />
+      <GhostHead2 crumb={112} title={220} chips={[132, 220]} actions={actions} />
       <div className={styles.content}>
         {s === 'planned' && m?.clientAnswer && first ? <p className={styles.banner}><Bone w={18} h={18} r="50%" /><Words>{m.clientAnswer === 'yes' ? `${first} says they’ll be there.` : `${first} says the time doesn’t suit${m.clientAnswerNote ? `: “${m.clientAnswerNote}”` : '.'} — Change the plan from the meeting’s row, or call them.`}</Words></p> : null}
         {s === 'held' && data?.lead.next && first && !data.project && !data.linkedToLog ? ((w) => (   /* (S42G) the page's own offer, in its words */

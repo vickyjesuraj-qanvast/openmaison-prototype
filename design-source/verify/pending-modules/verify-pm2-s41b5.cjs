@@ -188,7 +188,10 @@ async function measure(b, opts, url, blocks, max = 6) {
     if (latestActive) ok(aug.includes(fmt(byMonth(latestActive).reduce((s, l) => s + l.budget_minor / 100, 0))) && aug.includes(fmt(200 * byMonth(latestActive).length)), `${latestActive}: the leads’ budgets and the credits they took`, aug)
     const won = qleads.filter((l) => l.stage === 'Won').length
     ok(num(await tileValue(d, 'closures-contracts')) === won && (await tileValue(d, 'closures-rate')).endsWith('%'), `Closures: the Qanvast leads won (${won})`)
-    ok(/Simulated on this prototype/.test(await text(d.getByTestId('qanvast-account-sample'))), 'the stand-in says it is one')
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-09 · T-05) the prototype note sits behind a "?" — its words are the tooltip's */
+    await d.getByTestId('qanvast-account-sample').hover(); await settle(d, 600)
+    ok(/Simulated on this prototype/.test(await text(d.getByRole('tooltip').last())), 'the stand-in says it is one — behind its "?"')
+    await d.mouse.move(2, 2); await settle(d, 300)
     await shot(d, '01-credits-overview-1440', true)
     /* Maison AI answers from the page */
     await fab(d)
@@ -196,7 +199,7 @@ async function measure(b, opts, url, blocks, max = 6) {
     ok((await text(sheet(d))).includes(`${fmt(BALANCE)} credits left`), 'Maison AI: “How many lead credits are left?” answers the balance')
     await d.keyboard.press('Escape'); await settle(d, 400)
     /* the Ask box, asked anywhere: lead credits are Qanvast's, never the AI credits */
-    await go(d, '/dashboard', 1200); await fab(d)
+    await go(d, '/tasks', 1200); await fab(d)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field — the floating button steps aside there (Q-02); its sheet is asked on another page
     ok((await text(await ask(d, 'how many lead credits do we have left?'))).includes(`${fmt(BALANCE)} credits left`), 'the Ask box: “how many lead credits do we have left?” — Qanvast’s, not the AI credits')
     ok(/★ from \d+ reviews? on Qanvast/.test(await text(await ask(d, 'how are our reviews on qanvast?'))), 'the Ask box: “how are our reviews on Qanvast?”')
     await d.keyboard.press('Escape'); await settle(d, 400)
@@ -335,7 +338,7 @@ async function measure(b, opts, url, blocks, max = 6) {
     /* Request reviews */
     console.log('6b · Request reviews')
     await d.getByTestId('reviews-request').click(); await settle(d, 600)
-    const dlg = d.getByRole('dialog', { name: 'Request reviews' })
+    const dlg = d.getByRole('dialog', { name: 'Ask for reviews' })
     const finishedN = done.length + json(`select p.id from projects p join leads l on l.id = p.lead_id where p.completed_at is not null and p.deleted_at is null and l.deleted_at is null`).length - done.length
     ok(await dlg.count() === 1 && (await text(dlg.getByTestId('request-mode'))).includes(`Finished projects · ${finishedN}`), 'Request reviews opens on the finished projects’ clients')
     /* (S42E, E-06 — a deliberate change of this rule) a client whose review is on record is listed, says so, and starts unticked */
@@ -369,11 +372,11 @@ async function measure(b, opts, url, blocks, max = 6) {
     ok(await sendD.getByTestId('request-opened').count() === 1, '…and the row says Opened')
     await shot(d, '08-request-send-1440')
     await sendD.getByTestId('request-done').click(); await settle(d, 800)
-    ok(/Asked .+ for a review on WhatsApp/.test(await snackText(d)) && await d.getByRole('dialog', { name: /Send on WhatsApp|Request reviews/ }).count() === 0, 'Done closes it and says who was asked', await snackText(d))
+    ok(/Asked .+ for a review on WhatsApp/.test(await snackText(d)) && await d.getByRole('dialog', { name: /Send on WhatsApp|Ask for reviews/ }).count() === 0, 'Done closes it and says who was asked', await snackText(d))
     /* the doors: ?request=1 and Ranking's tip */
     await go(d, '/qanvast-ops/reviews?request=1', 1600)
-    ok(await d.getByRole('dialog', { name: 'Request reviews' }).count() === 1, '?request=1 opens Request reviews on arrival')
-    await d.getByRole('dialog', { name: 'Request reviews' }).getByRole('button', { name: 'Cancel' }).click(); await settle(d, 900)
+    ok(await d.getByRole('dialog', { name: 'Ask for reviews' }).count() === 1, '?request=1 opens Request reviews on arrival')
+    await d.getByRole('dialog', { name: 'Ask for reviews' }).getByRole('button', { name: 'Cancel' }).click(); await settle(d, 900)
     ok(!new URL(d.url()).searchParams.has('request'), '…and closing it leaves the plain address')
 
     // ── 7 · Ranking ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -385,10 +388,10 @@ async function measure(b, opts, url, blocks, max = 6) {
     ok(num(await tileValue(d, 'factor-reviews')) === ats.filter((t) => t >= now - 365 * DAY).length, 'Reviews over 12 months = the reviews written in the last 12 months')
     ok(num(await tileValue(d, 'factor-projects')) === Number(sql(`select count(*) from member_portfolio_projects where deleted_at is null`)), 'Projects = the designers’ published work')
     const told30 = qleads.filter((l) => !l.deleted_at && l.at >= now - 30 * DAY).length
-    if (!told30) ok((await tileValue(d, 'told-contact')) === '–' && /No homeowner answered/.test(await text(d.getByTestId('ranking-told-note'))), 'no Qanvast lead in 30 days: dashes, and why')
+    if (!told30) ok((await tileValue(d, 'told-contact')) === '–' && /No client answered/.test(await text(d.getByTestId('ranking-told-note'))), 'no Qanvast lead in 30 days: dashes, and why')
     await shot(d, '09-ranking-1440', true)
     await d.getByTestId('ranking-ask').click(); await settle(d, 1600)
-    ok(new URL(d.url()).pathname === '/qanvast-ops/reviews' && await d.getByRole('dialog', { name: 'Request reviews' }).count() === 1, 'Ask homeowners for a review opens Request reviews')
+    ok(new URL(d.url()).pathname === '/qanvast-ops/reviews' && await d.getByRole('dialog', { name: 'Ask for reviews' }).count() === 1, 'Ask homeowners for a review opens Request reviews')
     await d.keyboard.press('Escape'); await settle(d, 600)
     await go(d, '/qanvast-ops/reviews/ranking')
     ok((await d.getByTestId('ranking-work').getAttribute('href')).startsWith('/profile?from=') || (await d.getByTestId('ranking-work').getAttribute('href')).startsWith('/profile#'), 'publish more work: Your public profile, with the way back', await d.getByTestId('ranking-work').getAttribute('href'))
@@ -408,7 +411,7 @@ async function measure(b, opts, url, blocks, max = 6) {
       await go(d, days === 30 ? '/qanvast-ops/reviews/feedback' : `/qanvast-ops/reviews/feedback?days=${days}`)
       const sum = await text(d.getByTestId('feedback-summary'))
       if (ans.length >= 2) {
-        ok(sum.includes(`${ans.length} of the ${inW.length} homeowners`) && num(await text(d.getByTestId('feedback-contact-value'))) === Math.round(week / ans.length * 100) && (await text(d.getByTestId('feedback-row-lt3'))).startsWith('In less than 3 days') && (await text(d.getByTestId('feedback-row-lt3'))).includes(`${lt3} (`) && num(await text(d.getByTestId('feedback-meeting-value'))) === Math.round(met / ans.length * 100),
+        ok(sum.includes(`${ans.length} of the ${inW.length} clients`) && num(await text(d.getByTestId('feedback-contact-value'))) === Math.round(week / ans.length * 100) && (await text(d.getByTestId('feedback-row-lt3'))).startsWith('In less than 3 days') && (await text(d.getByTestId('feedback-row-lt3'))).includes(`${lt3} (`) && num(await text(d.getByTestId('feedback-meeting-value'))) === Math.round(met / ans.length * 100),
           `${days} days: ${ans.length} of ${inW.length} answered (a week after the lead, unless returned as unreachable); contacted within a week ${week}, within 3 days ${lt3}; met ${met}`, sum)
       } else ok(/no leads|None of|Only/.test(sum) && (await text(d.getByTestId('feedback-contact-value'))) === '–', `${days} days: too few answers (${ans.length}) — dashes and why`, sum)
     }
@@ -425,7 +428,7 @@ async function measure(b, opts, url, blocks, max = 6) {
     await go(d, '/company/profile', 1400)
     ok(await d.getByTestId('review-qanvast-door').count() === 1, 'Company › Profile › Reviews: the door to Request reviews on Qanvast Ops (the Owner)')
     await d.getByTestId('review-qanvast-request').click(); await settle(d, 1800)
-    ok(new URL(d.url()).pathname === '/qanvast-ops/reviews' && await d.getByRole('dialog', { name: 'Request reviews' }).count() === 1, '…it opens Request reviews')
+    ok(new URL(d.url()).pathname === '/qanvast-ops/reviews' && await d.getByRole('dialog', { name: 'Ask for reviews' }).count() === 1, '…it opens Request reviews')
     for (const [from, want] of [['/qanvast-ops/credits', '/qanvast-ops/credits'], ['/qanvast-ops/credits/transactions', '/qanvast-ops/credits/transactions'], ['/qanvast-ops/credits/contracts', '/qanvast-ops/credits/contracts'], ['/qanvast-ops/reviews', '/qanvast-ops/reviews'], ['/qanvast-ops/reviews/feedback', '/qanvast-ops/reviews/feedback'], ['/qanvast-ops/leads', '/qanvast-ops'], ['/qanvast-ops/credits/leads', '/qanvast-ops'], ['/qanvast-ops/credits/packages', '/qanvast-ops/credits/contracts']]) {
       const r = await chain(from)
       ok(r.status === 200 && rel(r.final) === want, `1.0’s ${from} → ${want}`, r.hops)
@@ -480,9 +483,9 @@ async function measure(b, opts, url, blocks, max = 6) {
       if (w === 390) {
         await go(p, '/qanvast-ops/reviews', 1400)
         await p.getByTestId('reviews-request').tap(); await settle(p, 800)
-        ok(await p.getByRole('dialog', { name: 'Request reviews' }).count() === 1 && await sideways(p) <= 0, '390: Request reviews rises as a sheet')
+        ok(await p.getByRole('dialog', { name: 'Ask for reviews' }).count() === 1 && await sideways(p) <= 0, '390: Request reviews rises as a sheet')
         await shot(p, '13-request-390')
-        await p.getByRole('dialog', { name: 'Request reviews' }).getByRole('button', { name: 'Cancel' }).tap(); await settle(p, 500)
+        await p.getByRole('dialog', { name: 'Ask for reviews' }).getByRole('button', { name: 'Cancel' }).tap(); await settle(p, 500)
         await go(p, `/qanvast-ops/credits/transactions?month=${m}`, 1400)
         await p.getByTestId('credits-month').tap(); await settle(p, 600)
         ok(await p.locator('[role="menuitemradio"]').count() > 0 && await sideways(p) <= 0, '390: the month menu is a sheet')

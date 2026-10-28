@@ -29,7 +29,9 @@ fs.mkdirSync(dir, { recursive: true })
 const BASE = baseArg || process.env.BASE || 'http://localhost:3160'
 const ONLY = (process.env.ONLY || '').split(',').filter(Boolean)
 const want = (n) => !ONLY.length || ONLY.includes(String(n))
-const REPO = path.resolve(__dirname, '..', '..', '..')
+/* (the calm UI build 2026-10-27, a harness fix) copied into a regression lane the probe can't climb to the repo from __dirname — the runner
+   starts it in the repo, so the working directory is the repo there */
+const REPO = fs.existsSync(path.join(process.cwd(), 'package.json')) && fs.existsSync(path.join(process.cwd(), 'public', 'fonts', 'doc')) ? process.cwd() : path.resolve(__dirname, '..', '..', '..')
 const UAT = path.join(REPO, 'public', 'uat-files')
 const sql = (q) => execSync(`sqlite3 -cmd ".timeout 30000" "${DB}" "${q.replace(/"/g, '\\"')}"`, { maxBuffer: 256 * 1024 * 1024 }).toString().trim()
 const json = (q) => { const out = execSync(`sqlite3 -cmd ".timeout 30000" -json "${DB}" "${q.replace(/"/g, '\\"')}"`, { maxBuffer: 256 * 1024 * 1024 }).toString().trim(); return out ? JSON.parse(out) : [] }

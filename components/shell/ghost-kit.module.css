@@ -6,6 +6,9 @@
 .head { position: relative; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 68px; padding: var(--om-spacing-4) var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
 .headTitle { flex: 1; display: flex; align-items: center; min-width: 0; min-height: 36px; }
 .headActions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+/* (the calm UI build 2026-10-27) PageHeader's `after` beside the title — its 8 from the title, its own 4 between (page-header.module.css .after) */
+.headTitle:has(> .headAfter) { gap: var(--om-spacing-2); }
+.headAfter { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
 
 /* The L2 header (page-header-l2.module.css): back · crumb over the title · actions, 72 tall — detail-skeleton.module.css draws the same. */
 .head2 { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 72px; padding: var(--om-spacing-4) var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
@@ -117,6 +120,9 @@
      the ghost's 36 title row made it 12 taller (Client portal's header) */
   .headTitle { min-height: 24px; }
   .headTitle > * { max-height: 24px; }   /* the title's bone in the title's 24 line (its 28 overrode it in the wrapped row) */
+  /* (the calm UI build 2026-10-27) …but what sits beside the title keeps its own height, and takes the next line when it doesn't fit, as the page's */
+  .headTitle > .headAfter { max-height: none; }
+  .headTitle:has(> .headAfter) { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
   /* (responsive audit 2026-10-23, W1 — REG-708) The page's title never shrinks under its words, so where its actions don't fit beside it they
      take the next line; the ghost's title shrank to nothing instead, and at 320 Your profile's and Company › Profile's title bone ran under
      Discard. The bone keeps its width, so the actions wrap where the page's do (a header whose actions fit is unchanged). */

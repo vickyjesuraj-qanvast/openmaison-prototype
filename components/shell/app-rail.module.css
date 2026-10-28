@@ -233,3 +233,8 @@ button.avatarRow:focus-visible .avatar { outline: var(--om-border-2) solid var(-
   pointer-events: none;
 }
 .panel[data-expanded] .badge { right: auto; left: 22px; }
+/* (the calm UI build 2026-10-27 — the audit's 1-04, T-07) a mark with no number: Tasks' red dot (yours and overdue), Issues' grey dot (a client
+   waits) — the badge's place and ring, 8 across; one more class than the badge, so it wins in any load order */
+.badge.badgeDot, .badge.badgeQuiet { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 6px; right: 8px; }
+.panel[data-expanded] .badge.badgeDot, .panel[data-expanded] .badge.badgeQuiet { right: auto; left: 30px; }
+.badge.badgeQuiet { background: var(--om-color-on-surface-secondary); }

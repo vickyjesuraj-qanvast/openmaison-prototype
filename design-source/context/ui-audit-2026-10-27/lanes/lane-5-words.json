@@ -1,0 +1,1367 @@
+[
+ {
+  "now": "People and roles",
+  "proposed": "(remove — the page is Members)",
+  "where": [
+   "/company/members card title",
+   "components/company/members-view.tsx:348"
+  ],
+  "why": "Repeats the page; \"People\" is a third name for members.",
+  "kind": "heading"
+ },
+ {
+  "now": "Owners and Admins run the studio and assign any lead; only an Owner makes another Owner, … Who sees which leads is set under Settings › Roles & access.",
+  "proposed": "What can each role do? (HelpLink → Settings › Roles & access)",
+  "where": [
+   "/company/members",
+   "lib/company/copy.ts:24"
+  ],
+  "why": "Five-line policy on top of a list.",
+  "kind": "helper"
+ },
+ {
+  "now": "Projects at once",
+  "proposed": "Max projects",
+  "where": [
+   "/company/members row select",
+   "components/company/members-view.tsx:412",
+   "/projects?view=workload Set capacity — components/projects/workload/workload-view.tsx:120"
+  ],
+  "why": "Not how studios talk about workload. Same field named in Workload view.",
+  "kind": "label"
+ },
+ {
+  "now": "Studio default · 4",
+  "proposed": "4 (studio usual)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:260"
+  ],
+  "why": "Reads as a code.",
+  "kind": "label"
+ },
+ {
+  "now": "Sarah now runs the studio default — 4 projects at once",
+  "proposed": "Sarah takes up to 4 projects (the studio usual)",
+  "where": [
+   "/company/members snackbar",
+   "components/company/members-view.tsx:270"
+  ],
+  "why": "System words in a confirmation.",
+  "kind": "helper"
+ },
+ {
+  "now": "Runs the studio",
+  "proposed": "(remove — the Role says it)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:385"
+  ],
+  "why": "Insider phrase; duplicates the role.",
+  "kind": "label"
+ },
+ {
+  "now": "Keeps the books",
+  "proposed": "(remove)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:383"
+  ],
+  "why": "Duplicates the role Accounting.",
+  "kind": "label"
+ },
+ {
+  "now": "Looks after the leads",
+  "proposed": "(remove)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:384"
+  ],
+  "why": "Duplicates the role Marketing.",
+  "kind": "label"
+ },
+ {
+  "now": "On the About page",
+  "proposed": "(remove from the row; on the public profile the switch reads \"Show on your client portal\")",
+  "where": [
+   "/company/members tag",
+   "components/company/members-view.tsx:427"
+  ],
+  "why": "Assumes the owner knows the portal's About page; a CAPS tag that is not a status.",
+  "kind": "status"
+ },
+ {
+  "now": "Show on the About page · The client portal’s About › Our team.",
+  "proposed": "Show on your client portal · Clients see it under Our team.",
+  "where": [
+   "/company/members/[id]/profile",
+   "components/portfolio/public-profile-view.tsx:126"
+  ],
+  "why": "Insider place name.",
+  "kind": "label"
+ },
+ {
+  "now": "Reports to: Nobody",
+  "proposed": "No manager (in the member drawer only)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:49",
+   "components/company/members-view.tsx:380"
+  ],
+  "why": "\"Nobody\" reads odd as a value; a placeholder repeated down the list.",
+  "kind": "label"
+ },
+ {
+  "now": "No preferences set",
+  "proposed": "(remove)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:414"
+  ],
+  "why": "Placeholder repeated on most rows.",
+  "kind": "empty"
+ },
+ {
+  "now": "Signature: not set",
+  "proposed": "Add your signature (own row only)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:419-421"
+  ],
+  "why": "Repeated placeholder on 6 rows; only the member can act on it.",
+  "kind": "empty"
+ },
+ {
+  "now": "Closed to new leads",
+  "proposed": "Not taking new leads (only when the switch is off, and only one of the two)",
+  "where": [
+   "/company/members chip",
+   "components/company/members-view.tsx:409"
+  ],
+  "why": "Says the switch's state twice.",
+  "kind": "status"
+ },
+ {
+  "now": "YOU (chip)",
+  "proposed": "Dane (you)",
+  "where": [
+   "/company/members",
+   "components/company/members-view.tsx:370"
+  ],
+  "why": "A CAPS tag for a fact a word says.",
+  "kind": "label"
+ },
+ {
+  "now": "Lead preferences · James",
+  "proposed": "James’s lead preferences",
+  "where": [
+   "/company/members Preferences dialog",
+   "components/company/preferences-dialog.tsx"
+  ],
+  "why": "Dialog speaks to \"you\" about James.",
+  "kind": "heading"
+ },
+ {
+  "now": "Select the types of leads you prefer for each category, then set how important each one is. Must match means you strongly prefer those leads. Nice to have gives a soft boost. Leave a category as Don’t care to skip it. This is optional — if not set, every factor counts equally.",
+  "proposed": "What kind of leads suit James? Leave a row on Any if it doesn’t matter.",
+  "where": [
+   "/company/members Preferences dialog",
+   "components/company/preferences-dialog.tsx"
+  ],
+  "why": "Four sentences of system words.",
+  "kind": "helper"
+ },
+ {
+  "now": "This category won’t affect lead matching. Select a priority to configure.",
+  "proposed": "(remove — the \"Any\" value says it)",
+  "where": [
+   "/company/members Preferences dialog",
+   "components/company/preferences-dialog.tsx:53"
+  ],
+  "why": "Repeated four times; \"configure\".",
+  "kind": "helper"
+ },
+ {
+  "now": "Don’t care",
+  "proposed": "Any",
+  "where": [
+   "/company/members Preferences dialog priority select"
+  ],
+  "why": "Blunt; \"Any\" is the usual filter word.",
+  "kind": "label"
+ },
+ {
+  "now": "0 of 4 categories configured",
+  "proposed": "(remove)",
+  "where": [
+   "/company/members Preferences dialog",
+   "components/company/preferences-dialog.tsx:57"
+  ],
+  "why": "System word, adds nothing.",
+  "kind": "helper"
+ },
+ {
+  "now": "A line or two",
+  "proposed": "About them",
+  "where": [
+   "/company/members/[id]/profile",
+   "components/portfolio/public-profile-view.tsx:114"
+  ],
+  "why": "Describes the field's size, not its content.",
+  "kind": "label"
+ },
+ {
+  "now": "The client portal’s About › Our team · Qanvast Hangout · Marina Bay’s booking page · The meeting room’s Past projects",
+  "proposed": "Shown on: your client portal · your Qanvast Hangout booking page · meetings",
+  "where": [
+   "/company/members/[id]/profile",
+   "components/portfolio/public-profile-view.tsx:147-154"
+  ],
+  "why": "Insider place names.",
+  "kind": "helper"
+ },
+ {
+  "now": "By team member",
+  "proposed": "By member",
+  "where": [
+   "/company/reports/leads · /projects · /meetings · /health",
+   "components/leads/insights/insights-view.tsx",
+   "components/company/reports/*"
+  ],
+  "why": "Members page, Commission and Plan say \"By member\".",
+  "kind": "heading"
+ },
+ {
+  "now": "Your team (Studio health section)",
+  "proposed": "Members",
+  "where": [
+   "/company/reports/health",
+   "lib/studio-health/model.ts"
+  ],
+  "why": "Third name for the same people.",
+  "kind": "heading"
+ },
+ {
+  "now": "homeowners (Questionnaire help)",
+  "proposed": "clients",
+  "where": [
+   "/company/questionnaire",
+   "lib/company/question-bank.ts:5"
+  ],
+  "why": "The same paragraph also says \"the client\"; the studio app says client.",
+  "kind": "helper"
+ },
+ {
+  "now": "Homeowners find your studio on Qanvast",
+  "proposed": "Clients find your studio on Qanvast",
+  "where": [
+   "/company/profile Listed on Qanvast · /company/integrations Qanvast"
+  ],
+  "why": "Studio app says client; Qanvast-facing pages may keep homeowner.",
+  "kind": "helper"
+ },
+ {
+  "now": "Kept in Company: Members · Profile",
+  "proposed": "Related: Members · Profile · Your profile (one line at the module’s end)",
+  "where": [
+   "/settings?section=* module head",
+   "app/settings/module-head.tsx",
+   "lib/settings/modules.ts:31-40"
+  ],
+  "why": "Signpost line before every setting.",
+  "kind": "helper"
+ },
+ {
+  "now": "Your own details, signature and notifications: Your profile",
+  "proposed": "(fold into the Related line)",
+  "where": [
+   "/settings?section=* module head",
+   "app/settings/module-head.tsx:18"
+  ],
+  "why": "A second signpost line.",
+  "kind": "helper"
+ },
+ {
+  "now": "Who sees which leads — and each lead’s project, quotes and contracts — is set under Roles & access › Who sees leads.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=leads",
+   "app/settings/settings-view.tsx"
+  ],
+  "why": "Pointer paragraph.",
+  "kind": "helper"
+ },
+ {
+  "now": "How a client pays — the bank and PayNow — the issuing entities and the GST switch are kept on Profile; the payment schedules a quote offers, in Templates › Payment schedules.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=finance",
+   "lib/settings/copy.ts:81"
+  ],
+  "why": "Pointer paragraph.",
+  "kind": "helper"
+ },
+ {
+  "now": "Who may do what (on-page matrix)",
+  "proposed": "What each role can do · See the list (opens a drawer)",
+  "where": [
+   "/settings?section=studio",
+   "app/settings/studio-settings.tsx",
+   "lib/settings/copy.ts:23"
+  ],
+  "why": "Reference table, not a setting.",
+  "kind": "heading"
+ },
+ {
+  "now": "It decides who sees each lead and everything on it — its project, quotes, contracts, files and X‑Ray readings, and its row in Qanvast Ops. …",
+  "proposed": "Who can see a lead, and its project, quotes and files.",
+  "where": [
+   "/settings?section=studio Who sees leads"
+  ],
+  "why": "\"X-Ray readings\" and \"its row in Qanvast Ops\" are insider.",
+  "kind": "helper"
+ },
+ {
+  "now": "Linear",
+  "proposed": "One stage at a time",
+  "where": [
+   "/settings?section=leads How leads move",
+   "lib/settings/types.ts:15"
+  ],
+  "why": "Engineering word.",
+  "kind": "label"
+ },
+ {
+  "now": "Flexible",
+  "proposed": "Any stage, any time",
+  "where": [
+   "/settings?section=leads How leads move",
+   "lib/settings/types.ts"
+  ],
+  "why": "Vague.",
+  "kind": "label"
+ },
+ {
+  "now": "the lead’s journey",
+  "proposed": "the lead’s stages",
+  "where": [
+   "/settings?section=leads Flexible help"
+  ],
+  "why": "Vague.",
+  "kind": "helper"
+ },
+ {
+  "now": "Raise an untouched lead after",
+  "proposed": "Mark a new lead untouched after",
+  "where": [
+   "/settings?section=leads",
+   "app/settings/settings-view.tsx:523"
+  ],
+  "why": "\"Raise\" is an alert system's verb.",
+  "kind": "label"
+ },
+ {
+  "now": "A New lead with no contact logged is raised as “untouched” after this delay — to the members on it, in the bell and on the channels Notifications sets for it.",
+  "proposed": "A new lead nobody has contacted is flagged after this time, to the members on it.",
+  "where": [
+   "/settings?section=leads",
+   "lib/settings/copy.ts:43"
+  ],
+  "why": "System phrasing.",
+  "kind": "helper"
+ },
+ {
+  "now": "Not set yet — these are the defaults.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=leads Lead sources",
+   "app/settings/settings-view.tsx:531"
+  ],
+  "why": "Reads as an error.",
+  "kind": "helper"
+ },
+ {
+  "now": "These are the defaults.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=leads Lost and On Hold reasons",
+   "app/settings/settings-view.tsx:561"
+  ],
+  "why": "Adds nothing.",
+  "kind": "helper"
+ },
+ {
+  "now": "Not set yet — these are the ones every studio starts with.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=finance Expense categories · /settings?section=quotes Trades, Units"
+  ],
+  "why": "Reads as an error.",
+  "kind": "helper"
+ },
+ {
+  "now": "Contacts expected first",
+  "proposed": "Contacts logged first",
+  "where": [
+   "/settings?section=leads Lost reason dialog",
+   "app/settings/list-entry-dialog.tsx:14"
+  ],
+  "why": "Unclear verb.",
+  "kind": "label"
+ },
+ {
+  "now": "LEADS NOW",
+  "proposed": "Leads",
+  "where": [
+   "/settings?section=leads Lead stages table"
+  ],
+  "why": "Extra word.",
+  "kind": "label"
+ },
+ {
+  "now": "What waits for an Owner or an Admin",
+  "proposed": "Approvals",
+  "where": [
+   "/settings?section=projects",
+   "lib/settings/copy.ts:66",
+   "app/settings/owner-approvals.tsx"
+  ],
+  "why": "A sentence as a card name, repeated in three pointer lines. Dashboard / Finance say \"To approve\".",
+  "kind": "heading"
+ },
+ {
+  "now": "Handover needs an owner’s review",
+  "proposed": "Handover needs approval",
+  "where": [
+   "/settings?section=projects",
+   "lib/settings/copy.ts:72",
+   "components/projects/ending/handover-setting.tsx:40"
+  ],
+  "why": "Lower-case \"owner\" vs \"an Owner or an Admin\" everywhere else.",
+  "kind": "label"
+ },
+ {
+  "now": "Whether a milestone’s Done and schedule changes wait for an Owner or an Admin is switched under What waits for an Owner or an Admin, above.",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=projects Schedule"
+  ],
+  "why": "Pointer line.",
+  "kind": "helper"
+ },
+ {
+  "now": "Whether a Designer’s or a Manager’s invoice waits for an Owner or an Admin is set with the studio’s other approvals, under Projects › What waits for an Owner or an Admin. …",
+  "proposed": "(remove)",
+  "where": [
+   "/settings?section=finance Invoices",
+   "lib/settings/copy.ts:84"
+  ],
+  "why": "Pointer line.",
+  "kind": "helper"
+ },
+ {
+  "now": "How the studio’s invoices, receipts, credit notes, purchase orders and tickets are numbered, each under its own prefix. The prefix is letters and digits, up to 8; …",
+  "proposed": "How invoices, receipts, credit notes, POs and tickets are numbered.",
+  "where": [
+   "/settings?section=finance Document numbers",
+   "lib/settings/copy.ts:82"
+  ],
+  "why": "Four-line help; the rules belong on each field's helper.",
+  "kind": "helper"
+ },
+ {
+  "now": "Save the numbers · Save invoice rules · Save the paper · Save cost rules · Save numbering · Save rate",
+  "proposed": "Save",
+  "where": [
+   "/settings?section=finance|projects|quotes",
+   "app/settings/document-numbers.tsx:133",
+   "components/projects/money/invoice-settings.tsx:99",
+   "components/projects/money/invoice-paper-settings.tsx:151",
+   "components/finance/po-paper-settings.tsx:57",
+   "components/finance/cost-settings.tsx:108",
+   "app/settings/projects-settings.tsx:102",
+   "app/settings/settings-view.tsx:675",
+   "app/settings/settings-view.tsx:737"
+  ],
+  "why": "Seven labels for one verb.",
+  "kind": "label"
+ },
+ {
+  "now": "Trust the client’s proof",
+  "proposed": "Count a client’s proof of payment before you check it",
+  "where": [
+   "/settings?section=finance Client payments",
+   "components/projects/money/payments-settings.tsx:62"
+  ],
+  "why": "Vague.",
+  "kind": "label"
+ },
+ {
+  "now": "Costs (Settings › Finance card) / \"Set under Finance › Costs\"",
+  "proposed": "Money out / \"Set under Settings › Finance › Money out\"",
+  "where": [
+   "/settings?section=finance",
+   "/settings?section=studio Who may do what",
+   "lib/settings/copy.ts:76"
+  ],
+  "why": "Finance's tab is Money out; \"Finance › Costs\" is not a place.",
+  "kind": "name"
+ },
+ {
+  "now": "Purchase orders, expenses and supplier bills (approval row lead \"A Designer’s or a Manager’s PO over S$5,000.00 or with an advance, their expenses, and a bill over …\")",
+  "proposed": "POs, expenses and bills over the limit",
+  "where": [
+   "/settings?section=projects Approvals",
+   "lib/settings/copy.ts:76"
+  ],
+  "why": "One rule explained as a paragraph.",
+  "kind": "helper"
+ },
+ {
+  "now": "What a template’s {prepared_by} field prints on every quote",
+  "proposed": "What prints as “Prepared by” on every quote",
+  "where": [
+   "/settings?section=quotes Prepared by"
+  ],
+  "why": "Field code in a setting.",
+  "kind": "helper"
+ },
+ {
+  "now": "Pieces · Lot · sqft · ft run · point · hour · set",
+  "proposed": "Piece · Lot · sqft · ft run · Point · Hour · Set (one case)",
+  "where": [
+   "/settings?section=quotes Units",
+   "lib/quotes/items-model.ts:22"
+  ],
+  "why": "Two cases look like a typo.",
+  "kind": "label"
+ },
+ {
+  "now": "Contracts · signing links",
+  "proposed": "Signing links",
+  "where": [
+   "/settings?section=quotes"
+  ],
+  "why": "Shorter.",
+  "kind": "heading"
+ },
+ {
+  "now": "What the studio hears about, on which channels, and the words each message uses. In app rows land in the bell; email and WhatsApp go out with them, sent by the platform with the same words — every one is listed under Sent messages.",
+  "proposed": "What the studio is told about, and on which channels.",
+  "where": [
+   "/settings?section=notifications",
+   "lib/settings/copy.ts:19"
+  ],
+  "why": "Three clauses of system words.",
+  "kind": "helper"
+ },
+ {
+  "now": "Message wording (card with 232 previews)",
+  "proposed": "Edit wording (per event, opens a drawer)",
+  "where": [
+   "/settings?section=notifications",
+   "app/settings/notifications-settings.tsx:141-160"
+  ],
+  "why": "A 26,000 px page.",
+  "kind": "heading"
+ },
+ {
+  "now": "1 awaiting · 1 proposed · 4 to approve",
+  "proposed": "n to approve (all three)",
+  "where": [
+   "rail › Company panel",
+   "components/company/company-popover.tsx"
+  ],
+  "why": "Three words for one state.",
+  "kind": "status"
+ },
+ {
+  "now": "What the templates print through their fields — {studio_name}, {studio_uen}, {studio_address} and the rest.",
+  "proposed": "These print on your quotes, invoices and contracts.",
+  "where": [
+   "/company/profile Company details",
+   "lib/company/copy.ts:10"
+  ],
+  "why": "Field codes are template internals.",
+  "kind": "helper"
+ },
+ {
+  "now": "Prints where a template places {studio_tagline} — a cover, a footer.",
+  "proposed": "A short line for your quote cover or footer.",
+  "where": [
+   "/company/profile Tagline",
+   "lib/company/copy.ts:15"
+  ],
+  "why": "Field code.",
+  "kind": "helper"
+ },
+ {
+  "now": "Handles or links, as you want them printed — e.g. @demostudio.sg. {studio_social} prints the filled ones in a line; the Social links element on a template prints each with its mark.",
+  "proposed": "As you want them printed, e.g. @demostudio.sg.",
+  "where": [
+   "/company/profile Social links",
+   "lib/company/copy.ts:13"
+  ],
+  "why": "Field code and template internals.",
+  "kind": "helper"
+ },
+ {
+  "now": "GST-registered · off turns GST off on quotes raised under it",
+  "proposed": "GST-registered · off: quotes under this company have no GST",
+  "where": [
+   "/company/profile entity",
+   "lib/company/copy.ts:20"
+  ],
+  "why": "\"raised under it\" is system phrasing.",
+  "kind": "helper"
+ },
+ {
+  "now": "Listed before your studio used OpenMaison — what Qanvast shows isn’t on record here yet.",
+  "proposed": "You were listed on Qanvast before OpenMaison. Update your listing to bring it in.",
+  "where": [
+   "/company/profile Listed on Qanvast"
+  ],
+  "why": "Unclear what to do.",
+  "kind": "helper"
+ },
+ {
+  "now": "Simulated on this prototype — … (Qanvast, Website form, Meta, Gmail, Xero, Listed on Qanvast)",
+  "proposed": "Demo (a quiet chip; the sentence in its Tooltip — or developers only)",
+  "where": [
+   "/company/integrations",
+   "/company/profile",
+   "lib/services/registry.ts:274-286"
+  ],
+  "why": "Developer note on a client-demo screen.",
+  "kind": "helper"
+ },
+ {
+  "now": "Paid through Dodo Payments. In the live app, updating the card opens Dodo’s billing page in a new tab.",
+  "proposed": "(remove)",
+  "where": [
+   "/company/plan/billing",
+   "components/company/plan/billing-view.tsx:163"
+  ],
+  "why": "Vendor name and a prototype note.",
+  "kind": "helper"
+ },
+ {
+  "now": "Visa ending 4242 · expires 08/28 (demo)",
+  "proposed": "Visa ending 4242 · expires 08/28",
+  "where": [
+   "/company/plan/billing",
+   "components/company/plan/billing-view.tsx:162"
+  ],
+  "why": "Prototype note.",
+  "kind": "label"
+ },
+ {
+  "now": "Simulate an enquiry arriving (demo) · Simulate a POST (demo)",
+  "proposed": "Try it",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:185"
+  ],
+  "why": "Developer word \"POST\".",
+  "kind": "label"
+ },
+ {
+  "now": "Webhooks",
+  "proposed": "Other forms (Zapier, Typeform…)",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:233"
+  ],
+  "why": "Developer word for a card a studio owner sets up.",
+  "kind": "heading"
+ },
+ {
+  "now": "Generate webhook URLs for external systems to push leads directly into your studio. Supports any platform that can POST JSON (Zapier, Make, Typeform, Facebook Lead Ads, etc.).",
+  "proposed": "Connect any form tool: make a link, paste it into the tool, and each answer arrives as a lead.",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:234"
+  ],
+  "why": "POST, JSON.",
+  "kind": "helper"
+ },
+ {
+  "now": "Accepted JSON fields: name, phone, email, budget, property_type, notes, source. Also accepts common aliases like full_name, mobile, message.",
+  "proposed": "For your developer (HelpLink → Tooltip)",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:241"
+  ],
+  "why": "Field keys for a developer.",
+  "kind": "helper"
+ },
+ {
+  "now": "Generate webhook URL",
+  "proposed": "Make a link",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:250"
+  ],
+  "why": "Developer verb and noun.",
+  "kind": "label"
+ },
+ {
+  "now": "NEW WEBHOOK ENDPOINT",
+  "proposed": "New link",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:244"
+  ],
+  "why": "CAPS and \"endpoint\".",
+  "kind": "label"
+ },
+ {
+  "now": "Ready · 1 active · Active · Works without connecting · Listed",
+  "proposed": "Connected / Not connected",
+  "where": [
+   "/company/integrations status chips",
+   "components/company/integrations-view.tsx:165-379"
+  ],
+  "why": "Seven status words for one question.",
+  "kind": "status"
+ },
+ {
+  "now": "Email lead sources",
+  "proposed": "Leads by email (Gmail)",
+  "where": [
+   "/company/integrations",
+   "components/company/integrations-view.tsx:305"
+  ],
+  "why": "The Company panel calls it Gmail; two email cards on the page.",
+  "kind": "heading"
+ },
+ {
+  "now": "TEXT · NUMBER · DATE · YES / NO · SINGLE SELECT · MULTI SELECT",
+  "proposed": "Short answer · Number · Date · Yes or no · Pick one · Pick several",
+  "where": [
+   "/company/questionnaire",
+   "lib/company/question-bank.ts:8"
+  ],
+  "why": "Developer terms in CAPS.",
+  "kind": "label"
+ },
+ {
+  "now": "Customise the questions homeowners answer about their project. New leads start with the active questions; an older lead adds them from its Questionnaire tab. Ask the client sends the lead’s questionnaire to the portal.",
+  "proposed": "The questions every new lead starts with. Ask the client sends them to the client’s portal.",
+  "where": [
+   "/company/questionnaire",
+   "lib/company/question-bank.ts:5"
+  ],
+  "why": "Long; homeowner vs client.",
+  "kind": "helper"
+ },
+ {
+  "now": "Question bank",
+  "proposed": "Questions",
+  "where": [
+   "/company/questionnaire card title",
+   "components/company/questionnaire-view.tsx:62"
+  ],
+  "why": "Jargon; the page is already Questionnaire.",
+  "kind": "heading"
+ },
+ {
+  "now": "Monthly amount",
+  "proposed": "Monthly limit",
+  "where": [
+   "/company/plan By member column",
+   "components/company/plan/usage-view.tsx"
+  ],
+  "why": "An amount of what?",
+  "kind": "label"
+ },
+ {
+  "now": "A monthly amount keeps one person from using the studio’s month. Every active member is listed.",
+  "proposed": "Set a monthly limit so one person can’t use up the studio’s credits.",
+  "where": [
+   "/company/plan",
+   "components/company/plan/usage-view.tsx:302"
+  ],
+  "why": "Odd phrasing.",
+  "kind": "helper"
+ },
+ {
+  "now": "Nothing yet (×8)",
+  "proposed": "(fold into \"7 members haven’t used AI this month\")",
+  "where": [
+   "/company/plan By member"
+  ],
+  "why": "Repeated placeholder.",
+  "kind": "empty"
+ },
+ {
+  "now": "New members: No limit",
+  "proposed": "New members’ limit: None",
+  "where": [
+   "/company/plan",
+   "components/company/plan/usage-view.tsx:305"
+  ],
+  "why": "Clearer what the pill sets.",
+  "kind": "label"
+ },
+ {
+  "now": "Set-up (tab)",
+  "proposed": "Set up",
+  "where": [
+   "/company/portal",
+   "lib/company/sections.ts:91"
+  ],
+  "why": "Hyphenated noun reads odd as a tab.",
+  "kind": "name"
+ },
+ {
+  "now": "OPENED 18 OCT (Access chip)",
+  "proposed": "Opened",
+  "where": [
+   "/company/portal/clients · /company/portal Clients card",
+   "lib/portal/model.ts:68"
+  ],
+  "why": "Repeats Last opened.",
+  "kind": "status"
+ },
+ {
+  "now": "Issues (portal section: \"Problems the client reports\")",
+  "proposed": "keep — but say \"Tickets\" in the help: \"Tickets: problems the client reports\"",
+  "where": [
+   "/company/portal What clients can see"
+  ],
+  "why": "The studio calls them Tickets (rail); the client sees Issues (deliberate) — the studio switch should name both.",
+  "kind": "label"
+ },
+ {
+  "now": "Money (portal section: \"Payments, how to pay, receipts\")",
+  "proposed": "Payments (if the project tab is renamed Payments, the client section follows)",
+  "where": [
+   "/company/portal What clients can see",
+   "lib/portal"
+  ],
+  "why": "Same rename as the project Money tab (the owner's own example).",
+  "kind": "name"
+ },
+ {
+  "now": "Owed to you (Reports › Finance tab + tile)",
+  "proposed": "To collect",
+  "where": [
+   "/company/reports/finance?report=ar",
+   "lib/finance/reports.ts:27",
+   "lib/finance/reports.ts:300"
+  ],
+  "why": "Finance › To do and the project Money tab say \"To collect\".",
+  "kind": "name"
+ },
+ {
+  "now": "You owe (Reports › Finance tab + tile)",
+  "proposed": "To pay",
+  "where": [
+   "/company/reports/finance?report=ap",
+   "lib/finance/reports.ts:28",
+   "lib/finance/reports.ts:301"
+  ],
+  "why": "Finance › To do and the project Money tab say \"To pay\".",
+  "kind": "name"
+ },
+ {
+  "now": "Owed (Money in › Invoices column)",
+  "proposed": "To collect",
+  "where": [
+   "/company/finance/money-in",
+   "components/finance/money-in/money-in-workspace.tsx:55"
+  ],
+  "why": "One word for client money due.",
+  "kind": "label"
+ },
+ {
+  "now": "Owed (Vendors column)",
+  "proposed": "To pay",
+  "where": [
+   "/company/finance/vendors",
+   "components/finance/cost-tables.tsx"
+  ],
+  "why": "One word for studio money due; \"Owed\" means the opposite on Money in.",
+  "kind": "label"
+ },
+ {
+  "now": "Still owed (report columns)",
+  "proposed": "To collect / To pay",
+  "where": [
+   "/company/reports/finance?report=ar|vendors",
+   "lib/finance/reports.ts:483"
+  ],
+  "why": "A fourth word.",
+  "kind": "label"
+ },
+ {
+  "now": "S$57,825.65 owed on 4 invoices",
+  "proposed": "S$57,825.65 to collect on 4 invoices",
+  "where": [
+   "/company/finance/todo To collect caption"
+  ],
+  "why": "Matches the section name.",
+  "kind": "helper"
+ },
+ {
+  "now": "Payments (Money in kind chip + list title)",
+  "proposed": "Client payments",
+  "where": [
+   "/company/finance/money-in?kind=payments",
+   "lib/finance/sections.ts:74"
+  ],
+  "why": "\"Payments\" has four meanings in Finance; Settings already says \"Client payments\".",
+  "kind": "name"
+ },
+ {
+  "now": "Paid (Money out kind chip)",
+  "proposed": "Payments out",
+  "where": [
+   "/company/finance/money-out?kind=paid",
+   "lib/finance/sections.ts:57"
+  ],
+  "why": "Its own list title says \"Payments out\".",
+  "kind": "name"
+ },
+ {
+  "now": "Bills (Money out kind chip) / Supplier bills (title)",
+  "proposed": "Supplier bills (both)",
+  "where": [
+   "/company/finance/money-out?kind=bills",
+   "lib/finance/sections.ts:55",
+   "components/finance/finance-workspace.tsx:243"
+  ],
+  "why": "Chip and title should match.",
+  "kind": "name"
+ },
+ {
+  "now": "Payments (Commission section)",
+  "proposed": "Commission paid",
+  "where": [
+   "/company/finance/commissions",
+   "components/finance/books/commissions-view.tsx:254"
+  ],
+  "why": "A third meaning of \"Payments\".",
+  "kind": "heading"
+ },
+ {
+  "now": "Billing (project Money list)",
+  "proposed": "Invoices",
+  "where": [
+   "/projects/[id]/money",
+   "components/projects/money/billing-section.tsx"
+  ],
+  "why": "Finance calls the same records Invoices.",
+  "kind": "heading"
+ },
+ {
+  "now": "MONEY IN · Client payments, 2026 (Cash flow tile)",
+  "proposed": "Received · Client payments, 2026",
+  "where": [
+   "/company/reports/finance?report=cashflow"
+  ],
+  "why": "\"Money in\" is also the Finance tab that lists invoices.",
+  "kind": "label"
+ },
+ {
+  "now": "Commissions (report chip)",
+  "proposed": "Commission",
+  "where": [
+   "/company/reports/finance",
+   "lib/finance/reports.ts:34"
+  ],
+  "why": "The Finance tab says Commission.",
+  "kind": "name"
+ },
+ {
+  "now": "Profit (Profitability tile)",
+  "proposed": "Expected profit · On signed contracts, before GST",
+  "where": [
+   "/company/reports/finance?report=profitability",
+   "lib/finance/reports.ts:369"
+  ],
+  "why": "A second \"Profit\" a tab away from P&L's, on another basis.",
+  "kind": "label"
+ },
+ {
+  "now": "Margin on contracts",
+  "proposed": "Expected margin",
+  "where": [
+   "/company/reports/finance?report=profitability",
+   "lib/finance/reports.ts:369"
+  ],
+  "why": "Pairs with Expected profit.",
+  "kind": "label"
+ },
+ {
+  "now": "Next step: Open / View receipt (every row)",
+  "proposed": "(empty unless a real next step: Send · Confirm · Remind)",
+  "where": [
+   "/company/finance/money-in",
+   "components/finance/money-in/money-in-workspace.tsx:161-200"
+  ],
+  "why": "\"Open\" is not a next step.",
+  "kind": "label"
+ },
+ {
+  "now": "Stuck",
+  "proposed": "Waiting on others",
+  "where": [
+   "/company/finance/todo",
+   "lib/finance/todo.ts:135"
+  ],
+  "why": "Sounds like an error.",
+  "kind": "heading"
+ },
+ {
+  "now": "What to know",
+  "proposed": "Why (as the row's second line)",
+  "where": [
+   "/company/finance/todo",
+   "components/finance/todo/todo-workspace.tsx:66"
+  ],
+  "why": "Becomes the row's reason line.",
+  "kind": "label"
+ },
+ {
+  "now": "Pay Michelle · Pay Dane · Pay Germaine (To do) / Pay yourself (Commission)",
+  "proposed": "Pay (the row names who)",
+  "where": [
+   "/company/finance/todo · /company/finance/commissions"
+  ],
+  "why": "One verb; the person is in the row.",
+  "kind": "label"
+ },
+ {
+  "now": "You (Commission member row)",
+  "proposed": "Dane (you)",
+  "where": [
+   "/company/finance/commissions",
+   "components/finance/books/commissions-view.tsx:113"
+  ],
+  "why": "To do names the same person \"Dane\".",
+  "kind": "label"
+ },
+ {
+  "now": "Asks for another rate",
+  "proposed": "Rate requests",
+  "where": [
+   "/company/finance/commissions",
+   "components/finance/books/commissions-view.tsx:235"
+  ],
+  "why": "Plain noun.",
+  "kind": "heading"
+ },
+ {
+  "now": "WAITING FOR AN ANSWER",
+  "proposed": "Waiting for your answer",
+  "where": [
+   "/company/finance/commissions"
+  ],
+  "why": "Says who.",
+  "kind": "status"
+ },
+ {
+  "now": "Each member, then their projects — the share, the rate that applies (a member’s on the project, the project’s, the member’s, then the studio’s), earned before GST from the payments that count. The rules are in Settings › Finance.",
+  "proposed": "Each member’s commission, project by project, before GST.",
+  "where": [
+   "/company/finance/commissions",
+   "components/finance/books/commissions-view.tsx:245"
+  ],
+  "why": "Rate precedence rule as prose.",
+  "kind": "helper"
+ },
+ {
+  "now": "A reversed payment stays on the record and counts for nothing.",
+  "proposed": "(remove)",
+  "where": [
+   "/company/finance/commissions",
+   "components/finance/books/commissions-view.tsx:254"
+  ],
+  "why": "Edge case as a section help.",
+  "kind": "helper"
+ },
+ {
+  "now": "POs (column head, renders \"POS\")",
+  "proposed": "Purchase orders",
+  "where": [
+   "/company/finance/vendors",
+   "components/finance/cost-tables.tsx:236"
+  ],
+  "why": "Uppercased it reads \"POS\".",
+  "kind": "label"
+ },
+ {
+  "now": "Plumbing · works on site · AF",
+  "proposed": "Plumbing · Contractor",
+  "where": [
+   "/company/finance/vendors",
+   "components/finance/cost-tables.tsx:244"
+  ],
+  "why": "Code \"AF\" and \"works on site\" are internal.",
+  "kind": "label"
+ },
+ {
+  "now": "Logged by its repeat",
+  "proposed": "Repeats every month",
+  "where": [
+   "/company/finance/money-out?kind=expenses"
+  ],
+  "why": "Odd phrasing.",
+  "kind": "label"
+ },
+ {
+  "now": "INVOICE · PAYMENT · BILL · PO (Recently tags)",
+  "proposed": "Invoice · … on the second line, sentence case",
+  "where": [
+   "/company/finance/todo Recently"
+  ],
+  "why": "CAPS tags that are not statuses.",
+  "kind": "label"
+ },
+ {
+  "now": "1d ago",
+  "proposed": "1 day ago / Yesterday",
+  "where": [
+   "/company/finance/todo Recently"
+  ],
+  "why": "Developer shorthand.",
+  "kind": "label"
+ },
+ {
+  "now": "Every invoice sent, and the Drafts that are ready to send, waiting for approval or sent back — a stage’s Draft joins once its milestone is reached.",
+  "proposed": "Sent invoices and Drafts ready to send.",
+  "where": [
+   "/company/finance/money-in"
+  ],
+  "why": "Rule in a help line.",
+  "kind": "helper"
+ },
+ {
+  "now": "Inactive · 0 (Vendors chip)",
+  "proposed": "(hide while empty)",
+  "where": [
+   "/company/finance/vendors",
+   "components/finance/finance-workspace.tsx:156"
+  ],
+  "why": "A choice that shows nothing.",
+  "kind": "label"
+ },
+ {
+  "now": "Creation → Assignment",
+  "proposed": "Time to assign",
+  "where": [
+   "/company/reports/leads",
+   "lib/leads/tat.ts:19"
+  ],
+  "why": "System events with arrows.",
+  "kind": "label"
+ },
+ {
+  "now": "Assignment → First outreach",
+  "proposed": "Time to first contact",
+  "where": [
+   "/company/reports/leads",
+   "lib/leads/tat.ts:20"
+  ],
+  "why": "\"Outreach\" is marketing jargon; Settings says \"contact\".",
+  "kind": "label"
+ },
+ {
+  "now": "First outreach → Won",
+  "proposed": "First contact to Won",
+  "where": [
+   "/company/reports/leads",
+   "lib/leads/tat.ts:21"
+  ],
+  "why": "Same.",
+  "kind": "label"
+ },
+ {
+  "now": "26.3h · 30m · 52m",
+  "proposed": "26 hours · 30 min · 52 min",
+  "where": [
+   "/company/reports/leads",
+   "lib/format.ts:311-312"
+  ],
+  "why": "Decimal hours and letter units.",
+  "kind": "label"
+ },
+ {
+  "now": "median · avg 52m · 29 leads",
+  "proposed": "Usually · 29 leads (the average in a Tooltip)",
+  "where": [
+   "/company/reports/leads · /projects"
+  ],
+  "why": "Statistics words.",
+  "kind": "helper"
+ },
+ {
+  "now": "1 lead awaiting assignment",
+  "proposed": "1 lead waiting for a member",
+  "where": [
+   "/company/reports/leads",
+   "components/leads/insights/insights-view.tsx:193"
+  ],
+  "why": "System word \"assignment\".",
+  "kind": "status"
+ },
+ {
+  "now": "4 assigned, no outreach logged yet",
+  "proposed": "4 not contacted yet",
+  "where": [
+   "/company/reports/leads",
+   "components/leads/insights/insights-view.tsx:194"
+  ],
+  "why": "Shorter, plain.",
+  "kind": "status"
+ },
+ {
+  "now": "Outreach & conversion attributed to whoever logged the first outreach",
+  "proposed": "Counted for whoever logged the first contact",
+  "where": [
+   "/company/reports/leads",
+   "components/leads/insights/insights-view.tsx:202"
+  ],
+  "why": "Jargon.",
+  "kind": "helper"
+ },
+ {
+  "now": "Medians shown as headline (robust to one long job). Leads with no outreach yet are excluded from elapsed-time math and counted in “Awaiting outreach”.",
+  "proposed": "How these are counted (HelpLink)",
+  "where": [
+   "/company/reports/leads · /projects",
+   "lib/leads/tat.ts:42"
+  ],
+  "why": "Statistician's footnote.",
+  "kind": "helper"
+ },
+ {
+  "now": "Collection days",
+  "proposed": "Days to get paid",
+  "where": [
+   "/company/reports/projects",
+   "components/projects/insights/project-insights-view.tsx:119"
+  ],
+  "why": "Jargon.",
+  "kind": "label"
+ },
+ {
+  "now": "Start → Completed",
+  "proposed": "Project length",
+  "where": [
+   "/company/reports/projects"
+  ],
+  "why": "Arrow notation.",
+  "kind": "label"
+ },
+ {
+  "now": "Went ahead",
+  "proposed": "Won after",
+  "where": [
+   "/company/reports/meetings",
+   "lib/meetings/report-model.ts:47"
+  ],
+  "why": "Vague.",
+  "kind": "label"
+ },
+ {
+  "now": "Tips acted on",
+  "proposed": "Tips used",
+  "where": [
+   "/company/reports/meetings",
+   "components/company/reports/meetings-report.tsx:65"
+  ],
+  "why": "Shorter.",
+  "kind": "label"
+ },
+ {
+  "now": "Deal score check · Scores don’t match what happened yet · Check the weights in Settings › Meetings — try more on Timeline",
+  "proposed": "Is the deal score right? · Not yet — try giving Timeline more weight in Settings › Meetings",
+  "where": [
+   "/company/reports/meetings",
+   "components/company/reports/meetings-report.tsx:228-241"
+  ],
+  "why": "Hard to parse.",
+  "kind": "helper"
+ },
+ {
+  "now": "Yours: 0% · studio: 25% · best: 0%",
+  "proposed": "Dane 0% · studio 25%",
+  "where": [
+   "/company/reports/meetings Coaching"
+  ],
+  "why": "Three numbers, one meaningful comparison.",
+  "kind": "label"
+ },
+ {
+  "now": "co-pilot · Copilot · Co-Pilot · Co-pilot",
+  "proposed": "Meeting Copilot (name) · Copilot (in a sentence)",
+  "where": [
+   "/settings?section=meetings · /company/reports/meetings · Tools",
+   "lib/settings/copy.ts:48-54"
+  ],
+  "why": "Four spellings.",
+  "kind": "name"
+ },
+ {
+  "now": "AI runs",
+  "proposed": "AI uses",
+  "where": [
+   "/company/reports/health",
+   "lib/studio-health/model.ts:83",
+   "components/company/reports/studio-health-report.tsx:48"
+  ],
+  "why": "Developer word.",
+  "kind": "label"
+ },
+ {
+  "now": "Hangout chats",
+  "proposed": "Qanvast Hangout chats",
+  "where": [
+   "/company/reports/health",
+   "lib/studio-health/model.ts:87"
+  ],
+  "why": "Insider name without its brand.",
+  "kind": "label"
+ },
+ {
+  "now": "1 did nothing",
+  "proposed": "1 not active in this period",
+  "where": [
+   "/company/reports/health",
+   "components/company/reports/studio-health-report.tsx:94"
+  ],
+  "why": "Blunt about a person.",
+  "kind": "label"
+ },
+ {
+  "now": "Profit and loss · Owed to you · You owe · Profitability · Cash flow · GST · Vendor spend · Expenses · Commissions · Client statement (10 chips)",
+  "proposed": "Report: Profit and loss ▾ (one ScopePill)",
+  "where": [
+   "/company/reports/finance",
+   "components/finance/books/reports-view.tsx:146"
+  ],
+  "why": "Ten equal chips.",
+  "kind": "label"
+ },
+ {
+  "now": "Period (select) · Period: This month (pill) · Last 30 days … (chips)",
+  "proposed": "Period: Last 90 days ▾ (one pill, one option list)",
+  "where": [
+   "/company/reports/* · /company/plan"
+  ],
+  "why": "Three controls, two vocabularies.",
+  "kind": "label"
+ },
+ {
+  "now": "Filtering on lead created date · 30 leads in range",
+  "proposed": "(remove — the Period pill's Tooltip says which date)",
+  "where": [
+   "/company/reports/leads · /projects · /meetings · /health"
+  ],
+  "why": "System phrasing.",
+  "kind": "helper"
+ }
+]

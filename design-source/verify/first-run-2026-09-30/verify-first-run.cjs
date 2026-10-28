@@ -44,7 +44,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
       ['/company/templates/quotes', 'templates-quotes', ['Upload my existing quote', 'Blank template']],
       ['/company/templates/contracts', 'templates-contracts', ['From the studio agreement', 'Blank template', 'From a contract…']],
       ['/company/templates/tasks', 'templates-tasks', ['Blank template', 'From a lead’s tasks…']],
-      ['/company/templates/terms', 'templates-terms', ['Write Terms and Conditions', 'Write Additional Notes']],
+      ['/company/templates/terms', 'templates-terms', ['Write terms and conditions', 'Write additional notes']],   // (the calm UI build 2026-10-27, a deliberate change) sentence case
       ['/company/templates/payments', 'templates-payments', ['Start from Default 10/30/30/30', 'Blank split']],
       ['/company/materials', 'materials', ['New material']],
       ['/company/price-book', 'price-book-items', ['Import from a spreadsheet', 'New item']],
@@ -73,11 +73,11 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const lists = [
       ['/quotes', 'tools-quotes', 'quotes-empty', 'Create Quote'],
       ['/contracts', 'tools-contracts', 'contracts-empty', 'New Contract'],
-      ['/tasks', 'tasks-rail', null, 'Add Task'],
+      ['/tasks', 'tasks-rail', null, 'New task'],   // (the calm UI build 2026-10-27, a deliberate change — one create verb, "New …")
       [`/leads/${leadId}/quotes`, 'lead-quotes', 'quotes-empty', 'Create Quote'],
       [`/leads/${leadId}/contracts`, 'lead-contracts', 'contracts-empty', 'New Contract'],
-      [`/leads/${leadId}/tasks`, 'lead-tasks', null, 'Add Task'],
-      [`/leads/${leadId}/files`, 'lead-files', null, 'New File'],
+      [`/leads/${leadId}/tasks`, 'lead-tasks', null, 'New task'],
+      [`/leads/${leadId}/files`, 'lead-files', null, 'New file'],   // (the calm UI build 2026-10-27, a deliberate change — one create verb, "New …")
     ]
     for (const [url, name, testid, twin] of lists) {
       await go(url)
@@ -89,7 +89,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
       await shot(`list-${name}`)
     }
     await go('/contracts')
-    ok(await p.getByRole('button', { name: 'Import from File', exact: true }).count() === 1, 'tools-contracts: Import from File stays on the card')
+    ok(await p.getByRole('button', { name: /^(Import from File|Import a file)$/ }).count() === 1 /* (the calm UI build 2026-10-27, a deliberate change) W-562: "Import a file" */, 'tools-contracts: Import from File stays on the card')
 
     // 7 · phone
     const m = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
@@ -113,10 +113,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   if (mode === 'noleads') {
     await go('/leads')
     ok(await p.locator('text=Add your first lead').isVisible(), 'leads: the empty card shows')
-    ok(await p.getByRole('button', { name: 'Add Lead', exact: true }).count() === 0, 'leads: the header’s Add Lead steps back')
+    ok(await p.getByRole('button', { name: 'New lead', exact: true }).count() === 0, 'leads: the header’s New lead steps back')   // (the calm UI build 2026-10-27, a deliberate change — one create verb, "New …")
     ok(await p.locator('input[aria-label="Search leads"]').count() === 0, 'leads: no search')
     ok(await p.getByRole('heading', { name: 'All Leads' }).count() === 1, 'leads: the row says All Leads')
-    ok(await p.locator('[data-kb="create"]').count() === 1, 'leads: one C target (Create New Lead)')
+    ok(await p.locator('[data-kb="create"]').count() === 1, 'leads: one C target (New lead)')
     await shot('leads-no-leads')
   }
 
@@ -128,10 +128,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await go('/company/templates/quotes')
     ok(await p.locator('[data-testid="new-template"]').count() === 1 && await p.locator('[data-testid="library-empty"]').count() === 0, 'full: templates toolbar as before')
     await go('/leads')
-    ok(await p.getByRole('button', { name: 'Add Lead', exact: true }).count() === 1, 'full: Add Lead in the header')
+    ok(await p.getByRole('button', { name: 'New lead', exact: true }).count() === 1, 'full: New lead in the header')   // (the calm UI build 2026-10-27, a deliberate change — one create verb, "New …")
     ok(await p.locator('input[aria-label="Search leads"]').count() === 1, 'full: the listing’s search')
     await go(`/leads/${leadId}/quotes`)
-    ok(await p.getByRole('button', { name: 'Create Quote', exact: true }).count() === 1, 'full: the Quotes tab’s Create Quote')
+    ok(await p.getByRole('button', { name: /^(Create Quote|New quote)$/ }).count() === 1 /* (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote" */, 'full: the Quotes tab’s Create Quote')
   }
 
   console.log(`\n${pass} passed, ${fail} failed`)

@@ -18,7 +18,7 @@ const FIELDS: { key: SetField; label: string; kind: 'number' | 'money' | 'pct' |
   { key: 'gst', label: 'GST (%)', kind: 'pct' },
   { key: 'room', label: 'Room', kind: 'label' },
   { key: 'category', label: 'Category', kind: 'label' },
-  { key: 'section', label: 'Section label', kind: 'label' },
+  { key: 'section', label: 'Print group', kind: 'label' },   // (the calm UI build 2026-10-27, W-356) the column's name
   { key: 'vendor', label: 'Vendor/Sub', kind: 'label' },   // (REG-623) every ticked line from one supplier
 ]
 

@@ -1,7 +1,8 @@
 /*
  * Quote X-Ray › Item by item (REG-529) — the templates list's stylesheet (components/company/templates/templates-table.module.css)
- * with the comparison's columns, sized to the 960 reading column: Item fluid ≥258 · Trade 128 · Yours 118 · Theirs 118 · Difference 118 · Status 150 (= 890). Each row
- * carries a 3px status band on its left edge: green = only in yours, red = only in theirs, grey = no price given.
+ * with the comparison's columns, sized to the 960 reading column: Item fluid ≥258 · Trade 128 · Yours 118 · Theirs 118 · Difference 118 · Status 150 (= 890).
+ * (the calm UI build 2026-10-27, 6-05 — T-04) No status band on the row's left edge any more: the Status chip (in the same colours) says which side
+ * has a line, once (Dane UAT 7.04's bar went with the legend).
  */
 .card {
   composes: frame card from '../om/table-core.module.css';   /* (REG-727) the table core: the frame (border, r8, the corner ring, the sideways scroller) and one grid, the head and rows its subgrids */
@@ -23,16 +24,14 @@
   composes: row from '../om/table-core.module.css';   /* (REG-727) the table core: the card's tracks, hover */
   height: auto; min-height: 60px;   /* this table's rows grow with a second line (the other side's name, a quantity) from a 60 floor */
 }
-.row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: 4; pointer-events: none; }
-.row[data-status='yours-only']::before { background: var(--om-color-tertiary-green-default); }
-.row[data-status='theirs-only']::before { background: var(--om-color-tertiary-red-default); }
-.row[data-status='unpriced']::before { background: var(--om-color-on-surface-border); }
 .card > .row:last-child, .card > .row:last-child .colItem { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
 .cell { composes: cell from '../om/table-core.module.css'; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
 .itemText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.theirName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (the calm UI build 2026-10-27, 6-05 · 6-21 — T-12) the item's name is what the owner recognises a line by: it wraps to a second line, never cut
+   mid-word at one */
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.theirName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* (REG-638) Difference = yours − theirs, the Real difference tile's sign: ours less reads green (1.0's tile), ours more plain. */
@@ -83,6 +82,9 @@
      it — it drew a 1px line across the card's top half, through a long item name — and the ⋮ it always shows is the bare glyph (REG-389) */
   .row::after { content: none; }
   .actions button[class*='icon-button'] { border-color: transparent; }
+  /* (the calm UI build 2026-10-27, 6-28) a card's ⋮ is the house grey, as every other card's — the primary glyph stays the desk's parked kebab
+     (a doubled class under `.actions`: it outranks the house `.btn[data-variant='primary']` wherever the sheets land) */
+  .actions .kebab.kebab { color: var(--om-color-on-surface-secondary); }
   .card[data-actions] .cell.colStatus { padding-right: 0; }
   .cell { padding: 0; border-top: 0; min-width: 0; }
   .cell.colItem { grid-column: 1 / -1 !important; grid-row: 1 !important; }
@@ -98,4 +100,5 @@
   .cell.colYours .figure { align-items: flex-start; }
   .cell.colDiff { grid-column: 1 / -1 !important; grid-row: 4 !important; font: var(--om-type-body-s); }
   .cell.colDiff::before { content: 'Difference · '; color: var(--om-color-on-surface-secondary); white-space: pre; }
+  .cell.colDiff[data-empty] { display: none; }   /* (the calm UI build, 6-05 — T-08) no difference to tell: the card leaves the line out */
 }

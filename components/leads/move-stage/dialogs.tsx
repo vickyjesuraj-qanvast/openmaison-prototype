@@ -30,7 +30,7 @@ export type SharedDialogVariant = 'wizard' | 'notes'
  * and said so — never the mock's scripted values. The drop zone and Upload open the picker; while it reads, "Reading {file}…".
  */
 export function AutoFillDialog({
-  open, onClose, onUpload, title = 'Auto Fill', width = 400, variant = 'wizard', kind = 'contact', layered = false,
+  open, onClose, onUpload, title = 'Auto fill', width = 400, variant = 'wizard', kind = 'contact', layered = false,
 }: {
   /** reads and attaches the picked file — the host closes the dialog once it lands (what filled is said under the log's Auto Fill) */
   open: boolean; onClose: () => void; onUpload: (file: File) => Promise<void> | void
@@ -162,9 +162,10 @@ export function SuggestedTasksDialog({
 function ParkSheet({ open, onClose, title, leadName, onSave, testId, children }: {
   open: boolean; onClose: () => void; title: string; leadName?: string; onSave: () => void; testId: string; children: ReactNode
 }) {
+  /* (the calm UI build 2026-10-27 — 2-29) the button says what happens — the title's own verb ("Put on hold" · "Mark as lost") */
   return (
     <Sheet open={open} onClose={onClose} title={title} subtitle={leadName} label={leadName ? `${title} — ${leadName}` : title}
-           footer={<div className={logStyles.foot}><Button className={logStyles.footBtn} onPress={onSave} data-testid={`${testId}-save`}>Save &amp; move</Button></div>}>
+           footer={<div className={logStyles.foot}><Button className={logStyles.footBtn} onPress={onSave} data-testid={`${testId}-save`}>{title}</Button></div>}>
       <div className={logStyles.body} data-sheet="" data-testid={testId}>{children}</div>
     </Sheet>
   )
@@ -233,17 +234,17 @@ export function OnHoldDialog({
           <Chips label="Follow up in" options={[...HOLD_DURATIONS, 'Custom']} value={preset} onChange={pick} className={logStyles.chips} testId="hold-durations" />
         </div>
         {custom ? <DateField label="Follow up on" required value={when} onChange={setWhen} today={today} error={showErrors ? errors.when : undefined} /> : null}
-        <span className={logStyles.label} data-testid="hold-next">Next follow up date will be {picked ? displayDate(picked) : '—'}</span>
+        <span className={logStyles.label} data-testid="hold-next">{picked ? `We’ll remind you on ${displayDate(picked)}.` : 'Choose when to follow up.'}</span>
       </ParkSheet>
     )
   }
   /* (parity P-10, the owner's pick 2026-10-08) The project's Put on hold dialog's twin: the same 400 `form` size — so on a phone both rise as a
-     bottom sheet (REG-353; this one was a centred card) — and the same title; the line under it still says it is a stage move. */
+     bottom sheet (REG-353; this one was a centred card) — and the same title. (the calm UI build 2026-10-27 — 2-29) The subtitle that repeated
+     the title ("Moving to On Hold") is gone; the button says what happens, as Lost's twin does. */
   return (
     <Dialog open={open} onClose={close} title="Put on hold" width={400} size="form"
-            subtitle={<span className={styles.subtitle}>Moving to On Hold</span>}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
-                     <Button onPress={save}>Save &amp; Move</Button></>}>
+                     <Button onPress={save}>Put on hold</Button></>}>
       <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
                  options={options}
                  error={showErrors ? errors.reason : undefined} />
@@ -252,7 +253,7 @@ export function OnHoldDialog({
       ) : null}
       <ChoiceChips label="Duration" required options={[...HOLD_DURATIONS, 'Custom']} value={preset} onChange={pick} />
       {custom ? <DateField label="Follow up on" required value={when} onChange={setWhen} today={today} error={showErrors ? errors.when : undefined} /> : null}
-      <span className={styles.helper}>Next follow up date will be {picked ? displayDate(picked) : '—'}</span>
+      <span className={styles.helper}>{picked ? `We’ll remind you on ${displayDate(picked)}.` : 'Choose when to follow up.'}</span>
     </Dialog>
   )
 }
@@ -335,7 +336,7 @@ export function LostDialog({
         <span>Under 6 months away — consider On Hold instead.</span>
         {canHold ? (
           <button type="button" className={styles.nudgeAction} onClick={() => { const d = restartDate; if (!d) return; reset(); onHoldInstead?.(d) }}>
-            Put On Hold instead
+            Put on hold instead
           </button>
         ) : null}
       </span>
@@ -358,11 +359,11 @@ export function LostDialog({
       </ParkSheet>
     )
   }
+  /* (the calm UI build 2026-10-27 — 2-29) On Hold's twin: titled for what it does, no subtitle repeating it, the button the same verb */
   return (
-    <Dialog open={open} onClose={close} title="Move stage" width={400}
-            subtitle={<span className={styles.subtitle}>Moving to Lost</span>}
+    <Dialog open={open} onClose={close} title="Mark as lost" width={400}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
-                     <Button onPress={save}>Save &amp; Move</Button></>}>
+                     <Button onPress={save}>Mark as lost</Button></>}>
       <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
                  options={options}
                  error={showErrors ? errors.reason : undefined} helper={contactHint} />
@@ -378,7 +379,7 @@ export function LostDialog({
       ) : null}
       {reason === LOST_POSTPONED ? (<>
         <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />
-        {/* (Dane's UAT 9.08) The nudge in the house warning tone — the grey helper line went unread — with the move it suggests. Save & Move
+        {/* (Dane's UAT 9.08) The nudge in the house warning tone — the grey helper line went unread — with the move it suggests. Mark as lost
             is unchanged: it still never blocks (REG-607). */}
         {nudge}
       </>) : null}

@@ -12,6 +12,7 @@ import books from './books/books.module.css'
 import plan from '@/components/company/plan/plan.module.css'
 import fin from './finance.module.css'
 import todo from './todo/todo.module.css'
+import ov from '@/components/projects/project-overview.module.css'
 
 /*
  * (gaps build F1 — REG-708's rule) Finance's ghost, one per tab, each the tab's own shape: the L1 header and the tab strip (Company's frame), the
@@ -23,7 +24,7 @@ import todo from './todo/todo.module.css'
  * reveal knows; the route's loader, which cannot ask who is signed in, draws the Owners' five.
  */
 const KIND_COLS: Record<string, { title: string; help: string; cols: Col[] }> = {
-  'purchase-orders': { title: 'Purchase orders', help: 'S$54,321.00 committed across the studio · S$18,000.00 still to pay', cols: [
+  'purchase-orders': { title: 'Purchase orders', help: 'S$54,321.00 committed across the studio · S$18,000.00 to pay', cols: [
     { basis: 220, grow: 220, head: 110, cell: (r) => [cycle([92, 92, 92], r), cycle(['70%', '54%', '62%'], r)], stick: true },
     { basis: 200, grow: 200, head: 52, cell: (r) => cycle(['78%', '64%', '72%'], r) },
     { basis: 190, grow: 190, head: 52, cell: (r) => cycle(['70%', '58%', '76%'], r) },
@@ -51,7 +52,7 @@ const KIND_COLS: Record<string, { title: string; help: string; cols: Col[] }> = 
     { basis: 200, grow: 200, head: 46, cell: { slot: 'chip', w: 120 } },
     { basis: 150, grow: 150, head: 70, cell: { slot: 'btn', w: 72 } },
   ] },
-  paid: { title: 'Payments out', help: 'S$12,345.00 paid out — a payment is recorded from its PO, bill or claim.', cols: [
+  paid: { title: 'Payments made', help: 'S$12,345.00 paid out — a payment is recorded from its PO, bill or claim.', cols: [
     { basis: 220, grow: 220, head: 52, cell: (r) => [cycle(['70%', '58%', '76%'], r), 80], stick: true },
     { basis: 200, grow: 200, head: 30, cell: (r) => cycle(['62%', '74%', '56%'], r) },
     { basis: 190, grow: 190, head: 52, cell: (r) => cycle(['70%', '62%', '74%'], r) },
@@ -73,38 +74,56 @@ const VENDOR_COLS: Col[] = [
   { basis: 130, grow: 130, head: 46, cell: { slot: 'chip', w: 60 } },
   { basis: 72, grow: 72, head: null, cell: { slot: 'icon' } },
 ]
-/* To do's four column sets (todo-workspace.tsx DEFS): the first column two lines, the action a text button and ⋮ */
-const todoCols = (heads: number[], first: number, tracks: number[]): Col[] => heads.map((h, i) => (i === 0
-  ? { basis: first, grow: first, head: h, cell: (r: number) => [cycle(['74%', '58%', '66%'], r), cycle(['52%', '64%', '40%'], r)], stick: true }
-  : i === heads.length - 1 ? { basis: tracks[i - 1]!, grow: tracks[i - 1]!, head: h, cell: { slot: 'btn', w: cycle([110, 72, 96], i) } }
-  : { basis: tracks[i - 1]!, grow: tracks[i - 1]!, head: h, cell: (r: number) => cycle(['72%', '56%', '64%'], r + i) }))
-const TODO_SHAPES = {
-  approve: todoCols([32, 52, 60, 56, 88, 70], 260, [170, 140, 130, 240, 190]),
-  pay: todoCols([20, 24, 52, 30, 56, 70], 210, [200, 170, 170, 140, 170]),
-  collect: todoCols([40, 52, 52, 30, 56, 70], 190, [230, 170, 180, 140, 210]),
-  quiet: todoCols([32, 52, 36, 56, 88, 70], 280, [170, 150, 130, 220, 170]),
-}
-const RUNNER_TODO: { title: string; help: string; shape: keyof typeof TODO_SHAPES; rows: number }[] = [
-  { title: 'To approve', help: '3 waiting for you · S$5,568.07', shape: 'approve', rows: 3 },
-  { title: 'To pay', help: 'S$19,002.20 to pay · S$9,030.00 overdue', shape: 'pay', rows: 8 },   // (pending modules S17) the demo's groups as the page shows them
-  { title: 'To collect', help: 'S$34,802.98 owed on 4 invoices', shape: 'collect', rows: 4 },
-  { title: 'Stuck', help: '1 waiting on someone else', shape: 'quiet', rows: 1 },
+/* (the calm UI build 2026-10-27 — 5-08) To do's groups as the page names them now: Approvals · To pay · To collect · Waiting on others, each a list of
+   house rows (`TodoSection`); `shape` stays only to say how many rows a group draws */
+const RUNNER_TODO: { title: string; help: string; shape: 'approve' | 'pay' | 'collect' | 'quiet'; rows: number }[] = [
+  { title: 'Approvals', help: '4 waiting for your approval · S$ 11,672', shape: 'approve', rows: 4 },
+  { title: 'To pay', help: 'S$ 19,002 to pay · S$ 9,030 overdue', shape: 'pay', rows: 8 },   // (pending modules S17) the demo's groups as the page shows them
+  { title: 'To collect', help: 'S$ 57,826 to collect on 4 invoices', shape: 'collect', rows: 4 },
+  { title: 'Waiting on others', help: '2 waiting on someone else', shape: 'quiet', rows: 2 },
 ]
 /** (parity map, MO-098) Accounting's To do (lib/finance/todo.ts BOOKS_GROUPS): pay, collect, unstick — then what waits for an Owner or an Admin. */
 const BOOKS_TODO: typeof RUNNER_TODO = [
-  { title: 'To pay', help: 'S$19,002.20 to pay · S$1,400.00 overdue', shape: 'pay', rows: 4 },
-  { title: 'To collect', help: 'S$34,802.98 owed on 3 invoices', shape: 'collect', rows: 3 },
-  { title: 'Stuck', help: '2 waiting on someone else', shape: 'quiet', rows: 2 },
-  { title: 'Waiting for approval', help: '3 for an Owner or an Admin · S$5,568.07', shape: 'approve', rows: 3 },
+  { title: 'To pay', help: 'S$ 19,002 to pay · S$ 1,400 overdue', shape: 'pay', rows: 4 },
+  { title: 'To collect', help: 'S$ 34,803 to collect on 3 invoices', shape: 'collect', rows: 3 },
+  { title: 'Waiting on others', help: '2 waiting on someone else', shape: 'quiet', rows: 2 },
+  { title: 'Waiting for approval', help: '3 for an Owner or an Admin · S$ 5,568', shape: 'approve', rows: 3 },
 ]
 const MEMBER_TODO: typeof RUNNER_TODO = [
   { title: 'Your drafts', help: '1 to change or send', shape: 'quiet', rows: 1 },
   { title: 'Sent back to you', help: 'Nothing sent back', shape: 'quiet', rows: 0 },
   { title: 'Vendors who answered', help: '1 to change', shape: 'quiet', rows: 1 },
-  { title: 'Your claims', help: '2 · S$124.90', shape: 'quiet', rows: 2 },
+  { title: 'Your claims', help: '2 · S$ 125', shape: 'quiet', rows: 2 },
 ]
 
-/* (parity map, MO-084) To do ends with Recently — its head, then five rows: the kind's chip, what happened over its project and when, the amount */
+/* (the calm UI build 2026-10-27 — 5-08) a To do group: its head, then its rows on the house Row — the kind's icon, the title and the line under it,
+   the amount, the one verb and the ⋮ (todo-workspace.tsx · todo.module.css) */
+const TodoSection = ({ title, help, rows }: { title: string; help: string; rows: number }) => (
+  <section className={plan.section}>
+    <div className={plan.sectionHead}>
+      <div className={plan.sectionTitles}><Words as="h2" className={plan.sectionTitle}>{title}</Words><Words className={plan.sectionHelp}>{help}</Words></div>
+    </div>
+    {rows ? (
+      <ul className={todo.list}>
+        {Array.from({ length: rows }, (_, r) => (
+          <li key={r} className={todo.item}>
+            <div className={`${ov.row} ${todo.row}`} data-two="" data-static="">
+              <Line w={20} lh={20} h={20} />
+              <span className={ov.label}>
+                <span className={ov.two}><Line w={cycle(['46%', '34%', '52%'], r)} lh={20} h={12} /><Line w={cycle(['78%', '62%', '70%'], r)} lh={20} h={10} /></span>
+                <span className={ov.meta}><Line w={64} lh={20} h={12} /></span>
+              </span>
+              <span className={ov.rowActions} data-row-actions=""><Slot kind="btn" w={cycle([64, 40, 72], r)} /></span>
+              <span className={todo.more}><Slot kind="icon" /></span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    ) : null}
+  </section>
+)
+
+/* (parity map, MO-084) To do ends with Recently — its head, then five rows: what happened, its kind · project · when under it, the amount */
 const RecentGhost = ({ runs }: { runs: boolean }) => (
   <section className={plan.section}>
     <div className={plan.sectionHead}>
@@ -113,7 +132,6 @@ const RecentGhost = ({ runs }: { runs: boolean }) => (
     <ul className={todo.recent}>
       {[0, 1, 2, 3, 4].map((r) => (
         <li key={r} className={todo.recentRow}>
-          <span className={todo.recentKind}><Slot kind="chip" w={cycle([52, 40, 64], r)} /></span>
           <span className={todo.recentText}><Line w={cycle(['62%', '48%', '56%'], r)} lh={20} h={12} /><Line w={cycle(['34%', '40%', '28%'], r)} lh={16} h={10} /></span>
           <span className={todo.recentAmount}><Line w={84} lh={20} h={12} /></span>
         </li>
@@ -122,13 +140,13 @@ const RecentGhost = ({ runs }: { runs: boolean }) => (
   </section>
 )
 
-const Section = ({ title, help, cols, rows, card = 222 }: { title: string; help: string; cols: Col[]; rows: number; /** (pending modules S17) a phone's card as the page's stack draws the table's row */ card?: number }) => (
+const Section = ({ title, help, cols, rows, card = 222, lines = 5 }: { title: string; help: string; cols: Col[]; rows: number; /** (pending modules S17) a phone's card as the page's stack draws the table's row */ card?: number; /** (the calm UI build, 5-10) a phone card's lines */ lines?: number }) => (
   <section className={plan.section}>
     <div className={plan.sectionHead}>
       <div className={plan.sectionTitles}><Words as="h2" className={plan.sectionTitle}>{title}</Words><Words className={plan.sectionHelp}>{help}</Words></div>
       {rows ? <div className={plan.sectionTools}><Slot kind="icon" desk /></div> : null}
     </div>
-    {rows ? <GhostTable cols={cols} rows={rows} head={56} row={64} phone={{ card, lines: 5 }} /> : null}
+    {rows ? <GhostTable cols={cols} rows={rows} head={56} row={64} phone={{ card, lines }} /> : null}
   </section>
 )
 
@@ -157,14 +175,14 @@ export function FinanceGhost({ tab: given, runs: told, asks }: { tab?: string; r
     <div className={`${fin.phoneTools} ${fin.ghostPhone}`}>
       <div className={fin.phoneBar}><span className={fin.phoneSearch} style={{ display: 'flex' }}><Slot kind="btn" w="100%" /></span><Slot kind="icon" /></div>
       <div className={fin.kindRail}>{labels ? <GhostChips labels={labels} rail /> : chipRow(chips, true)}</div>
-      {pill ? <span className={fin.inlineRow}><Slot kind="btn" w={72} /></span> : null}   {/* (pending modules S17) the scope pill, "All ▾" on a phone */}
+      {pill ? <span className={fin.inlineRow}><Slot kind="btn" w={127} /></span> : null}   {/* (the calm UI build, 5-10) the scope pill keeps its name on a phone — "Status: All ▾" */}
     </div>
   )
   /* (parity map, MO-098) the chips and groups of the To do this viewer reads: a runner's, Accounting's (approves nothing) or a member's */
   const todoChips = runs ? (keeper ? [64, 80, 96, 64, 168] : [64, 108, 82, 100, 74]) : [64, 104, 92, 136, 100]
   /* (pending modules S17) an Owner's or an Admin's groups as the demo has them — the chips' own words (with their counts), so a phone's wider
      chips are drawn as wide; the other viewers' chips keep their desk widths */
-  const todoLabels = runs && !keeper ? ['All · 16', 'To approve · 3', 'To pay · 8', 'To collect · 4', 'Stuck · 1'] : undefined
+  const todoLabels = runs && !keeper ? ['All', 'Approvals', 'To pay', 'To collect', 'Waiting on others'] : undefined   // (the calm UI build, 5-08) no counts on the chips
   if (tab === 'todo') return frame(
     <div className={todo.page}>
       <div className={`${fin.toolbar} ${fin.ghostDesk}`}>
@@ -173,7 +191,7 @@ export function FinanceGhost({ tab: given, runs: told, asks }: { tab?: string; r
         <span className={fin.toolEnd}><Slot kind="btn" w={110} /></span>
       </div>
       {phoneTools(todoChips, false, todoLabels)}
-      {(runs ? (keeper ? BOOKS_TODO : RUNNER_TODO) : MEMBER_TODO).map((g) => <Section key={g.title} title={g.title} help={g.help} cols={TODO_SHAPES[g.shape]} rows={g.rows} />)}
+      {(runs ? (keeper ? BOOKS_TODO : RUNNER_TODO) : MEMBER_TODO).map((g) => <TodoSection key={g.title} title={g.title} help={g.help} rows={g.rows} />)}
       <RecentGhost runs={runs} />
     </div>,
   )
@@ -181,10 +199,10 @@ export function FinanceGhost({ tab: given, runs: told, asks }: { tab?: string; r
     <div className={fin.page}>
       <div className={fin.toolbar}>
         <span className={fin.search} style={{ display: 'flex' }}><Slot kind="btn" w="100%" /></span>
-        <GhostChips widths={crews ? [85, 114, 90, 63] : [85, 90, 63]} />   {/* (pending modules S17) Active · Inactive · All — house chips, 44 with a finger; (S45B) Contractors second while the page shows it */}
+        <GhostChips labels={crews ? ['Active', 'Contractors'] : ['Active']} />   {/* (the calm UI build, 5-27) Active · Contractors without counts; Inactive and All only while a vendor is inactive */}
         <span className={fin.toolEnd}><Slot kind="btn" w={138} /></span>
       </div>
-      <Section title="Vendors" help="The studio’s sub-contractors and suppliers. Merge a duplicate into the one that stays; deactivate one you no longer use." cols={VENDOR_COLS} rows={7} card={270} />
+      <Section title="Vendors" help="The studio’s sub-contractors and suppliers. Merge a duplicate into the one that stays; deactivate one you no longer use." cols={VENDOR_COLS} rows={7} card={170} lines={3} />
     </div>,
   )
   /* (parity map — P-A) Money in: its own body, the kind from the address */
@@ -204,7 +222,7 @@ export function FinanceGhost({ tab: given, runs: told, asks }: { tab?: string; r
         <span className={fin.toolEnd}><Slot kind="btn" w={110} /></span>
       </div>
       {phoneTools(kindChips, true, kindLabels)}
-      <div className={fin.kindBody}>{kind === 'expenses' && expLocked ? <ProLockedGhost feature="expense_management" /> : <Section title={g.title} help={g.help} cols={g.cols} rows={7} card={264} />}</div>
+      <div className={fin.kindBody}>{kind === 'expenses' && expLocked ? <ProLockedGhost feature="expense_management" /> : <Section title={g.title} help={g.help} cols={g.cols} rows={7} card={210} lines={4} />}</div>   {/* (the calm UI build, 5-10) a phone's card on the Leads model */}
     </div>,
   )
 }

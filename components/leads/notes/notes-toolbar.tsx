@@ -38,32 +38,33 @@ export function NotesToolbar({ query, onQuery, onNew, views }: NotesToolbarProps
     <div className={styles.bar}>
       {/* (REG-318, user 2026-09-02) The tab's title, as every sibling has ("All Tasks", "All Quotes"): the REG-293 scope
           pill is gone — the kind filter went back to the mock's chips in the list head (931:44884, notes-list.tsx). */}
-      {views ?? <h2 className={styles.title}>All Notes &amp; Logs</h2>}
+      {views ?? <h2 className={styles.title}>All notes &amp; logs</h2>}   {/* (the calm UI build 2026-10-27 — T-13) */}
 
       <div className={styles.actions}>
         <span className={styles.menuWrap}>
           {/* touchTarget: the 36px DS control takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
-              the menu, its title and every action behind it are the same. */}
+              the menu, its title and every action behind it are the same. (the calm UI build 2026-10-27 — T-10 · 2-13) one create
+              grammar: "New note ▾" — Note · Contact log. */}
           {sheet ? (
-            <Tooltip shortcut="create" label="New">
-              <IconButton icon="add" label="New" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New"
+            <Tooltip shortcut="create" label="New note">
+              <IconButton icon="add" label="New note" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New note"
                           onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined" className={styles.touchTarget}
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New"
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New note"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
-              New
+              New note
             </Button>
           )}
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="New">
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="New note">
             <DropdownItem onSelect={() => { setMenu(null); onNew('note') }}>Note</DropdownItem>
-            <DropdownItem onSelect={() => { setMenu(null); onNew('contact') }}>Contact Log</DropdownItem>
+            <DropdownItem onSelect={() => { setMenu(null); onNew('contact') }}>Contact log</DropdownItem>
           </Dropdown>
         </span>
         {/* (REG-275) The box matches what a row SHOWS — title, secondary line, the printed date — plus the note's

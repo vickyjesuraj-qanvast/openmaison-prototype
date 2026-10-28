@@ -70,7 +70,9 @@ export function KvTable({ rows, values, lines, gap, labelWidth, valueCss, labelC
   const valueOf = (r: KVRow): CSSProperties => ({ ...valueCss, ...(r.valueBold ? { fontWeight: 700 } : {}), ...(lines === 'under' ? { borderBottom: `1px solid ${ink}` } : {}), ...cellBox })
   return (
     <table className={styles.kv} data-lines={lines} style={tableCss}><tbody>
-      {rows.map((r) => (
+      {/* (the calm UI build 2026-10-27, the UI audit's 4-47 · T-08) a row whose value is fields that all came out empty (an "IC" with no NRIC on
+          the quote) leaves the paper — the template keeps the row for the quote that has it; a row the studio wrote as words alone still prints */}
+      {rows.filter((r) => !isEmptyResolved(r.value, values)).map((r) => (
         <tr key={r.id}>
           <td className={styles.kvLabel} style={labelOf(r)}>{resolveFields(r.label, values)}</td>
           <td className={valueClass} style={valueOf(r)}>{resolveFields(r.value, values) || '\u00a0'}</td>

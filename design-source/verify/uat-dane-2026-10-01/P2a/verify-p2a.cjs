@@ -41,7 +41,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
     const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
     const tick = dlg.getByTestId('export-option')
-    ok('3.11 the export offers "Include proposed items", off', (await tick.innerText()).includes('Include proposed items') && !(await tick.locator('input[type=checkbox]').isChecked()))
+    ok('3.11 the export offers "Include proposed items", off', (await tick.innerText()).includes('Include items waiting for approval') && !(await tick.locator('input[type=checkbox]').isChecked()))   // (the calm UI build 2026-10-27, a deliberate change) T-01: proposals read Waiting for approval
     ok('3.11 untick: All items counts the approved ones only', (await dlg.innerText()).includes(`All items (${liveCount})`), (await dlg.innerText()).split('\n').find((l) => /All items/.test(l)))
     await shot(page, 'b1-export-untick')
     let [dl] = await Promise.all([page.waitForEvent('download'), dlg.getByRole('button', { name: 'Export' }).click()])
@@ -50,7 +50,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     ok('3.11 the default export leaves the proposal out, no Status column', !plain.includes(PROPOSAL) && !/Status/.test(lines[0]) && lines.length === liveCount + 1, `${lines.length - 1} rows`)
     await page.waitForTimeout(500)
     await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
-    await dlg.waitFor(); await dlg.getByText('Include proposed items').click(); await page.waitForTimeout(200)
+    await dlg.waitFor(); await dlg.getByText('Include items waiting for approval').click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) T-01: proposals read Waiting for approval
     ok('3.11 ticked: All items counts the proposal too', (await dlg.innerText()).includes(`All items (${liveCount + 1})`))
     await shot(page, 'b1-export-tick')
     ;[dl] = await Promise.all([page.waitForEvent('download'), dlg.getByRole('button', { name: 'Export' }).click()])
@@ -125,7 +125,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     await dlg.getByLabel('Item name').fill('Probe sealant')
     await dlg.getByRole('button', { name: 'Add to My Items' }).click()
     const t = await snack(page, /added to/)
-    ok('3.03 at the top, it lands at the top and says My Items', t.includes('Probe sealant added to My Items') && sql(`select ifnull(folder_id, '-') from price_book_items where name = 'Probe sealant'`) === '-', t)
+    ok('3.03 at the top, it lands at the top and says My Items', t.includes('Probe sealant added to Items') && sql(`select ifnull(folder_id, '-') from price_book_items where name = 'Probe sealant'`) === '-', t)   // (the calm UI build 2026-10-27, a deliberate change) the top of the library is the tab's own name, "Items" (4-39, LIBRARY_ROOT)
   })
   await step('b-folder section', async () => {
     await page.goto(`${BASE}/company/price-book/sections?folder=lf-sections-bathrooms`); await ready(page)
@@ -140,7 +140,8 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     { tab: 'quotes', folder: 'lf-quotes-hdb', row: 'Blank template', table: 'quote_templates', col: 'name', url: /\/templates\/[0-9a-f-]{36}/ },
     { tab: 'contracts', folder: 'lf-contracts-agreements', row: 'Blank template', table: 'contract_templates', col: 'title', url: /\/templates\/contracts\// },
     { tab: 'tasks', folder: 'lf-tasks-followup', row: 'Blank template', table: 'task_templates', col: 'name', url: /\/templates\/tasks\// },
-    { tab: 'terms', folder: 'lf-texts-hdb', row: 'Terms and Conditions', table: 'quote_text_templates', col: 'title', url: /\/templates\/terms\// },
+    /* (the calm UI build 2026-10-27, a deliberate change) New ▾'s row in sentence case (T-13) */
+    { tab: 'terms', folder: 'lf-texts-hdb', row: 'Terms and conditions', table: 'quote_text_templates', col: 'title', url: /\/templates\/terms\// },
     { tab: 'payments', folder: 'lf-payments-full', row: 'Blank split', table: 'payment_templates', col: 'name', url: /\/templates\/payments\// },
   ]
   let blankId = null
@@ -249,17 +250,17 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
       return text
     }
     const many = await confirmFor('Painting, whole unit')
-    ok('3.14 on n quotes', /It’s on \d+ quotes — they keep their lines\. New quotes can’t pick it until you restore it from Deleted Items\./.test(many), many.split('\n').slice(-3).join(' '))
+    ok('3.14 on n quotes', /It’s on \d+ quotes — they keep their lines\. New quotes can’t pick it until you restore it from Deleted items\./.test(many), many.split('\n').slice(-3).join(' '))   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const one = await confirmFor('Homogeneous tiles', 'Hafary')
-    ok('3.14 on 1 quote', one.includes('It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted Items.'), one.split('\n').slice(-3).join(' '))
+    ok('3.14 on 1 quote', one.includes('It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted items.'), one.split('\n').slice(-3).join(' '))   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const none = await confirmFor('Probe sealant')
-    ok('3.14 on no quote', none.includes('You can restore it from Deleted Items.') && !/quote/.test(none.replace(/Delete .*\?/, '')))
+    ok('3.14 on no quote', none.includes('You can restore it from Deleted items.') && !/quote/.test(none.replace(/Delete .*\?/, '')))   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     /* bulk */
     const boxes = page.getByTestId('library-row').locator('[data-kb-select] input[type=checkbox]')
     await boxes.nth(0).check({ force: true }); await boxes.nth(1).check({ force: true }); await page.waitForTimeout(300)
     await page.getByRole('button', { name: 'Delete', exact: true }).last().click()
     const c = page.getByRole('dialog').filter({ hasText: 'Delete 2 items?' }); await c.waitFor()
-    ok('3.14 bulk', (await c.innerText()).includes('Quotes already carrying them keep their lines. New quotes can’t pick them until you restore them from Deleted Items.'))
+    ok('3.14 bulk', (await c.innerText()).includes('Quotes already carrying them keep their lines. New quotes can’t pick them until you restore them from Deleted items.'))   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     await shot(page, 'g6-bulk-delete-confirm')
     await c.getByRole('button', { name: 'Cancel' }).click()
   })

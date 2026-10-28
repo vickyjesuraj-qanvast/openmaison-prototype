@@ -152,7 +152,7 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     ok(await dlg.count() === 1, 'the house WhatsApp dialog opens: Share a view-only link')
     const token = sql(`select view_token from quotes where id = '${Q_SENT}'`)
     ok(/^[A-Za-z0-9_-]{16,64}$/.test(token) && sql(`select view_token_by from quotes where id = '${Q_SENT}'`) === 'dane', 'the link is made, by whoever made it')
-    ok((await dlg.locator('code').innerText()).endsWith(`/quote/${token}`), 'the dialog shows the link: /quote/<token>')
+    ok(((await dlg.locator('code').count()) ? await dlg.locator('code').innerText() : await dlg.getByRole('textbox').last().inputValue()).includes(`/quote/${token}`), 'the dialog shows the link: /quote/<token>')   // (the calm UI build 2026-10-27, a deliberate change) 4-20: the link rides in the message; its own row shows only when the message lacks it
     ok(/first look at quote OM-10007 from/.test(await dlg.getByRole('textbox').last().inputValue().catch(() => '')) || /first look/.test(await dlg.innerText()), 'the drafted message: a first look, view only')
     /* (S42 B-23, a deliberate change of this rule) opening the dialog makes the link but says nothing yet — the line waits for a share */
     ok(sql(`select count(*) from lead_events where kind = 'parity_s02_quote_view_shared' and at >= ${T0} and json_extract(detail, '$.id') = '${Q_SENT}'`) === '0', 'S42 B-23: just opening the dialog writes no “made a view-only link” line')
@@ -166,7 +166,7 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     { const AC = await desk(); const ac = await page(AC, 'activity'); await go(ac, `/leads/${sql(`select lead_id from quotes where id = '${Q_SENT}'`)}/activity`)
       ok(/made a view-only link to the quote “?OM-10007”? for Serena Koh/.test(await ac.locator('main').innerText()), 'the lead’s Activity reads “… made a view-only link to the quote OM-10007 for Serena Koh.”'); await AC.close() }
     const popP = D.waitForEvent('page', { timeout: 6000 }).catch(() => null)
-    await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()
+    await dlg.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const pop = await popP
     ok(!!pop && /wa\.me\/65/.test(pop.url()) && decodeURIComponent(pop.url()).includes(`/quote/${token}`), 'Send via WhatsApp opens WhatsApp on the press, with the link')
     if (pop) await pop.close()
@@ -180,8 +180,8 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     console.log('4 · The client’s page')
     const C = await desk(); const c = await page(C, 'client')
     await go(c, `/quote/${token}`)
-    ok(await c.getByTestId('quote-view-page').count() === 1 && /view only/i.test(await c.locator('[data-testid="quote-view-page"] header').first().innerText()), 'the client’s page opens: the studio’s bar, “View only”')
-    ok(await c.locator('[data-testid="quote-view-card"] h2').innerText().then((t) => t.length > 0) && /nothing to confirm or sign/.test(await c.getByTestId('quote-view-words').innerText()), 'its card says what this is — a look, nothing to confirm or sign')
+    ok(await c.getByTestId('quote-view-page').count() === 1 && /private link/i.test(await c.locator('[data-testid="quote-view-page"] header').first().innerText()), 'the client’s page opens: the studio’s bar, “View only”')
+    ok(await c.locator('[data-testid="quote-view-card"] h2').innerText().then((t) => t.length > 0) && /It stays up to date on this page/.test(await c.getByTestId('quote-view-words').innerText()), 'its card says what this is — a page that stays up to date')   // (the calm UI build 2026-10-27, a deliberate change) 4-34 · W-209: the words by state
     ok(await c.getByRole('button', { name: /Confirm/ }).count() === 0 && await c.getByRole('button', { name: /Sign/ }).count() === 0, 'no Confirm, no Sign')
     ok(await c.getByTestId('quote-view-message').count() === 1 && await c.getByTestId('quote-view-download').count() === 1, 'Message the designer · Download a copy')
     ok(/Quote OM-10007 · Demo Studio/.test(await c.title()), `the tab: “${await c.title()}”`)
@@ -360,7 +360,7 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     await go(f, `/leads/${KEVIN}/activity`)
     const actText = await f.locator('main').innerText()
     const evAdded = Number(sql(`select count(*) from lead_events where lead_id = '${KEVIN}' and kind like 'file_%'`)) - Number(vizLines0)
-    ok(/showed .*Render - Living room - V3\.jpg.* to Kevin Ng/.test(actText) && !/shared 1 render with Kevin Ng/.test(actText) && evAdded === 1, `Activity says it once — “showed … to Kevin Ng”, no second “shared 1 render” line (${evAdded} new event)`)
+    ok(/showed .*Render - Living room - V3\.jpg.* to Kevin Ng/.test(actText) && !/shared 1 (render|version) with Kevin Ng/.test(actText) /* (the calm UI build 2026-10-27, a deliberate change) 6-07 */ && evAdded === 1, `Activity says it once — “showed … to Kevin Ng”, no second “shared 1 render” line (${evAdded} new event)`)
     await showVia(V3_FILE)   // Stop showing
     ok(sql(`select quote(revoked_at) from render_share_links where id = '${own[0]}'`) !== 'NULL' && /no longer shown to the client/.test(await snackText(f)), 'Stop showing takes it off Designs too (its link stops)')
     await go(pp, '/my/demo-studio/designs')

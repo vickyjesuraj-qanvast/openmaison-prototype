@@ -60,9 +60,10 @@ import { moveStageHref } from '@/lib/leads/move-link'
 import { lineChanges } from './items/line-change'
 import { ReviseDialog } from './revise-dialog'
 import { VersionHistoryDrawer } from './version-history'
-import { displayDate, displayDateLong, inputDate, money, parseInputDate } from '@/lib/format'
+import { displayDate, displayDateLong, inputDate, money, parseInputDate, savedLabel } from '@/lib/format'
 import { duration } from '@/lib/motion'
 import { quoteStatuses, viewedSince, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01 · 4-04) the status set on screen
 import type { QuoteEditorData } from '@/lib/quotes/editor'
 import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
 import { SECTION_KEYS, SECTION_LABELS, isFixedSection, parseSections, pinFixed, type QuoteSectionState, type SectionKey } from '@/lib/quotes/sections'
@@ -107,16 +108,8 @@ const SCREEN_LABELS: Record<SectionKey, string> = { general: 'General info', ite
 /** The first line of a text, for a row's summary. */
 const firstLine = (plain: string, max = 56): string => { const l = plain.split('\n').map((x) => x.trim()).find(Boolean) ?? ''; return l.length > max ? `${l.slice(0, max - 1).trimEnd()}…` : l }
 
-/** "Saved 2 mins ago" (1201:33811) — the header's own wording, from the last write's stamp. */
-function savedLabel(updatedAt: number, now: number): string {
-  const s = Math.max(0, Math.floor((now - updatedAt) / 1000))
-  if (s < 60) return 'Saved just now'
-  const m = Math.floor(s / 60)
-  if (m < 60) return `Saved ${m} ${m === 1 ? 'min' : 'mins'} ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `Saved ${h} ${h === 1 ? 'hour' : 'hours'} ago`
-  return `Saved ${displayDate(new Date(updatedAt))}`
-}
+/* "Saved 2 mins ago" (1201:33811) — the header's own wording, from the last write's stamp: (the calm UI build 2026-10-27, 4-43) the house
+   `savedLabel` (lib/format.ts), one "Saved …" for every editor */
 
 /**
  * Quote editor (Figma 1271:40301, page 1260:31139) — phase 1: the page shell, General Info and the section frame.
@@ -468,6 +461,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { openSaveAs(); return }
+    if (action === 'editTemplate') { editTemplate(); return }   /* (the calm UI build, 4-10) the Template card's Edit template, now the ⋮'s row */
     if (action === 'contract') { quoteSend.openContract(); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
     if (action === 'viewLink') { viewLinkUi.open(); return }   /* (pending modules S02) */
     if (action === 'confirmLink') { const open = status === 'Approved' || status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed'; void copyText(confirmLink(confirmKeyOf(quote))).then(() => snackbar({ message: open ? 'Confirmation link copied' : 'Confirmation link copied — it opens for the client once the quote is sent' }), () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }   /* (REG-587; REG-626: the link confirms only a sent quote) */
@@ -509,10 +503,10 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
               setVersion(was.version); setStatus(was.status); setRecord(was.record); stamp(Date.now()); router.refresh()
             }, `Version ${was.version} is back — ${quote.number} is approved by the client again`)
           } }
-        : { message: `Version ${version + 1} started — version ${version} is kept in Version History` })
+        : { message: `Version ${version + 1} started — version ${version} is kept in Version history` })
     })
   }
-  const VIEW_WORD: Record<ItemsView, string> = { none: 'your own sections', category: 'Trade', room: 'Room', section: 'Section label' }   /* (REG-567) */
+  const VIEW_WORD: Record<ItemsView, string> = { none: 'your own sections', category: 'Trade', room: 'Room', section: 'Print group' }   /* (REG-567) */
   const pickTemplate = (templateId: string) => {
     setPickerOpen(false)
     setPickedTpl(null)
@@ -576,6 +570,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   const printView = viewForTemplate(clientPaneDesign)
   const printTemplate = templateState.current?.name ?? templateState.picker.templates.find((t) => t.isDefault)?.name ?? null
   const printsBy = printView !== 'none' && printTemplate ? { template: printTemplate, view: printView } : null
+  const itemsHaveSections = lines.some((i) => i.kind === 'group')   // (the calm UI build, 4-02) the Template card's "Prints by trade" line, only once there are sections to speak of
   /* (UX audit Q1 · Q2 · Q11) Send — every path through the quote's one Send (components/quotes/send/use-quote-send.tsx), Preview's too. */
   /* (S44F — NB-02 (b)) A revision's message says what changed since the last version — in the client's words: no line hidden from them, no
      line's money unless the client view prints a price on every line, the schedule only while it prints */
@@ -645,8 +640,8 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   const backHref = from ?? `/leads/${lead.id}/quotes`
   const close = () => router.push(backHref)
 
-  const tabs = sections.filter((s) => !(data.variation && s.key === 'payment')).map((s) => ({ key: s.key, label: s.key === 'items' ? `Items (${itemCount})` : s.key === 'files' ? `Files (${fileCount})` : SECTION_LABELS[s.key] }))
-  const titleOf = (k: SectionKey) => (k === 'items' ? `Items (${itemCount})` : k === 'files' ? `Files (${fileCount})` : SECTION_LABELS[k])
+  const tabs = sections.filter((s) => !(data.variation && s.key === 'payment')).map((s) => ({ key: s.key, label: s.key === 'items' ? `Items · ${itemCount}` : s.key === 'files' ? `Files · ${fileCount}` : SECTION_LABELS[s.key] }))
+  const titleOf = (k: SectionKey) => (k === 'items' ? `Items · ${itemCount}` : k === 'files' ? `Files · ${fileCount}` : SECTION_LABELS[k])
   const openOf = (k: SectionKey) => !(sections.find((s) => s.key === k)?.collapsed ?? true)
   /* A section something needs on screen: opened on the desk, its own screen on the move (P-02). */
   const reveal = (k: SectionKey) => { if (tabletDown) { if (openKey !== k && isSectionKey(k)) openSection(k) } else if (!openOf(k)) toggle(k) }
@@ -663,7 +658,8 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} variation={!!data.variation} extra={<>{data.variation ? <VariationReasonField quoteId={quote.id} value={data.variation.reason ?? null} approved={status === 'Confirmed' || status === 'Signed'} /> : null}
       {/* (P-02) on the move the template's newer version is offered where the template is — the General info screen (the desk keeps it under the tabs) */}
       {mode !== 'desk' && templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} /> : null}
-      <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} /></>} />   // (gaps build B, item 7) a VO’s reason for the change
+      {data.variation ? null : <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} signed={status === 'Signed'}
+                    printsBy={mode === 'desk' && printsBy ? { view: printsBy.view, sections: itemsHaveSections } : null} />}</>} />   // (gaps build B, item 7) a VO’s reason for the change
     if (k === 'activity') return <ActivityBody events={activity} now={now} />
     return (
       <div className={styles.soon} role="status">
@@ -679,7 +675,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
       <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={statusOpen} className={styles.pill}
               iconEnd={<span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
               onPress={() => setStatusOpen((o) => !o)}>
-        {data.variation ? variationLabel({ status }) : status}{/* (fix-D, D-24) a variation order reads the Money tab's word for its state */}
+        {data.variation ? variationLabel({ status }) : quoteStatusLabel(status)}{/* (fix-D, D-24) a variation order reads the Money tab's word for its state */}
       </Button>
       {/* (REG-728) A status list: the 240 width; "current" is the row's meta — the tab's mark (910:36673), so no Selected fill.
           (REG-590) "approvers only" on Approved while the studio asks for an approver. */}
@@ -698,7 +694,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                           onSelect={() => { if (marksIt) { setStatusOpen(false); setMarking(true) } else changeStatus(s) }}
                           help={marksIt ? 'Mark as approved by the client' : undefined}
                           meta={s === status ? 'current' : approverOnly ? 'approvers only' : waits ? STATUS_BLOCK_META : undefined}>
-              {data.variation ? variationLabel({ status: s }) : s}
+              {data.variation ? variationLabel({ status: s }) : quoteStatusLabel(s)}
             </DropdownItem>
           )
         })}
@@ -800,7 +796,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     return { key: k, label: SCREEN_LABELS[k], count: k === 'items' ? itemCount : k === 'files' ? fileCount : null, summary }
   })
   /* the open section's screen: its bar's words (Items: "16 lines · S$49,838") and the way back to the list */
-  const openScreen: SectionScreen | null = useMemo(() => (shownKey ? { onBack: backToList, title: SCREEN_LABELS[shownKey], subtitle: shownKey === 'items' ? `${itemCount} ${itemCount === 1 ? 'line' : 'lines'} · S$${money(amountMinor)}` : undefined } : null), [shownKey, backToList, itemCount, amountMinor])
+  const openScreen: SectionScreen | null = useMemo(() => (shownKey ? { onBack: backToList, title: SCREEN_LABELS[shownKey], subtitle: shownKey === 'items' ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'} · S$${money(amountMinor)}` : undefined } : null), [shownKey, backToList, itemCount, amountMinor])
   /* (Q-07) the foot's one primary, by state; Send and Send for signature are the quote's own Send button */
   const [remindOpen, setRemindOpen] = useState(false)
   const onPrimary = (p: NextPrimary) => {
@@ -829,7 +825,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
         {mode === 'desk' ? (
           <>
             <EditorHeader
-              deleteBlock={deleteWhy}
+              deleteBlock={deleteWhy} editTemplate={!!templateState.current && !templateState.current.deleted}
               lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={version} status={status} siblings={siblings}
               savedLabel={savedLabel(updatedAt, clock)}
               canSend={quoteSend.canSend} sendKind={quoteSend.kind} sendHint={quoteSend.hint} statusSlot={statusPill}
@@ -937,7 +933,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
         </div>
         {/* (Q-07) Remind — a nudge on WhatsApp with the same confirmation link; nothing changes on the quote */}
         <SendContractDialog open={remindOpen} onClose={() => setRemindOpen(false)} link={confirmLink(confirmKeyOf(quote))} defaults={{ name: lead.name, phone: lead.phone }}
-                            title="Send a reminder" subtitle={`A nudge on WhatsApp with the same link — the ${data.variation ? 'variation order' : 'quote'} stays as it is.`} copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)" sendLabel="Send via WhatsApp"
+                            title="Send a reminder" subtitle={`A nudge on WhatsApp with the same link — the ${data.variation ? 'variation order' : 'quote'} stays as it is.`} copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)" sendLabel="Send on WhatsApp"
                             draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: studio.name, number: quote.number, link: confirmLink(confirmKeyOf(quote)), variation: !!data.variation, validUntil: validUntilDate && !validityEnded ? displayDateLong(validUntilDate) : null })}
                             onSend={sendRemind} />
         {/* (REG-497) the live client view on a tablet went through a 400 drawer with a 328px paper (B-08); on the move the Preview page is the client's view — K3's */}
@@ -972,8 +968,8 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
         {/* (UX audit Q10) Revise asks what the client asked for — optional, kept with the version it answers (Version History, the kept preview). */}
         <ReviseDialog open={reviseOpen} version={version} number={quote.number}
                       message={data.variation
-                        ? `Version ${version} is kept as it stands — ${variationLabel({ status })}, ${signedMoney(amountMinor)} — and opens read-only from Version History. The variation order becomes a Draft again under ${quote.number} with the same lines, ready for the changes.${voApproved ? ` Its approval stops counting: the contract goes back to ${money2(data.variation.contractMinor)} until ${clientFirst} approves version ${version + 1}, and the unsent invoices follow.` : ''}`
-                        : `Version ${version} is kept as it stands — ${status}, ${money2(amountMinor)} — and opens read-only from Version History. The quote becomes a Draft again under ${quote.number} with the same lines, ready for the changes.${data.contract?.status === 'Sent to Client' ? ` ${lead.name.trim().split(/\s+/)[0] || 'The client'}’s signing link for ${data.contract.title} waits until version ${version + 1} is sent.` : ''}`}   /* (S42 B-01) said before the press: the open signing link waits for the new version */
+                        ? `Version ${version} is kept as it stands — ${variationLabel({ status })}, ${signedMoney(amountMinor)} — and opens read-only from Version history. The variation order becomes a Draft again under ${quote.number} with the same lines, ready for the changes.${voApproved ? ` Its approval stops counting: the contract goes back to ${money2(data.variation.contractMinor)} until ${clientFirst} approves version ${version + 1}, and the unsent invoices follow.` : ''}`
+                        : `Version ${version} is kept as it stands — ${quoteStatusLabel(status)}, ${money2(amountMinor)} — and opens read-only from Version history. The quote becomes a Draft again under ${quote.number} with the same lines, ready for the changes.${data.contract?.status === 'Sent to Client' ? ` ${lead.name.trim().split(/\s+/)[0] || 'The client'}’s signing link for ${data.contract.title} waits until version ${version + 1} is sent.` : ''}`}   /* (S42 B-01) said before the press: the open signing link waits for the new version */
                       onClose={() => setReviseOpen(false)} onRevise={doRevise} />
         <DeleteQuotesDialog open={deleteOpen} count={1} onNo={() => setDeleteOpen(false)}
                             onYes={() => { setDeleteOpen(false); void run('delete the quote', async () => { const r = await deleteQuotes([quote.id]); if (!('deleted' in r) || !r.deleted) { snackbar({ message: r.error ?? DELETE_RULE }); return } snackbar({ message: data.variation ? `${quote.number} deleted — find it under Money › Deleted variation orders` : 'Quote deleted — find it under Deleted Quotes' })   /* (fix-G, G-11) a variation order comes back from its project's Money tab */; router.push(backHref) }) }} />

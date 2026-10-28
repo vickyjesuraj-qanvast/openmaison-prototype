@@ -21,3 +21,7 @@
 .isoText { flex: 1; min-width: 200px; font: var(--om-type-body-s); }
 .isoLink { min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subtitle-s); color: var(--om-color-primary-default); }
 .isoLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (the calm UI build 2026-10-27, 6-21 — T-12) the card's foot (whose · when) wraps to a second line on a narrow card instead of cutting — the
+   gallery's usage line is one cut line by default */
+.footWrap { display: block; white-space: normal; overflow-wrap: anywhere; }

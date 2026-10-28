@@ -8,16 +8,22 @@ import { useSignedInRole } from '@/components/shell/access-gate'   // (S44O — 
 import { opensPath } from '@/lib/settings/roles'
 import { InsightsGhost, MEMBER_GHOST_CELL } from '@/components/leads/insights/insights-ghost'
 import { ProjectInsightsGhost } from '@/components/projects/insights/project-insights-ghost'
-import { BooksGhost } from '@/components/finance/books/books-ghost'
 import { Bone } from '@/components/shell/skeleton'
-import { GhostChips, GhostTable, GhostTextButton, HelpLines, Line, Slot, Words } from '@/components/shell/ghost-kit'
+import { GhostChips, GhostTable, GhostTextButton, HelpLines, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
 import { StatTiles } from '@/components/om/stat-tile'
 import { useFlagPref } from '@/lib/prefs'
+import { useSeedFlag } from '@/lib/ghost-shape'
+import { PERIODS, PERIOD_REPORTS, PROFIT_REPORTS, REPORTS } from '@/lib/finance/reports'
+import plan from '@/components/company/plan/plan.module.css'
+import ins from '@/components/leads/insights/insights-view.module.css'
 import {
-  CHECK_TITLE, COACHING_EMPTY, COACHING_TITLE, FOOT_NOTE, MEMBERS_EMPTY, MEMBERS_HELP, OBJECTIONS_EMPTY, OBJECTIONS_HELP, OBJECTIONS_TITLE,
+  COACHING_EMPTY, COACHING_TITLE, MEMBERS_EMPTY, MEMBERS_HELP, OBJECTIONS_EMPTY, OBJECTIONS_HELP, OBJECTIONS_TITLE,
   OBJECTION_TILE_LABELS, RANGES, SHAPE, TILE_LABELS, checkWaitLine,
 } from '@/lib/meetings/report-model'
-import { CAPTION as HEALTH_CAPTION, FOOT_NOTE as HEALTH_FOOT, GROUPS as HEALTH_GROUPS, MEMBERS_HELP as HEALTH_MEMBERS_HELP, RANGES as HEALTH_RANGES, SHAPE as HEALTH_SHAPE, TREND_EMPTY, helpShown, readRange, trendSubtitle } from '@/lib/studio-health/model'
+import { CHECK_HEAD } from './meetings-report'
+import { GhostHowCounted, GhostPill, GhostShowNumbers } from './report-pill'
+import { GROUPS as HEALTH_GROUPS, MEMBERS_HELP as HEALTH_MEMBERS_HELP, RANGES as HEALTH_RANGES, SHAPE as HEALTH_SHAPE, TREND_EMPTY, helpShown, rangeParam, readRange, trendSubtitle } from '@/lib/studio-health/model'
+import { HEADLINE_TILES } from './studio-health-report'
 import books from '@/components/finance/books/books.module.css'
 import tile from '@/components/om/stat-tile.module.css'
 import card from '@/components/leads/detail/card.module.css'
@@ -43,15 +49,76 @@ export function ReportsGhost({ tab: given, money }: { tab?: ReportsTab['key']; m
         : tab === 'projects' ? <ProjectInsightsGhost money={money} />
         : tab === 'meetings' ? <MeetingsReportGhost />
         : tab === 'health' ? <StudioHealthGhost />
-        : <div className={books.page}><BooksGhost tab="reports" /></div>}
+        : <FinanceReportsGhost />}
     </CompanyGhostFrame>
   )
 }
 
+/* ── (the calm UI build 2026-10-27 — 5-19 · 5-20) Company › Reports › Finance's ghost, the tab's own now: the Report pill and the Period pill in
+   their words, Export; the report's head; its tiles; two tables — on the page's classes (books.module.css · plan.module.css). It was the books
+   ghost's Reports branch (components/finance/books/books-ghost.tsx), drawn with the ten chips the page no longer has. ── */
+function FinanceReportsGhost() {
+  const profits = useSeedFlag('role.costs', true)   // (pending modules S41b-1) a role kept from profit and margin opens on To collect
+  const params = useSearchParams()
+  const reports = profits ? REPORTS : REPORTS.filter((r) => !PROFIT_REPORTS.includes(r.key))
+  const r = reports.find((x) => x.key === params.get('report')) ?? reports[0]!
+  const period = PERIOD_REPORTS.includes(r.key) ? (PERIODS.find((p) => p.value === params.get('period'))?.label ?? (r.key === 'gst' ? 'This quarter' : 'This year')) : null
+  const four = r.key === 'pl' || r.key === 'profitability' || r.key === 'statement'
+  /* (REG-708) each report's own shape (lib/finance/reports.ts): To collect and To pay open on By how late — five buckets and its Total, no help
+     line — then their list, no help line; the others two tables with a help line. Their tiles' lines as the page wraps them: To collect's Net
+     one line, To pay's two short lines and a tile with none. */
+  const aging = r.key === 'ar' || r.key === 'ap'
+  const tables = aging ? [{ rows: 6, help: false }, { rows: 4, help: false }] : [{ rows: 3, help: true }, { rows: 4, help: true }]
+  const tileLines = (i: number): 2 | 1 | 0 => (r.key === 'ar' ? (i === 2 ? 1 : 2) : r.key === 'ap' ? (i === 2 ? 0 : 1) : 2)
+  return (
+    <div className={books.page}>
+      <div className={books.block}>
+        <div className={`${ins.pickBar} ${ins.flush}`}>
+          <span className={ins.picks}>
+            <GhostPill name="Report" value={r.label} />
+            {period ? <GhostPill name="Period" value={period} /> : null}
+          </span>
+          <span className={ins.pickEnd}><Slot kind="btn" w={100} /></span>
+        </div>
+      </div>
+      <div className={books.head}><Words as="h2" className={books.headTitle}>{period ? `${r.label} · ${period}` : r.label}</Words><Words as="p" className={books.headHelp}>{`${r.help}.`}</Words></div>
+      <div className={four ? books.tiles : books.tiles3}>
+        {Array.from({ length: four ? 4 : 3 }, (_, i) => (
+          <div key={i} className={tile.tile}>
+            <Line w={cycle([96, 72, 104, 84], i)} lh={16} h={10} />
+            <Line w={cycle([140, 120, 150, 110], i)} lh={24} h={20} />
+            {tileLines(i) === 2 ? <HelpLines w={cycle(['70%', '58%', '76%', '62%'], i)} w2={cycle(['44%', '52%', '36%', '48%'], i)} />
+              : tileLines(i) === 1 ? <Line w={cycle(['70%', '58%', '76%', '62%'], i)} lh={16} h={10} /> : null}
+          </div>
+        ))}
+      </div>
+      {tables.map((tb, t) => (
+        <section key={t} className={plan.section}>
+          <div className={plan.sectionHead}>
+            <div className={plan.sectionTitles}><Line w={cycle([120, 200], t)} lh={24} h={16} />{tb.help ? <Line w={cycle([360, 420], t)} lh={16} h={10} /> : null}</div>
+            {/* the page's Column settings — a desk's tool, gone on a phone */}
+            <div className={plan.sectionTools}><Slot kind="icon" desk /></div>
+          </div>
+          <GhostTable rows={tb.rows} head={56} row={64} phone={{ card: 150, lines: 3 }} cols={[
+            { basis: 240, grow: 240, head: 36, cell: (row: number) => [cycle(['72%', '60%', '80%'], row), cycle([64, 80, 72], row)], stick: true },
+            { basis: 130, grow: 130, head: 56, cell: (row: number) => cycle([84, 96, 72], row) },
+            { basis: 130, grow: 130, head: 72, cell: (row: number) => cycle([84, 96, 72], row) },
+          ]} />
+        </section>
+      ))}
+    </div>
+  )
+}
+
+/** (the calm UI build 2026-10-27 — 5-19) The Period pill's words for the range in the address (`?range=30|90|365|all`, the house reports' 90 when
+    none or another) — what the page opens on. */
+const rangeOf = (v: string | null, ranges: readonly { key: number | null; label: string }[]) =>
+  (ranges.find((r) => (r.key === null ? 'all' : String(r.key)) === v) ?? ranges.find((r) => r.key === 90) ?? ranges[0])?.label ?? 'Last 90 days'
+
 /* ── (pending modules S23) Company › Reports › Meetings' ghost ── */
 
 /** One Overview card's two-line rows (the LEAD STAGES grammar, components/projects/overview/row.tsx `two`), in groups under a rule. */
-function RowsCardGhost({ title, groups }: { title: string; groups: number[] }) {
+function RowsCardGhost({ title, groups, line }: { title: string; groups: number[]; /** the card's one line instead of rows */ line?: string }) {
   let n = 0
   const row = () => {
     const i = n++
@@ -65,16 +132,19 @@ function RowsCardGhost({ title, groups }: { title: string; groups: number[] }) {
       </div>
     )
   }
+  /* (the calm UI build 2026-10-27 — 5-23) the page's section head over the card's frame, as RowsCard (meetings-report.tsx) draws it */
   return (
-    <section className={card.card}>
-      <div className={card.head}><div className={card.headText}><Words className={card.title}>{title}</Words></div></div>
-      <div className={ov.body}>
-        {groups.map((g, gi) => (
-          <Fragment key={gi}>
-            {gi > 0 ? <div className={card.rule} /> : null}
-            <div className={ov.group}>{Array.from({ length: g }, row)}</div>
-          </Fragment>
-        ))}
+    <section className={m.rowsCard}>
+      <div className={m.sectionHead}><div><Words className={m.sectionTitle}>{title}</Words></div></div>
+      <div className={m.panel}>
+        <div className={ov.body}>
+          {line ? <Words as="p" className={ov.line}>{line}</Words> : groups.map((g, gi) => (
+            <Fragment key={gi}>
+              {gi > 0 ? <div className={card.rule} /> : null}
+              <div className={ov.group}>{Array.from({ length: g }, row)}</div>
+            </Fragment>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -88,15 +158,17 @@ function RowsCardGhost({ title, groups }: { title: string; groups: number[] }) {
  * the page's PageReveal (the Reports frame's `skeleton`) draw this same one.
  */
 export function MeetingsReportGhost() {
+  const period = rangeOf(useSearchParams().get('range'), RANGES)
   const [members] = useFlagPref(SHAPE.members, true)
   const [coaching] = useFlagPref(SHAPE.coaching, true)
   const [check] = useFlagPref(SHAPE.check, true)
   const [objections] = useFlagPref(SHAPE.objections, true)
   return (
     <div>
-      <div className={m.bar}>
-        <GhostChips labels={RANGES.map((r) => r.label)} rail />
-        <span className={m.barEnd}><Line w={320} lh={16} h={10} /><Slot kind="btn" w={104} /></span>
+      {/* (the calm UI build 2026-10-27 — 5-19) the Period pill in its words, then Export */}
+      <div className={m.pickBar}>
+        <span className={m.picks}><GhostPill name="Period" value={period} /></span>
+        <span className={m.pickEnd}><Slot kind="btn" w={100} /></span>   {/* Export, 100 wide */}
       </div>
       <StatTiles className={m.tiles}>
         {TILE_LABELS.map((l, i) => (
@@ -109,7 +181,7 @@ export function MeetingsReportGhost() {
       </StatTiles>
       <section className={m.section}>
         <div className={m.sectionHead}>
-          <div><Words className={m.sectionTitle}>By team member</Words><Words className={m.sectionHelp}>{MEMBERS_HELP}</Words></div>
+          <div><Words className={m.sectionTitle}>By member</Words><Words className={m.sectionHelp}>{MEMBERS_HELP}</Words></div>
           <Slot kind="icon" desk />
         </div>
         {/* a phone gets the member cards the real table turns into, 238 tall: the member (36), then five lines — three of them two (REG-727) */}
@@ -126,20 +198,10 @@ export function MeetingsReportGhost() {
       </section>
       <div className={`${m.cards} ${m.block}`}>
         <div className={m.stack}>
-          {coaching ? <RowsCardGhost title={COACHING_TITLE} groups={[2]} /> : (
-            <section className={card.card}>
-              <div className={card.head}><div className={card.headText}><Words className={card.title}>{COACHING_TITLE}</Words></div></div>
-              <div className={ov.body}><Words as="p" className={ov.line}>{COACHING_EMPTY}</Words></div>
-            </section>
-          )}
+          {coaching ? <RowsCardGhost title={COACHING_TITLE} groups={[2]} /> : <RowsCardGhost title={COACHING_TITLE} groups={[]} line={COACHING_EMPTY} />}
         </div>
         <div className={m.stack}>
-          {check ? <RowsCardGhost title={CHECK_TITLE} groups={[1, 3]} /> : (
-            <section className={card.card}>
-              <div className={card.head}><div className={card.headText}><Words className={card.title}>{CHECK_TITLE}</Words></div></div>
-              <div className={ov.body}><Words as="p" className={ov.line}>{checkWaitLine(0)}</Words></div>
-            </section>
-          )}
+          {check ? <RowsCardGhost title={CHECK_HEAD} groups={[1, 3]} /> : <RowsCardGhost title={CHECK_HEAD} groups={[]} line={checkWaitLine(0)} />}
         </div>
       </div>
       <section className={`${m.section} ${m.block}`}>
@@ -176,7 +238,7 @@ export function MeetingsReportGhost() {
           </>
         ) : <Words as="p" className={m.empty}>{OBJECTIONS_EMPTY}</Words>}
       </section>
-      <Words as="p" className={m.foot}>{FOOT_NOTE}</Words>
+      <GhostHowCounted />
     </div>
   )
 }
@@ -195,31 +257,26 @@ export function StudioHealthGhost() {
   const range = readRange(useSearchParams().get('range'))   // the page opens on the address's range — its words follow it
   const [trend] = useFlagPref(HEALTH_SHAPE.trend, true)
   const [clients] = useFlagPref(HEALTH_SHAPE.clients, true)
-  const [projects] = useFlagPref(HEALTH_SHAPE.projects, true)
-  const [hangouts] = useFlagPref(HEALTH_SHAPE.hangouts, true)
-  const shown = (k: string) => !(((k === 'tickets' || k === 'updates' || k === 'projects') && !projects) || (k === 'chats' && !hangouts))
   const groups = HEALTH_GROUPS.filter((g) => g.key !== 'clients' || clients)
+  /* (the calm UI build 2026-10-27 — 5-22) the four headline tiles the page opens on, then "Show all figures" (the groups stay folded) */
+  const headline = HEADLINE_TILES.map((k) => groups.flatMap((g) => g.tiles).find((t) => t.key === k)).filter((t): t is NonNullable<typeof t> => !!t)
   return (
     <div>
-      <div className={h.bar}>
-        <GhostChips labels={HEALTH_RANGES.map((r) => r.label)} rail />
-        <span className={h.barEnd}><Words className={h.caption}>{HEALTH_CAPTION}</Words><Slot kind="btn" w={100} /></span>   {/* Export: the outlined button with its icon, 100 wide */}
+      <div className={h.pickBar}>
+        <span className={h.picks}><GhostPill name="Period" value={rangeOf(rangeParam(range), HEALTH_RANGES)} /></span>
+        <span className={h.pickEnd}><Slot kind="btn" w={100} /></span>   {/* Export: the outlined button with its icon, 100 wide */}
       </div>
-      {groups.map((g, i) => (
-        <section key={g.key} className={`${h.section} ${i ? h.block : ''}`}>
-          <div className={h.sectionHead}><div><Words as="h2" className={h.sectionTitle}>{g.title}</Words><Words className={h.sectionHelp}>{g.help}</Words></div></div>
-          <StatTiles>
-            {g.tiles.filter((t) => shown(t.key)).map((t, j) => (
-              <div key={t.key} className={tile.tile}>
-                <Words className={tile.label}>{t.label}</Words>
-                <Line w={t.key === 'active' ? 56 : [24, 32, 20, 28][j % 4]!} lh={24} h={20} />
-                {/* every help is one short line (lib/studio-health/model.ts), the comparing ones gone on all time */}
-                {helpShown(t.key, range) ? <Line w={[104, 88, 112, 96][j % 4]!} lh={16} h={10} /> : null}
-              </div>
-            ))}
-          </StatTiles>
-        </section>
-      ))}
+      <StatTiles>
+        {headline.map((t, j) => (
+          <div key={t.key} className={tile.tile}>
+            <Words className={tile.label}>{t.label}</Words>
+            <Line w={t.key === 'active' ? 56 : [24, 32, 20, 28][j % 4]!} lh={24} h={20} />
+            {/* every help is one short line (lib/studio-health/model.ts), the comparing ones gone on all time */}
+            {helpShown(t.key, range) ? <Line w={[104, 88, 112, 96][j % 4]!} lh={16} h={10} /> : null}
+          </div>
+        ))}
+      </StatTiles>
+      <div className={h.more} style={{ display: 'flex' }}><GhostTextButton label="Show all figures" iconEnd /></div>
       {trend ? (
         <div className={`${h.chart} ${h.block}`}>
           <figure className={chart.chart} aria-hidden>
@@ -228,7 +285,7 @@ export function StudioHealthGhost() {
               {['Active members', 'AI runs'].map((l) => <li key={l} className={chart.key}><span className={chart.swatch} data-mark="line" /><Words>{l}</Words></li>)}
             </ul>
             <Bone w="100%" r={4} className={h.plotGhost} />
-            <div className={chart.foot}><span /><GhostTextButton label="Show the numbers" /></div>
+            <div className={chart.foot}><span /><GhostShowNumbers /></div>
           </figure>
         </div>
       ) : (
@@ -239,7 +296,7 @@ export function StudioHealthGhost() {
       )}
       <section className={`${h.section} ${h.block}`}>
         <div className={h.sectionHead}>
-          <div><Words as="h2" className={h.sectionTitle}>By team member</Words><Words className={h.sectionHelp}>{HEALTH_MEMBERS_HELP}</Words></div>
+          <div><Words as="h2" className={h.sectionTitle}>By member</Words><Words className={h.sectionHelp}>{HEALTH_MEMBERS_HELP}</Words></div>
           <Slot kind="icon" desk />
         </div>
         {/* a phone gets the member cards the real table turns into: the member (36), then six one-line figures (REG-727) */}
@@ -253,7 +310,7 @@ export function StudioHealthGhost() {
           { basis: 144, grow: 144, head: 84, cell: 12 },
         ]} />
       </section>
-      <Words as="p" className={h.foot}>{HEALTH_FOOT}</Words>
+      <GhostHowCounted />
     </div>
   )
 }

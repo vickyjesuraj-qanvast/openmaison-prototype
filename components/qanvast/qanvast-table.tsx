@@ -27,8 +27,9 @@ export const QANVAST_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'qanvastId', label: 'Qanvast ID', track: 'minmax(120px, 120fr)', hidden: true },   /* (REG-609, parity T-10) 1.0's qanvast_lead_id, off until switched on */
   { key: 'status', label: 'Status', track: '369px' },
 ]
-/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
-const SORTABLE: Record<string, boolean> = { type: false, status: false, window: false, qanvastId: false }
+/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. (the calm UI build 2026-10-27, 2-09 · 2-27) the other
+   heads' arrows only ever answered "Coming soon": the heads are labels now (the order is Filters › Sort's, newest or oldest first), and the
+   Created head is whole again ("CREAT…" with its arrow). */
 const COL_CLASS: Record<string, string | undefined> = { name: styles.colName, credits: styles.colCredits, budget: styles.colBudget, type: styles.colType, created: styles.colCreated, status: styles.colStatus }
 
 /**
@@ -54,15 +55,7 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
-            {SORTABLE[c.key] === false ? (
-              <span className={styles.hLabel}>{c.label}</span>
-            ) : (
-              /* Sort is inert in this prototype — the head answers coming soon. */
-              <button type="button" className={styles.hSort} onClick={comingSoon}>
-                <span className={styles.hLabel}>{c.label}</span>
-                <Icon name="unfold_more" size={16} />
-              </button>
-            )}
+            <span className={styles.hLabel}>{c.label}</span>
             <ColumnResizer table="qanvast-leads" column={c.key} label={c.label} min={c.key === 'name' ? 160 : 72} />
           </div>
         ))}
@@ -96,7 +89,10 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
           <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(row.createdAt)}</div>
           {/* (REG-609, parity Q-44) Where the lead stands against Qanvast's return rules — shown, never enforced; the tooltip carries the rules. */}
           <div className={`${styles.cell} ${L.pinned('window') ? styles.pin : ''}`} role="cell" data-col="window" data-pin-edge={L.edge('window') || undefined} style={L.style('window')}>
-            <Tooltip label={RETURN_RULES_TEXT}><span className={styles.window} data-state={row.window.state} tabIndex={0}>{row.window.short}</span></Tooltip>
+            {/* (the calm UI build 2026-10-27, 2-27 · W-343) only a window still open (or about to open, or used up) says so — an expired one is the
+                same "Expired (30 days)" on every row, and the Status says the rest */}
+            {row.window.state === 'expired' ? <span className={styles.muted} aria-label={row.window.text}>—</span>
+              : <Tooltip label={RETURN_RULES_TEXT}><span className={styles.window} data-state={row.window.state} tabIndex={0}>{row.window.short}</span></Tooltip>}
           </div>
           <div className={`${styles.cell} ${L.pinned('qanvastId') ? styles.pin : ''}`} role="cell" data-col="qanvastId" data-pin-edge={L.edge('qanvastId') || undefined} style={L.style('qanvastId')}><span className={styles.oneLine}>{row.qanvastLeadId ?? '—'}</span></div>
           {/* Status: stage / return states as the 20px "Tag Outlined" MetaChip (title case, as the Lead Details header and the
@@ -114,7 +110,7 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
             <span className={styles.actions}>
               <span className={styles.actionsInner}>
               <span className={styles.float}>
-                <Button appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead Return Updates</Button>
+                <Button appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead return updates</Button>
               </span>
               </span>
             </span>

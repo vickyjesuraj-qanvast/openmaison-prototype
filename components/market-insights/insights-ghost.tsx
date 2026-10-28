@@ -2,15 +2,12 @@
 
 import { useSearchParams } from 'next/navigation'
 import { GhostSheet, Bone } from '@/components/shell/skeleton'
-import { GhostChips, GhostHead, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
+import { GhostHead, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
 import { useFirstRunShape, useSeedFlag } from '@/lib/ghost-shape'
-import { SAMPLES_NOTE, SOURCE_LINE } from '@/lib/market-insights/model'
+import { SAMPLES_NOTE } from '@/lib/market-insights/model'
 import gallery from '@/components/company/templates/quote-templates-gallery.module.css'
 import es from '@/components/om/empty-state.module.css'
 import styles from './market-insights.module.css'
-
-/** The categories' words as the chips draw them (their counts are the data the ghost can't know — a figure each). */
-const CATS = ['All · 6', 'Trends · 2', 'Reports · 2', 'Case Studies · 1', 'Industry News · 1']
 
 /** A line whose box is the page's line height at every width (the class sets it). */
 const Ln = ({ w, h, className }: { w: number | string; h: number; className?: string }) => <Line w={w} h={h} className={className} style={{ height: undefined }} />
@@ -37,6 +34,7 @@ function CardGhost({ i }: { i: number }) {
  * chips · the search, folded at ≤1024), the sample note while the demo's articles are samples, the featured article's wide card on All with
  * no search (the shell's seed says one is featured), and the cards — or, the feed being empty, the empty card. It reads `?category=` and
  * `?q=` as the page does. Its loading.tsx and the page's PageReveal draw it.
+ * (the calm UI build 2026-10-27, 6-12 · 6-27) the header's info glyph, the Category pill in place of the chips, no source line under the list.
  */
 export function InsightsGhost() {
   const params = useSearchParams()
@@ -46,7 +44,7 @@ export function InsightsGhost() {
   const featured = useSeedFlag('market-insights.featured', true) && !filtered
   return (
     <GhostSheet label="Loading Market Insights" l1>
-      <GhostHead title={164} />
+      <GhostHead title={164} after={first ? [] : ['icon']} />   {/* (the calm UI build 2026-10-27, W-125) the info glyph beside the title, as the page's */}
       <div className={styles.content} aria-hidden>
         {first ? (
           <section className={es.empty} data-tone="plain">
@@ -57,7 +55,7 @@ export function InsightsGhost() {
         ) : (
           <>
             <div className={styles.bar}>
-              <div className={styles.views}><div className={styles.rail}><GhostChips rail labels={CATS} /></div></div>
+              <div className={styles.views}><Slot kind="btn" w={150} className={styles.ghostCat} /></div>
               <div className={styles.tools}><Slot kind="search" w={280} /></div>
             </div>
             {samples ? <p className={styles.note}><Bone w={20} h={20} r={4} /><Words>{SAMPLES_NOTE}</Words></p> : null}
@@ -66,16 +64,16 @@ export function InsightsGhost() {
                 <span className={styles.featuredPic}><Bone w="100%" h={320} r={0} style={{ position: 'absolute', inset: 0, height: '100%' }} /></span>
                 <span className={styles.featuredText}>
                   <Line w={84} lh={16} h={10} />
-                  <span className={`${styles.featuredTitle} ${styles.ghostLines}`}><Ln w="90%" h={20} className={styles.ghostFeatTitle} /><Ln w="64%" h={20} className={styles.ghostFeatTitle} /></span>
+                  <span className={`${styles.featuredTitle} ${styles.ghostLines}`}><Ln w="90%" h={20} className={styles.ghostFeatTitle} /><Ln w="64%" h={20} className={`${styles.ghostFeatTitle} ${styles.ghostFeatTitle2}`} /></span>
                   <span className={styles.featuredExcerpt}><span className={styles.ghostLines}><Ln w="96%" h={12} className={styles.ghostFeatText} /><Ln w="92%" h={12} className={styles.ghostFeatText} /><Ln w="54%" h={12} className={styles.ghostFeatText} /></span></span>
-                  <span className={styles.tags}>{[68, 40, 56, 72].map((w, k) => <Bone key={k} w={w} h={20} r={4} />)}</span>
+                  {/* (the calm UI build, 6-34) the excerpt sits under the title now, so the ghost's lines follow the page's: its tags at their own widths, 32 tall (44 under a finger) */}
+                  <span className={styles.tags}>{[85, 52, 65, 75].map((w, k) => <Bone key={k} w={w} r={4} className={styles.ghostTag} style={{ height: undefined }} />)}</span>
                   <span className={styles.byline}><Bone w={36} h={36} r={4} /><span className={styles.bylineText}><Line w={128} lh={20} h={12} /><Line w={124} lh={16} h={10} /></span></span>
                 </span>
               </div>
             ) : null}
-            {/* All draws the list's two rows; a category or a search lists what the ghost can't know — one row, and the list's foot below it */}
+            {/* All draws the list's two rows; a category or a search lists what the ghost can't know — one row */}
             <div className={styles.grid}>{Array.from({ length: filtered ? 4 : featured ? 5 : 6 }, (_, i) => <CardGhost key={i} i={i} />)}</div>
-            {filtered ? null : <p className={styles.source}><Words>{SOURCE_LINE}</Words></p>}
           </>
         )}
       </div>

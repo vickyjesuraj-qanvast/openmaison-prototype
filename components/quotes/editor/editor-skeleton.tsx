@@ -23,7 +23,7 @@ export function EditorSkeleton() {
   return (
     <GhostSheet label="Loading quote">
       <div className={`${styles.page} ${styles.desk}`}>
-        <EditorHeadGhost crumb={180} title={196} chips={[60, 62, 48, 108]} status={76} primary={54} spans={false} foldable={[36, 76, 36]} />
+        <EditorHeadGhost crumb={180} title={196} chips={[96]} status={76} primary={54} spans={false} foldable={[76]} />   {/* (the calm UI build 2026-10-27, 4-03) the header as it is now: the number line, the pill, Send, Preview, ⋮ */}
         <div className={styles.tabs}>
           {[82, 62, 128, 34, 156, 118, 68, 54].map((w, i) => <Bone key={i} w={w} h={20} />)}
         </div>

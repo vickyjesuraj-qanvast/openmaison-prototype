@@ -151,7 +151,8 @@ const ROUTES = ['/company/profile', '/company/members', '/company/questionnaire'
     for (const [w, url] of [[320, '/settings?section=notifications']]) {
       const c = await ctxOf(b, w); const p = await c.newPage()
       await go(p, url)
-      await press(p, p.getByRole('button', { name: /^Edit/ }))
+      /* (the calm UI build 2026-10-27, a deliberate change) a message's wording opens from its event row's Edit wording drawer (5-05) */
+      await press(p, p.getByTestId('wording-new_lead')); await press(p, p.getByTestId('message-new_lead-whatsapp').getByRole('button', { name: 'Edit' }))
       const reset = p.getByRole('dialog').last().getByRole('button', { name: /Reset to the house draft/ })
       const r = await box(reset)
       ok(r.l >= 0 && r.r <= r.vw, `${w} · the message dialog's *Reset to the house draft* stands inside the foot (${Math.round(r.l)}–${Math.round(r.r)})`)

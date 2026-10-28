@@ -4,10 +4,13 @@
 //      the image model's seam, the Condo flats' bathroom wall
 //  1 · the door: Tools › Floorplan to 3D Isometric (Beta, as in 1.0) opens /floorplan-3d and lights Tools; ⌘K finds it; 1.0's addresses land
 //  2 · the landing: 1.0's words, How it works, the drop box, What you'll get (1.0's two looks), the sample plan with its views — nothing sideways
-//  3 · the sample's way through (his "Ship HDB 4-Room only": a sample shows once it has views, with the looks it has): read (the photo
-//      straightened by its 7°, on the house progress card's three steps) → confirm (its own rooms, Turn a quarter, the four corners; one look,
-//      no Style) → generate → the view (said to be made ahead), Regenerate's other take, Download named for it, Start a new plan
-//  4 · a studio's own plan on the prototype: straightened, then said plainly, the sample offered; an unreadable file says 1.0's words
+//  3 · the sample's way through (his "Ship HDB 4-Room only": a sample shows once it has views): read (the photo straightened by its 7°, on
+//      the house progress card's three steps) → confirm (2026-10-27, a deliberate change — his "1.0 is simpler" and the testers' "I can't see
+//      the button to generate top-down view": 1.0's Confirm — the plan alone, its own rooms, BOTH looks with the one it has no view for saying
+//      so, Generate naming the look) → generate (the plan faded under the wait, 1.0) → the view (said to be made ahead), Switch style with both
+//      looks, Regenerate's other take, Download named for it, Start a new plan
+//  4 · a studio's own plan on the prototype: said on the landing before the upload; straightened, with S28's rescues (Turn a quarter, the four
+//      corners — a sample has none now), then said plainly, the sample offered; an unreadable file says 1.0's words
 //  5 · the planner's isometric line no longer names the tool; the ghost
 //  6 · 390 and 768 (touch) and 320: one column, the plan before what to do, 48 foot buttons, nothing sideways
 // The page writes nothing. Usage: BASE=http://localhost:3021 NODE_PATH=<repo>/node_modules node verify-fp3d.cjs [shotDir]
@@ -78,6 +81,11 @@ const toDone = async (p) => { await p.waitForSelector('[data-testid="fp3d-render
     const samples = d.getByTestId('fp3d-sample')
     /* (his "Ship HDB 4-Room only", 2026-10-23) a sample shows once it has views: the HDB 4-Room alone for now */
     ok(await samples.count() === 1 && /HDB 4-Room/.test(await samples.first().innerText()), 'the sample plan with its views: the HDB 4-Room')
+    /* (2026-10-27) what the prototype does with a studio's own plan, said before the upload */
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-22 · T-05: the note sits behind the header's info glyph beside Beta, not as a line on the landing: its words are its tooltip */
+    { const tip = d.getByTestId('fp3d-prototype-hint'); await tip.hover().catch(() => {}); await settle(d, 900)
+      ok(await tip.count() === 1 && /What happens to your own plan here/.test(await tip.getAttribute('aria-label') ?? '') && /your own plan is straightened but not drawn in 3D — the sample plans go all the way/.test(await d.locator('[role="tooltip"]').first().innerText().catch(() => '')), 'the header says before the upload what a studio’s own plan gets here (its info glyph)')
+      await d.mouse.move(2, 2) }
     ok(await sideways(d) <= 0, 'nothing runs sideways')
     await shot(d, '02-landing-1440', true)
 
@@ -88,34 +96,30 @@ const toDone = async (p) => { await p.waitForSelector('[data-testid="fp3d-render
     const steps = await progress.locator('li').evaluateAll((ls) => ls.map((l) => [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim())).catch(() => [])
     ok(steps.join(' · ') === 'Read the plan · Confirm the rooms · 3D render', 'reading: the house progress card with 1.0’s three steps', steps)
     await toConfirm(d)
-    const line = await d.getByTestId('fp3d-line').innerText()
-    const angle = Number(/by ([\d.]+)°/.exec(line)?.[1])
-    ok(angle > 6 && angle < 8, `the photo is straightened by its 7° (“${line}”)`)
+    const angle = Math.abs(Number(await d.getByTestId('fp3d-picture').getAttribute('data-angle')))
+    ok(angle > 6 && angle < 8, `the photo is straightened by its 7° (${angle})`)
     ok(await loaded(d.getByTestId('fp3d-picture')), 'the straightened plan shows')
+    /* (2026-10-27, a deliberate change) 1.0's Confirm: a sample's plan alone — no angle line, no rescues (it is straight already) */
+    ok(await d.getByTestId('fp3d-line').count() === 0 && await d.getByTestId('fp3d-turn').count() === 0 && await d.getByTestId('fp3d-corners-open').count() === 0, 'a sample’s plan alone: no angle line, no Turn a quarter, no corners')
     const rooms = (await d.getByTestId('fp3d-rooms').innerText()).toLowerCase()
-    ok(/3 bedrooms/.test(rooms) && /11 rooms in all/.test(rooms), 'We found: the sample’s own rooms, 1.0’s chips', rooms.replace(/\n/g, ' · '))
-    ok(await d.getByTestId('fp3d-rooms-edit').count() === 0 && /The sample’s own rooms/.test(await d.getByTestId('fp3d-confirm').innerText()), 'a sample’s rooms aren’t changed — its views were drawn from them')
-    ok((await words(d.getByTestId('fp3d-generate'))) === 'Generate dollhouse view' && await d.getByTestId('fp3d-look-dollhouse').count() === 0, 'its one look, Dollhouse: no Style to pick, the button names it')
+    ok(/3 bedrooms/.test(rooms) && /11 rooms in total/.test(rooms), 'We found: the sample’s own rooms, 1.0’s chips', rooms.replace(/\n/g, ' · '))
+    ok(await d.getByTestId('fp3d-rooms-edit').count() === 0 && !/The sample’s own rooms/.test(await d.getByTestId('fp3d-confirm').innerText()), 'a sample’s rooms aren’t changed — its views were drawn from them — and nothing more is said')
+    /* (2026-10-27, a deliberate change — the testers' "I can't see the button to generate top-down view") both looks, always, as 1.0 */
+    const dh = d.getByTestId('fp3d-look-dollhouse'), td = d.getByTestId('fp3d-look-top')
+    ok(await dh.count() === 1 && await td.count() === 1 && await dh.getAttribute('aria-checked') === 'true', 'Style: both looks, as 1.0 offers them — Dollhouse picked')
+    ok(await td.isDisabled() && /This sample has no top-down view yet/.test(await td.innerText()), 'the look it has no view for stays in its place, not pressable, and says why')
+    ok((await words(d.getByTestId('fp3d-generate'))) === 'Generate dollhouse view', 'the button names the look')
     await shot(d, '03-confirm-1440', true)
-    const src0 = await d.getByTestId('fp3d-picture').getAttribute('src')
-    const dims0 = await d.getByTestId('fp3d-picture').evaluate((i) => [i.naturalWidth, i.naturalHeight])
-    await d.getByTestId('fp3d-turn').click(); await settle(d, 1500)
-    const dims1 = await d.getByTestId('fp3d-picture').evaluate((i) => [i.naturalWidth, i.naturalHeight])
-    ok((await d.getByTestId('fp3d-picture').getAttribute('src')) !== src0 && dims1[0] === dims0[1] && dims1[1] === dims0[0], 'Turn a quarter turns it (its sides swap)', [dims0, dims1])
-    for (let i = 0; i < 3; i++) { await d.getByTestId('fp3d-turn').click(); await settle(d, 1200) }
-    await d.getByTestId('fp3d-corners-open').click(); await settle(d, 600)
-    ok(await d.getByTestId('fp3d-corners-editor').count() === 1 && await d.locator('[data-testid^="fp3d-corner-"]').count() === 4, 'Square it by its corners: the four corners on the photo')
-    await shot(d, '04-corners-1440')
-    await d.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 500)
-    ok(await d.getByTestId('fp3d-picture').count() === 1, 'Cancel goes back to the plan')
     await d.getByTestId('fp3d-generate').click()
     await progress.waitFor({ timeout: 4000 }).catch(() => {})
-    ok(/HDB 4-Room’s dollhouse view/.test(await progress.innerText().catch(() => '')) && /made ahead/.test(await progress.innerText().catch(() => '')), 'the wait says what it waits for — the sample’s view, made ahead')
+    ok(/HDB 4-Room’s dollhouse view/.test(await progress.innerText().catch(() => '')) && /ready-made/.test(await progress.innerText().catch(() => '')), 'the wait says what it waits for — the sample’s view, ready-made')   // (the calm UI build 2026-10-27, a deliberate change)
+    ok(await d.getByTestId('fp3d-faded').count() === 1, 'the plan stays in view, faded, while it renders (1.0)')
     await toDone(d)
     const render = d.getByTestId('fp3d-render')
     ok((await render.getAttribute('src')).endsWith('/hdb-4-room-dollhouse-1.jpg') && await loaded(render), 'the Dollhouse view')
-    ok(/Sample · HDB 4-Room — its views were made ahead/.test(await d.getByTestId('fp3d-sample-note').innerText()), 'said under it: a sample, made ahead with the image model')
-    ok(await d.getByTestId('fp3d-switch-dollhouse').count() === 0 && !/Switch style/.test(await d.getByTestId('fp3d-done').innerText()), 'no Switch style while the sample has one look')
+    ok(/^Sample plan — ready-made views$/.test(await d.getByTestId('fp3d-sample-note').innerText()), 'said under it: a sample plan, its views ready-made')   // (the calm UI build 2026-10-27, a deliberate change) — 6-22 · W-349
+    /* (2026-10-27, a deliberate change) Switch style, always, as 1.0 — the look without a view says so */
+    ok(/Switch style/i.test(await d.getByTestId('fp3d-done').innerText()) && await d.getByTestId('fp3d-switch-dollhouse').getAttribute('aria-checked') === 'true' && await d.getByTestId('fp3d-switch-top').isDisabled(), 'Switch style: both looks, the one shown picked, the one without a view not pressable')
     await shot(d, '05-done-1440', true)
     await d.getByTestId('fp3d-regenerate').click(); await toDone(d); await settle(d, 300)
     ok((await render.getAttribute('src')).endsWith('/hdb-4-room-dollhouse-2.jpg'), 'Regenerate: its other take')
@@ -133,12 +137,25 @@ const toDone = async (p) => { await p.waitForSelector('[data-testid="fp3d-render
     await d.locator('input[type=file]').first().setInputFiles(path.join(REPO, 'public/projects/demo/floor-plan-ec.png'))
     await toConfirm(d)
     ok(await loaded(d.getByTestId('fp3d-picture')), 'its plan is read and straightened for real')
-    ok(/This is the prototype, so your own plan isn’t read or drawn in 3D — in the live app/.test(await d.getByTestId('fp3d-held').innerText()), 'then said plainly: its rooms aren’t read and it isn’t drawn here')
+    /* S28's rescues stay for a studio's own plan (a sideways photo needs them — 1.0's own gap) */
+    ok(/(Straightened by|Already straight)/.test(await d.getByTestId('fp3d-line').innerText()), 'its line says what was done', await d.getByTestId('fp3d-line').innerText())
+    const src0 = await d.getByTestId('fp3d-picture').getAttribute('src')
+    const dims0 = await d.getByTestId('fp3d-picture').evaluate((i) => [i.naturalWidth, i.naturalHeight])
+    await d.getByTestId('fp3d-turn').click(); await settle(d, 1500)
+    const dims1 = await d.getByTestId('fp3d-picture').evaluate((i) => [i.naturalWidth, i.naturalHeight])
+    ok((await d.getByTestId('fp3d-picture').getAttribute('src')) !== src0 && dims1[0] === dims0[1] && dims1[1] === dims0[0], 'Turn a quarter turns it (its sides swap)', [dims0, dims1])
+    for (let i = 0; i < 3; i++) { await d.getByTestId('fp3d-turn').click(); await settle(d, 1200) }
+    await d.getByTestId('fp3d-corners-open').click(); await settle(d, 600)
+    ok(await d.getByTestId('fp3d-corners-editor').count() === 1 && await d.locator('[data-testid^="fp3d-corner-"]').count() === 4, 'Square it by its corners: the four corners on the photo')
+    await shot(d, '04-corners-1440')
+    await d.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 500)
+    ok(await d.getByTestId('fp3d-picture').count() === 1, 'Cancel goes back to the plan')
+    ok(/On the prototype, your own plan stops here — reading its rooms and drawing it in 3D need the image model/.test(await d.getByTestId('fp3d-held').innerText()), 'then said plainly: its rooms aren’t read and it isn’t drawn here')
     ok(await d.getByTestId('fp3d-generate').count() === 0 && await d.getByTestId('fp3d-look-dollhouse').count() === 0, 'no Generate that couldn’t answer')
     ok(await d.getByTestId('fp3d-held-sample').count() === 1, 'the sample offered in its place')
     await shot(d, '06-own-plan-1440', true)
     await d.getByTestId('fp3d-held-sample').first().click(); await toConfirm(d)
-    ok(/11 rooms in all/i.test(await d.getByTestId('fp3d-rooms').innerText()) && await d.getByTestId('fp3d-generate').count() === 1, 'the sample from there goes the whole way')
+    ok(/11 rooms in total/i.test(await d.getByTestId('fp3d-rooms').innerText()) && await d.getByTestId('fp3d-generate').count() === 1, 'the sample from there goes the whole way')
     await d.getByTestId('fp3d-reset').click(); await settle(d, 500)
     const junk = path.join(dir, 'not-a-plan.png'); fs.writeFileSync(junk, 'this is not a picture')
     await d.locator('input[type=file]').first().setInputFiles(junk)
@@ -150,7 +167,7 @@ const toDone = async (p) => { await p.waitForSelector('[data-testid="fp3d-render
 
     console.log('5 · the planner’s line, and the ghost')
     await go(d, '/planner?view=iso')
-    ok(/Isometric view — /.test(await d.getByTestId('planner-iso-note').innerText()) && !/Floorplan to 3D/.test(await d.getByTestId('planner-iso-note').innerText()), 'the planner’s isometric line no longer names the tool')
+    ok(/3D at an angle — /.test(await d.getByTestId('planner-iso-note').innerText()) && !/Floorplan to 3D/.test(await d.getByTestId('planner-iso-note').innerText()), 'the planner’s isometric line no longer names the tool')   // (the calm UI build 2026-10-27, a deliberate change) — W-532: "3D at an angle" for Isometric
     /* the loader: the streamed page with its scripts taken out (the house ghost probes' way) — the ghost stays, as a slow load shows it */
     const G = await b.newContext({ viewport: { width: 1440, height: 1024 }, reducedMotion: 'reduce' }); const g = await G.newPage()
     await g.route(/\/floorplan-3d$/, async (r) => { const res = await r.fetch(); const html = (await res.text()).replace(/<script\b[\s\S]*?<\/script>/g, ''); await r.fulfill({ response: res, body: html }) })

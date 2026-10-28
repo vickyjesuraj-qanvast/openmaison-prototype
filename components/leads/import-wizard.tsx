@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -110,7 +109,6 @@ export function ImportWizard({
   onReview?: () => void
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
-  const router = useRouter()
   const snackbar = useSnackbar()
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [parsed, setParsed] = useState<Parsed | null>(null)
@@ -322,11 +320,11 @@ export function ImportWizard({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}>
-          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Import Leads"
+          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Import leads"
                       tabIndex={-1}>
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel: the step count rides in the head's
                 actions, and the close goes through `close`, whose busy gate holds it while an import runs */}
-            <SurfaceHead title="Import Leads" actions={<span className={styles.step}>Step {step} of 4</span>} onClose={close} closeDisabled={busy} className={styles.heading} />
+            <SurfaceHead title="Import leads" actions={<span className={styles.step}>Step {step} of 4</span>} onClose={close} closeDisabled={busy} className={styles.heading} />
 
             <div className={styles.body}>
               <AnimatePresence mode="wait" initial={false}>
@@ -343,32 +341,25 @@ export function ImportWizard({
                         </button>
                       ) : null}
                       <div className={styles.tips} hidden={phoneModel && !tipsOpen}>
+                        {/* (the calm UI build 2026-10-27 — audit 2-32, W-630) three bullets and the template once — it was linked twice; Import history is
+                            the listing ⋮'s row (where it always was too) */}
                         <div className={styles.tipBlock}>
-                          <span className={styles.tipTitle}>Tips on Importing</span>
+                          <span className={styles.tipTitle}>Before you import</span>
                           <ul className={styles.tipList}>
-                            <li>Easily import your leads into OpenMaison using <a className={styles.inlineLink} href={TEMPLATE_HREF} download>this template</a></li>
-                          </ul>
-                        </div>
-                        <div className={styles.tipBlock}>
-                          <span className={styles.tipTitle}>Important Reminders</span>
-                          <ul className={styles.tipList}>
-                            <li>List only one lead per row</li>
-                            <li>Every lead must have a lead Name</li>
+                            <li>List one lead per row</li>
+                            <li>Each lead needs a name</li>
                             <li>Avoid duplicate entries</li>
                           </ul>
                         </div>
                         <div className={styles.rule} />
                         <div className={styles.linkCol}>
-                          <a className={styles.link} href={TEMPLATE_HREF} download>
-                            <Icon name="download" size={20} />Download Leads Import Template
+                          <a className={styles.link} href={TEMPLATE_HREF} download data-testid="import-template">
+                            <Icon name="download" size={20} />Download the template
                           </a>
-                          <button type="button" className={styles.link} onClick={() => { onClose(); router.push('/leads/imports') }}>
-                            <Icon name="history" size={20} />Lead Import History
-                          </button>
                         </div>
                       </div>
                       <div className={styles.uploadCol}>
-                        <span className={styles.uploadTitle}>Upload local file</span>
+                        <span className={styles.uploadTitle}>Your file</span>
                         <input ref={fileRef} type="file" accept=".csv,.xlsx,.pdf" className={styles.hiddenInput}
                                onChange={(e) => { const f = e.target.files?.[0]; if (f) void acceptFile(f); e.target.value = '' }} />
                         {parsed ? (
@@ -377,13 +368,13 @@ export function ImportWizard({
                               <span className={styles.successCheck}><Icon name="check_circle" size={20} fill weight={300} /></span>
                               <span className={styles.successTitle}>Success!</span>
                               <span className={styles.successSub}>
-                                Detected {parsed.rows.length} line(s). Click “Next” to start mapping your files’s column headers to our fields in OpenMaison.
+                                Found {parsed.rows.length} row{parsed.rows.length === 1 ? '' : 's'}. Next, match your file’s columns to OpenMaison’s fields.
                               </span>
                             </div>
                             <div className={styles.successGroup}>
                               {sheetLayout ? <FileBadge name={parsed.name} /> : <Icon name="draft" size={20} fill weight={300} />}
                               <span className={styles.fileName}>{parsed.name}</span>
-                              <button type="button" className={styles.reupload} onClick={() => fileRef.current?.click()}>Re-upload File</button>
+                              <button type="button" className={styles.reupload} onClick={() => fileRef.current?.click()}>Choose another file</button>
                             </div>
                           </div>
                         ) : sheetLayout && toast?.state === 'uploading' ? (
@@ -402,7 +393,7 @@ export function ImportWizard({
                                onDragLeave={() => setOver(false)}
                                onDrop={(e) => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files?.[0]; if (f) void acceptFile(f) }}>
                             <span className={styles.dropMain}>Drop your file or <u>browse</u></span>
-                            <span className={styles.dropSub}>Supports: CSV, XLSX, PDF (a Homematch lead sheet)</span>   {/* (REG-603) */}
+                            <span className={styles.dropSub}>CSV, Excel or a PDF lead sheet</span>   {/* (REG-603) · (the calm UI build — W-619) not an insider's name */}
                           </div>
                         )}
                       </div>
@@ -410,7 +401,7 @@ export function ImportWizard({
                   ) : step === 2 && parsed ? (
                     <div className={styles.stepBody}>
                       <div>
-                        <div className={styles.stepTitle}>Map your columns to OpenMaison Fields</div>
+                        <div className={styles.stepTitle}>Map your columns to OpenMaison fields</div>
                         <div className={styles.stepDesc}>
                           Ensure your columns align with the correct OpenMaison fields, especially assigning one to “Lead Name”. Only columns matched to a OpenMaison field name will be imported.
                         </div>

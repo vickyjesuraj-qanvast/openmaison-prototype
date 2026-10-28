@@ -75,7 +75,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
   const openAccess = async (s) => {
     await go(s, `/projects/${BEN_P}`)
     await s.getByRole('button', { name: 'More options' }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: /Invite to Portal/ }).click(); await settle(s, 1600)   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1600) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
   }
   /* Kevin Ng (Met, his designs shared from the Visualizer): invited, his link open a week more — the Designs tab's demo */
   if (KEVIN && KEVIN_SHARE) {
@@ -118,7 +118,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     const S = await desk(); const s = await S.newPage(); watch(s, 'studio')
     await go(s, '/company/portal'); await settle(s, 1200)
     ok(/(\d+) of \1 on/.test(await s.locator('[data-card="portal-sections"]').innerText()), 'What clients can see: every section on')   /* (gaps build G, REG-g.12) the Floor plan is the seventh switch · (gaps build H) Messages, Issues and About us the eighth to tenth — the rule, not the count */
-    ok(/Schedule[\s\S]*Updates[\s\S]*Money[\s\S]*Choices[\s\S]*Designs[\s\S]*Files/.test(await s.locator('[data-card="portal-sections"]').innerText()), '…in the portal’s tab order (fix-G, G-25), with its lines')
+    ok(/Schedule[\s\S]*Updates[\s\S]*Payments[\s\S]*Choices[\s\S]*Designs[\s\S]*Files/.test(await s.locator('[data-card="portal-sections"]').innerText()), '…in the portal’s tab order (fix-G, G-25), with its lines (the calm UI build 2026-10-27, a deliberate change: Money reads Payments)')
     await shot(s, 'setup-1440', true)
     await go(p, '/my/demo-studio/schedule'); await settle(p, 800)
     ok(await p.locator('[data-testid="portal-confirm"]').count() === 1, 'his Schedule open, Electrical & plumbing waiting for his answer')
@@ -189,7 +189,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     ok(wa.length === 1 && wa[0].includes(`wa.me/65${PHONE.son}`) && /Hi Wei/.test(decodeURIComponent(wa[0])) && decodeURIComponent(wa[0]).includes('/my/demo-studio'), 'one press adds him and opens WhatsApp with his own link')
     const SON = sql(`select x.id from homeowner_household_links x join homeowner_profiles h on h.id = x.homeowner_id where x.lead_id='${BEN}' and h.phone='${PHONE.son}'`)
     const sonRow = s.locator(`[data-testid="household-row"][data-person="${SON}"]`)
-    ok(!!SON && /Invited, not opened/i.test(await sonRow.innerText()) && /Son ·/.test(await sonRow.innerText()), 'his row: Son · Invited, not opened')
+    ok(!!SON && /^invited$/i.test((await sonRow.locator('[data-testid="household-chip"]').innerText()).trim()) && /Son ·/.test(await sonRow.innerText()), 'his row: Son · Invited (the calm UI build 2026-10-27, a deliberate change: the chip says the state alone — 5-42)')
     ok(n(`select count(*) from lead_events where lead_id='${BEN}' and kind='household_added' and json_extract(detail,'$.id')='${SON}'`) === 1, '…and a line in Activity')
     // Remind on WhatsApp
     const remindRow = s.locator('[data-testid="access-waiting-row"]').first()
@@ -281,10 +281,28 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     ok(await s.locator('[data-card="portal-sections"] input[type="checkbox"]').first().isDisabled() && await s.locator('[data-card="portal-welcome"] input').isDisabled() && await s.locator('[data-testid="portal-welcome-save"]').count() === 0, 'a Designer reads What clients can see and the welcome line — no switch, no Save')
     sql(`update members set is_you = case id when 'dane' then 1 else 0 end`)
 
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-36) at a desk the bar is the phone's five: Home · Schedule · Updates · Payments and More ▾,
+     the rest in its menu — a section is "in the bar" when it is either */
+  const deskSections = async (pg) => {
+    const bar = await pg.locator('[data-testid="portal-nav"]').innerText()
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return bar
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const rows = await pg.locator('[data-testid="portal-nav-more-row"]').allInnerTexts()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return `${bar}\n${rows.join('\n')}`
+  }
+  const deskHas = async (pg, key) => {
+    if (await pg.locator(`[data-testid="portal-nav"] a[data-key="${key}"]`).isVisible()) return true
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return false
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const there = await pg.locator(`[data-testid="portal-nav-more-row"][data-key="${key}"] [role="menuitem"]`).isVisible()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return there
+  }
     // ── Desk and phone looks ──────────────────────────────────────────────────────────────────────────────────────────
     const D = await desk(); const d = await D.newPage(); watch(d, 'ben-desk')
     await signIn(d, PHONE.ben)
-    ok(await d.locator('[data-testid="portal-nav"] a[data-key="designs"]').isVisible() && await d.locator('[data-testid="portal-bell"]').isVisible(), 'at a desk: Designs in the bar, the bell beside his name')
+    ok(await deskHas(d, 'designs') && await d.locator('[data-testid="portal-bell"]').isVisible(), 'at a desk: Designs in the bar (under More ▾ — the calm UI build 2026-10-27, a deliberate change), the bell beside his name')
     await openBell(d)
     ok(await d.locator('[data-testid="portal-bell-panel"]').isVisible() && await noOverflow(d), 'the bell opens under itself')
     await shot(d, 'bell-1440')

@@ -95,7 +95,7 @@ function slowNextAction(ctx, ms = 1600) {
     /* an eSignature field at the end of clause 4 */
     const signsBefore = await page.locator('[data-testid="contract-doc"] .om-sign[data-sign="client-signature"]').count()
     await clickEnd(page, paraUnder(page, '4. Programme'))
-    await page.getByRole('button', { name: 'eSignatures' }).click()
+    await page.getByRole('button', { name: 'Signatures', exact: true }).filter({ hasText: 'draw' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) 4-19: eSignatures → Signatures
     const row = page.getByTestId('esign-field').filter({ hasText: 'Client signature' })
     await row.getByRole('button', { name: 'Insert' }).click(); await page.waitForTimeout(400)
     const signs = page.locator('[data-testid="contract-doc"] .om-sign[data-sign="client-signature"]')
@@ -136,23 +136,32 @@ function slowNextAction(ctx, ms = 1600) {
       await page.locator('body').click({ position: { x: 5, y: 1000 } }).catch(() => {})
       return rest
     }
-    await check('contract', `${BASE}/contracts/${OLIVIA_C}`)
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-17 · 4-18: a contract's and a contract template's name is said once, in the header —
+       renamed from ⋮ › Rename… (its dialog); no inline title field there. The other library editors keep their pencilled field. */
+    const renamedFromMenu = async (label, url, refused = false) => {
+      await page.goto(url); await ready(page)
+      ok(`g-pencil ${label}: no inline title field — the name is the header's`, await page.getByTestId('title-field').count() === 0)
+      await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300)
+      const row = page.getByRole('menuitem', { name: /^Rename/ })
+      ok(`g-pencil ${label}: ⋮ › Rename…${refused ? ' refused (it can’t change)' : ''}`, await row.count() === 1 && ((await row.getAttribute('aria-disabled')) === 'true') === refused)
+      await page.keyboard.press('Escape'); await page.waitForTimeout(200)
+    }
+    await renamedFromMenu('contract', `${BASE}/contracts/${OLIVIA_C}`)
     await shot(page, 'g-pencil-contract', { x: 0, y: 60, width: 900, height: 140 })
-    await check('contract template', `${BASE}/templates/contracts/${TPL.contracts}`)
+    await renamedFromMenu('contract template', `${BASE}/templates/contracts/${TPL.contracts}`)
     await check('tasks template', `${BASE}/templates/tasks/${TPL.tasks}`)
     await shot(page, 'g-pencil-tasks-template', { x: 0, y: 60, width: 900, height: 140 })
     await check('T&Cs template', `${BASE}/templates/terms/${TPL.terms}`)
     await check('payments template', `${BASE}/templates/payments/${TPL.payments}`)
-    await page.goto(`${BASE}/contracts/${RYAN_C}`); await page.getByTestId('title-field').waitFor(); await ready(page)
-    ok('g-pencil a signed contract’s title shows no pencil (it can’t change)', await page.getByTestId('title-field').evaluate((f) => getComputedStyle(f.lastElementChild).display === 'none'))
+    await renamedFromMenu('a signed contract', `${BASE}/contracts/${RYAN_C}`, true)   // (the calm UI build 2026-10-27, a deliberate change) its title can't change: Rename… refused
   })
 
   /* ── g-merge-fields: the template editor's help and placeholder ── */
   await step('g-merge-fields template', async () => {
     await page.goto(`${BASE}/templates/contracts/${TPL.contracts}`); await page.getByTestId('contract-template-editor').waitFor(); await ready(page)
     ok('g-merge-fields the template editor offers “How fields fill in”', (await page.getByRole('button', { name: 'How fields fill in' }).count()) === 1 && (await page.getByRole('button', { name: /^Insert a field/ }).count()) === 1)
-    await page.getByRole('button', { name: 'How fields fill in' }).click()
-    ok('g-merge-fields its help says fields', /^Fields fill in from the lead/.test(await page.locator('[role="status"][aria-live="polite"]').innerText().catch(() => '')))
+    await page.getByRole('button', { name: 'How fields fill in' }).hover(); await page.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-48: its words are a tooltip, not a snackbar
+    ok('g-merge-fields its help says fields', /^Fields fill in from the lead/.test(await page.locator('[role="tooltip"]').last().innerText().catch(() => '')))
   })
 
   /* ── g-banner (UAT 8.11): full width, no corners, a rule under it — the contract's and the quote's ── */
@@ -175,9 +184,13 @@ function slowNextAction(ctx, ms = 1600) {
     const colours = await page.evaluate(() => [...document.querySelectorAll('[data-testid="xray-row"]')].map((r) => [r.getAttribute('data-status'), r.querySelector('[data-col="status"] [data-color]')?.getAttribute('data-color') ?? 'default', r.querySelector('[data-col="status"]')?.textContent.trim()]))
     const want = { 'yours-only': 'green', 'theirs-only': 'red', matched: 'default', unpriced: 'default' }
     const kinds = [...new Set(colours.map((c) => c[0]))]
-    ok('g-xray-rows every row’s Status chip wears its status colour', colours.length > 0 && colours.every(([s, c, t]) => (t === 'Paired by you' ? c === 'default' : c === want[s])), kinds.join(' · '))
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-05: a no-price line's chip names its side ("Only in theirs" / "Only in yours" /
+       "Matched"), so its colour is its words' — the stored status stays `unpriced` */
+    const byWords = { 'only in yours': 'green', 'only in theirs': 'red', matched: 'default', 'paired by you': 'default' }
+    ok('g-xray-rows every row’s Status chip wears its status colour', colours.length > 0 && colours.every(([s, c, t]) => (s === 'unpriced' ? c === (byWords[String(t).toLowerCase()] ?? 'default') : t === 'Paired by you' ? c === 'default' : c === want[s])), kinds.join(' · '))
     ok('g-xray-rows the reading has a coloured side to show', colours.some(([, c]) => c !== 'default'))
-    ok('g-xray-rows the left status bar stays', await page.evaluate(() => { const r = document.querySelector('[data-testid="xray-row"][data-status="yours-only"], [data-testid="xray-row"][data-status="theirs-only"]'); return !!r && getComputedStyle(r, '::before').width === '3px' }))
+    /* (the calm UI build 2026-10-27, a deliberate change) — 6-05: one signal per row — the Status chip in its colour; the left bar (UAT 7.04) and the legend went */
+    ok('g-xray-rows no left status bar: the chip alone says it', await page.evaluate(() => { const r = document.querySelector('[data-testid="xray-row"][data-status="yours-only"], [data-testid="xray-row"][data-status="theirs-only"]'); if (!r) return false; const b = getComputedStyle(r, '::before'); return b.content === 'none' || b.width === 'auto' || b.width === '0px' }))
     const box = await page.getByTestId('xray-items').evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: Math.min(r.height, 1500) } })
     await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(300)
     await page.screenshot({ path: path.join(OUT, 'g-xray-status-chips.png'), fullPage: true, clip: box })
@@ -192,11 +205,11 @@ function slowNextAction(ctx, ms = 1600) {
     }
     await page.goto(`${BASE}/leads/${OLIVIA}/contracts`); await page.getByTestId('contract-date').first().waitFor(); await ready(page)
     const a = await hoverTip()
-    ok('k-contracttime the tab keeps the date and says its time on hover', !/:/.test(a.cell) && a.tip.startsWith(a.cell) && /, \d{1,2}:\d{2} (AM|PM)$/.test(a.tip), JSON.stringify(a))
+    ok('k-contracttime the tab keeps the date and says its time on hover', !/:/.test(a.cell) && a.tip.startsWith(a.cell) && / · \d{1,2}:\d{2} (AM|PM)$/.test(a.tip), JSON.stringify(a))   // (the calm UI build 2026-10-27, a deliberate change) T-11 · 3-20: the house dot before the time, "8 Sep ’26 · 11:30 AM"
     await shot(page, 'k-contracttime-tab-tooltip', { x: 300, y: 150, width: 1140, height: 340 })
     await page.goto(`${BASE}/contracts`); await page.getByTestId('contract-date').first().waitFor(); await ready(page)
     const b = await hoverTip()
-    ok('k-contracttime Tools › Contracts too', !/:/.test(b.cell) && b.tip.startsWith(b.cell) && /, \d{1,2}:\d{2} (AM|PM)$/.test(b.tip), JSON.stringify(b))
+    ok('k-contracttime Tools › Contracts too', !/:/.test(b.cell) && b.tip.startsWith(b.cell) && / · \d{1,2}:\d{2} (AM|PM)$/.test(b.tip), JSON.stringify(b))   // (the calm UI build 2026-10-27, a deliberate change) T-11 · 3-20: the house dot before the time
   })
 
   /* ── b-creating (UAT 8.02): "Creating…" until the contract exists, then the editor — the lead tab, a quote, Tools › Contracts ── */
@@ -214,7 +227,7 @@ function slowNextAction(ctx, ms = 1600) {
     }
     await page.goto(`${BASE}/leads/${OLIVIA}/contracts`); await ready(page)
     await page.getByRole('button', { name: 'New Contract' }).first().click()
-    await page.getByRole('menuitem', { name: 'From Template' }).click()
+    await page.getByRole('menuitem', { name: 'From a template' }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-199: New contract ▾ › From a template
     await page.getByTestId('contract-template-option').first().waitFor()
     await watch('the lead’s Contracts tab', page.getByTestId('contract-template-use'), 'b-creating-lead-tab')
     FRESH = (page.url().match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
@@ -227,7 +240,7 @@ function slowNextAction(ctx, ms = 1600) {
 
     await page.goto(`${BASE}/contracts`); await ready(page)
     await page.getByRole('button', { name: 'New Contract' }).first().click()
-    await page.getByRole('menuitem', { name: 'From Template' }).click()
+    await page.getByRole('menuitem', { name: 'From a template' }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-199: New contract ▾ › From a template
     await page.getByTestId('contract-template-option').first().waitFor()
     await page.getByTestId('contract-template-use').click()
     const ask = page.getByRole('dialog', { name: 'Which lead is this contract for?' })
@@ -237,7 +250,7 @@ function slowNextAction(ctx, ms = 1600) {
 
     /* UAT 8.22: with no caret ever placed in the paper (straight from Use template), an inserted field still ends the document */
     await ready(page)
-    await page.getByRole('button', { name: 'eSignatures' }).click()
+    await page.getByRole('button', { name: 'Signatures', exact: true }).filter({ hasText: 'draw' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) 4-19: eSignatures → Signatures
     await page.getByTestId('esign-field').filter({ hasText: 'Client initial' }).getByRole('button', { name: 'Insert' }).click(); await page.waitForTimeout(400)
     ok('8.22 no caret yet: the inserted field ends the document, as before', await page.evaluate(() => { const d = document.querySelector('[data-testid="contract-doc"]'); const last = [...d.querySelectorAll('.om-sign')].pop(); return !!last && last.getAttribute('data-sign') === 'client-initial' && !d.lastElementChild.nextSibling?.textContent?.trim() && (d.lastElementChild === last || d.lastElementChild.contains(last)) }))
   })

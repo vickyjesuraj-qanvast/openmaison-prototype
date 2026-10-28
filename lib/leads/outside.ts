@@ -9,7 +9,7 @@ import { MSG } from '@/lib/forms'
 
 export const OUTSIDE_KINDS = ['subcontractor', 'supplier'] as const
 export type OutsideKind = (typeof OUTSIDE_KINDS)[number]
-export const OUTSIDE_LABEL: Record<OutsideKind, string> = { subcontractor: 'Subcontractor', supplier: 'Supplier' }
+export const OUTSIDE_LABEL: Record<OutsideKind, string> = { subcontractor: 'Contractor', supplier: 'Vendor' }   // (the calm UI build 2026-10-27 — 1-23, W-103) Finance's words; the stored kinds stay
 /** The glyph an outside person wears where a member wears their initial. */
 export const OUTSIDE_ICON: Record<OutsideKind, string> = { subcontractor: 'handyman', supplier: 'local_shipping' }
 export const isOutsideKind = (v: unknown): v is OutsideKind => typeof v === 'string' && (OUTSIDE_KINDS as readonly string[]).includes(v)

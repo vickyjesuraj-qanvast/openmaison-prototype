@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
 import { PROJECT_TABS } from '@/lib/projects/tabs'
@@ -17,9 +16,9 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteContract, QuoteSibling, QuoteVariation } from '@/lib/quotes/editor'
 import { SendButton, type SendKind, type SendMode } from '@/components/quotes/send/send-button'
 import styles from './editor-header.module.css'
-import { variationLabel } from '@/lib/projects/money'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 
-export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink' | 'viewLink'
+export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'editTemplate' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink' | 'viewLink'
 export type { SendKind, SendMode }
 
 /**
@@ -38,8 +37,10 @@ function voCrumb(projectId: string, from: string | undefined): { label: string; 
 
 export function EditorHeader({
   lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,
-  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval', contract = null, contractHref, deleteBlock = null, variation = null, from, viewLink = null,
+  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval', contract = null, contractHref, deleteBlock = null, variation = null, from, viewLink = null, editTemplate = false,
 }: {
+  /** (the calm UI build, 4-10) the quote prints through a template of its own that still exists — the ⋮ offers Edit template */
+  editTemplate?: boolean
   /** (pending modules S02) The kebab's *Share a view-only link* — offered on a quote (not a variation order); `block` greys it with the rule in the row. */
   viewLink?: { block: string | null } | null
   /** (fix-C, C-13) Where the editor was opened from — a variation order's crumb names that tab of its project (Choices, Money). */
@@ -111,14 +112,13 @@ export function EditorHeader({
               ))}
             </Dropdown>
           </span>
+          {/* (the calm UI build 2026-10-27, the UI audit's 4-03 · 4-11 · W-423) The status lives in its pill alone; the number and version are the title's
+              grey subtitle ("OM-10001 · v1"), a variation order says what it is there; the contract is one sentence-case link, not a capital tag. */}
           <div className={styles.chips}>
-            {variation ? <MetaChip icon="request_quote" color="yellow">Variation order</MetaChip> : null}
-            <MetaChip>{number}</MetaChip>
-            <MetaChip>Version {version}</MetaChip>
-            <MetaChip>{variation ? variationLabel({ status }) : status}</MetaChip>{/* (fix-D, D-24) a variation order's state in the Money tab's words */}
+            <span className={styles.sub} data-testid="quote-header-sub">{variation ? 'Variation order · ' : ''}{number} · v{version}</span>
             {contract && contractHref ? (
               <Tooltip label={`Open ${contract.title}`}>
-                <Link href={contractHref} className={styles.chipLink} data-testid="quote-contract-chip"><MetaChip icon="contract">Contract · {contract.status}</MetaChip></Link>
+                <Link href={contractHref} className={styles.contractLink} data-testid="quote-contract-chip"><Icon name="contract" size={16} weight={300} />Contract: {contractStatusLabel(contract.status)}<Icon name="chevron_right" size={16} weight={300} /></Link>
               </Tooltip>
             ) : null}
           </div>
@@ -137,20 +137,9 @@ export function EditorHeader({
         </span>
       </span>
       <div className={styles.actions}>
-        {onClientView ? (
-          <span className={styles.foldable}>
-            <Tooltip label={clientViewOn ? 'Hide the client view' : 'See the quote as your client will'}>
-              <IconButton icon="visibility" label="Client view" selected={clientViewOn} aria-pressed={clientViewOn} onClick={onClientView} />
-            </Tooltip>
-          </span>
-        ) : null}
+        {/* (the calm UI build 2026-10-27, 4-03) Preview, the ⋮ and the close; the Client view pane and Comments are the ⋮'s first rows at every width */}
         <span className={styles.foldable}>
           <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')} data-kb="preview">Preview</Button></Tooltip>
-        </span>
-        <span className={styles.foldable}>
-          <Tooltip label="Comments">
-            <IconButton icon="comment" label="Comments" onClick={() => onMenu('comments')} />
-          </Tooltip>
         </span>
         <span className={styles.anchor}>
           <Tooltip label="More options" disabled={menu === 'more'}>
@@ -160,20 +149,18 @@ export function EditorHeader({
           {/* Dropdown Menu / Leads 1271:41512 — ≤1024 Preview and Comments fold in here (responsive.md). (REG-728) 240 — the scale's width for
               rows with a second line (a locked Delete says why in its row, a key hint): "Compare with another quote" wrapped at 200 (REG-531). */}
           <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle={number}>
-            {folded ? (
-              <>
-                <DropdownItem onSelect={pick(() => onMenu('preview'))} shortcut="preview">Preview</DropdownItem>   {/* (REG-728) its key, as the contract kebab's */}
-                {onClientView ? <DropdownItem onSelect={pick(onClientView)}>{clientViewOn ? 'Hide client view' : 'Client view'}</DropdownItem> : null}
-                <DropdownItem onSelect={pick(() => onMenu('comments'))}>Comments</DropdownItem>
-                <DropdownDivider />
-              </>
-            ) : null}
-            <DropdownItem onSelect={pick(() => onMenu('rename'))}>{variation ? 'Rename' : 'Rename Quote'}</DropdownItem>
-            {variation ? null : <DropdownItem onSelect={pick(() => onMenu('duplicate'))}>Duplicate and Edit</DropdownItem>}
+            {folded ? <DropdownItem onSelect={pick(() => onMenu('preview'))} shortcut="preview">Preview</DropdownItem> : null}   {/* (REG-728) its key, as the contract kebab's */}
+            {onClientView ? <DropdownItem onSelect={pick(onClientView)} help={clientViewOn ? undefined : 'The quote as your client will see it, beside the editor'}>{clientViewOn ? 'Hide client view' : 'Client view'}</DropdownItem> : null}
+            <DropdownItem onSelect={pick(() => onMenu('comments'))}>Comments</DropdownItem>
+            <DropdownDivider />
+            <DropdownItem onSelect={pick(() => onMenu('rename'))}>{variation ? 'Rename' : 'Rename quote'}</DropdownItem>
+            {variation ? null : <DropdownItem onSelect={pick(() => onMenu('duplicate'))}>Duplicate and edit</DropdownItem>}
             <DropdownItem onSelect={pick(() => onMenu('revise'))}>Revise — new version</DropdownItem>   {/* (REG-565) keeps this version, starts the next under the same number */}
             {variation ? null : (
               <>
-                <DropdownItem meta={tplLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('template'))}>Save as Template</DropdownItem>
+                {/* (the calm UI build 2026-10-27, 4-10 · W-352) the Template card's Edit template and Save as template, named once, here */}
+                {editTemplate ? <DropdownItem meta={tplLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('editTemplate'))}>Edit template</DropdownItem> : null}
+                <DropdownItem meta={tplLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('template'))}>Save as template</DropdownItem>
                 <DropdownItem meta={xrayLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('xray'))}>Compare with another quote</DropdownItem>   {/* (pending modules S19) Pro on Free — the press opens the lock */}
                 <DropdownItem onSelect={pick(() => onMenu('contract'))}>Create contract from this quote</DropdownItem>   {/* (REG-534) */}
               </>
@@ -184,7 +171,7 @@ export function EditorHeader({
             <DropdownItem onSelect={pick(() => onMenu('pdf'))}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('export'))}>Export</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('print'))}>Print</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('history'))}>Version History</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('history'))}>Version history</DropdownItem>
             <DropdownDivider />
             <DropdownItem tone="danger" disabled={!!deleteBlock} title={deleteBlock ?? undefined} onSelect={pick(() => onMenu('delete'))}>Delete</DropdownItem>
           </Dropdown>

@@ -18,3 +18,7 @@
 .link { composes: link from '../leads/deleted-sheet.module.css'; }
 .note { composes: note from '../leads/deleted-sheet.module.css'; }
 .actions.actions { justify-content: flex-start; gap: var(--om-spacing-6); }
+
+/* (the calm UI build 2026-10-27, 3-47) the row's ⋮ after Restore, centred in its 44; a menu row's own test mark takes no box */
+.menuWrap { display: inline-flex; align-items: center; margin-left: auto; }
+.menuRow { display: contents; }

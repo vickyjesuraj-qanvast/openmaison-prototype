@@ -31,7 +31,7 @@ export const TOOLS: { key: string; icon: string; label: string; href?: string; /
   { key: 'insights', icon: 'trending_up', label: 'Market Insights', href: '/market-insights', help: 'Articles from OpenMaison’s editors' },   /* (pending modules S25) live — the articles OpenMaison's editors publish */
   { key: 'compliance', icon: 'verified_user', label: 'Compliance Navigator', href: '/compliance', help: 'The studio’s registrations and Singapore’s rules by home' },   /* (gaps build I, I-Q12) live — the studio's own steps and Singapore's rules by home */
   { key: 'planner', icon: 'space_dashboard', label: '3D Space Planner', href: '/planner', help: 'Every 3D layout' },   /* (gaps build J) live — every layout, a project's or personal */
-  { key: 'copilot', icon: 'analytics', label: 'Meeting Copilot', href: '/meetings', help: 'Every meeting, and the co-pilot in each' },   /* (pending modules S23) live — every meeting in the studio, and the co-pilot in each */
+  { key: 'copilot', icon: 'analytics', label: 'Meeting Copilot', href: '/meetings', help: 'Every meeting, with Meeting Copilot in each' },   /* (pending modules S23) live — every meeting in the studio, and Meeting Copilot in each — (the calm UI build 2026-10-27, 1-12 · T-01) one spelling, never “co-pilot” */
 ]
 
 /** (UX audit V7) A page that belongs to Tools — its list or anything opened from it — lights the rail's Tools item, as Company lights on /company. */

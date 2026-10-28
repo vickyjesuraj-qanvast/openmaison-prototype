@@ -4,5 +4,5 @@
 .dimHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
 .dimTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .priority { width: 180px; flex-shrink: 0; }
-.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.count { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — W-072) the count, for a screen reader only */
+.srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

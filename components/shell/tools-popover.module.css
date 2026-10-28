@@ -4,7 +4,8 @@
 /* (REG-670) Doubled on purpose, as the Items table's Add Item menu does: this box also wears leads/menus.module.css `.menu` (200 wide, a
    scrolling max-height) at the same weight, and after a client-side navigation the browser can load that sheet second — the panel
    then opened 200 wide with its rows cut ("reports to …"). Twice the class outranks it whatever the order. */
-.eyebrow { display: block; height: 24px; margin-bottom: var(--om-spacing-2); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — T-06: capitals only for a status) the panel's title in sentence case, as every group title (was TOOLS) */
+.eyebrow { display: block; height: 24px; margin-bottom: var(--om-spacing-2); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .grid { display: grid; grid-template-columns: repeat(3, 92px); gap: var(--om-spacing-2); }
 .tile {
   box-sizing: border-box; width: 92px; height: 96px;
@@ -18,9 +19,11 @@
 .tile { position: relative; }
 .count {
   position: absolute; top: 6px; right: 6px; box-sizing: border-box; min-width: 16px; height: 16px; padding: 0 3px; border-radius: var(--om-radius-full);
-  display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-tertiary-red-default); color: var(--om-color-on-tertiary-red-default);
+  display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-surface-variant); color: var(--om-color-on-surface-default);
   font: var(--om-type-caption-xs); pointer-events: none;
 }
+/* (the calm UI build 2026-10-27 — the audit's 1-03 · T-07) a quiet grey count: red is for what is yours and overdue; the approvals' home is the
+   Dashboard */
 .tile:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
 .tile { position: relative; }
 /* (UX audit V7) the tool you are in — the Company panel's marked row: the primary variant, the glyph filled */

@@ -90,7 +90,7 @@ const SIZE = {
   /* the element a finger at this control's centre lands on is the control (or inside it) */
   const onTop = (loc) => loc.evaluate((el) => { const r = el.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!h && (h === el || el.contains(h) || h.contains(el)) })
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
-  const dialogNamed = (p, name) => p.getByRole('dialog', { name })
+  const dialogNamed = (p, name) => p.getByRole('dialog', { name })   // (the calm UI build 2026-10-27, a deliberate change) "Assign members", "Deleted leads" below
   /* a finger's swipe on the Filters rail (a wheel over it — never a programmatic scroll, which moves even a clipped box): is the tab then
      inside the rail's visible part, above the dialog's foot, with the dialog's head still where it was? */
   const railTo = async (p, dlg, tab) => {
@@ -112,7 +112,7 @@ const SIZE = {
       await go(p, '/leads?view=table')
       const assignBtn = p.getByRole('button', { name: /^Assign members to / }).first()
       await tap(p, assignBtn); await p.waitForTimeout(700)
-      const card = dialogNamed(p, 'Assign Member')
+      const card = dialogNamed(p, 'Assign members')
       const cb = await box(card)
       ok(cb.t >= 0 && cb.b <= 390, 'the listing’s Assign card stays inside the 390-tall screen', `${Math.round(cb.t)}–${Math.round(cb.b)}`)
       const doIt = card.getByRole('button', { name: 'Assign', exact: true })
@@ -131,7 +131,7 @@ const SIZE = {
       await p.keyboard.press('Escape'); await p.waitForTimeout(400)
 
       await go(p, '/tasks')
-      await tap(p, p.getByRole('button', { name: /^All Tasks|^My Tasks|^Unassigned|^Studio Tasks/ }).first()); await p.waitForTimeout(600)
+      await tap(p, p.getByRole('button', { name: /^All tasks|^My tasks|^Unassigned|^General tasks/i }).first()); await p.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) sentence case, "General tasks"
       const menu = p.getByRole('menu').last()
       const mb = await box(menu)
       ok(mb.b <= 390, '/tasks: the scope menu ends inside the screen', `${Math.round(mb.t)}–${Math.round(mb.b)}`)
@@ -147,10 +147,11 @@ const SIZE = {
       if (lt.reached) { await p.touchscreen.tap(lt.x, lt.y); await p.waitForTimeout(400) }
       ok(await lastTab.evaluate((el) => el.hasAttribute('data-active')), '…and a tap on it opens its pane')
       await p.keyboard.press('Escape'); await p.waitForTimeout(400)
-      const taskAssign = p.locator('[class*="tasks-table-module"][class*="assignLink"], [data-testid="task-assign"]').first()
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-07: an unassigned task's purple "Assign" link is the grey person-plus, `task-row-assign`) */
+      const taskAssign = p.locator('[class*="tasks-table-module"][class*="assignLink"], [data-testid="task-assign"], [data-testid="task-row-assign"]').first()
       if (await taskAssign.count()) {
         await tap(p, taskAssign); await p.waitForTimeout(700)
-        const tc = await box(dialogNamed(p, 'Assign Member'))
+        const tc = await box(dialogNamed(p, 'Assign members'))
         ok(tc.t >= 0 && tc.b <= 390, 'a task’s Assign card stays inside the screen (its top never above it)', `${Math.round(tc.t)}–${Math.round(tc.b)}`)
         await p.keyboard.press('Escape'); await p.waitForTimeout(300)
       } else ok(false, 'a task to assign on /tasks')
@@ -158,14 +159,14 @@ const SIZE = {
       /* W2-17 the Deleted sheets fit the screen: their head stays, the body scrolls inside */
       await go(p, '/leads?view=table')
       await tap(p, p.getByRole('button', { name: 'More options' }).first()); await p.waitForTimeout(500)
-      await tap(p, p.getByRole('menuitem', { name: /Deleted Leads/ })); await p.waitForTimeout(900)
+      await tap(p, p.getByRole('menuitem', { name: /Deleted leads/i })); await p.waitForTimeout(900)
       const dl = p.getByRole('dialog').last(), dlb = await box(dl)
       ok(dlb.t >= 0 && dlb.b <= 390, 'Deleted Leads stands inside the 390-tall screen', `${Math.round(dlb.t)}–${Math.round(dlb.b)}`)
       ok(await onTop(dl.locator('[data-surface-head]').first()), '…its head in place, on top')
       await p.keyboard.press('Escape'); await p.waitForTimeout(400)
       await go(p, `/leads/${KEVIN}/files`)
       await tap(p, p.getByRole('button', { name: 'More options' }).last()); await p.waitForTimeout(500)   // the Files toolbar's ⋮ (the header's comes first)
-      const df = p.getByRole('menuitem', { name: /Deleted Files/ })
+      const df = p.getByRole('menuitem', { name: /Deleted files/i })   // (the calm UI build 2026-10-27, a deliberate change) sentence case
       if (await df.count()) {
         await tap(p, df); await p.waitForTimeout(900)
         const dfb = await box(p.getByRole('dialog').last())
@@ -430,13 +431,13 @@ const SIZE = {
       await go(p, '/leads?view=table')
       await p.getByRole('button', { name: /^Assign members to / }).first().hover()
       await p.getByRole('button', { name: /^Assign members to / }).first().click(); await p.waitForTimeout(600)
-      ok(await dialogNamed(p, 'Assign Member').evaluate((el) => getComputedStyle(el).maxHeight) === '440px', '1440: the Assign card keeps its 440')
+      ok(await dialogNamed(p, 'Assign members').evaluate((el) => getComputedStyle(el).maxHeight) === '440px', '1440: the Assign card keeps its 440')
       await p.keyboard.press('Escape'); await p.waitForTimeout(300)
       await p.getByRole('button', { name: /^Filters/ }).first().click(); await p.waitForTimeout(600)
       ok(await dialogNamed(p, 'Filters').locator('[class*="filters-modal-module__"][class*="__rail"]').first().evaluate((el) => getComputedStyle(el).overflowY) === 'visible', '1440: the Filters rail is drawn, not a scroller')
       await p.keyboard.press('Escape'); await p.waitForTimeout(300)
       await p.getByRole('button', { name: 'More options' }).first().click(); await p.waitForTimeout(400)
-      await p.getByRole('menuitem', { name: /Deleted Leads/ }).click(); await p.waitForTimeout(800)
+      await p.getByRole('menuitem', { name: /Deleted leads/i }).click(); await p.waitForTimeout(800)
       ok(await p.getByRole('dialog').last().evaluate((el) => Math.round(el.getBoundingClientRect().height)) >= 480, '1440: Deleted Leads keeps its 480 floor')
       await c.close()
     }

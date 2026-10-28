@@ -3,7 +3,8 @@
 .settings { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .help { margin: 0 0 var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .group { display: flex; flex-direction: column; gap: 0; }
-.eyebrow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — T-06) a group's title in sentence case (was capitals) */
+.eyebrow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .list { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .row { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 56px; }
 .handle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border: 0; background: none; padding: 0; border-radius: var(--om-radius-1); }
@@ -28,3 +29,12 @@
   .handle, .pin { box-sizing: border-box; width: 44px; height: 44px; padding: 10px 4px 10px 16px; margin: -10px -4px -10px -16px; }
   .pinSlot { width: 24px; }
 }
+
+/* (the calm UI build 2026-10-27 — the audit's 2-43, T-04) a row's pin shows on the row's hover or focus (a pinned row keeps its own); under a
+   finger always — thirteen identical glyphs at rest read as noise */
+@media (hover: hover) {
+  .row .pin:not([data-pinned]) { opacity: 0; transition: opacity var(--motion-hover); }
+  .row:hover .pin, .row:focus-within .pin { opacity: 1; }
+}
+.howTo { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); cursor: default; }
+.howTo:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

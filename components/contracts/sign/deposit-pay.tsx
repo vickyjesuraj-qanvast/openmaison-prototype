@@ -23,7 +23,7 @@ export function DepositPay({ d, bare = false }: { d: DepositView; bare?: boolean
   return (
     <section className={bare ? styles.depositBare : styles.deposit} aria-labelledby={bare ? undefined : 'deposit-title'} aria-label={bare ? 'Pay the deposit' : undefined} data-testid="deposit-pay">
       {bare ? null : <h3 id="deposit-title" className={styles.depositTitle}>Pay the deposit</h3>}
-      <p className={styles.cardText}>{d.stage} of quotation {d.quoteNumber}: <strong>{money2(d.amountMinor)}</strong>. {d.pay ? 'Scan the QR in your banking app, or pay to the details below.' : `${d.entity} will send you the payment details.`}</p>
+      <p className={styles.cardText}>{d.stage} of quote {d.quoteNumber}: <strong>{money2(d.amountMinor)}</strong>. {d.pay ? 'Scan the QR in your banking app, or pay to the details below.' : `${d.entity} will send you the payment details.`}</p>
       {d.pay ? <PayBox pay={d.pay} stage={{ number: d.reference, owedMinor: d.amountMinor }} /> : null}
       <p className={styles.fine}>{d.entity} confirms it once it arrives.</p>
     </section>

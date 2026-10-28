@@ -11,6 +11,7 @@ import { CONTRACT_DELETE_RULE } from '@/lib/contracts/policy'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { displayDate } from '@/lib/format'
 import type { DeletedContractRow } from '@/lib/contracts/queries'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import styles from './deleted-contracts-sheet.module.css'
 
 /**
@@ -61,8 +62,8 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
   return (
     <>
       {/* (REG-727) The trio's head: the crumb as the eyebrow, Empty Trash the one action before the close; no foot. */}
-      <Dialog open={open} onClose={onClose} title="Deleted Contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
-              actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Empty Trash</Button>}>
+      <Dialog open={open} onClose={onClose} title="Deleted contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
+              actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Delete all forever</Button>}>   {/* (the calm UI build 2026-10-27, W-006 · T-13) the sheet is Deleted, not a trash */}
         <span className={`${styles.note} ${styles.noteMove}`}>Deleted contracts stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a contract.</span>
         <div className={styles.table} role="table" aria-label="Deleted contracts" data-testid="deleted-contracts" data-lead={showLead || undefined} data-by="" data-select="" data-card="">
           <div className={styles.head} role="row">
@@ -82,7 +83,7 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
               <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="contract" size={20} weight={300} />{c.title}</span>
               {/* (Contracts on the move, C4 — A-14) on a phone the facts read as one labelled line under the title; the desk keeps its columns */}
               {showLead ? <span role="cell" className={styles.cell} data-fact="Lead">{c.leadName}</span> : null}
-              <span role="cell" className={styles.cell} data-fact="Status">{c.status}</span>
+              <span role="cell" className={styles.cell} data-fact="Status">{contractStatusLabel(c.status)}</span>
               <span role="cell" className={styles.cell} data-fact="Deleted">{c.deletedAt ? displayDate(c.deletedAt) : '--'}</span>
               <span role="cell" className={styles.cell} data-fact="Deleted by">{c.deletedByName ?? '--'}</span>
               <span role="cell" className={`${styles.cell} ${styles.actions}`}>
@@ -90,7 +91,7 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
                   <span><Button variant="secondary" appearance="outlined" isDisabled={busy || !c.mine} onPress={() => { void run('restore the contract', () => onRestore([c.id])) }}>Restore</Button></span>
                 </Tooltip>
                 <Tooltip label={c.mine ? 'Deletes the contract for good' : CONTRACT_DELETE_RULE}>
-                  <span><DangerButton disabled={busy || !c.mine} onClick={() => setConfirm({ kind: 'forever', ids: [c.id] })}>Delete Forever</DangerButton></span>
+                  <span><DangerButton disabled={busy || !c.mine} onClick={() => setConfirm({ kind: 'forever', ids: [c.id] })}>Delete forever</DangerButton></span>
                 </Tooltip>
               </span>
             </div>
@@ -99,13 +100,13 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
         <DetailBulkBar inset count={live.length}
                        actions={[
                          { label: `Restore${mine.length !== live.length ? ` ${mine.length}` : ''}`, onClick: () => { const ids = mine; setSelected(new Set()); if (ids.length) void run('restore the contracts', () => onRestore(ids)) } },
-                         ...(mine.length ? [{ label: `Delete Forever${mine.length !== live.length ? ` ${mine.length}` : ''}`, tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: mine }) }] : []),
+                         ...(mine.length ? [{ label: `Delete forever${mine.length !== live.length ? ` ${mine.length}` : ''}`, tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: mine }) }] : []),
                        ]}
                        onClear={() => setSelected(new Set())} />
       </Dialog>
-      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" message={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `These ${confirm.ids.length} contracts will be deleted permanently. This action cannot be undone.` : 'This contract will be deleted permanently. This action cannot be undone.'} confirmLabel="Delete Forever"
+      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" message={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `These ${confirm.ids.length} contracts will be deleted permanently. This action cannot be undone.` : 'This contract will be deleted permanently. This action cannot be undone.'} confirmLabel="Delete forever"
                      onCancel={() => setConfirm(null)} onConfirm={() => { const c = confirm; setConfirm(null); if (c?.kind === 'forever') { setSelected(new Set()); void run(c.ids.length > 1 ? 'delete the contracts forever' : 'delete the contract forever', () => onDeleteForever(c.ids)) } }} />
-      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Empty the trash?" message={`${emptiable} deleted ${emptiable === 1 ? 'contract' : 'contracts'} will be deleted permanently. Contracts someone else created stay. This action cannot be undone.`} confirmLabel="Empty Trash"
+      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Delete all forever?" message={`${emptiable} deleted ${emptiable === 1 ? 'contract' : 'contracts'} will be deleted permanently. Contracts someone else created stay. This action cannot be undone.`} confirmLabel="Delete all forever"
                      onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); setSelected(new Set()); void run('empty the trash', onEmptyTrash) }} />
     </>
   )

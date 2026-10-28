@@ -24,19 +24,22 @@ import { filterByQuery } from '@/lib/search'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { INBOX_FILTERS, conversationKey, firstWords, keepsRow, parseConversationKey, type InboxFilter } from '@/lib/projects/messages-model'
 import type { ChatStart, ConversationData, InboxRow } from '@/lib/projects/messages'
-import { Conversation, conversationHref, readersLine } from './conversation'
-import { ChatInboxGhost, PICK_HELP, PICK_TITLE } from './chat-ghost'
+import { Conversation, conversationHref } from './conversation'
+import { ChatInboxGhost, PICK_TITLE } from './chat-ghost'
 import { NewGroupDialog, NewMessageMenu } from './new-conversation'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './messages.module.css'
 
-/** (pending modules S26) The chip a row wears: who the conversation is with, beyond a client's (which needs none). */
-function KindChip({ r }: { r: Pick<InboxRow, 'kind' | 'chatType'> }) {
-  if (r.kind === 'team' || r.kind === 'lead-team') return <MetaChip>Team</MetaChip>
-  if (r.kind === 'lead') return <MetaChip color="blue">Client</MetaChip>   // (S42 audit C-23, call C·5) a lead's conversation with its client — "Team" is the other
-  if (r.kind === 'chat') return <MetaChip>{r.chatType === 'group' ? 'Group' : r.chatType === 'studio' ? 'Studio' : 'Direct'}</MetaChip>
-  return null
+/** (pending modules S26) The chip a row wears. (the calm UI build 2026-10-27, 1-21 · 1-16 · W-391) ONE tag, "Team", on every conversation only the
+    studio reads — a project's or a lead's team, two members, a group, the studio's room (Direct · Group · Studio read from their names: "Hui Min",
+    "Site team", "Everyone at Demo Studio"); a client's conversation wears none — its title says it ("Benjamin Han · client"). */
+const isInternal = (r: Pick<InboxRow, 'kind'>) => r.kind === 'team' || r.kind === 'lead-team' || r.kind === 'chat'
+function KindChip({ r }: { r: Pick<InboxRow, 'kind'> }) {
+  return isInternal(r) ? <MetaChip>Team</MetaChip> : null
 }
+/** (the calm UI build 2026-10-27, 1-21) A row's title says who reads it: a client's conversation by the client ("Benjamin Han · client"), the
+    studio's own by its name — so two rows never read the same ("HDB 5-Room — Benjamin Han" with the Team tag beside "Benjamin Han · client"). */
+const rowTitle = (r: Pick<InboxRow, 'kind' | 'client' | 'projectName'>) => (r.kind === 'client' || r.kind === 'lead' ? `${r.client || r.projectName} · client` : r.projectName)
 /** "Germaine: the cabinet came…" — a row's second line; a group's own line reads alone. */
 function lineOf(r: InboxRow): string {
   if (!r.last) return r.kind === 'chat' && r.chatType === 'studio' ? 'Every member of the studio reads it' : 'No messages yet'
@@ -143,21 +146,22 @@ export function ChatInbox({ rows: initial, now, start, initialOpen = null, initi
   /* (S26, S10's rule — every suggestion acts) Maison AI here: start one, or show what waits */
   const maison: MaisonSuggestion[] = [
     { label: 'Start a group', run: () => setGrouping([]) },
-    ...(unreadRows ? [{ label: `Show the unread (${unreadRows})`, run: () => setFilter('unread') }] : []),
+    ...(unreadRows ? [{ label: `Show the ${unreadRows} unread`, run: () => setFilter('unread') }] : []),   // (the calm UI build 2026-10-27, T-07) no "(n)"
   ]
   useMaisonAi(maison)
 
   const from = readFrom(params.get('from'))
   const newMessage = <NewMessageMenu start={start} onMember={(id) => { void startDirect(id) }} onGroup={() => setGrouping([])} onClient={() => setPicking(true)} />
+  /* (the calm UI build 2026-10-27, 1-21 · T-04) the open conversation's head says each thing once: who is in a members' one (its people — the
+     composer says who reads it); the Team tag on the studio's own; nothing on a client's — its composer's line says who sees it */
   const head = (o: ConversationData) => {
     if (o.chat) {
       const names = o.chat.people.filter((p) => p.id !== o.me.id).map((p) => p.name.trim())   // (S42 audit C-13) members as stored
       const who = o.chat.type === 'studio' ? `Everyone at the studio · ${o.chat.people.length} people` : o.chat.type === 'direct' ? (o.chat.other?.active === false ? 'No longer in the studio' : 'Just the two of you')
         : names.length ? `You, ${names.slice(0, 2).join(', ')}${names.length > 2 ? ` and ${names.length - 2} more` : ''}` : 'Just you'
-      return <><KindChip r={{ kind: 'chat', chatType: o.chat.type }} /><span className={styles.convMeta} data-testid="conversation-who">{who}</span></>
+      return <span className={styles.convMeta} data-testid="conversation-who">{who}</span>
     }
-    return <>{o.kind === 'team' || o.kind === 'lead-team' ? <MetaChip>Team</MetaChip> : o.kind === 'lead' ? <MetaChip color="blue">Client</MetaChip> : null}
-      <span className={styles.convMeta} data-testid="conversation-who">{o.kind === 'team' ? `The team on ${o.title} — ${o.lead?.client ?? 'the client'} never sees it` : o.kind === 'lead-team' ? `The team on ${o.title}’s lead — they never see it` : readersLine(o.people)}</span></>
+    return o.kind === 'team' || o.kind === 'lead-team' ? <KindChip r={{ kind: o.kind }} /> : null
   }
   const door = (o: ConversationData) => {
     const target = o.project ? { href: openHref, label: 'Open project' } : o.lead ? { href: `/leads/${o.lead.id}`, label: 'Open lead' } : null
@@ -182,7 +186,7 @@ export function ChatInbox({ rows: initial, now, start, initialOpen = null, initi
           ) : (
             <div className={styles.inbox} data-open={open ? '' : undefined}>
               <div className={styles.pane} data-slot="list">
-                <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search people, words…" label="Search conversations" />
+                <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search messages" label="Search conversations" />   {/* (the calm UI build 2026-10-27, W-611) */}
                 <div className={styles.filters}>
                   <Chips label="Show" value={filter} onChange={(v) => setFilter(v as InboxFilter)} testId="chat-filters"
                          options={INBOX_FILTERS} />   {/* no counts in the chips: a row's own count says it, and the ghost draws the same words */}
@@ -192,7 +196,7 @@ export function ChatInbox({ rows: initial, now, start, initialOpen = null, initi
                     <button key={r.key} type="button" role="listitem" className={styles.row} aria-current={open?.key === r.key ? 'true' : undefined}
                             data-unread={r.unread ? '' : undefined} data-muted={r.muted || undefined} data-kind={r.kind} data-chat={r.chatType ?? undefined} data-testid="chat-row" onClick={() => { void pick(r.key) }}>
                       <span className={styles.rowName}>
-                        <span className={styles.rowTitle}>{r.projectName}</span>
+                        <span className={styles.rowTitle}>{rowTitle(r)}</span>
                         <KindChip r={r} />
                         {r.pinned || r.muted ? <span className={styles.rowMarks} aria-label={[r.pinned ? 'Pinned' : '', r.muted ? 'Muted' : ''].filter(Boolean).join(', ')} data-testid="chat-row-marks">{r.pinned ? <Icon name="push_pin" size={16} weight={300} /> : null}{r.muted ? <MetaChip>Muted</MetaChip> : null}</span> : null}
                       </span>
@@ -215,7 +219,7 @@ export function ChatInbox({ rows: initial, now, start, initialOpen = null, initi
                     <Conversation key={open.key} data={open} onRead={onRead} headStart={head(open)} onLeft={onLeft} onStartGroup={(ids) => setGrouping(ids)} />
                   </>
                 ) : (
-                  <EmptyState icon="comment" tone="plain" testId="chat-pick" title={PICK_TITLE} help={PICK_HELP} />   /* (S42 audit C-25) plain words; the ghost reads the same */
+                  <EmptyState icon="comment" tone="plain" testId="chat-pick" title={PICK_TITLE} />   /* (S42 audit C-25) plain words; the ghost reads the same · (the calm UI build 2026-10-27, 1-21 · W-314) the title alone */
                 )}
               </div>
             </div>

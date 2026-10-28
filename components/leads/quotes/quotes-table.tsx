@@ -4,7 +4,7 @@ import { ProTag } from '@/components/credits/pro-tag'
 import { usePlanLock } from '@/components/credits/credits-client'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Button, Checkbox } from '@/components/ds'
+import { Checkbox } from '@/components/ds'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
@@ -23,6 +23,7 @@ import { Avatar } from '@/components/om/avatar'
 import { displayDate, displayDateLong, money } from '@/lib/format'
 import { clientValidityPassed, headOrderWords, isQuoteOverdue, isQuoteSortKey, quoteStatuses, sentToClientOf, viewedSince, type QuoteHeadSort, type QuoteListRow, type QuoteSortKey, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { STATUS_BLOCK_META, statusBlock } from '@/lib/quotes/policy'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01 · 4-04) the status set on screen
 import type { QuoteApproval } from '@/lib/settings/types'
 import { canRemind, cardChip, sinceWords } from './quote-card-words'
 import { useLongPress } from './use-long-press'
@@ -72,12 +73,12 @@ export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
   { key: 'creator', label: 'Creator', track: '160px', tabletHidden: true },   /* (REG-471) who created the quote — avatar + name, as the Tasks table's Creator */
   { key: 'total', label: 'Total', track: '120px' },
-  { key: 'due', label: 'Due', track: '160px' },   /* (Dane UAT 5.13) the widest "Wed, 28 May ’26" uncut — was 120 */
+  { key: 'due', label: 'Follow up', track: '160px' },   /* (Dane UAT 5.13) the widest "Wed, 28 May ’26" uncut — was 120; (the calm UI build 2026-10-27, 4-13 · W-175) it is the follow-up date — "Due" is the payments' word; the key stays */
   { key: 'created', label: 'Created', track: '120px', tabletHidden: true },
   { key: 'sent', label: 'Sent to client', track: '168px', tabletHidden: true },   /* (UX audit Q5) the day it went to the client (client_sent_at), not to the approvers */
   { key: 'valid', label: 'Valid until', track: '160px', tabletHidden: true },   /* (UX audit Q5) the quote's Valid until — sortable, red once passed while the client holds it; (Dane UAT 5.13) 160 holds its day */
   { key: 'updated', label: 'Updated', track: '120px', tabletHidden: true },
-  { key: 'approval', label: 'Approval Date', track: '157px', tabletHidden: true },
+  { key: 'approval', label: 'Approval date', track: '157px', tabletHidden: true },
 ]
 /** Whether the Approval Date column exists at all — the lifecycle has it, or a quote was approved before the setting was switched off. */
 export const quoteShowApproval = (quotes: readonly Pick<Quote, 'approvedAt'>[], approval: QuoteApproval) => quoteStatuses(approval).includes('Approved') || quotes.some((q) => q.approvedAt)
@@ -117,7 +118,7 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
   /* (P-11 · A-03) …and the tracks tighten there — the mock's 317 Title floor alone took half a 768 frame, so the amount sat off the first screen:
      Title from 180, the dates at their day's width; a dragged width still wins (REG-427). The desk keeps the mock's tracks. */
   const tabletColumns = useMemo(() => (touchTablet ? columns.map((c) => ({ ...c, track: TABLET_TRACKS[c.key] ?? c.track })) : columns), [columns, touchTablet])
-  const tracks = gridTemplateFor(tabletColumns, colWidths, '40px', touchTablet ? ACTIONS_TRAIL.kebab : ACTIONS_TRAIL.pair)
+  const tracks = gridTemplateFor(tabletColumns, colWidths, '40px', ACTIONS_TRAIL.kebab)   // (the calm UI build 2026-10-27, 4-46 · T-02) the ⋮ alone — the row's hover View left (the title opens), so nothing floats over the Created / Sent cells
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow, { leading: 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
@@ -266,10 +267,11 @@ function QuoteRowView({
           <button type="button" className={styles.title} onClick={() => onView(quote)} data-kb-open>{quote.title}</button>
           <span className={styles.sub}>
             <span>{quote.number}</span>
-            <span className={styles.desk}>·</span>
-            <span className={styles.desk}>{quote.visibility}</span>
+            {/* (the calm UI build 2026-10-27, 4-15 · W-368) the Shared / Private word left the row — the status says whether the client has it;
+                a private quote keeps a quiet lock that says what it means */}
+            {quote.visibility === 'Private' ? <Tooltip label="Only your team can see this quote"><span className={`${styles.desk} ${styles.lock}`} tabIndex={0} aria-label="Only your team can see this quote" data-testid="quote-private"><Icon name="lock" size={16} weight={300} /></span></Tooltip> : null}
             {/* (REG-625, parity Q-29) Out with the client past its Valid until: marked, never blocked. (P-06) On the card the chip says it. */}
-            {clientValidityPassed(quote, now) ? <><span className={styles.desk}>·</span><Tooltip label={`Valid until ${displayDate(quote.validUntil!)} has passed — nothing is blocked; extend Quote Valid Until if the price still stands`}><span className={styles.expired} data-testid="validity-passed" tabIndex={0}>Expired {displayDate(quote.validUntil!)}</span></Tooltip></> : null}
+            {clientValidityPassed(quote, now) ? <><span className={styles.desk}>·</span><Tooltip label={`Valid until ${displayDate(quote.validUntil!)} has passed. Change Valid until if the price still stands.`}><span className={styles.expired} data-testid="validity-passed" tabIndex={0}>Expired {displayDate(quote.validUntil!)}</span></Tooltip></> : null}
             {/* (P-06) the card's second line ends with the title, since its first line is the client's name — ≤767 only */}
             {client ? <><span className={styles.subTitle}>·</span><span className={styles.subTitle}>{quote.title}</span></> : null}
           </span>
@@ -300,10 +302,10 @@ function QuoteRowView({
           <button
             type="button" className={styles.statusBtn}
             aria-haspopup="menu" aria-expanded={statusOpen}
-            aria-label={`Status ${quote.status} — change status`}
+            aria-label={`Status ${quoteStatusLabel(quote.status)} — change status`}
             onClick={onStatusToggle}
           >
-            {quote.status}
+            {quoteStatusLabel(quote.status)}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
           {/* (sweep S1 · U-01) through the portal, as the kebab since REG-639: a short table's scroller can't clip it, a sticky layer can't cover it */}
@@ -319,7 +321,7 @@ function QuoteRowView({
               /* (UX audit Q3) the client's statuses wait for an approver's OK — the row says so, as "approvers only" does */
               const waits = !isCurrent && !locked && !!statusBlock({ target: s, current: quote.status, approval, approver: canApprove })
               return (
-                <DropdownItem key={s} disabled={locked || waits} meta={isCurrent ? 'current' : locked ? 'approvers only' : waits ? STATUS_BLOCK_META : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
+                <DropdownItem key={s} disabled={locked || waits} meta={isCurrent ? 'current' : locked ? 'approvers only' : waits ? STATUS_BLOCK_META : undefined} onSelect={pickStatus(s)}>{quoteStatusLabel(s)}</DropdownItem>
               )
             })}
           </PortalMenu>
@@ -341,15 +343,19 @@ function QuoteRowView({
       <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')}>
         {quote.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
-                  aria-label={`Due ${displayDateLong(quote.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
+                  aria-label={`Follow up ${displayDateLong(quote.dueAt)}${overdue ? ', overdue' : ''} — change the follow-up date`}
                   onClick={(e) => onDue(quote, e.currentTarget)}>
             {displayDateLong(quote.dueAt)}
           </button>
-        ) : (
-          <Tooltip label="Set due date">
-            <IconButton icon="calendar_add_on" label={`Set due date for ${quote.title}`} size={24} variant="primary"
-                        onClick={(e) => onDue(quote, e.currentTarget)} />
-          </Tooltip>
+        ) : quote.status === 'Confirmed' || quote.status === 'Signed' ? null : (
+          /* (the calm UI build 2026-10-27, 4-12 · 4-13 · W-365) the add shows on the row's hover / focus only (under a finger, always) — seven
+             identical purple glyphs down the column hid the one quote that has a date; a confirmed or signed quote has no follow-up to set */
+          <span className={styles.dueAdd}>
+            <Tooltip label="Set a follow-up date">
+              <IconButton icon="calendar_add_on" label={`Set a follow-up date for ${quote.title}`} size={24} variant="primary"
+                          onClick={(e) => onDue(quote, e.currentTarget)} />
+            </Tooltip>
+          </span>
         )}
       </div>
 
@@ -371,9 +377,6 @@ function QuoteRowView({
       {/* Row hover actions (910:36644 / 910:36709 "Hover button"): View + kebab, level-1 shadow, right 24 — tasks pattern with "View". */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
         <span className={styles.actionsInner}>
-        <span className={styles.float}>
-          <Button variant="primary" appearance="outlined" onPress={() => onView(quote)}>View</Button>
-        </span>
         <span className={styles.menuWrap} ref={kebab}>
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
@@ -390,23 +393,23 @@ function QuoteRowView({
                 <DropdownItem onSelect={pick('copy')}>Copy link</DropdownItem>
                 {canRemind(quote) ? <DropdownItem onSelect={pick('remind')} help="A WhatsApp nudge, drafted for you">Remind</DropdownItem> : null}
                 <DropdownItem onSelect={pick('share')}>Preview</DropdownItem>
-                <DropdownItem submenu onSelect={() => { onMenuClose(); onStatusToggle() }} meta={quote.status}>Change status</DropdownItem>
+                <DropdownItem submenu onSelect={() => { onMenuClose(); onStatusToggle() }} meta={quoteStatusLabel(quote.status)}>Change status</DropdownItem>
                 <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
                 <DropdownItem tone="danger" disabled={!deletable} title={deletable ? undefined : 'creator, Owner or Admin'} onSelect={pick('delete')}>Delete</DropdownItem>
               </>
             ) : (
               <>
-                {/* (P-11 · A-02) a touch tablet dropped the row's View: the title opens, and so does the menu's first row */}
+                {/* (P-11 · A-02) the title opens; under a finger the menu's first row opens too */}
                 {touch ? <DropdownItem onSelect={() => { onMenuClose(); onView(quote) }}>Open</DropdownItem> : null}
                 {/* 910:36723 — verbatim order. */}
-                <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
-                <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
+                <DropdownItem onSelect={pick('share')}>Preview and share</DropdownItem>
+                <DropdownItem onSelect={pick('copy')}>Copy link</DropdownItem>
                 <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
                 <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
                 {/* (REG-639, X-Ray parity Q-12) the quote editor's kebab entry, on the row — and a phone's way into X-Ray from a lead */}
                 <DropdownItem meta={xrayLocked ? <ProTag /> : undefined} onSelect={pick('xray')}>Compare with another quote</DropdownItem>   {/* (pending modules S19) Pro on Free */}
                 {/* (UX audit C6) the quote editor kebab's "Create contract from this quote", on the row — the same picker, the same contract */}
-                <DropdownItem onSelect={pick('contract')}>Create contract</DropdownItem>
+                <DropdownItem onSelect={pick('contract')}>Create contract from this quote</DropdownItem>
                 <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
                 {/* (sweep S1) the rule's own people — Admins may too. (REG-728) The row's own tone — a locked Delete reads disabled, not red — and
                     its reason in the row's reason line, under its words (the full rule was a native title, which never shows on touch). */}

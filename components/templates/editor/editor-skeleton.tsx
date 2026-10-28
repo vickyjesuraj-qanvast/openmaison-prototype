@@ -2,7 +2,6 @@
 
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
 import { Line, Slot } from '@/components/shell/ghost-kit'
-import { useFlagPref } from '@/lib/prefs'
 import styles from './editor-skeleton.module.css'
 
 /**
@@ -13,14 +12,13 @@ import styles from './editor-skeleton.module.css'
  * document's width at the editor's 95% (794 × 0.95), centred in the stage.
  */
 export function TemplateEditorSkeleton() {
-  const [hintSeen] = useFlagPref('om.tpl.hint', false)
   return (
     <GhostSheet label="Loading template">
       <div className={styles.page}>
         <div className={styles.bar}>
           <Bone w={24} h={24} r={4} />
           <span className={styles.name}><Line w={144} lh={32} h={16} /></span>
-          <span className={styles.chips}><Slot kind="chip" w={86} /><Slot kind="chip" w={58} /></span>
+          <span className={styles.chips}><Slot kind="chip" w={86} /></span>
           <span className={styles.desk}><Line w={110} lh={16} h={10} /></span>
           <span className={styles.grow} />
           <span className={styles.desk}><Slot kind="btn" w={249} /></span>
@@ -28,11 +26,12 @@ export function TemplateEditorSkeleton() {
           <span className={styles.group}>{[0, 1, 2, 3].map((i) => <Bone key={i} w={20} h={20} r={4} />)}</span>
           <span className={styles.desk}><Slot kind="btn" w={84} /></span><span className={styles.desk}><Slot kind="btn" w={98} /></span>
         </div>
-        {/* the first-visit hint as the member left it; a phone always shows its note (the editor is a view there) */}
-        <div className={styles.hint} data-seen={hintSeen || undefined}><Bone w={16} h={16} r={8} /><Line w={780} lh={20} h={12} style={{ flexShrink: 1, minWidth: 0 }} /><span className={styles.grow} /><span className={styles.desk}><Line w={36} lh={20} h={12} /></span></div>
+        {/* a phone's note (the editor is a view there) — (the calm UI build 2026-10-27, the UI audit's 4-23) the desk's first-visit hint is gone, so
+            the desk never draws the row (data-seen); the inspector's empty state says its three steps */}
+        <div className={styles.hint} data-seen=""><Bone w={16} h={16} r={8} /><Line w={780} lh={20} h={12} style={{ flexShrink: 1, minWidth: 0 }} /><span className={styles.grow} /><span className={styles.desk}><Line w={36} lh={20} h={12} /></span></div>
         <div className={styles.body}>
           <div className={styles.side}>
-            <div className={styles.tabs}>{[36, 40, 76].map((w, i) => <span key={i} className={styles.tab}><Bone w={w} h={14} /></span>)}</div>
+            <div className={styles.tabs}>{[36, 40, 100].map((w, i) => <span key={i} className={styles.tab}><Bone w={w} h={14} /></span>)}</div>
             <div className={styles.setup}><Line w={96} lh={20} h={14} /><Bone w={20} h={20} r={4} /></div>
             {[0, 1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className={styles.row}>

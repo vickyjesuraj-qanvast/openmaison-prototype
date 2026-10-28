@@ -18,7 +18,6 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { LeaveGuard } from '@/components/company/leave-guard'
 import { HelpLink } from '@/components/company/help-link'
 import { MSG } from '@/lib/forms'
-import { moduleLinks } from '@/lib/settings/modules'
 import { MEETINGS_WORDS, MEETING_CARDS, checklistWordsLine, meetingsModuleHelp, weightsTotalLine } from '@/lib/settings/copy'
 import { AIMS, DEFAULT_WEIGHTS, DIMENSIONS, FEATURES, aimLabel, weightsTotal, type AimKey, type DimKey, type FeatureKey, type Features, type Weights } from '@/lib/meetings/model'
 import { CATEGORIES, categoryLabel, checklistFor, type ChecklistCategory } from '@/lib/meetings/checklists'
@@ -28,7 +27,7 @@ import {
   restoreCompetitor, restoreObjectionAnswer, saveCopilotFeature, saveDealWeights, saveObjectionAnswer, setObjectionAnswerOn, updateChecklistItem, updateCompetitor,
   type CompetitorRow, type MeetingsSettingsData, type OwnChecklistItem,
 } from './meetings-actions'
-import { ModuleHead } from './module-head'
+import { ModuleHead, ModuleRelated } from './module-head'
 import styles from './settings.module.css'
 import own from './meetings-settings.module.css'
 import band from './studio-settings.module.css'   // Who may do what's group band: the card table's head band across the row
@@ -52,7 +51,7 @@ import band from './studio-settings.module.css'   // Who may do what's group ban
 const LOCKED = 'Only Owners and Admins change the meeting settings'   // (invented copy) the server's rule, word for word
 const quoted = (s: string) => `“${s}”`
 
-export function MeetingsSettings({ data, studio, canManage, from }: { data: MeetingsSettingsData; studio: string; canManage: boolean; from: string }) {
+export function MeetingsSettings({ data, studio, canManage }: { data: MeetingsSettingsData; studio: string; canManage: boolean; /** (the calm UI build, 5-17) the module's doors take the way back from the address now (ModuleRelated) */ from?: string }) {
   const readOnly = !canManage
   /* the parts' switches are the first card's; the cards that a part shows say so while it is off */
   const [features, setFeatures] = useState<Features>(data.copilot.features)
@@ -60,12 +59,13 @@ export function MeetingsSettings({ data, studio, canManage, from }: { data: Meet
      kind-of-objection chips stay live, so whoever may only read can still read every list */
   return (
     <section className={styles.panel} aria-labelledby="settings-meetings-title" data-testid="settings-meetings">
-      <ModuleHead id="settings-meetings-title" title="Meetings" help={meetingsModuleHelp(studio)} readOnly={readOnly} links={moduleLinks('meetings', from)} />
+      <ModuleHead id="settings-meetings-title" title="Meetings" help={meetingsModuleHelp(studio)} readOnly={readOnly} />
       <FeaturesCard features={features} setFeatures={setFeatures} canManage={canManage} />
       <DealScoreCard initial={data.copilot.weights} canManage={canManage} off={features.deal_scoring ? null : offLine('deal_scoring', 'the score')} />
       <ChecklistsCard initial={data.items} canManage={canManage} off={features.checklist ? null : offLine('checklist', 'these checklists')} />
       <AnswersCard initial={data.answers} canManage={canManage} off={features.coaching ? null : offLine('coaching', 'these answers')} />
       <CompetitorsCard initial={data.competitors} canManage={canManage} />
+      <ModuleRelated section="meetings" />   {/* (the calm UI build, 5-17) */}
     </section>
   )
 }

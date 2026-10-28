@@ -166,7 +166,7 @@ export function salesReport(data: SalesData, days: Range, granularity: Granulari
   const tiles: SalesTile[] = [
     { key: 'leads', label: 'Leads', value: String(cur.length), help: cur.length ? `${openN} open · ${won.length} won · ${lost} lost` : 'None added in this range' },
     { key: 'quoted', label: 'Quote sent', value: String(q), help: cur.length ? `${pctWords(pct(q, cur.length))} of leads` : 'No leads to quote' },
-    { key: 'won', label: 'Won', value: String(won.length), help: won.length ? `${pctWords(conv)} of leads · median ${durationWords(median(daysToWon))} to Won` : 'None won yet' },
+    { key: 'won', label: 'Won', value: String(won.length), help: won.length ? `${pctWords(conv)} of leads · usually ${durationWords(median(daysToWon))} to Won` : 'None won yet' },   // (the calm UI build — 5-09 · T-09) no "median" on screen
     { key: 'value', label: 'Won value', value: money2(valueMinor), help: `Before GST${valued.length ? ` · ${money2(Math.round(valueMinor / valued.length))} a lead won` : ''}${budgetWon ? ` · ${budgetWon} at the client’s budget` : ''}` },
   ]
 
@@ -264,13 +264,13 @@ export function salesReport(data: SalesData, days: Range, granularity: Granulari
 export const SALES_TITLE = 'Sales'
 export const SALES_HELP = 'Who brings leads in and wins them, where leads stop, which sources pay, and what is still in play.'
 export const SECTIONS = {
-  members: { title: 'By team member', help: 'Every member on a lead counts it, so these rows can add up to more than the studio’s.' },
+  members: { title: 'By member', help: 'Every member on a lead counts it, so these rows can add up to more than the studio’s.' },
   funnel: { title: 'Where leads stop', help: 'Each step counts the leads that reached at least that far.' },
   sources: { title: 'By source', help: 'Your lead sources, as Settings › Lead sources names them.' },
   pipeline: { title: 'Open pipeline', help: 'Leads not yet won or lost, valued before GST.' },
   flow: { title: 'Over time', help: 'Leads added in each period, how many of them were won, and the wins that fell in it.' },
   quiet: { title: 'Going quiet', help: 'Open leads by days since the last contact — On hold leads wait for their follow-up day.' },
-  quietMembers: { title: 'Going quiet, by team member', help: 'Each member’s open leads, and the one longest without a contact.' },
+  quietMembers: { title: 'Going quiet, by member', help: 'Each member’s open leads, and the one longest without a contact.' },
 } as const
 export const MEMBERS_EMPTY = 'No leads in this range.'
 export const FUNNEL_EMPTY = 'No leads in this range.'

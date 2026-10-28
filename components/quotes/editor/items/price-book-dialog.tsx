@@ -134,7 +134,7 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
                       {p.thumb ? <img src={p.thumb} alt="" /> : <Icon name={ITEM_KIND_ICON[kindOf(p)]} size={20} weight={300} />}
                     </span>
                     <span className={styles.text}>
-                      <span className={styles.name}>{p.name}{p.status === 'proposed' ? <MetaChip color="yellow">Proposed</MetaChip> : null}</span>
+                      <span className={styles.name}>{p.name}{p.status === 'proposed' ? <MetaChip color="yellow">Waiting for approval</MetaChip> : null}</span>
                       <span className={styles.meta}>{[itemBrowse.where(p) || null, ITEM_KIND_LABEL[kindOf(p)], p.vendor ? `by ${p.vendor}` : null, p.category].filter(Boolean).join(' · ')}</span>
                     </span>
                     <span className={styles.price}>{money2(p.costMinor + p.markupMinor)}<span className={styles.unit}> / {p.unit}</span></span>

@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react'
+import { useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { SearchBar } from '@/components/ds'
-import { Chips } from '@/components/om/chips'
+import { ScopePill } from '@/components/om/scope-pill'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -86,6 +88,9 @@ export function MaterialPicker({ scope, categories, style, pick, mixed = false, 
 }) {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<string>('All')
+  /* (the calm UI build 2026-10-27, 6-31 · 6-27 — T-10: one filter dimension is a scope pill) the categories as "Category: All ▾", not ten chips */
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLButtonElement | null>(null)
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const order = useMemo(() => [...categories.filter((c) => GENERIC_CATEGORIES.includes(c)), ...GENERIC_CATEGORIES.filter((c) => !categories.includes(c))], [categories])
   const suggested = useMemo(() => suggestMaterials(scope, style, 6).map(fromCatalogue), [scope, style])
@@ -133,7 +138,12 @@ export function MaterialPicker({ scope, categories, style, pick, mixed = false, 
               {studio.map((m) => tile(m, m.source === 'design' ? 'this design' : `${m.category} · studio`, m.source === 'design' ? () => onRemoveOwn(m.id.slice(4)) : undefined))}
             </div>
           </div>
-          <Chips label="Categories" options={['All', ...order]} value={cat} onChange={setCat} />
+          <span className={styles.catRow}>
+            <ScopePill ref={catRef} label={`Category: ${cat}`} short={cat} open={catOpen} scoped={cat !== 'All'} onClick={() => setCatOpen((o) => !o)} />
+          </span>
+          <PortalMenu open={catOpen} anchor={catRef} onClose={() => setCatOpen(false)} role="menu" width={240} sheetTitle="Category">
+            {['All', ...order].map((c) => <DropdownItem key={c} role="menuitemradio" checked={cat === c} onSelect={() => { setCat(c); setCatOpen(false) }}>{c}</DropdownItem>)}
+          </PortalMenu>
           {(cat === 'All' ? order : [cat as CatalogueCategory]).map((c) => section(c, CATALOGUE.filter((m) => m.category === c).map(fromCatalogue), undefined, `${CATALOGUE.filter((m) => m.category === c).length}`))}
           {cat === 'All' || cat === 'Paints' ? BRAND_CATEGORIES.map((b) => {
             const all = CATALOGUE.filter((m) => m.category === b).map(fromCatalogue)

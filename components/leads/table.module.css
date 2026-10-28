@@ -136,6 +136,19 @@
   transition: color var(--motion-hover);
 }
 .assignLink:hover { color: var(--om-color-on-primary-variant); }
+/* (the calm UI build 2026-10-27 — audit 2-06 · T-02) A task-less row says "No task" in grey at rest; "Add task" (the link's ink) shows on the row's
+   hover or the button's own focus — and always under a finger, which never hovers. The person-plus beside a lead's avatars does the same. */
+.restLink .onHover { display: none; align-items: center; gap: var(--om-spacing-1); }
+.restLink .atRest { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.row:hover .restLink .onHover, .restLink:focus-visible .onHover { display: inline-flex; }
+.row:hover .restLink .atRest, .restLink:focus-visible .atRest { display: none; }
+.onHoverTool { display: inline-flex; opacity: 0; transition: opacity var(--motion-hover); }
+.row:hover .onHoverTool, .onHoverTool:focus-within { opacity: 1; }
+@media (hover: none) {
+  .restLink .onHover { display: inline-flex; }
+  .restLink .atRest { display: none; }
+  .onHoverTool { opacity: 1; }
+}
 .memberStack { display: flex; align-items: center; gap: var(--om-spacing-2); }
 .plusBox {
   width: 24px; height: 24px;
@@ -170,9 +183,9 @@
 /* (REG-733) The actions band (table.tsx ACTIONS_BAND): an empty end to every row and to the head, wearing the row's fill, so the
    hover pair floats over it and never over the last column's value — the Items table's Total (REG-446). */
 @media (hover: hover) {
-  .headRow::after { content: ''; flex: 0 0 116px; align-self: stretch; }
+  .headRow::after { content: ''; flex: 0 0 40px; align-self: stretch; }   /* (the calm UI build 2026-10-27 — 2-06) the ⋮'s band alone (table.tsx ACTIONS_BAND) */
   .row::after {
-    content: ''; flex: 0 0 116px;
+    content: ''; flex: 0 0 40px;
     border-top: var(--om-border-1) solid var(--om-color-surface-variant);
     background: var(--om-color-surface-default);
   }
@@ -244,7 +257,7 @@
      spans the row), and the mouse's hover-reveal float is untouched. */
   .rowActions { opacity: 1; pointer-events: auto; position: static; width: auto; flex-shrink: 0; display: inline-flex; align-items: center; padding: 0 var(--om-spacing-4) 0 var(--om-spacing-2); }
   .rowActionsInner { position: static; transform: none; }
-  .headRow::after { content: ''; flex: 0 0 134px; }   /* the table's min-width carries the same 134 on a touch tablet (table.tsx `band`) */
+  .headRow::after { content: ''; flex: 0 0 68px; }   /* the table's min-width carries the same 68 on a touch tablet (table.tsx `band`) — (the calm UI build) the ⋮ alone */
   .copyBtn { opacity: 1; }
   /* The selection checkboxes had the same treatment at ≤767 (above); a touch TABLET needs them too, and the
      name cell keeps the 40px the checkbox occupies. Inert on the listing, which never offers selection (REG-89). */

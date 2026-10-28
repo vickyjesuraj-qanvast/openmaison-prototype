@@ -117,7 +117,7 @@ const VIVIEN = sql(`select id from leads where name = 'Vivien Lee' and deleted_a
       const CN = cn?.id ?? '', CNN = cn?.number ?? ''
       await settle(p, 1000); await go(p, `/projects/${ben}/money`); await allNeeds(p)
       const held = p.getByTestId('money-credit-held')
-      ok(await held.count() === 1 && /Benjamin’s credit, /.test(await text(held)) && /S\$115\.06/.test(await text(held)) && /Paid beyond what INV-2026-006 owed/.test(await text(held)), 'Needs you: “Benjamin’s credit, CN-… · S$115.06 — Paid beyond what INV-2026-006 owed”')
+      ok(await held.count() === 1 && /Benjamin’s credit, /.test(await text(held)) && /S\$ ?115/.test(await text(held)) && /Paid beyond what INV-2026-006 owed/.test(await text(held))   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */, 'Needs you: “Benjamin’s credit, CN-… · S$115.06 — Paid beyond what INV-2026-006 owed”')
       ok(await held.getByTestId('money-credit-refund').count() === 1 && await held.getByTestId('money-credit-use').count() === 0 && /comes off the next invoice once one is sent/.test(await text(held)), 'no later invoice owes yet: its one step is Record the refund, and it says the next invoice takes it')
       await shot(p, '02-credit-held-1440')
       ok(/S\$115\.06 kept as credit/.test(await text(p.locator(`[data-testid="money-stages"] [data-invoice="${INV6}"]`).last())), 'the invoice’s Paid cell says the extra kept as credit')
@@ -143,7 +143,10 @@ const VIVIEN = sql(`select id from leads where name = 'Vivien Lee' and deleted_a
       sql(`update project_invoices set status = 'sent', number = 'INV-2026-090', sent_at = strftime('%s','now'), sent_by = 'dane', due_at = strftime('%s','now') + 14 * 86400 where id = '${COMP}'`)
       await go(p, `/projects/${ben}/money`); await allNeeds(p)
       const held2 = p.getByTestId('money-credit-held')
-      ok(await held2.getByTestId('money-credit-use').count() === 1 && /Use on INV-2026-090/.test(await text(held2.getByTestId('money-credit-use'))) && await held2.getByTestId('money-credit-refund').count() === 1, 'once INV-2026-090 owes: the filled step is “Use on INV-2026-090”, Record the refund beside it')
+      if (await held2.getByTestId('money-credit-held-more').count()) { await held2.getByTestId('money-credit-held-more').click(); await settle(p, 300) }   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    const refundRow = await p.getByTestId('money-credit-refund').count()
+    await p.keyboard.press('Escape'); await settle(p, 200)
+    ok(await held2.getByTestId('money-credit-use').count() === 1 && /Use on INV-2026-090/.test(await text(held2.getByTestId('money-credit-use'))) && refundRow === 1, 'once INV-2026-090 owes: the filled step is “Use on INV-2026-090”, Record the refund beside it')
       await held2.getByTestId('money-credit-use').click(); await settle(p, 2400)
       let use = json(`select id, amount_minor, method, credit_note_id, receipt_number, status from project_payments where invoice_id = '${COMP}' and credit_note_id = '${CN}'`)[0]
       ok(use && use.amount_minor === 11506 && use.method === 'credit' && use.status === 'confirmed' && !!use.receipt_number, 'Use on: a payment of S$115.06 FROM the credit note (method credit), confirmed with its receipt')
@@ -164,14 +167,14 @@ const VIVIEN = sql(`select id from leads where name = 'Vivien Lee' and deleted_a
       ok(new RegExp(`took S\\$115\\.06 of Benjamin Han’s credit ${esc(CNN)} off “INV-2026-090”`).test(await text(p.locator('main'))) && new RegExp(`the extra S\\$115\\.06 is their credit, ${esc(CNN)}`).test(await text(p.locator('main'))), 'Activity: the overpayment and the use, in words')
 
       console.log('1c · the original payment is not reversed while its credit is used; reversing the use gives it back; the refund')
-      await go(p, `/projects/${ben}/money`); await billingView(p, 'Payments')
+      await go(p, `/projects/${ben}/money`); await billingView(p, 'Collected')   // (the calm UI build 2026-10-27, a deliberate change) T-01: Client payments' view of the money in reads "Collected"
       await p.locator(`[data-payment="${pay.id}"]`).first().getByRole('button', { name: /More actions for the payment/ }).click(); await settle(p, 400)
       await p.getByRole('menuitem', { name: 'Reverse' }).click(); await settle(p, 500)
       await dialog(p).getByLabel('Why is it reversed?').fill('Wrong invoice')
       await dialog(p).getByRole('button', { name: 'Reverse' }).click(); await settle(p, 1800)
       ok(sql(`select status from project_payments where id = '${pay.id}'`) === 'confirmed' && new RegExp(`Its extra is credit note ${esc(CNN)}, and some of it was used or refunded — take that back first`).test(await snackText(p)), 'Reverse refused while some of its credit is used — the snackbar says why')
       await p.keyboard.press('Escape'); await settle(p, 400)
-      await go(p, `/projects/${ben}/money`); await billingView(p, 'Payments')
+      await go(p, `/projects/${ben}/money`); await billingView(p, 'Collected')   // (the calm UI build 2026-10-27, a deliberate change) T-01: Client payments' view of the money in reads "Collected"
       await p.locator(`[data-payment="${use.id}"]`).first().getByRole('button', { name: /More actions for the payment/ }).click(); await settle(p, 400)
       await p.getByRole('menuitem', { name: 'Reverse' }).click(); await settle(p, 500)
       await dialog(p).getByLabel('Why is it reversed?').fill('Refunding instead')
@@ -179,8 +182,10 @@ const VIVIEN = sql(`select id from leads where name = 'Vivien Lee' and deleted_a
       ok(sql(`select status from project_payments where id = '${use.id}'`) === 'reversed', 'the credit’s use is reversed')
       await go(p, `/projects/${ben}/money`); await allNeeds(p)
       const held3 = p.getByTestId('money-credit-held')
-      ok(await held3.count() === 1 && /S\$115\.06/.test(await text(held3)), 'the credit holds again')
-      await held3.getByTestId('money-credit-refund').click(); await settle(p, 700)
+      ok(await held3.count() === 1 && /S\$ ?115/.test(await text(held3)), 'the credit holds again')
+      if (await held3.getByTestId('money-credit-refund').count()) await held3.getByTestId('money-credit-refund').click()
+      else { await held3.getByTestId('money-credit-held-more').click(); await settle(p, 300); await p.locator('[data-testid="money-credit-refund"] [role="menuitem"]').click() }   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+      await settle(p, 700)
       const rd = p.getByTestId('credit-refund-dialog')
       ok(/115\.06/.test(await rd.getByLabel('Amount refunded (S$)').inputValue()), 'Record the refund opens with what is held')
       await p.getByTestId('credit-refund-save').click(); await settle(p, 2200)
@@ -229,7 +234,8 @@ const VIVIEN = sql(`select id from leads where name = 'Vivien Lee' and deleted_a
       await go(p, `/projects/${ryan}/money`); await allNeeds(p)
       const banner = p.locator(`[data-payment-banner="${pid}"]`)
       ok(await banner.count() === 1, 'the proof waits to be confirmed')
-      await banner.getByTestId('payment-confirm').click(); await settle(p, 2400)
+      await banner.getByTestId('payment-confirm').click(); await settle(p, 600)   /* (the calm UI build 2026-10-27, a deliberate change) the approved confirm step: Confirm asks once more */
+      await p.getByRole('dialog').last().getByRole('button', { name: 'Confirm payment' }).click(); await settle(p, 2400)
       const r = json(`select amount_minor, status, receipt_number from project_payments where id = '${pid}'`)[0]
       const cn = json(`select * from credit_notes where payment_id = '${pid}'`)[0]
       ok(r?.status === 'confirmed' && r.amount_minor === 64800 && cn?.kind === 'overpayment' && cn.amount_minor === 5200, 'Confirm settles the S$648.00 owed and the extra S$52.00 becomes the client’s credit note')

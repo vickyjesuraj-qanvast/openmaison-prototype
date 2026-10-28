@@ -16,9 +16,10 @@ export type LeadFacts = {
 }
 export type LegKey = 'assignment' | 'outreach' | 'won'
 export const LEGS: { key: LegKey; label: string }[] = [
-  { key: 'assignment', label: 'Creation → Assignment' },
-  { key: 'outreach', label: 'Assignment → First outreach' },
-  { key: 'won', label: 'First outreach → Won' },
+  /* (the calm UI build 2026-10-27 — audit 5-09, W-162 · W-119 · W-189) plain words, not system events with arrows */
+  { key: 'assignment', label: 'Time to assign' },
+  { key: 'outreach', label: 'Time to first contact' },
+  { key: 'won', label: 'First contact to Won' },
 ]
 /** (parity P-31 · Q-16) Reports › Leads and › Projects share one set of ranges and both open on 90 days; Finance keeps its calendar periods. */
 export type Range = 30 | 90 | 365 | null
@@ -39,7 +40,8 @@ export const INSIGHTS_SHAPE = {
   delta: (leg: LegKey) => `om.shape.insights.delta.${leg}`, assign: 'om.shape.insights.awaitAssign', outreach: 'om.shape.insights.awaitOutreach', members: 'om.count.insights.members',
 } as const
 /** (parity P-35 · C-13) The reports' one footnote opens with this sentence; each page adds its own second one. */
-export const MEDIANS_NOTE = 'Medians shown as headline (robust to one long job).'
+/** (the calm UI build 2026-10-27 — audit 5-09, W-257) In plain words — the reports may put it behind their "How these are counted" link. */
+export const MEDIANS_NOTE = 'Each figure is the usual time — half took less, half took more — so one long job doesn’t skew it.'
 
 const HOUR = 3_600_000, DAY = 86_400_000
 const clamp = (ms: number) => Math.max(0, ms)   // 1.0 clamps a backdated leg to zero
@@ -111,11 +113,33 @@ export function responseTime(f: Pick<LeadFacts, 'stage' | 'createdAt' | 'assigne
   ]
   return { legs, total: f.wonAt !== null ? countedMs(f.createdAt, f.wonAt) : null, age: countedMs(f.createdAt, now) }
 }
-/** The Overview's one line: "Assigned in 30m · First contact in 1.2h · Won in 12 days"; a running leg reads "First contact — 3 days running"
-    (parity P-28: the house words, never "12d"). */
-export function responseLine(r: ResponseTime): string {
-  const parts = r.legs.filter((l) => l.state !== 'pending').map((l) => (l.state === 'done' ? `${l.label} in ${durationWords(l.ms)}` : `${l.label} — ${durationWords(l.ms)} running`))
-  return parts.length ? parts.join(' · ') : 'Nothing logged yet'
+/** (the calm UI build 2026-10-27 — audit 2-17, W-520 · W-598) A span as a studio owner says it: "30 min", "2 hours", "about a day", "3 days" —
+    never a stopwatch's "24.8h". Whole calendar days past two days, as the house counts them (`countedMs`). */
+export function aboutWords(ms: number | null): string {
+  if (ms === null) return '--'
+  if (ms < HOUR) { const m = Math.max(1, Math.round(ms / 60_000)); return `${m} min` }
+  if (ms < 48 * HOUR) {
+    const h = Math.round(ms / HOUR)
+    if (h >= 20 && h <= 30) return 'about a day'
+    return h === 1 ? 'an hour' : `${h} hours`
+  }
+  const d = Math.round(ms / DAY)
+  return d === 1 ? '1 day' : `${d} days`
+}
+/** The Overview's one line, in words: "Assigned in 2 hours · first reply in about a day · won in 12 days"; a leg still running reads
+    "Not assigned for 50 days" / "no reply for 3 days". (the calm UI build — 2-17) The Won leg shows only once the lead has reached Quote Sent
+    ("won …" on a New lead read as a won lead); `stage` = the lead's. */
+export function responseLine(r: ResponseTime, stage?: string): string {
+  const wonInSight = stage === undefined || stage === 'Quote Sent' || stage === 'Won' || r.legs.some((l) => l.key === 'won' && l.state === 'done')
+  const parts = r.legs.filter((l) => l.state !== 'pending' && (l.key !== 'won' || wonInSight)).map((l) => {
+    const t = aboutWords(l.ms)
+    if (l.key === 'assignment') return l.state === 'done' ? `assigned in ${t}` : `not assigned for ${t}`
+    if (l.key === 'outreach') return l.state === 'done' ? `first reply in ${t}` : `no reply for ${t}`
+    return l.state === 'done' ? `won in ${t}` : `not won yet, ${t} after the first reply`
+  })
+  if (!parts.length) return 'Nothing logged yet'
+  const line = parts.join(' · ')
+  return line.charAt(0).toUpperCase() + line.slice(1)
 }
 
 /* ── (parity Q-20) The house Export, as Finance's reports have it: the page's numbers as one sheet (Finance's `reportSheet` shape) ── */
@@ -124,8 +148,9 @@ const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
 export function insightsSheet(r: Report): { head: string[]; body: string[][] } {
   const body: string[][] = [['Turnaround'], ['Leg', 'Median', 'Average', 'Leads']]
   for (const { key, label } of LEGS) { const s = r.legs[key]; body.push([label, durationWords(s.median), durationWords(s.mean), String(s.count)]) }
-  body.push([], ['Waiting now'], ['Leads awaiting assignment', String(r.awaitingAssignment)], ['Assigned, no outreach logged yet', String(r.awaitingOutreach)])
-  body.push([], ['By team member'], ['Member', 'Role', 'Leads', 'Assign → First outreach', 'Average', 'First outreach → Won', 'Average', 'Won', 'Awaiting outreach'])
+  /* (the calm UI build 2026-10-27 — audit 5-09) the export says what the screen says */
+  body.push([], ['Waiting now'], ['Leads waiting for a member', String(r.awaitingAssignment)], ['Not contacted yet', String(r.awaitingOutreach)])
+  body.push([], ['By member'], ['Member', 'Role', 'Leads', 'Time to first contact', 'Average', 'First contact to Won', 'Average', 'Won', 'Not contacted yet'])
   for (const m of r.members) body.push([m.name, m.role, String(m.leads), durationWords(m.outreachMedian), durationWords(m.outreachMean), durationWords(m.wonMedian), durationWords(m.wonMean), String(m.won), m.awaitingOutreach ? String(m.awaitingOutreach) : BLANK])
   return { head: [`Leads · ${rangeLabel(r.days)} · ${plural(r.inRange, 'lead')} in range`], body }
 }

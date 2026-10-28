@@ -276,7 +276,7 @@ console.log(JSON.stringify([doc([c({})]), doc([c({ held: true })]), doc([c({ exp
       const D = await desk(); const d = await page(D, 'lead-form')
       const openForm = async () => {
         await go(d, '/leads'); await d.keyboard.press('c'); await settle(d, 800)
-        return d.locator('[role="dialog"][aria-label="Create New Lead"]')
+        return d.locator('[role="dialog"][aria-label="New lead"]')   /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — its labels "Name*" · "Mobile number*" · "Email" below */
       }
       const fillDlg = d.locator('[role="dialog"][aria-label="Fill from a document"]')
       const pick = async (form, f) => {
@@ -286,8 +286,8 @@ console.log(JSON.stringify([doc([c({})]), doc([c({ held: true })]), doc([c({ exp
       let form = await openForm()
       await pick(form, ENQUIRY)
       ok(!(await fillDlg.isVisible()), 'a PDF with the client’s details: read, and the dialog closes')
-      ok(await valueOf(form.getByLabel('Lead name')) === 'Aisyah Rahman' && (await valueOf(form.getByLabel('Lead phone number'))).replace(/\s/g, '') === '98765432', 'its name and mobile fill — the file’s own words')
-      ok(await valueOf(form.getByLabel('Lead email')) === 'aisyah.rahman@gmail.com' && /BTO 4-Room/.test(await valueOf(form.getByLabel('Property type'))) && await valueOf(form.getByLabel('Property address')) === 'Blk 123 Tampines St 11 #05-123', '…its email (Additional info opens), property type (“4-room BTO” → BTO 4-Room) and address')
+      ok(await valueOf(form.getByLabel('Name*', { exact: true })) === 'Aisyah Rahman' && (await valueOf(form.getByLabel('Mobile number*', { exact: true }))).replace(/\s/g, '') === '98765432', 'its name and mobile fill — the file’s own words')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
+      ok(await valueOf(form.getByLabel('Email', { exact: true })) === 'aisyah.rahman@gmail.com' && /BTO 4-Room/.test(await valueOf(form.getByLabel('Property type'))) && await valueOf(form.getByLabel('Property address')) === 'Blk 123 Tampines St 11 #05-123', '…its email (Additional info opens), property type (“4-room BTO” → BTO 4-Room) and address')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       ok(/Full renovation before we move in/.test(await valueOf(form.getByLabel('Remarks'))), '…its message lands in Remarks')
       const note = form.locator('[data-testid="fill-document-note"]')
       ok(/^Filled from enquiry-aisyah\.pdf: name, phone number, email, property type, property address and remarks\.$/.test(await text(note)), `one line says what filled — “${await text(note)}”`)
@@ -297,9 +297,9 @@ console.log(JSON.stringify([doc([c({})]), doc([c({ held: true })]), doc([c({ exp
       await form.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 600)
 
       form = await openForm()
-      await form.getByLabel('Lead name').fill('Typed By Hand')
+      await form.getByLabel('Name*', { exact: true }).fill('Typed By Hand')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       await pick(form, EMAIL)
-      ok(await valueOf(form.getByLabel('Lead name')) === 'Typed By Hand' && (await valueOf(form.getByLabel('Lead phone number'))).replace(/\s/g, '') === '91234567' && /Condo 3-bedder/.test(await valueOf(form.getByLabel('Property type'))), 'an email saved as a PDF: its number and home fill; the name typed is kept')
+      ok(await valueOf(form.getByLabel('Name*', { exact: true })) === 'Typed By Hand' && (await valueOf(form.getByLabel('Mobile number*', { exact: true }))).replace(/\s/g, '') === '91234567' && /Condo 3-bedder/.test(await valueOf(form.getByLabel('Property type'))), 'an email saved as a PDF: its number and home fill; the name typed is kept')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       ok(/Kept what you typed for name\./.test(await text(note)) && /Not found: property address\./.test(await text(note)), `…the line says what it kept and what it didn’t find — “${await text(note)}”`)
       await form.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 600)
 
@@ -311,16 +311,16 @@ console.log(JSON.stringify([doc([c({})]), doc([c({ held: true })]), doc([c({ exp
         if (what === 'a PDF with no client details') await shot(d, 's42f-fill-nothing-1440')
         await fillDlg.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 400)
       }
-      ok(await valueOf(form.getByLabel('Lead name')) === '' && await form.locator('[data-testid="fill-document-note"]').count() === 0, '…and nothing changed in the form, nothing attached')
+      ok(await valueOf(form.getByLabel('Name*', { exact: true })) === '' && await form.locator('[data-testid="fill-document-note"]').count() === 0, '…and nothing changed in the form, nothing attached')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       await pick(form, CSV)
-      ok(await valueOf(form.getByLabel('Lead name')) === 'Ong Bee Lian' && /Executive Condo/.test(await valueOf(form.getByLabel('Property type'))) && await valueOf(form.getByLabel('Estimated budget (S$)')) === '90,000', 'a one-lead CSV: its cells fill (the budget “S$90k” read as 90,000)')
+      ok(await valueOf(form.getByLabel('Name*', { exact: true })) === 'Ong Bee Lian' && /Executive Condo/.test(await valueOf(form.getByLabel('Property type'))) && await valueOf(form.getByLabel('Estimated budget (S$)')) === '90,000', 'a one-lead CSV: its cells fill (the budget “S$90k” read as 90,000)')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       await form.getByRole('button', { name: 'Cancel' }).click(); await settle(d, 600)
       ok(sql(`select count(*) from leads`) === leads0, 'nothing was saved — the form was only filled')
       await D.close()
 
       const M = await phoneCtx(); const m = await page(M, 'lead-form-390')
       await go(m, '/leads', 1200); await m.keyboard.press('c'); await settle(m, 900)
-      const f390 = m.locator('[role="dialog"][aria-label="Create New Lead"]')
+      const f390 = m.locator('[role="dialog"][aria-label="New lead"]')   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33: the New lead form's words
       await f390.getByRole('button', { name: 'Fill from a document' }).click(); await settle(m, 500)
       await m.locator('[data-testid="fill-document-input"]').setInputFiles(ENQUIRY); await settle(m, 2200)
       ok(/Filled from enquiry-aisyah\.pdf/.test(await text(f390.locator('[data-testid="fill-document-note"]'))) && await sideways(m) <= 0, '390: the line under Fill from a document reads whole, no sideways scroll')

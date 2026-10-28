@@ -30,7 +30,7 @@ export type TokenValues = Partial<Record<TokenKey, string>>
 export type SignKey = 'studio-signature' | 'client-signature' | 'studio-initial' | 'client-initial'
 /** eSignatures › Fillable fields, in the reference's order. */
 export const SIGN_FIELDS: { key: SignKey; label: string; help: string }[] = [
-  { key: 'studio-signature', label: 'Studio signature', help: 'Your saved signature, from the quote editor' },
+  { key: 'studio-signature', label: 'Studio signature', help: 'Your signature — from Your profile' },   // (the calm UI build 2026-10-27, 4-19 · W-452) it lives on Your profile (S01)
   { key: 'client-signature', label: 'Client signature', help: 'Where the client signs online' },
   { key: 'studio-initial', label: 'Studio initial', help: 'Your initials on a page' },
   { key: 'client-initial', label: 'Client initial', help: 'The client’s initials on a page' },
@@ -49,6 +49,15 @@ export function resolveTokens(html: string, v: TokenValues): string {
     const label = TOKEN_LABEL[key as TokenKey] ?? key
     return `<span class="om-token-value" data-token="${key}">${esc(value && value.trim() ? value : `[${label}]`)}</span>${sp ? ' ' : ''}`
   }).replace(/<\/span> (?=[,.;:)\]])/g, '</span>')   // the chip's trailing space is dropped before punctuation ("S$64,062.57, inclusive")
+}
+/**
+ * (The calm UI build 2026-10-27, the UI audit's 4-45) For the eye only: a resolved field hugs the punctuation after it — "S$77,900.12," and
+ * "(UEN 201912345K)", never "S$77,900.12 ," — wherever the space came from (the chip's own &nbsp;, a raw no-break space a round trip left,
+ * or one sitting inside a closing <strong>). A space before , . ; : ) ] is dropped. Never used for the fingerprint or a kept copy
+ * (`resolveTokens` feeds those, unchanged): the paper, the preview, the signing page and the reading cards draw through it.
+ */
+export function tightenPunctuation(html: string): string {
+  return html.replace(/(<\/span>(?:<\/(?:strong|b|em|i|u)>)*)(?:\s|&nbsp;|\u00a0)+((?:<\/(?:strong|b|em|i|u)>)*)(?=[,.;:)\]])/g, '$1$2')
 }
 /** The keys a document uses, in order of appearance. */
 export function tokensIn(html: string): TokenKey[] {

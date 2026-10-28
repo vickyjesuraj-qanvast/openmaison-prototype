@@ -23,15 +23,15 @@ export function ContractsEmpty({ onFromScratch, onFromTemplate, onImport, names 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/figma-assets/empty-quotes.svg" width={180} height={176} alt="" className={styles.art} />
         <div className={styles.texts}>
-          <p className={styles.title}>Create your first contract</p>
-          <p className={styles.body}>Create contracts and share it with your clients</p>
+          {/* (the calm UI build 2026-10-27, 2-23 · W-506) one plain line — "share it" read as a typo; the buttons below say how */}
+          <p className={styles.title}>No contract yet</p>
           {names ? <p className={styles.names} data-testid="contracts-empty-quote"><Icon name="request_quote" size={18} weight={300} />Names {names.number} · {moneySGD(names.amountMinor)}</p> : null}
         </div>
         <div className={styles.buttons}>
           <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From the studio agreement</Button>   {/* (sweep S2 #20) the mock's "From Scratch" made the full agreement — one name for one action, the picker's */}
-          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="New Contract">From Template</Button>   {/* (REG-735) C, while the toolbar's New Contract steps back */}
+          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="New contract">From a template</Button>   {/* (REG-735) C, while the toolbar's New Contract steps back */}
           {/* (REG-735) New Contract ▾'s third live way in, kept on the card while the toolbar steps back */}
-          {onImport ? <Button appearance="text" onPress={onImport}>Import from File</Button> : null}
+          {onImport ? <Button appearance="text" onPress={onImport}>Import a file</Button> : null}
         </div>
       </div>
     </div>

@@ -11,6 +11,9 @@ export function dueLine(r: Pick<FeedRow, 'kind' | 'at' | 'due'>, now: number): s
      tomorrow: …") on its day — it read "Due in 29 min" before, whatever its day */
   if (r.kind === 'task_due_soon') {
     const at = r.due ?? r.at + 30 * 60_000
+    /* (the Dashboard redesigned, 2026-10-26 — P-13, one overdue clock) a task due today whose time has gone is due today, not late: overdue
+       starts the next day, as the task lists count it (`isOverdue`) */
+    if (at <= now) return `Due ${dayOf(new Date(at))}`
     const m = Math.round((at - now) / 60_000)
     return m <= 60 ? `Due in ${Math.max(1, m)} min` : `Due ${dayOf(new Date(at))}`
   }

@@ -23,6 +23,9 @@ const fs = require('fs')
 const os = require('os')
 const crypto = require('crypto')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s41b4')
@@ -81,7 +84,7 @@ const setBalance = (left) => {
   const demoPlan = async (p, name) => {
     if (!(await p.getByRole('button', { name: /^Demo Studio/ }).count())) await go(p, '/leads')
     await p.getByRole('button', { name: /^Demo Studio/ }).first().click(); await settle(p, 400)
-    await p.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
+    await (await openDemo(p)).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
     await settle(p, 2600)
   }
   /* a quiet moment on a studio page: arrive, put focus nowhere, and wait for the studio's look (its watermark moves) — answers the offer
@@ -262,6 +265,7 @@ const setBalance = (left) => {
     const ben = sql(`select id from projects where number = 'P-2026-002'`)
     await go(d, `/projects/${ben}/money`)
     await d.locator('[data-testid="money-new"]').click(); await settle(d, 300)
+    await d.getByRole('menuitem', { name: /^Variation order/ }).first().click(); await settle(d, 300)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
     await d.getByRole('menuitem', { name: /contractor/ }).first().click(); await settle(d, 600)
     const voCsv = csv(`s41b4-vo-${Date.now()}.csv`, 'Item,Qty,Unit,Rate\nAdditional power point,4,pcs,85\n')
     await d.getByTestId('vo-upload-dialog').locator('input[type="file"]').setInputFiles(voCsv); await settle(d, 2600)
@@ -287,11 +291,11 @@ const setBalance = (left) => {
     console.log('11 · a safe moment only')
     const rearm = () => { liftGap(); setBalance(25); charge('dane', 'render_fast', 10) }
     rearm()
-    await go(d, '/leads'); await d.getByRole('button', { name: 'Add Lead' }).first().click(); await settle(d, 800)
+    await go(d, '/leads'); await d.getByRole('button', { name: /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ 'New lead' }).first().click(); await settle(d, 800)
     ok(await d.getByRole('menu').count() > 0, 'a menu is open (Add Lead ▾)')
     let q = await quietFor(d)
     ok(!q.looked && !q.offered, 'a menu open for 22 s: the studio never looks — nothing over a menu')
-    await d.getByRole('menuitem', { name: /Create New Lead/ }).click(); await settle(d, 1000)
+    await d.getByRole('menuitem', { name: /Type in a lead/ }).click(); await settle(d, 1000)   // (the calm UI build 2026-10-27, a deliberate change) New lead ▾ › Type in a lead
     ok(await d.locator('[role="dialog"]').count() > 0, 'a dialog is open (Create New Lead)')
     q = await quietFor(d)
     ok(!q.looked && !q.offered, 'a dialog open for 22 s: the studio never looks — nothing over a dialog')

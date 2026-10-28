@@ -207,7 +207,8 @@ export function AttachFilesModal({
   }
 
   const count = picks.length
-  const attachLabel = imageMode ? 'Add' : count === 0 ? 'Attach Files' : count === 1 ? 'Attach 1 File' : `Attach ${count} Files`
+  /* (the calm UI build 2026-10-27, T-13 · 2-12) sentence case — "Attach 2 files" (was "Attach 2 Files") */
+  const attachLabel = imageMode ? 'Add' : count === 0 ? 'Attach files' : count === 1 ? 'Attach 1 file' : `Attach ${count} files`
   // The head counts the toast's rows, not the in-flight flag: the toast stays up after the row's green check (only ✕
   // removes it), and a count keyed off 'uploading' turned that frame into "Uploading 0 files" — the mock's head reads
   // "Uploading 2 files" over its finished rows (902:28261). (T2) One row per picked file; a failure says so once nothing is in flight.
@@ -233,7 +234,7 @@ export function AttachFilesModal({
             <div ref={scrollRef} className={styles.body}>
               {/* Upload block (V g12): title 16/Semi Bold + dropzone 140 (p40, 2px dashed #cccccc on surface-bg). */}
               <div className={styles.uploadBlock}>
-                <span className={styles.blockTitle}>Upload from your local files</span>
+                <span className={styles.blockTitle}>Upload from your computer</span>   {/* (the calm UI build 2026-10-27, W-634) "local" is jargon */}
                 <div className={styles.dropWrap}>
                   <Dropzone
                     title={<>Drop your file or <b>browse</b></>}
@@ -263,7 +264,7 @@ export function AttachFilesModal({
                       expand_more 16). (pending modules S05) It narrows to one kind of file — the kinds the library holds — and names the one picked. */}
                   <button ref={typeRef} type="button" className={styles.chip} data-chrome={chrome} data-applied={kindPick ? 'true' : undefined}
                           aria-haspopup="menu" aria-expanded={menu === 'type'} onClick={() => setMenu((m) => (m === 'type' ? null : 'type'))} data-testid="attach-type">
-                    <span>{kindPick ? `File Type: ${kindPick}` : 'File Type'}</span>
+                    <span>{kindPick ? `File type: ${kindPick}` : 'File type'}</span>
                     <span className={styles.chipChevron}><Icon name={quoteChrome ? 'expand_more' : 'keyboard_arrow_down'} size={quoteChrome ? 16 : 20} /></span>
                     {kindPick ? <AppliedDot /> : null}
                   </button>

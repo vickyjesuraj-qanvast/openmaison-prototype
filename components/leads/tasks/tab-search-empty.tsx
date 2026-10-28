@@ -15,7 +15,7 @@ export function TabSearchEmpty({ noun, searching, onClearAll, widen }: { noun: s
       <span className={styles.title}>No results found</span>
       <span className={styles.sub}>{searching ? 'Check your spelling and try again.' : `No ${noun} match this filter.`}</span>
       {widen ? <button type="button" className={styles.clear} onClick={widen.onPress}>{widen.label}</button> : null}
-      <button type="button" className={styles.clear} onClick={onClearAll}>Clear All</button>
+      <button type="button" className={styles.clear} onClick={onClearAll}>Clear all</button>
     </div>
   )
 }

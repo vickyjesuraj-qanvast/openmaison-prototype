@@ -96,14 +96,16 @@ export async function messageHits(key: string, seesLead: (leadId: string) => boo
   return [
     ...own,
     ...rows.filter((r) => r.body.trim() && seesLead(r.leadId)).map((r): MessageHit => ({
-      kind: 'message', id: r.id, title: firstWords(r.body, 90), sub: [r.by, r.channel === 'team' ? `Team · ${r.project}` : r.project, day(r.at)].join(' · '), chip: r.channel === 'team' ? 'Team' : null,
+      /* (the calm UI build 2026-10-27, 1-37) a client's conversation is tagged "Client" here too — the Team one "Team" */
+      kind: 'message', id: r.id, title: firstWords(r.body, 90), sub: [r.by, r.channel === 'team' ? `Team · ${r.project}` : r.project, day(r.at)].join(' · '), chip: r.channel === 'team' ? 'Team' : 'Client',
       href: `/projects/${r.projectId}/messages?${r.channel === 'team' ? 'channel=team&' : ''}at=${encodeURIComponent(r.id)}`, icon: 'comment', others: [r.body, r.by, titleCaseName(r.client)],
     })),
     /* a lead's message before Won — in its project's conversation once there is one */
     ...early.filter((r) => r.body.trim() && seesLead(r.leadId)).map((r): MessageHit => {
       const pid = projectOf.get(r.leadId)
       return {
-        kind: 'message', id: r.id, title: firstWords(r.body, 90), sub: [r.by, titleCaseName(r.client), day(r.at)].join(' · '), chip: pid ? null : 'Lead',
+        /* (the calm UI build 2026-10-27, 1-37) "Client" (was "Lead") — the word Messages gives the same conversation */
+        kind: 'message', id: r.id, title: firstWords(r.body, 90), sub: [r.by, titleCaseName(r.client), day(r.at)].join(' · '), chip: 'Client',
         href: pid ? `/projects/${pid}/messages?at=${encodeURIComponent(r.id)}` : `/chat?open=${encodeURIComponent(conversationKey('lead', r.leadId))}&at=${encodeURIComponent(r.id)}`, icon: 'comment', others: [r.body, r.by, titleCaseName(r.client)],
       }
     }),

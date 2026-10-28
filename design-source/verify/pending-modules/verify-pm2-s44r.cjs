@@ -92,16 +92,17 @@ const restore = (d) => {
     ok(!!EL && sql(`select approval_why || '|' || ifnull(approved_at, '-') || '|' || created_by from supplier_bills where id = '${EL}'`) === 'limit|-|priya', 'R128: EL-2207 on record — over the limit on no PO, recorded by Priya, waiting')
     ok(sql(`select count(*) from notifications where kind = 'bill_review' and href like '%${EL}%' and member_id in ('dane','huimin')`) === '2', 'R128: Dane and Hui Min each have its bell row')
     await go(p, '/company/finance/todo')
-    const approveRow = p.getByTestId('todo-approve').getByRole('row').filter({ hasText: 'EL-2207' })
+    /* (the calm UI build 2026-10-27, a deliberate change) Finance › Needs your attention is one list of rows (5-08), not tables: a row is [data-todo] */
+    const approveRow = p.getByTestId('todo-approve').locator('[data-todo]').filter({ hasText: 'EL-2207' })
     ok(await approveRow.count() === 1, 'Dane’s To do › To approve lists Bright Spark Electrical’s bill EL-2207')
     ok(/Over S\$5,000\.00, on no PO/.test(await approveRow.innerText().catch(() => '')), 'what to know: over the limit, on no PO')
-    ok(await p.getByTestId('todo-pay').getByRole('row').filter({ hasText: 'EL-2207' }).count() === 0, 'and never under To pay while it waits')
+    ok(await p.getByTestId('todo-pay').locator('[data-todo]').filter({ hasText: 'EL-2207' }).count() === 0, 'and never under To pay while it waits')
     await approveRow.scrollIntoViewIfNeeded(); await shot(p, 'c8-todo-approve-1440')
     as('priya')
     await go(p, '/company/finance/todo')
-    const waitRow = p.getByTestId('todo-waiting').getByRole('row').filter({ hasText: 'EL-2207' })
+    const waitRow = p.getByTestId('todo-waiting').locator('[data-todo]').filter({ hasText: 'EL-2207' })
     ok(await waitRow.count() === 1 && /An Owner or an Admin approves this bill before it is paid/.test(await waitRow.innerText().catch(() => '')), 'Priya (Accounting): Waiting for approval, the rule where the button would be')
-    ok(await waitRow.getByRole('button', { name: /^(Approve|Pay)$/ }).count() === 0 && await p.getByTestId('todo-pay').getByRole('row').filter({ hasText: 'EL-2207' }).count() === 0, 'no Approve and no Pay for her')
+    ok(await waitRow.getByRole('button', { name: /^(Approve|Pay)$/ }).count() === 0 && await p.getByTestId('todo-pay').locator('[data-todo]').filter({ hasText: 'EL-2207' }).count() === 0, 'no Approve and no Pay for her')
     await go(p, `/company/finance/money-out?kind=bills&open=${EL}`)
     const panel = p.getByTestId('bill-panel')
     await panel.waitFor({ timeout: 8000 }).catch(() => {})
@@ -114,8 +115,9 @@ const restore = (d) => {
     const profitTile = async () => p.getByTestId('tile-profit').innerText().catch(() => '')
     ok(/Early estimate/i.test(await profitTile()) && /--/.test(await profitTile()), 'while it waits it is not a cost yet: Benjamin’s Profit is still “--”, Early estimate')
     await go(p, '/company/finance/todo')
-    await p.getByTestId('todo-approve').getByRole('row').filter({ hasText: 'EL-2207' }).getByRole('button', { name: 'Approve' }).click(); await settle(p, 1500)
-    ok(/Bright Spark Electrical’s bill EL-2207 approved — it can be paid/.test(await snackText(p)), 'Approve: “… approved — it can be paid”, with Undo')
+    await p.getByTestId('todo-approve').locator('[data-todo]').filter({ hasText: 'EL-2207' }).getByRole('button', { name: 'Approve' }).click(); await settle(p, 1500)
+    ok(/Bill EL-2207 from Bright Spark Electrical approved — it can be paid/.test(await snackText(p)),   // (the calm UI build 2026-10-27, a deliberate change) the project's rows' words
+    'Approve: “… approved — it can be paid”, with Undo')
     ok(sql(`select approved_by || '|' || (approved_at is not null) from supplier_bills where id = '${EL}'`) === 'dane|1', 'the OK is on the record as Dane’s')
     ok(sql(`select count(*) from lead_events where kind = 'project_bill_approved' and detail like '%${EL}%'`) === '1', 'its Activity line')
     ok(sql(`select count(*) from notifications where kind = 'bill_approved' and member_id = 'priya'`) === '1' && sql(`select count(*) from notifications where kind = 'bill_review' and href like '%${EL}%'`) === '0', 'Priya hears it; the approvers’ rows are answered')
@@ -123,9 +125,9 @@ const restore = (d) => {
     ok(sql(`select ifnull(approved_at, '-') from supplier_bills where id = '${EL}'`) === '-' && sql(`select count(*) from lead_events where kind = 'project_bill_approved'`) === '0', 'Undo: it waits again, its line gone')
     ok(sql(`select count(*) from notifications where kind = 'bill_review' and href like '%${EL}%'`) === '2', 'and its approvers’ rows are back')
     await go(p, '/company/finance/todo')
-    await p.getByTestId('todo-approve').getByRole('row').filter({ hasText: 'EL-2207' }).getByRole('button', { name: 'Approve' }).click(); await settle(p, 1500)
+    await p.getByTestId('todo-approve').locator('[data-todo]').filter({ hasText: 'EL-2207' }).getByRole('button', { name: 'Approve' }).click(); await settle(p, 1500)
     await go(p, '/company/finance/todo')
-    ok(await p.getByTestId('todo-pay').getByRole('row').filter({ hasText: 'EL-2207' }).count() === 1, 'approved, it is To pay’s')
+    ok(await p.getByTestId('todo-pay').locator('[data-todo]').filter({ hasText: 'EL-2207' }).count() === 1, 'approved, it is To pay’s')
     await go(p, `/projects/${BEN_PID}/money`)
     ok(!/Early estimate/i.test(await profitTile()), 'approved, it is a cost: Benjamin’s costs pass a tenth of the contract and Profit shows its figure')
     await go(p, `/projects/${BEN_PID}`)
@@ -171,7 +173,7 @@ const restore = (d) => {
       await go(p, `/leads/${leadId}/contracts`)
       const direct = p.getByRole('button', { name: 'From the studio agreement' })
       if (await direct.count()) await direct.first().click()
-      else { await p.getByRole('button', { name: /^New Contract/ }).last().click(); await p.getByRole('menuitem', { name: 'From the studio agreement' }).click() }
+      else { await p.getByRole('button', { name: /^New contract/ }).last().click(); await p.getByRole('menuitem', { name: 'From the studio agreement' }).click() }   /* (the calm UI build 2026-10-27, a deliberate change — W-199 · T-13) "New contract" in sentence case; the same menu, the same row */
     }
     const markSigned = async (leadId, o = {}) => {
       await newAgreement(leadId)
@@ -179,7 +181,7 @@ const restore = (d) => {
       const id = p.url().split('/contracts/')[1].split(/[?/]/)[0]
       if (o.noQuote) { sql(`update contracts set from_quote_id = NULL where id = '${id}'`); await p.reload({ waitUntil: 'networkidle' }); await settle(p, 1000) }
       if (o.beforeSign) await o.beforeSign(id)
-      await p.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Signed)$/ }).first().click(); await settle(p, 300)
+      await p.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Waiting for signature|Signed)$/ /* (the calm UI build 2026-10-27, a deliberate change) W-363 */ }).first().click(); await settle(p, 300)
       await p.getByRole('menuitemradio', { name: /^Signed/ }).click(); await settle(p, 500)
       await p.getByRole('dialog', { name: 'Mark as signed' }).getByRole('button', { name: 'Mark as signed' }).click(); await settle(p, 2200)
       return id
@@ -217,13 +219,13 @@ const restore = (d) => {
     ok(/a deposit of S\$8,870\.48 secures your project/.test(await p.locator('body').innerText()), 'its Deposit field prints the quote’s first payment: S$8,870.48')
     await go(p, `/contracts/${C}`)
     await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 800)
-    const sd = p.getByRole('dialog', { name: 'Send for digital signature' })
+    const sd = p.getByRole('dialog', { name: /^Send for (digital )?signature/ })   // (the calm UI build 2026-10-27, a deliberate change) 4-20: "Send for signature"
     const dep = sd.getByTestId('send-deposit')
     ok(await dep.count() === 1 && /Once Serena signs, the page asks for S\$8,870\.48 — Deposit of OM-10007 — by PayNow to Demo Studio Pte Ltd\./.test(await dep.innerText()), 'Send: “Ask for the deposit”, said whole — the amount, the stage, the quote, the payee')
     await dep.getByRole('checkbox').click({ force: true }); await settle(p, 1200)
     ok(sql(`select ask_deposit from contracts where id = '${C}'`) === '1', 'saved as it is ticked')
     await shot(p, 'c7-send-deposit-1440')
-    await sd.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 2200)
+    await sd.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 2200)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     ok(sql(`select status from contracts where id = '${C}'`) === 'Sent to Client', 'the letter goes out')
     /* the client signs it */
     const client = await desk(); const sp = await page(client, 'client')
@@ -240,7 +242,7 @@ const restore = (d) => {
     await sp.getByRole('button', { name: 'Sign agreement' }).click()
     await sp.getByRole('heading', { name: 'Signed' }).waitFor({ timeout: 15000 }); await settle(sp, 2500)
     const pay = sp.getByTestId('deposit-pay')
-    ok(await pay.count() === 1 && /Pay the deposit/.test(await pay.innerText()) && /Deposit of quotation OM-10007: S\$8,870\.48/.test(await pay.innerText()), 'signed: the page ends on “Pay the deposit” — the stage, the quote, the amount')
+    ok(await pay.count() === 1 && /Pay the deposit/.test(await pay.innerText()) && /Deposit of (quotation|quote) OM-10007: S\$8,870\.48/.test(await pay.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-331: "quote" */, 'signed: the page ends on “Pay the deposit” — the stage, the quote, the amount')
     const payload = await pay.locator('[data-testid="paynow-qr"]').getAttribute('data-payload').catch(() => '')
     ok(/8870\.48/.test(payload || '') && /201234567M/.test(payload || ''), 'the PayNow QR carries the deposit, to the entity’s PayNow ID')
     ok(/OM-10007 deposit/.test(payload || ''), 'with the reference the studio matches it by')

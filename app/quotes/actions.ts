@@ -28,6 +28,7 @@ import { MARK_RULE, REVISE_VO_RULE, marksVariationApproved } from '@/lib/project
 import { completedBlock } from '@/lib/projects/handover-model'
 import { tellToAnswer } from '@/lib/portal/client-tells'   // (gaps build H)
 import { syncPreparedSnapshot } from '@/lib/quotes/prepared-server'   // (pending modules S04)
+import { closeQuoteFollowUps, openQuoteFollowUps, reopenQuoteFollowUps, settlesFollowUp } from '@/lib/quotes/follow-up'   // (the Dashboard redesigned, P-14)
 import { quoteByConfirmKey } from '@/lib/quotes/client-quote'
 import { confirmKeyOf, confirmPath } from '@/lib/quotes/confirm'
 import { deskRefusal, keepOffDesk } from '@/lib/quotes/desk'   // (S44Z) the editors' role rule on the server
@@ -351,6 +352,7 @@ export async function confirmQuoteOnline(token: string, name: string, picks: str
   await db.update(quotes).set({ status: 'Confirmed', confirmedAt: now, confirmedBy: who, confirmedVia: 'link', confirmedMarkedBy: null, sentAt: q.sentAt ?? now, clientSentAt: q.clientSentAt ?? now, visibility: 'Shared', updatedAt: now }).where(eq(quotes.id, quoteId))   // (S44F — NB-04) on its link, by the client
   for (const o of optional) await db.update(quoteItems).set({ clientChoice: wanted.has(o.id) ? 'want' : 'skip', updatedAt: now }).where(eq(quoteItems.id, o.id))
   await syncPreparedSnapshot(quoteId)   // (S04) confirmed without a send on the record — the paper keeps its preparer now
+  await closeQuoteFollowUps(quoteId)   // (the Dashboard redesigned, P-14) the client said yes: the due date's follow-up is done
   const picked = optional.filter((o) => wanted.has(o.id)).map((o) => o.name)
   const body = optional.length ? `${picked.length ? `Wants ${picked.length} of ${optional.length} optional works — ${picked.join(', ')}` : `Passed on the ${optional.length} optional ${optional.length === 1 ? 'work' : 'works'}`}. Next: add the T&Cs and send for signature` : 'Next: add the T&Cs and send for signature'
   /* (UX audit Q1, the confirmation's bell line) A confirmation on a lead still before Quote Sent opens the Move stage window at Quote Sent with this
@@ -427,6 +429,8 @@ export type StatusUndo = {
   signedAmountMinor?: number | null
   /** (S44F — NB-04) how the confirmation was had and who marked it — a mark to Confirmed records "marked" and the member; Undo puts both back */
   confirmedVia?: string | null; confirmedMarkedBy?: string | null
+  /** (the Dashboard redesigned, P-14) the due-date follow-ups a mark to Confirmed or Signed closed — its Undo opens them again */
+  followUps?: string[]
 }
 const ms = (d: Date | null) => (d ? d.getTime() : null)
 
@@ -455,6 +459,7 @@ export async function markQuoteStatus(quoteId: string, status: string): Promise<
   }
   if (status === q.status) return { status, number: q.number, undo, told: 0, moveTo: null }
   const before = Date.now()
+  if (settlesFollowUp(status)) undo.followUps = await openQuoteFollowUps(quoteId)   // (P-14) what `setQuoteStatus` closes (the status moves: the same one returned above)
   await setQuoteStatus(quoteId, status)
   let told = 0
   if (status === 'Sent for Approval') {
@@ -488,6 +493,7 @@ export async function undoQuoteStatus(quoteId: string, undo: StatusUndo): Promis
     ...(undo.confirmedVia !== undefined ? { confirmedVia: s(undo.confirmedVia ?? null)?.slice(0, 20) ?? null, confirmedMarkedBy: s(undo.confirmedMarkedBy ?? null)?.slice(0, 64) ?? null } : {}),   // (S44F — NB-04) how it was confirmed, as it was
   }).where(eq(quotes.id, quoteId))
   if (typeof undo.raisedAt === 'number') await db.delete(notifications).where(and(eq(notifications.quoteId, quoteId), eq(notifications.kind, 'quote_approval'), gte(notifications.createdAt, new Date(undo.raisedAt - 1000))))
+  await reopenQuoteFollowUps(quoteId, undo.followUps)   // (the Dashboard redesigned, P-14) the follow-ups the mark closed are open again — exactly those
   if (q.kind === 'variation' && isApprovedVariation(undo.status) !== isApprovedVariation(q.status)) { await onVariationReverted(quoteId); revalidatePath('/projects', 'layout') }   // (Projects round 5)
   await syncPreparedSnapshot(quoteId)   // (pending modules S04) back before the client: the preparer reads live again
   touch(q.leadId, quoteId); revalidatePath('/quotes')

@@ -32,6 +32,7 @@ import { createQuoteItem, createQuoteItems, type BulkLine } from '@/app/quotes/i
 import { orThrow } from '@/lib/company/template-rules'   // (S44Z) the editors' answers, a refusal thrown on
 import { newShareToken } from '@/lib/projects/invoices-token'
 import { syncPreparedSnapshot } from '@/lib/quotes/prepared-server'
+import { closeQuoteFollowUps, settlesFollowUp } from '@/lib/quotes/follow-up'   // (the Dashboard redesigned, P-14)
 import { deskRefusal, offDesk } from '@/lib/quotes/desk'   // (S45C) the editors' role rule (S44Z)
 import type { Refusal } from '@/lib/company/template-rules'
 
@@ -316,6 +317,7 @@ export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Prom
   if (status === 'Confirmed' && !q.confirmedAt) { patch.confirmedAt = now; if (!q.sentAt) patch.sentAt = now; patch.confirmedVia = 'marked'; patch.confirmedMarkedBy = meRow?.id ?? null }   // (REG-587) marked by hand — the client said so on the phone · (S44F — NB-04) on the record as marked, and by whom (a variation order's rule)
   await db.update(quotes).set(patch).where(eq(quotes.id, quoteId))
   await syncPreparedSnapshot(quoteId)   // (pending modules S04) with the client now: the paper keeps its preparer
+  if (settlesFollowUp(status) && status !== q.status) await closeQuoteFollowUps(quoteId)   // (the Dashboard redesigned, P-14) the client has decided: nothing left to chase
   touch(q.leadId)
 }
 

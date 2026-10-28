@@ -13,6 +13,11 @@
 .chipBtn > .templateChip { flex-shrink: 1; max-width: 100%; min-width: 0; }
 .chipBtn > .templateChip > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 1024px) { .bar { flex-wrap: wrap; } .actions { flex: 1 1 100%; min-width: 0; } }
+/* (the calm UI build 2026-10-27, 4-08) the template and the page count as quiet words after the status chip */
+.templateWords { display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; max-width: 100%; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chipBtn.templateWords { padding: 0 var(--om-spacing-1); }
+.chipBtn.templateWords:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.pageWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; min-width: 0; flex: 1 1 auto; }   /* min-width 0: beside the title, its automatic minimum was its widest chip — a long template name pushed a 320 phone 57px wide */
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .internal { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }

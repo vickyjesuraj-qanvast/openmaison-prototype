@@ -23,8 +23,22 @@ let pass = 0, fail = 0; const ok = (c, n) => { if (c) { pass++; console.log('  �
   ok(xs.size === 1, `every table's thumbnail starts at the same place in its row (${[...xs].join(', ')}px)`)
   /* the Price book's Status column, and the name keeps its width */
   await p.goto(BASE + '/company/price-book', { waitUntil: 'networkidle' }); await p.waitForTimeout(700); await list()
-  const st = await p.evaluate(() => ({ head: [...document.querySelectorAll('[role="columnheader"]')].map((h) => h.textContent.trim()), cells: [...document.querySelectorAll('[data-kb-row] [data-col="status"]')].map((c) => c.textContent.trim()), nameChip: !!document.querySelector('[data-kb-row] [data-col="name"] [class*="chip"]') }))
-  ok(st.head[1]?.startsWith('Status') && st.cells.includes('Approved') && st.cells.some((c) => c.startsWith('Proposed')) && !st.nameChip, `Price book: Status column second (${st.cells.join(' · ')}), no chip in the name cell`)
+  /* (the calm UI build 2026-10-27, a deliberate change) 4-12 · REG-B4.212: only the exception shows — the Status column rests in Column settings
+     (off by default, still second when turned on, its words Approved / Waiting for approval), and the one item that waits wears a
+     "Waiting for approval" chip in its name cell; an approved row carries none */
+  const heads = () => p.evaluate(() => [...document.querySelectorAll('[role="columnheader"]')].map((h) => h.textContent.trim()))
+  const restHead = await heads()
+  await p.getByRole('button', { name: 'Column settings' }).first().click(); await p.waitForTimeout(600)
+  const drawer = p.getByRole('dialog', { name: 'Column settings' })
+  const stSw = drawer.getByRole('switch', { name: 'Show Status column' }).first()
+  const offAtRest = (await stSw.count()) === 1 && !(await stSw.isChecked())
+  const flip = async () => { await stSw.locator('xpath=ancestor::label[1]').click().catch(async () => { await stSw.click({ force: true }) }); await p.waitForTimeout(500) }
+  await flip(); await p.keyboard.press('Escape'); await p.waitForTimeout(500)
+  const st = await p.evaluate(() => ({ head: [...document.querySelectorAll('[role="columnheader"]')].map((h) => h.textContent.trim()), rows: [...document.querySelectorAll('[data-kb-row]')].filter((r) => r.querySelector('[data-col="status"]')).map((r) => ({ status: r.querySelector('[data-col="status"]').textContent.trim(), chip: r.querySelector('[data-col="name"] [class*="chip"]')?.textContent.trim() ?? null })) }))
+  const waiting = st.rows.filter((r) => r.status.startsWith('Waiting for approval')), approved = st.rows.filter((r) => r.status === 'Approved')
+  ok(!restHead.some((h) => h.startsWith('Status')) && offAtRest && st.head[1]?.startsWith('Status') && approved.length > 0 && waiting.length > 0 && waiting.every((r) => r.chip === 'Waiting for approval') && approved.every((r) => !r.chip),
+    `Price book: Status column in Column settings, second when on (${[...new Set(st.rows.map((r) => r.status))].join(' · ')}); a chip in the name cell only on the item that waits`)
+  await p.getByRole('button', { name: 'Column settings' }).first().click(); await p.waitForTimeout(600); await flip(); await p.keyboard.press('Escape'); await p.waitForTimeout(500)   // back to the list as it rests
   /* a cut name's tooltip — and none for a name that fits */
   const bubble = () => p.evaluate(() => [...document.querySelectorAll('[role="tooltip"]')].map((t) => t.textContent).join('|'))
   await p.locator('[data-kb-row] [data-col="name"] button', { hasText: 'Design consultation' }).hover(); await p.waitForTimeout(900)

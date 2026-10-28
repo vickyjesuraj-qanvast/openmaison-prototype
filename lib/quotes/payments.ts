@@ -199,9 +199,9 @@ export function aiSchedule(items: (Line & { position: number; section: string | 
   return withEstimates(rows, a)
 }
 
-/** The DUE cell (spec 06): "On Approval" · "~ 21 Oct ’26" for an estimate · "21 Oct ’26" for a date the studio set. */
+/** The DUE cell (spec 06): "On signing" (was "On Approval") · "~ 21 Oct ’26" for an estimate · "21 Oct ’26" for a date the studio set. */
 export function dueLabel(row: { dueKind: string; dueAt: Date | null }): string {
-  if (row.dueKind === 'approval') return 'On Approval'
+  if (row.dueKind === 'approval') return 'On signing'   // (the calm UI build 2026-10-27, W-579) the stored kind stays 'approval'
   if (!row.dueAt) return '–'
   return `${row.dueKind === 'fixed' ? '' : '~ '}${displayDate(row.dueAt)}`
 }

@@ -61,6 +61,13 @@
 .findField { width: 240px; max-width: 100%; }
 .findCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; min-width: 56px; text-align: right; }
 .convMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* (the calm UI build 2026-10-27, 3-13) the project's Messages: the head's start is a quiet switch — "Team chat" (its glyph and unread count) on the
+   client's conversation, the Team tag + "Back to {first}'s conversation" on the team's — the house text link at the head's body size */
+.channel { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.channelLink { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-subtitle-s); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: none) and (max-width: 1024px) { .channelLink.channelLink { min-height: 44px; } }
+/* (the calm UI build 2026-10-27, 1-21 · W-314) the empty pane is "Pick a conversation" alone — the house EmptyState draws no help line when it has
+   none (its ghost draws no line either) */
 
 /* /chat's rows: a Team or a Lead chip, a pin, a mute */
 .rowName { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }

@@ -25,7 +25,7 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
     // the strip's My Items
     // REG-773 (UX audit Q7): the Create strip's tile reads Price book (it read My Items)
-    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)
+    await page.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'From Price book' }).click(); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) one door each (4-03): the Price book is Create ▾ › From Price book (and each section's foot)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     ok('the strip’s My Items opens the Price book modal over the editor', await dlg.isVisible() && page.url().includes(`/quotes/${Q1}`))
     ok('it lands on My Items', (await dlg.getByRole('radio', { name: /^My Items/ }).getAttribute('aria-checked')) === 'true' || /true/.test(await dlg.locator('[data-selected="true"], [aria-checked="true"]').first().innerText().catch(() => '')) || await dlg.getByTestId('book-item').count() > 0)
@@ -67,7 +67,7 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     const pos = sql(`select group_concat(position) from (select position from quote_items where quote_id='${Q1}' and parent_id is null order by position)`)
     ok('the list’s positions run 0…n with no gaps', pos.split(',').every((p, i) => Number(p) === i), pos)
     // the table's Price book link (REG-773: the strip's tile shares its name, so the link is the one in the Items section)
-    await page.locator('#section-items').getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(500)
+    await page.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'From Price book' }).click(); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) one door each (4-03): the Price book is Create ▾ › From Price book (and each section's foot)
     ok('the table’s Price book opens the same modal', await page.getByRole('dialog', { name: 'Price book' }).isVisible())
     await page.getByRole('dialog', { name: 'Price book' }).getByRole('button', { name: 'Manage Price book' }).click(); await page.waitForTimeout(1500)
     ok('Manage Price book leaves with the way back', page.url().includes('/company/price-book') && decodeURIComponent(page.url()).includes(`from=/quotes/${Q1}`), page.url())

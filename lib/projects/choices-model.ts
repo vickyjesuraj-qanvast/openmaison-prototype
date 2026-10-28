@@ -117,9 +117,10 @@ export type ChoicesData = {
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 /** 0 and nothing are the same: no change against the quote. */
 export const normPrice = (minor: number | null | undefined): number | null => (minor == null || !Number.isFinite(minor) || Math.round(minor) === 0 ? null : Math.round(minor))
-/** The option's price on the studio's card: "+S$1,200" · "−S$300" · "No change" — (fix-C, C-21) "+S$240 + GST" when the project charges GST,
-    so the tile says it is the figure before GST (the pick's line and the client's card say the inclusive one). */
-export const priceText = (minor: number | null, gstPct = 0): string => { const m = normPrice(minor); return m == null ? 'No change' : `${m > 0 ? '+' : '−'}${moneySGD(Math.abs(m))}${gstPct > 0 ? ' + GST' : ''}` }
+/** The option's price on the studio's card: "+S$1,200" · "−S$300" · "No change" — (fix-C, C-21) with GST, (the calm UI build 2026-10-27, 3-21)
+    the client's own figure, "+S$457.80 incl. GST": both sides read the one number the variation order will carry (the pick's line says what
+    it is made of). Display only — the stored price stays before GST. */
+export const priceText = (minor: number | null, gstPct = 0): string => { const m = normPrice(minor); return m == null ? 'No change' : gstPct > 0 ? `${m > 0 ? '+' : '−'}${money2s(withGst(m, gstPct))} incl. GST` : `${m > 0 ? '+' : '−'}${moneySGD(Math.abs(m))}` }
 /**
  * (REG-1068) What a pick moves the contract by. An option's price is entered as a quote line's is — before GST — and the variation order
  * drafted from it charges GST on top when the project's quote does (the studio's rate, `pickGstPct` on the server), so every line that says

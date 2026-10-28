@@ -24,6 +24,9 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"], [role="menu"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }   // (calm-build regression fix F) + the phone's You sheet, a menu (the house Sheet, role="menu")
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s31')
@@ -102,7 +105,7 @@ const fileOf = (f) => path.join(HOME, f)
     await p.waitForLoadState('networkidle').catch(() => {}); await settle(p, 1500)
   }
   const studioBlock = (p) => p.getByTestId('studio-block')
-  const openMenu = async (p) => { await studioBlock(p).click(); await settle(p, 600); return p.locator('[role="menu"][aria-label="View as"]') }
+  const openMenu = async (p) => { await studioBlock(p).click(); await settle(p, 600); await openDemo(p); return p.locator('[role="menu"][aria-label="View as"]') }
   const closeWelcome = async (p) => { const d = p.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await d.count()) { await d.getByRole('button', { name: 'Not now' }).click().catch(() => {}); await settle(p, 500) } }
   const switchTo = async (p, label) => {
     const m = await openMenu(p)
@@ -111,7 +114,7 @@ const fileOf = (f) => path.join(HOME, f)
   }
   const signOutDesk = async (p) => { const m = await openMenu(p); await m.getByTestId('sign-out').click(); await p.waitForURL(/\/sign-in/, { timeout: 15000 }).catch(() => {}); await ready(p, 'sign-in') }
   const signIn = async (p, contact) => {
-    await ready(p, 'sign-in'); await p.getByLabel('Mobile number or email').fill(contact); await p.getByTestId('sign-in-send').click(); await settle(p, 1000)
+    await ready(p, 'sign-in'); await p.getByLabel(/^Mobile number or (work )?email/).fill(contact); await p.getByTestId('sign-in-send').click(); await settle(p, 1000)
     await typeCode(p, 'sign-in-digit'); await p.getByTestId('sign-in-go').click()
     await p.waitForURL((u) => !/\/sign-in/.test(String(u)), { timeout: 20000 }).catch(() => {})
     await p.waitForLoadState('networkidle').catch(() => {}); await settle(p, 1500)
@@ -127,7 +130,7 @@ const fileOf = (f) => path.join(HOME, f)
       const C = await desk(); await out(C); const c = await page(C, 'doors')
       await go(c, '/sign-in', 400); await ready(c, 'sign-in')
       ok(await text(c.getByTestId('sign-in-sign-up')) === 'New to OpenMaison? Start your studio', 'sign-in’s foot: “New to OpenMaison? Start your studio”')
-      await c.getByLabel('Mobile number or email').fill('91112233'); await c.getByTestId('sign-in-send').click(); await settle(c, 1000)
+      await c.getByLabel(/^Mobile number or (work )?email/).fill('91112233'); await c.getByTestId('sign-in-send').click(); await settle(c, 1000)
       ok(/ask its Owner to add you/.test(await text(c.getByTestId('sign-in-no-account'))) && await c.getByTestId('sign-in-sign-up').count() === 1, '“No account found” keeps who to ask, and the way to start a studio')
       await shot(c, '01-sign-in-door-1440')
       await c.getByRole('link', { name: 'Start your studio' }).click(); await c.waitForURL(/\/sign-up/); await ready(c, 'sign-up')
@@ -328,11 +331,17 @@ const fileOf = (f) => path.join(HOME, f)
       await c.keyboard.press('Escape'); await settle(c, 300)
       await switchTo(c, 'Demo Studio')
       ok(/Switched to Demo Studio/.test(await waitSnack(c, /Switched/)), '“Switched to Demo Studio”')
-      ok(await text(c.getByTestId('studio-name')) === 'Demo Studio' && (await studioBlock(c).locator('img').getAttribute('src')) === '/figma-assets/avatar-studio.svg' && /Dane Bruce Lee/.test(await text(studioBlock(c))), 'the demo’s block as the mock draws it — Demo Studio · Dane Bruce Lee')
+      ok(await text(c.getByTestId('studio-name')) === 'Demo Studio' && (await studioBlock(c).locator('img').getAttribute('src')) === '/figma-assets/avatar-studio.svg' && /Dane · Owner/.test(await text(studioBlock(c))), 'the demo’s block as the mock draws it — Demo Studio · Dane Bruce Lee')
       await go(c, '/leads', 900)
       ok(!/Add your first lead/.test(await text(c.locator('main'))) && Number(sql(`select count(*) from leads where deleted_at is null and direct = 0`)) > 0, 'the demo’s leads are back')
       const touched = TABLES.filter((t) => hashOf(t) !== demoBefore.get(t))
-      ok(touched.length === 0, `switching wrote nothing to the demo (${touched.join(', ') || 'none'})`)
+      /* (calm-build regression fix F) say which members' columns moved, so a failure names its write */
+      const membersMoved = touched.includes('members') ? (() => { const now = json('select * from members'); const was = kept.get('members'); return now.flatMap((r) => { const w = was.find((x) => x.id === r.id); return Object.keys(r).filter((k) => !w || String(w[k]) !== String(r[k])).map((k) => `${r.id}.${k}`) }) })() : []
+      /* (the calm UI build 2026-10-27: restated to the rule already in force) landing on the Dashboard stamps the member's visit
+         (members.dashboard_seen_at · dashboard_since_at, the Dashboard redesign's migration 0115) — the switch itself still writes nothing */
+      const VISIT = /\.dashboard_(seen|since)_at$/
+      if (touched.includes('members') && membersMoved.length && membersMoved.every((k) => VISIT.test(k))) touched.splice(touched.indexOf('members'), 1)
+      ok(touched.length === 0, `switching wrote nothing to the demo (${touched.join(', ') || 'none'})${membersMoved.length ? ` — ${membersMoved.join(', ')}` : ''}`)
       ok(made().length === 1, 'Lim & Co Interiors is kept, as it was left')
       await switchTo(c, 'Lim & Co Interiors')
       ok(await text(c.getByTestId('studio-name')) === 'Lim & Co Interiors' && /Lim Wei Ming/.test(await text(studioBlock(c))), 'and back — the studio’s own session, its Owner')
@@ -345,7 +354,9 @@ const fileOf = (f) => path.join(HOME, f)
       const C = await desk(); const c = await page(C, 'find')
       await go(c, '/leads', 900); await closeWelcome(c)
       await signOutDesk(c)
-      ok(/Lim Wei Ming, the studio’s Owner, signs in with 9111\s2233\./.test(await text(c.getByTestId('sign-in-hint'))), 'signed out of the new studio: the demo’s line names its Owner')
+      /* (the calm UI build 2026-10-27, a deliberate change) B1 1-46: the demo's two lines are one quiet box, "Demo: any 6 digits work — try {what to type}" —
+         the who-to-try is still the open studio's own Owner (Lim Wei Ming's mobile, never the demo's Dane), now as the number to type */
+      ok(/^9111\s2233$/.test(await text(c.getByTestId('sign-in-hint'))) && /^Demo: any 6 digits work — try 9111\s2233$/.test(await text(c.getByTestId('sign-in-demo'))), 'signed out of the new studio: the demo’s line names its Owner')
       await signIn(c, 'dane@demostudio.sg')
       ok(pathOf(c) === '/dashboard' && await text(c.getByTestId('studio-name')) === 'Demo Studio', `signing in as Dane opens the demo studio (${pathOf(c)})`)   // (S42 audit A-04, a deliberate change of this rule) the front door
       ok(json(`select member_id, ended_at from studio_sessions where member_id = 'dane' and ended_at is null`).length === 1, '…with a session of its own there')
@@ -441,7 +452,7 @@ const fileOf = (f) => path.join(HOME, f)
       await go(p, '/leads', 1200); await closeWelcome(p)
       ok(await sideways(p) <= 0, 'the new studio’s Leads at 390: no sideways scroll')
       await p.getByTestId('phone-avatar').click(); await settle(p, 800)
-      ok(/Studios · demo only/i.test(await text(p.getByTestId('demo-studios'))) && /Aisha Rahman Design|Lim & Co Interiors/.test(await text(p.getByTestId('demo-studios'))), 'the phone’s You sheet carries the Studios group')
+      ok(/Studios · demo only/i.test(await text((await openDemo(p)).getByTestId('demo-studios'))) && /Aisha Rahman Design|Lim & Co Interiors/.test(await text((await openDemo(p)).getByTestId('demo-studios'))), 'the phone’s You sheet carries the Studios group')
       await shot(p, '16-you-sheet-390')
       await P.close()
     }
@@ -470,7 +481,7 @@ const fileOf = (f) => path.join(HOME, f)
       const C = await desk(); await out(C); const c = await page(C, 'paused')
       await go(c, '/sign-in', 400); await ready(c, 'sign-in')
       ok(await c.getByTestId('sign-in-sign-up').count() === 0, 'sign-in shows no way to sign up')
-      await c.getByLabel('Mobile number or email').fill('91112233'); await c.getByTestId('sign-in-send').click(); await settle(c, 1000)
+      await c.getByLabel(/^Mobile number or (work )?email/).fill('91112233'); await c.getByTestId('sign-in-send').click(); await settle(c, 1000)
       ok(/ask its Owner to add you/.test(await text(c.getByTestId('sign-in-no-account'))) && await text(c.getByTestId('sign-in-sign-up-paused')) === 'New to OpenMaison? Contact support for account setup.', '“No account found”: who to ask, and 1.0’s “Contact support for account setup” for a new studio')
       await go(c, '/sign-up', 400); await ready(c, 'sign-up')
       ok(/^lock\s*Sign-ups are paused\. Contact support for account setup\.$/.test(await text(c.getByTestId('sign-up-blocked'))) && await c.getByTestId('sign-up-continue').count() === 0, 'sign-up’s first step: “Sign-ups are paused. Contact support for account setup.” — and no way on')
@@ -490,7 +501,7 @@ const fileOf = (f) => path.join(HOME, f)
         if ((await c.getByTestId('studio-name').innerText().catch(() => '')) !== 'Demo Studio') {
           const dlg = c.getByRole('dialog').filter({ hasText: /^Welcome,/ }); if (await dlg.count()) await dlg.getByRole('button', { name: 'Not now' }).click().catch(() => {})
           await c.getByTestId('studio-block').click(); await c.waitForTimeout(500)
-          await c.getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
+          await (await openDemo(c)).getByTestId('demo-studios').getByRole('menuitemradio').filter({ hasText: 'Demo Studio' }).click(); await c.waitForTimeout(2500)
         }
         await C.close()
       } catch (e) { console.log('  ! could not switch the server back to the demo — restart it:', String(e).slice(0, 120)) }

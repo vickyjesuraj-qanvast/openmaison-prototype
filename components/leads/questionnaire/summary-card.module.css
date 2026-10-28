@@ -12,14 +12,16 @@
 }
 
 /* Head 48: p20/20/12/20 → 20 + 16 + 12. */
-.head { display: flex; align-items: center; gap: var(--om-spacing-2); height: 48px; padding: var(--om-spacing-5) var(--om-spacing-5) var(--om-spacing-3); }
-/* 12/Semi Bold/16 secondary, uppercase — components/leads/detail/card.module.css .title. */
-.title { font: var(--om-type-subheading-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (REG-729) 12/16/600 from the token it re-typed; no letter-spacing */
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); height: 48px; padding: var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-3); }   /* 16 + 20 (the bold 14 head) + 12 = 48 */
+/* (the calm UI build 2026-10-27 — T-06) the house card head: bold sentence case in the ink colour, never capitals (components/leads/detail/card.module.css .title) */
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 
 /* Body: V g8, 8/20/20/20 → group V g8 (the overview card's body). */
 .body { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 
+/* (2-18) the one line — "7 of 11 answered · none by Olivia yet" */
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 /* "Total questions answered" (fills, subheading-m) · "7 / 11" (body-m secondary), on one baseline. */
 .row { display: flex; align-items: baseline; gap: var(--om-spacing-2); }
 .label { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
@@ -49,5 +51,6 @@
 /* (Leads on the move, L4 — P-13 · C-17) The summary's values read at 14 on a finger (the eyebrow stays a 12 group label); the desk keeps the mock's. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .legend, .asked { font: var(--om-type-body-m); }
+  .line { font: var(--om-type-body-l); }
   .legend { height: auto; min-height: 20px; }
 }

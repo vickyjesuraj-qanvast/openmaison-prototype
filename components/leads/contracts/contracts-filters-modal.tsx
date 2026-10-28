@@ -18,6 +18,7 @@ import {
   CONTRACT_STATUSES, EMPTY_CONTRACT_FILTERS, activeContractGroups,
   type ContractDatePreset, type ContractFilters, type ContractSort, type ContractStatus,
 } from '@/lib/leads/contract-filters'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import styles from './contracts-filters-modal.module.css'
 
 /**
@@ -132,7 +133,7 @@ export function ContractsFiltersModal({
                 </section>
                 <section className={styles.sheetGroup} aria-label="Status">
                   <span className={styles.sectionTitle}>Status</span>
-                  <Chips multiple label="Status" options={CONTRACT_STATUSES.map((s) => ({ value: s, label: s }))} value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as ContractStatus[] }))} />
+                  <Chips multiple label="Status" options={CONTRACT_STATUSES.map((s) => ({ value: s, label: contractStatusLabel(s) }))}   /* (the calm UI build 2026-10-27, W-363) the value stays stored */ value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as ContractStatus[] }))} />
                 </section>
               </div>
             ) : (
@@ -194,7 +195,7 @@ export function ContractsFiltersModal({
             </div>
             )}
             <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
-              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}>Clear All</Button>
+              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}>Clear all</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
             </SurfaceFoot>

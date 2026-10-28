@@ -1,0 +1,1128 @@
+[
+ {
+  "id": "4-01",
+  "area": "Quotes › Items · Price book · Quote templates",
+  "route": "/quotes/[id] · /company/price-book · /templates/[id]",
+  "kind": "copy",
+  "severity": "high",
+  "title": "One field, two names: “Category” in quotes and Price book, “Trade” elsewhere",
+  "now": "The Items table head reads “CATEGORY”, its empty cell “Add Category ▾”, View by offers “Category”, the totals card “BY CATEGORY · 11 · share of the subtotal”, the Price book column and item field “Category” — whose helper says “The studio’s trades — Settings › Quotes & pricing”. The same value is called a trade by the template editor (“Group the items by: Trade — A trade is one of your works — Carpentry, Ceiling and the rest in Settings › Quotes & pricing”), by the Items note (“Default Quote PDF prints lines by trade, so these sections don’t show on the printed quote”), by the template card (“By trade › room”) and by Settings (Trades).",
+  "why": "A studio owner sets up “Trades” in Settings and never finds the word again where they price; they cannot tell that “Category” on a line is the trade the printed quote groups by. The helper has to translate one word into the other.",
+  "proposal": "Call it “Trade” everywhere: Items column “Trade”, empty cell “Add trade”, View by: “Trade”, totals card “By trade”, Price book column/field “Trade” (drop the helper), Price book filter “Any trade”. Keep “Uncategorized” as “No trade”. One rename in lib/quotes/items-model.ts (ITEM_VIEW_LABEL · column labels) and the Price book item dialog.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-quote-viewby-menu.png",
+   "4-pb-items.png",
+   "4-pb-item-dialog.png",
+   "4-tpl-editor-items-inspector.png"
+  ],
+  "code": [
+   "lib/quotes/items-model.ts:34",
+   "lib/quotes/items-model.ts:50",
+   "components/quotes/editor/items/items-summary.tsx:230",
+   "components/quotes/editor/items/items-section.tsx:1349",
+   "components/company/price-book/item-dialog.tsx:178"
+  ]
+ },
+ {
+  "id": "4-02",
+  "area": "Quotes › Items table",
+  "route": "/quotes/[id]",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Five ways to group the same lines, and the quote’s sections don’t print",
+  "now": "One Items table carries the quote’s own Sections (row tag “SECTION” / “Sub-section”), and per line the columns TYPE (Labour / Purchase …), CATEGORY (the trade), SECTION LABEL (“Finishing”, “Wet works”) and ROOM (“Living Room”, “Whole unit”); “View by: None ▾” regroups by Category · Room · Section label; and the template’s own Items block groups the print “By trade › room”. Above the table an info line says “Default Quote PDF prints lines by trade, so these sections don’t show on the printed quote.” with “Change template”. On the phone the Quote screen’s reading cards follow the print (Masonry · Plumbing …) while Edit › Items shows the sections (Bathrooms · Bedrooms). Defaults on a new quote show TYPE, CATEGORY, SECTION LABEL, QTY, UNIT, COST, MARKUP, MARGIN, UNIT PRICE, DISCOUNT, GST (%), ROOM.",
+  "why": "A designer builds “Bathrooms / Bedrooms” sections and is then told they will not print; the same line has four grouping fields to fill. Nobody can predict what the client will see — the most costly confusion in the quote. Section label exists only because Section was taken (REG-574).",
+  "proposal": "One grouping a studio sees: the print follows the quote’s sections unless the studio has chosen “by trade” in the template, and then the editor says so once in the Template card (“Prints by trade · your sections are for you”) instead of an always-on note. Default columns for a new quote: Item · Qty · Unit · Unit price · Total (+ Cost · Markup for those who see costs); Type, Section label, Room, Discount, GST (%), Margin start hidden in Column settings. Drop “Section label” from View by unless a line uses one. On the phone show the reading cards by the quote’s sections, the same as Edit › Items. (REG-567 · REG-574 · REG-488.)",
+  "effort": "M",
+  "shots": [
+   "4-quote-draft.png",
+   "4-items-right.png",
+   "4-quote-viewby-menu.png",
+   "4-quote-draft-390.png",
+   "4-quote-items-390.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/items-section.tsx:1347",
+   "lib/quotes/items-model.ts:33",
+   "lib/quotes/items-model.ts:50",
+   "components/quotes/editor/items/items-layout.ts"
+  ]
+ },
+ {
+  "id": "4-03",
+  "area": "Quotes › Quote editor",
+  "route": "/quotes/[id]",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Quote editor first screen: 569 words, 67 controls, 11 purple actions",
+  "now": "Header: crumb · title ▾ · four uppercase tags (“OM-10001”, “VERSION 1”, “DRAFT”, “CONTRACT · DRAFT”) · “Saved 6 Oct ’26” · “Draft ▾” · Send ▾ (filled) · eye (Client view) · Preview · Comments · ⋮ · ✕. Eight anchor tabs. General Info: ten fields + “Add a second client” floating in an empty column + the Template card with three purple actions. Items toolbar at rest: search · New section · undo · redo · Column settings · Row density · Expand All · View by: None ▾ · Maison AI · Create ▾ · full screen (11). Maison AI has three doors on the same screen (the right rail’s spark, the Items toolbar button, the FAB); the Price book four (the right rail, Create ▾ › From Price book, the “Price book” link under the table, each section’s foot). Measured on the first screen: 569 words · 67 controls · 11 primary text actions · 28 uppercase strings · 17 font styles · 8 text colours.",
+  "why": "The one job — price the lines and send — sits under a wall of chrome. An owner has to learn which of three Maison AI buttons or four Price book doors to use; repeated doors read as different features.",
+  "proposal": "Keep one door each: Maison AI = the FAB only (drop the Items toolbar button and the rail spark); Price book = Create ▾ › From Price book + the section foot (drop the rail tile and the link under the table). Items toolbar at rest: search · New section · Create ▾ · ⋮ (Column settings, Row density, Expand/Collapse all, View by, full screen move into ⋮ or appear on hover of the card head). Header: title · one status pill · “OM-10001 · v1” as plain subtitle text (drop the four tags, see 4-11) · Send ▾ · Preview · ⋮ · ✕ (Comments and the Client view eye into ⋮ — the eye duplicates Preview). Collapse Payment Schedule, Files, Terms, Notes, Signature, Activity by default to their one-line summaries (the phone’s section list already writes them).",
+  "effort": "M",
+  "shots": [
+   "4-quote-draft.png",
+   "4-quote-draft-full.png",
+   "4-quote-sent.png"
+  ],
+  "code": [
+   "components/quotes/editor/editor-header.tsx:114",
+   "components/quotes/editor/editor-header.tsx:139",
+   "components/quotes/editor/create-strip.tsx",
+   "components/quotes/editor/items/items-section.tsx"
+  ]
+ },
+ {
+  "id": "4-04",
+  "area": "Quotes · Contracts · Templates · Variation orders",
+  "route": "/quotes · /quotes/[id] · /contracts · /company/templates/quotes · /projects/[id]/money",
+  "kind": "copy",
+  "severity": "high",
+  "title": "The same states are named four ways across quotes, VOs, templates and invoices",
+  "now": "Waiting on an approver: quote status “Sent for Approval” (lib/leads/quote-filters.ts:10), the list chip “Waiting for my approval · n”, the template gallery “Awaiting approval”, invoices “Waiting for approval”. With the client: quote “Sent to Client”, the same status on a VO reads “With the client” (lib/projects/money.ts:509), the list chip “Waiting on client · 3”; a contract out for signature also reads “Sent to Client”. Header tags shout them in capitals (“SENT TO CLIENT”, “WITH THE CLIENT”).",
+  "why": "A studio filters for “waiting for approval” and sees “Sent for Approval” in the rows; a VO and its quote show different words for the same state; “Sent to Client” on a contract does not say it is waiting for a signature.",
+  "proposal": "One status set, sentence case, everywhere: Draft · Waiting for approval · Approved · With client · Confirmed · Signed (quotes and VOs alike); contracts: Draft · Waiting for signature · Signed. Chips: “Waiting for my approval · 2”, “With client · 3”. Templates: “Waiting for approval”. (Changes the stored labels’ display only — map in one place, e.g. a statusWord() beside QUOTE_STATUSES.)",
+  "effort": "M",
+  "shots": [
+   "4-quote-status-menu.png",
+   "4-quote-vo.png",
+   "4-tpl-quotes.png",
+   "4-contracts-row-status.png"
+  ],
+  "code": [
+   "lib/leads/quote-filters.ts:10",
+   "lib/projects/money.ts:509",
+   "components/company/templates/quote-templates-gallery.tsx:89",
+   "components/projects/money/use-invoices.tsx:274",
+   "components/leads/quotes/quotes-toolbar.tsx:31"
+  ]
+ },
+ {
+  "id": "4-05",
+  "area": "Contracts · signing page",
+  "route": "/contracts/301fe7ef… · /sign/301fe7ef… (and the two other signed contracts)",
+  "kind": "defect",
+  "severity": "high",
+  "title": "Every signed contract’s document date is 13 days off its own record",
+  "now": "Ryan D’Souza’s signed agreement reads “This Agreement is made on 22 July 2026” while its Contract date field shows 4/8/2026 and it was signed “Sat, 8 Aug ’26”; Benjamin Han’s reads “4 August 2026” against 17 Aug; Aisha Rahman’s “1 September 2026” against 14 Sep. The same 13-day gap on all three — the demo-day shift moves contracts.contract_date but not the date written inside contracts.signed_body.",
+  "why": "A signed contract with a date that disagrees with itself is the one thing a client or a studio in a live demo will notice; it reads as a legal error.",
+  "proposal": "Developer-side, no visible design change: add the signed body’s date.contract (and any other date token kept in signed_body / signed_letterhead) to the demo-day shift (lib/db/demo-day.ts EMBEDDED list, S42’s rule), or re-run the snapshot for demo contracts after a restore.",
+  "effort": "S",
+  "shots": [
+   "4-contract-signed.png",
+   "4-sign-signed.png",
+   "4-sign-signed-390.png"
+  ],
+  "code": [
+   "lib/db/demo-day.ts",
+   "lib/contracts/snapshot.ts",
+   "lib/contracts/agreement.ts:14"
+  ]
+ },
+ {
+  "id": "4-06",
+  "area": "Company › Templates · Quote editor › Payment Schedule",
+  "route": "/company/templates/payments · /company/templates/schedules · /templates/payments/[id] · /quotes/[id]",
+  "kind": "copy",
+  "severity": "high",
+  "title": "“Payment schedules” beside “Schedules”; payments called “milestones”",
+  "now": "Company › Templates tabs: “… Payment schedules · Schedules”. The payment schedule editor calls its rows “Milestones” (“Add a milestone”, “4 milestones · 10/30/30/30”, column “MILESTONE”) — the word the project Schedule uses for works (“7 milestones”, “Add a milestone after”). The quote calls the same rows payments (“Add a Payment”, column “PAYMENT NAME”) and its dropdown ends with “Manage payment templates”.",
+  "why": "Two tabs with the same noun and the same row word (“milestones”) for money and for works; a studio cannot tell where to set up its 10/30/30/30 split versus its renovation timeline.",
+  "proposal": "Tabs: “Payment schedules” · “Project schedules”. In the payment editor rows are payments: card title “Payments”, column “Payment”, button “Add a payment”, meta “4 payments · 10/30/30/30”. In the quote, “Manage payment templates” → “Manage payment schedules”. Milestones stay the project Schedule’s word only.",
+  "effort": "S",
+  "shots": [
+   "4-tpl-payments.png",
+   "4-tpl-schedules.png",
+   "4-lib-payment.png",
+   "4-quote-payments-menu.png"
+  ],
+  "code": [
+   "lib/company/sections.ts:44",
+   "components/company/templates/editors/payment-template-editor.tsx:117",
+   "components/quotes/editor/payments/payments-section.tsx:299",
+   "components/quotes/editor/payments/payments-section.tsx:449"
+  ]
+ },
+ {
+  "id": "4-07",
+  "area": "Quotes › Items table menus",
+  "route": "/quotes/[id]",
+  "kind": "noise",
+  "severity": "high",
+  "title": "A line’s ⋮ and a section’s ⋮ each hold 17 rows and run off the screen",
+  "now": "Line ⋮: “From My Items · Kitchen carpentry… · Update the item from this line · Save as a new item · Duplicate · Copy Name · Add Sub-section · Words on this line… · Show Full Content · Comment · Mark as Optional · Print as › · Highlight › · Skip the number · Add Item › · Move Item › · Move to section › · Remove”. Section ⋮: “Save section to My Sections · Duplicate · Copy Name · Section note… · Show Full Content · Print as › · Highlight › · Label the sub-total… · Print as one line · Price after the contract (Out of the total — printed after the items) · Add Item › · Move Item › · Move to section › · Ungroup — keep the lines · Remove”. Both open past the bottom of a 1024 screen.",
+  "why": "The common moves (duplicate, move, remove) hide among print and spreadsheet tricks; a studio scanning 17 rows for “Remove” gives up. “Move Item ›” on a section, “Copy Name”, “Show Full Content” are tool words.",
+  "proposal": "Line ⋮ (7): Duplicate · Move to section › · Mark as optional · Print as › · Comment · Price book › (Update the item · Save as a new item) · Remove; “More ›” holds Highlight, Skip the number, Words on this line…, Add sub-section. Drop Copy Name (⌘C) and Show Full Content (the row expands on its chevron). Section ⋮ (6): Duplicate · Move to section › · Print as › (with “As one line”, “Label the sub-total…”, “Priced after the contract”) · Save to Price book · Ungroup · Remove; Section note… and Highlight under “More ›”.",
+  "effort": "M",
+  "shots": [
+   "4-items-row-menu.png",
+   "4-items-section-menu.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/table-menus.tsx"
+  ]
+ },
+ {
+  "id": "4-08",
+  "area": "Quote Preview vs Contract Preview",
+  "route": "/quotes/[id]/preview · /contracts/[id]/preview",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "The two Previews have different bars, words and buttons",
+  "now": "Quote Preview: ← · crumb “Olivia Martinez / OM-10001” · title “Preview” · tags “DEFAULT QUOTE PDF · V1”, “DRAFT”, “3 PAGES” · “Internal copy” switch · “What your client sees” · “Copy link” · “Download PDF” · Send ▾. Contract Preview: no ← · crumb “Leads / Olivia Martinez / Contracts / Preview” · the document’s title · “DRAFT” tag · “Back to edit” · an icon-only link · an icon-only download · Send. The editors differ the same way: the quote header closes with ✕, the contract’s adds a second row that repeats the title.",
+  "why": "The same moment (check the paper, then send) looks like two products; buttons move and lose their words between the two.",
+  "proposal": "One Preview bar for every paper: ← (back to the editor) · crumb “{client} / {number}” · title “Preview” · one status chip · Copy link · Download PDF (both with words) · Send. Internal copy and What your client sees stay quote-only, inside ⋮ or as the two right-most text buttons.",
+  "effort": "M",
+  "shots": [
+   "4-quote-preview.png",
+   "4-contract-preview-top.png"
+  ],
+  "code": [
+   "components/quotes/preview/quote-preview.tsx:260",
+   "components/contracts/preview/contract-preview.tsx:238"
+  ]
+ },
+ {
+  "id": "4-09",
+  "area": "Client pages (confirm, view-only, signing)",
+  "route": "/confirm/[token] · /quote/[token] · /sign/[token]",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "Client pages: three badges, three download words, two names for the quote",
+  "now": "Badges: “PRIVATE LINK” (green, confirm), “SECURE SIGNING” (green, sign), “VIEW ONLY” (grey, view). Download: “Download a copy” (confirm, view, sign desk), “Save a copy” (sign phone), “Download” (view phone). The quote is “Quotation OM-10004” / “Signs quotation OM-10004” on the signing page and “quote” everywhere else. Phone links: “As cards ›” (signing page — opens the quote as reading cards), “View as printed”, “As printed”.",
+  "why": "A homeowner meets these pages one after the other from WhatsApp; changing words make them doubt it is the same studio and the same document. “As cards” means nothing to a client.",
+  "proposal": "One badge on every client page: lock + “Private link” (sentence case). One verb: “Download a copy” (desk and phone; the phone’s share sheet can still be what it does). Call it “quote” on client pages (the contract text may keep “Quotation” as its defined term). “As cards ›” → “See the quote ›”; “As printed” / “View as printed” → “See it as printed”.",
+  "effort": "S",
+  "shots": [
+   "4-confirm-sent.png",
+   "4-sign-signed.png",
+   "4-sign-signed-390.png",
+   "4-quote-view.png",
+   "4-quote-view-390.png",
+   "4-confirm-sent-390.png"
+  ],
+  "code": [
+   "components/quotes/confirm/confirm-page.tsx:193",
+   "components/contracts/sign/signing-page.tsx:194",
+   "components/quotes/view/quote-view-page.tsx:72",
+   "components/contracts/sign/sign-hero.tsx",
+   "components/contracts/sign/sign-bar.tsx"
+  ]
+ },
+ {
+  "id": "4-10",
+  "area": "Quotes › General Info › Template card",
+  "route": "/quotes/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Template card: shorthand settings and three purple actions on every quote",
+  "now": "Eyebrow “TEMPLATE”, “Default Quote PDF” + “V1” + “DEFAULT” tags, “By trade › room · Default: 10/30/30/30 · Valid 30 days · GST · signs online”, “Starts with Hacking Works · Masonry Works · Carpentry Works · Plumbing Works · Electrical Works · Painting Works”, then “Change · Edit template ✎ · Save as new template”. Shown on Draft, Sent and Signed quotes alike. The same action is “Save as new template” here, “Save as Template” in ⋮, “Save as template” as the dialog title.",
+  "why": "The shorthand line is the template’s defaults — already applied when the quote was made; reading it on every quote is noise. Three text actions on a card that most quotes never change.",
+  "proposal": "One line: “Prints with Default Quote PDF (v1)” + one text button “Change”. Edit template and Save as template live in the header ⋮ (named once: “Save as template”). Hide the card’s actions once the quote is signed.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-quote-signed.png",
+   "4-quote-kebab.png"
+  ],
+  "code": [
+   "components/quotes/editor/template-bar.tsx:33",
+   "components/quotes/editor/template-bar.tsx:40",
+   "components/quotes/editor/editor-header.tsx:177"
+  ]
+ },
+ {
+  "id": "4-11",
+  "area": "Editor headers (quote, contract, preview, library editors)",
+  "route": "/quotes/[id] · /contracts/[id] · /quotes/[id]/preview · /templates/* · /templates/payments/[id] · /templates/schedules/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Header tags in capitals repeat the status pill and the title",
+  "now": "Quote: tags “OM-10001”, “VERSION 1”, “DRAFT”, “CONTRACT · DRAFT” next to a “Draft ▾” pill (the status twice). Contract: “FROM TEMPLATE”, “SIGNED 8 AUG ’26” next to “Signed ▾”. Payment schedule editor: “10/30/30/30”, “STUDIO DEFAULT”, “DEFAULT ON 4 QUOTE TEMPLATES”. Schedule editor: “7 MILESTONES”, “1 SCHEDULE STARTED FROM IT”. Contract template: “TEMPLATE”, “USED BY 4 CONTRACTS”. Quote template: “PUBLISHED V1”, “DEFAULT”.",
+  "why": "Capitals read as alarms; a status said twice and facts like “From template” or “Template” on a template add nothing to the task.",
+  "proposal": "Keep the status pill only. Number and version become the title’s grey subtitle (“OM-10001 · v1”); the contract link stays as one sentence-case chip (“Contract: Draft ›”). Drop “From template”, “Template”, usage counts and the split from headers (they live on the gallery card). MetaChip text in sentence case, never `text-transform: uppercase`.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-contract-signed.png",
+   "4-lib-payment.png",
+   "4-lib-schedule.png",
+   "4-lib-contract.png",
+   "4-tpl-editor.png"
+  ],
+  "code": [
+   "components/quotes/editor/editor-header.tsx:114",
+   "components/contracts/editor/contract-editor.tsx:541",
+   "components/company/templates/editors/payment-template-editor.tsx:105",
+   "components/om/meta-chip.tsx"
+  ]
+ },
+ {
+  "id": "4-12",
+  "area": "Lists and tables in Quotes, Price book, Templates",
+  "route": "/quotes · /company/price-book · /company/templates/* · /quotes/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Defaults and placeholders repeated down every list",
+  "now": "Tools › Quotes: the Due column is seven identical purple calendar_add_on icons (Signed quotes too); “Shared”/“Private” under every number; the title “Whole-home renovation” on every row. Price book: Status “Approved” on every row but one, Vendor “--”. Templates cards: “Not used yet”, “Not a default anywhere”, “No schedule started from it yet” on nearly every card. Items table: DISCOUNT “0%” and GST (%) “9” on every line; an eye icon after every child line’s name in its default Visible state (cutting the name: “Kitchen carpentry, top and b…”); a “SECTION” tag on every section row; an eye in four column heads.",
+  "why": "The eye has to skip the same token on every row to find what differs; the one quote that needs a follow-up date or the one item that is Proposed is lost.",
+  "proposal": "Show only exceptions: Due cell empty until hovered (the icon appears on row hover/focus) and no Due on Signed/Confirmed quotes; drop Shared/Private (see 4-15); Price book status as a “Proposed” chip in the name cell, no Status column; Vendor cell blank, not “--”; card usage line only when used (“Used by 6 quotes”); Discount and GST (%) columns hidden by default; the line eye only when a line is not fully shown (as top-level lines already do); no SECTION tag (the band and chevron say it).",
+  "effort": "M",
+  "shots": [
+   "4-quotes.png",
+   "4-pb-items.png",
+   "4-tpl-terms.png",
+   "4-tpl-schedules.png",
+   "4-items-right.png",
+   "4-items-row-menu.png"
+  ],
+  "code": [
+   "components/leads/quotes/quotes-table.tsx:350",
+   "components/leads/quotes/quotes-table.tsx:270",
+   "components/company/templates/payment-templates-gallery.tsx:54",
+   "components/company/templates/text-templates-gallery.tsx:49",
+   "components/company/templates/schedules/schedule-templates-gallery.tsx:67",
+   "components/quotes/editor/items/item-row.tsx:376",
+   "components/quotes/editor/items/item-row.tsx:365"
+  ]
+ },
+ {
+  "id": "4-13",
+  "area": "Quotes › list and Send for confirmation",
+  "route": "/quotes · /quotes/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "A quote’s “Due” is really its follow-up date",
+  "now": "Column “DUE” with the button “Set due date for Whole-home renovation”; the confirmation dialog: “Follow up in 3 days ▾ — Sets the quote’s Due date and adds a follow-up task for you”. The quote also has “Quote Valid Until”, and its payments have their own “DUE” column.",
+  "why": "“Due” on a quote reads as a payment due date or the validity; studios won’t guess it is a reminder to chase the client.",
+  "proposal": "Column “Follow up”; button “Set a follow-up date”; dialog helper “Adds a follow-up task for you on that day”. Keep “Due” for payments only.",
+  "effort": "S",
+  "shots": [
+   "4-quotes.png",
+   "4-send-confirmation.png"
+  ],
+  "code": [
+   "components/leads/quotes/quotes-table.tsx:75",
+   "components/leads/quotes/quotes-table.tsx:350"
+  ]
+ },
+ {
+  "id": "4-14",
+  "area": "Quotes › validity",
+  "route": "/quotes · /quotes/[id] · /templates/[id] · /confirm/[token]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Validity is named five ways",
+  "now": "“Quote Valid Until” (desk field; VOs say “Valid until”), the banner “Its validity ended on 24 Sep ’26 — extend Quote Valid Until if the price still stands”, list mark “Expired 24 Sep ’26” with tooltip “… has passed — nothing is blocked; extend Quote Valid Until if the price still stands”, template card “Valid 30 days”, template field “Valid for (days)”, phone “valid until 24 Sep ’26”.",
+  "why": "Capitalised field names inside sentences (“extend Quote Valid Until”) read as system text; “Expired” and “validity ended” describe the same fact differently.",
+  "proposal": "Field “Valid until” everywhere. Banner and tooltip: “The price was valid until 24 Sep. Change Valid until if it still stands.” List chip “Expired 24 Sep” stays. Template: “Valid for (days)” both on the card and in the field.",
+  "effort": "S",
+  "shots": [
+   "4-quote-sent.png",
+   "4-quotes.png",
+   "4-quote-screen-390.png"
+  ],
+  "code": [
+   "components/quotes/editor/general-info.tsx:79",
+   "components/quotes/editor/quote-bars.tsx:82",
+   "components/leads/quotes/quotes-table.tsx:272",
+   "lib/templates/readiness.ts:26"
+  ]
+ },
+ {
+  "id": "4-15",
+  "area": "Tools › Quotes",
+  "route": "/quotes",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "“Approved · Private” rows that were already sent; “Shared/Private” unclear",
+  "now": "OM-10008 (Vivien Lee) reads Status “Approved”, “OM-10008 · Private · Expired 29 Sep ’26”, Sent to client “2 Sep ’26”; on the phone “Expired 29 Sep ’26 · sent 2 Sep ’26 · not opened”; it counts in “Waiting on client · 3”. Every row carries “Shared” or “Private” under its number (from the mock 910:36323). Visibility is not shown or explained anywhere else.",
+  "why": "One row says approved, private, sent and expired at once; a studio can’t tell whether the client has the quote. “Private” to whom?",
+  "proposal": "Drop the Shared/Private word from the title cell (the status says whether the client has it). When a quote has gone to the client its status reads “With client” (4-04), so Approved never carries a sent date. If visibility must stay, show it only as a lock glyph with Tooltip “Only your team can see this quote”.",
+  "effort": "S",
+  "shots": [
+   "4-quotes.png",
+   "4-quotes-390.png"
+  ],
+  "code": [
+   "components/leads/quotes/quotes-table.tsx:268",
+   "lib/leads/quote-filters.ts:77",
+   "lib/leads/quote-filters.ts:82"
+  ]
+ },
+ {
+  "id": "4-16",
+  "area": "Dates across quotes and contracts",
+  "route": "/quotes/[id] · /contracts/[id] · /quote/[token] · /sign/[token]",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Four date formats on one quote, five on one contract",
+  "now": "Fields show d/m/yyyy: “Quote Valid Until 7/10/2026”, “Contract date 7/9/2026”. Next to them: “Saved 6 Oct ’26”, payment due “~ 28 Sep ’26”, the contract text “7 September 2026”, the signing card “Sat, 8 Aug ’26”, the view-only page “Last changed 27 Aug” (no year), the contract and library editors “Saved 7 Sept ’26”.",
+  "why": "7/10/2026 is read as July 10 by many; a studio sees one date written three ways on one screen.",
+  "proposal": "DateField displays the house date “7 Oct 2026” (REG-34’s d/m/yyyy came from typed dates; dates are no longer typed, REG-119). One short form “7 Oct ’26” for every other date (with the year on the view page). See 4-43 for “Sept”.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-contract-draft.png",
+   "4-quote-view.png",
+   "4-sign-signed.png"
+  ],
+  "code": [
+   "lib/format.ts:99",
+   "components/om/date-field.tsx",
+   "components/quotes/view/quote-view-page.tsx:92",
+   "lib/contracts/model.ts:48"
+  ]
+ },
+ {
+  "id": "4-17",
+  "area": "Company › Templates › library editors",
+  "route": "/templates/payments/[id] · /templates/schedules/[id] · /templates/terms/[id] · /templates/contracts/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Library editors repeat the name and wear double labels on every input",
+  "now": "Payment schedule editor shows the split five times: title “Default: 10/30/30/30”, tag “10/30/30/30”, tags “STUDIO DEFAULT” and “DEFAULT ON 4 QUOTE TEMPLATES”, a second row repeating “Default: 10/30/30/30 ✎”, and “4 milestones · 10/30/30/30”. Each table cell is a floating-label field under its own column head (“MILESTONE” over a box labelled “Milestone”, “SHARE” over “Share (%)”; the schedule’s “DAYS” over “Days”, “GAP (DAYS)” over “Gap (days)”). Schedule help: “Each one starts its gap in days after the one before ends; a negative gap overlaps them.”",
+  "why": "Every row reads twice; the screen doubles its words without adding a fact.",
+  "proposal": "Name once, in the header (click to rename, as the quote title does); drop the second row and the tags. Inputs in a table carry no floating label (aria-label from the column head). Schedule help: “Gap = days between one milestone and the next. Use a minus number to overlap.”",
+  "effort": "S",
+  "shots": [
+   "4-lib-payment.png",
+   "4-lib-schedule.png",
+   "4-lib-contract.png"
+  ],
+  "code": [
+   "components/company/templates/editors/payment-template-editor.tsx:105",
+   "components/company/templates/editors/payment-template-editor.tsx:117",
+   "components/company/templates/schedules/schedule-template-editor.tsx:142"
+  ]
+ },
+ {
+  "id": "4-18",
+  "area": "Contracts › contract editor",
+  "route": "/contracts/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Contract editor: title 4×, a bell that isn’t notifications, a link that sends",
+  "now": "The title shows in the header, again in a second row with ✎, as the document’s H1 and in the Outline. The header holds Draft ▾ · Send · Preview · a bell (“Automation”: “Remind me to follow up”, “Remind me to thank the client”) · a link icon (“Copy link — marks it Sent”) · ⋮ · ✕. A signed contract keeps the whole formatting toolbar visible and greyed.",
+  "why": "A bell is the app’s notifications icon; a copy icon that changes the contract’s status is a surprise. The repeated title pushes the document down.",
+  "proposal": "Drop the second-row title (rename from the header). Move Automation into ⋮ as “Reminders…” (or into the Send dialog, where it applies). Remove the header link icon — Copy link already sits in the Send dialog’s foot and says what it does. Hide the toolbar on a signed contract (the banner says it’s locked).",
+  "effort": "S",
+  "shots": [
+   "4-contract-draft.png",
+   "4-contract-automation.png",
+   "4-contract-signed.png"
+  ],
+  "code": [
+   "components/contracts/editor/contract-editor.tsx:550",
+   "components/contracts/editor/contract-editor.tsx:554",
+   "components/contracts/editor/contract-editor.tsx:542"
+  ]
+ },
+ {
+  "id": "4-19",
+  "area": "Contracts › eSignatures panel",
+  "route": "/contracts/[id] · /templates/contracts/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "“eSignatures” panel words are technical and point to the wrong place",
+  "now": "Toolbar button and panel title “eSignatures”; eyebrow “FILLABLE FIELDS”; rows “Studio signature — Your saved signature, from the quote editor”, “Studio initial”, “Client initial”, four outlined “Insert” buttons; a paragraph after the list “Place the fields where the parties sign. The client’s field is where they sign online once you send the link.”; then “BEFORE THE CLIENT SIGNS”.",
+  "why": "“eSignatures” and “Fillable fields” are software words; the studio’s signature is set on Your profile (S01), not in the quote editor.",
+  "proposal": "Button and title “Signatures”; eyebrow “Signature boxes”; “Your signature — from Your profile”; the paragraph as one line under the eyebrow: “Put a box where each person signs.”",
+  "effort": "S",
+  "shots": [
+   "4-contract-esign.png"
+  ],
+  "code": [
+   "components/contracts/editor/esign-panel.tsx:59",
+   "lib/contracts/tokens.ts:33"
+  ]
+ },
+ {
+  "id": "4-20",
+  "area": "Send dialogs (contract, confirmation, view-only link)",
+  "route": "/contracts/[id] · /quotes/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Send dialogs: 3-line subtitle with demo talk, link twice, a character count",
+  "now": "Contract: title “Send for digital signature”, subtitle “Your client reviews and signs in their browser. A one-time code confirms it’s them — demo only: no text is sent, any six digits sign it. The link opens for 7 days from when you send it.” The message box contains the raw link and a grey row repeats it; “347 characters”; a disabled “Code” box with +65. Confirmation and view-only dialogs share the pattern (“327 characters”, “241 characters”).",
+  "why": "Three lines in the house head break the 64px head; “demo only” sits in the studio’s real send flow; the link twice and a count no one needs add reading.",
+  "proposal": "Title “Send for signature” (the quote’s word). Subtitle one line: “Your client signs on their phone; a one-time code confirms it’s them.” Put the demo note and the 7-day window behind a “How signing works” Tooltip. Drop the link row (the foot’s Copy link copies it) and the character count (show it only past 900). Fold “Code” into the phone field’s prefix.",
+  "effort": "S",
+  "shots": [
+   "4-contract-send-dialog.png",
+   "4-send-confirmation.png",
+   "4-quote-viewlink-dialog.png"
+  ],
+  "code": [
+   "lib/contracts/model.ts:69",
+   "components/contracts/editor/dialogs.tsx",
+   "components/quotes/send/"
+  ]
+ },
+ {
+  "id": "4-21",
+  "area": "Quotes › Send ▾",
+  "route": "/quotes/[id] · /quotes/[id]/preview",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Send ▾ rows use insider words; “Send for signature” opens a template picker",
+  "now": "“Send for confirmation — The client confirms the quote on a link — no signature yet” · “Send for signature — Add the T&Cs and raise the agreement to sign” · “Sent it another way — The client has it already — marks it Sent to Client, sends nothing”. “Send for signature” opens “Choose a contract template — Pick a template to start the contract from.” with “Start from the studio agreement” and “Use template”.",
+  "why": "“Raise the agreement” is jargon; “Sent it another way” is past tense among verbs; pressing Send and landing in a template gallery breaks the expectation.",
+  "proposal": "“Ask to confirm — Your client taps Confirm on a link. No signature yet.” · “Send to sign — Your client signs an agreement made from this quote.” · “Mark as sent — You sent it yourself; nothing goes out.” Picker title “Which agreement should they sign?” with the studio agreement pre-selected and one button “Continue”.",
+  "effort": "S",
+  "shots": [
+   "4-quote-send-menu.png",
+   "4-send-signature.png"
+  ],
+  "code": [
+   "components/quotes/send/send-button.tsx:49",
+   "components/quotes/send/send-button.tsx:53",
+   "components/quotes/send/contract-from-quote.tsx"
+  ]
+ },
+ {
+  "id": "4-22",
+  "area": "Quotes › Send ▾ › Sent it another way",
+  "route": "/quotes/[id]",
+  "kind": "defect",
+  "severity": "med",
+  "title": "“Sent it another way” changes the status at once, and may offer no Undo",
+  "now": "One press on the menu row marked OM-10006 Sent to Client immediately (no ask). When the lead can move stage the snackbar carries “Move to …” instead of “Undo” (use-quote-send.tsx:93), so a slip has no way back but the status menu — which then leaves the quote “Shared” with a client-sent date it never had.",
+  "why": "The page checklist: “A status set by hand that the client never saw asks first and offers Undo”. A mis-tap in a menu sends a false record to the lead’s trail.",
+  "proposal": "Open a ConfirmDialog: “Mark OM-10006 as sent? Nothing goes to Harpreet.” — Mark as sent · Cancel. The snackbar always keeps Undo; the lead’s next stage moves to the banner or a second snackbar action.",
+  "effort": "S",
+  "shots": [
+   "4-quote-send-menu.png"
+  ],
+  "code": [
+   "components/quotes/send/use-quote-send.tsx:86",
+   "components/quotes/send/use-quote-send.tsx:93"
+  ]
+ },
+ {
+  "id": "4-23",
+  "area": "Company › Templates › Quote template editor",
+  "route": "/templates/[templateId]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Template editor: every column control at rest; the same 3 steps said twice",
+  "now": "Selecting Items table shows nine column cards, each with a switch, an alignment button, ← →, “Heading on the page”, a mm width and a Colour row of eight swatches — about 60 controls in one panel. The banner “Click any part of the page to change it on the right. Everything is saved as you go — press Publish when it looks right.” and the inspector’s empty state (“Click any part of the page to change it here. 1 Pick a part… 2 Change its words… 3 Press Publish…”) say the same thing. The deleted-draft bar reads “… the quotes on it would keep printing v0”.",
+  "why": "The owner’s own rule for this editor (template-editor-simplicity, REG-542): plain words, progressive disclosure, for an elderly studio owner.",
+  "proposal": "Columns as one list: name + switch per row; tapping a column opens its heading, width and colour. Keep the inspector’s three steps; drop the banner (or show it once and let “Got it” remove the inspector copy). Deleted draft bar: “This draft is deleted. Restore”.",
+  "effort": "M",
+  "shots": [
+   "4-tpl-editor.png",
+   "4-tpl-editor-items-inspector.png",
+   "4-tpl-editor-new-quotes.png"
+  ],
+  "code": [
+   "components/templates/editor/inspector.tsx:49",
+   "components/templates/editor/template-editor.tsx:414",
+   "components/templates/editor/template-editor.tsx:420"
+  ]
+ },
+ {
+  "id": "4-24",
+  "area": "Company › Templates galleries · Price book",
+  "route": "/company/templates/* · /company/price-book",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The galleries’ one filter pill has four names",
+  "now": "“Status: All ▾” (Quotes), “Show: All ▾” (Contracts, Tasks, Payment schedules), “Kind: All ▾” (T&Cs & Notes, Price book › My Items), none (Schedules, My Sections); on a phone just “All ▾”. The pill’s noun defaults to “Show” in LibraryGallery.",
+  "why": "Same control, same place, different word; “Show: All” doesn’t say what it shows.",
+  "proposal": "Name the pill by what it filters, always: “Status”, “Kind”, “Use”; never “Show”. Keep the noun on the phone (“Kind: All”).",
+  "effort": "S",
+  "shots": [
+   "4-tpl-quotes.png",
+   "4-tpl-contracts.png",
+   "4-tpl-terms.png",
+   "4-pb-items-390.png"
+  ],
+  "code": [
+   "components/company/templates/library-gallery.tsx:591"
+  ]
+ },
+ {
+  "id": "4-25",
+  "area": "Price book ↔ quote Items",
+  "route": "/company/price-book · /quotes/[id]",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The same line field is “Kind” in the Price book and “Type” in the quote",
+  "now": "Price book column and item field “Kind” (Labour · Purchase · Design · Delivery); the quote’s Items column and Column settings “Type”. Vendor is “Vendor” in the Price book and “Vendor/Sub” in the quote’s Column settings; “Unit Price” (Column settings) vs “Unit price” (Price book); Markup shows “S$1,200.00” in the Price book and “S$60.00 (31.58%)” in the quote.",
+  "why": "An item added from the Price book changes its field names on the way in.",
+  "proposal": "“Type” in both; “Vendor” in both; “Unit price” in both; Markup shown as “S$60 (32%)” in both.",
+  "effort": "S",
+  "shots": [
+   "4-pb-items.png",
+   "4-items-columns.png",
+   "4-items-row-menu.png"
+  ],
+  "code": [
+   "lib/quotes/items-model.ts:50",
+   "components/company/price-book/item-dialog.tsx",
+   "components/quotes/editor/items/column-settings-drawer.tsx"
+  ]
+ },
+ {
+  "id": "4-26",
+  "area": "Tools › Quotes vs Tools › Contracts",
+  "route": "/quotes · /contracts",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Two sister lists name and draw the same things differently",
+  "now": "Quotes: column “CLIENT”, button “Create Quote”, search “Search title, number, client…”, title cell with number. Contracts: column “LEAD” for the same person, button “New Contract ▾”, search “Search title, status, date…”, no number, a “SIGNED COPY” column whose cell is the truncated file name “Interior Desig…” on every signed row. Phone cards: “Signed · signed 15 Sep ’26” (the word twice), contract subtitle “Signs OM-10009 · Interior…” cut.",
+  "why": "A studio jumping between Tools tiles has to relearn the table; “Lead” for a client who has signed reads wrong.",
+  "proposal": "Contracts: column “Client”; button “New contract ▾”; search “Search client, title, quote number…”; title cell second line “for OM-10009”; drop Signed Copy (its ⋮ › Download signed copy). Quotes: “New quote”. Phone cards: “Signed 15 Sep ’26” once.",
+  "effort": "S",
+  "shots": [
+   "4-quotes.png",
+   "4-contracts.png",
+   "4-quotes-390.png",
+   "4-contracts-390.png"
+  ],
+  "code": [
+   "components/leads/contracts/contracts-table.tsx:74",
+   "components/leads/contracts/contracts-table.tsx:77",
+   "components/leads/quotes/quote-card-words.ts:25",
+   "components/leads/contracts/contract-card-words.ts"
+  ]
+ },
+ {
+  "id": "4-27",
+  "area": "Quotes · Contracts · Price book (labels and menus)",
+  "route": "/quotes · /quotes/[id] · /contracts · /company/price-book",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Title Case and sentence case mixed in menus; phone and desk disagree",
+  "now": "Title Case: “Rename Quote”, “Duplicate and Edit”, “Save as Template”, “Version History”, “Copy Link”, “Preview and Share”, “Manage Templates”, “Quotes Settings”, “Archived Quotes”, “Deleted Quotes”, “From Template”, “Import from File”, “Blank Quote”, “Add a Payment”, “Expand All”, “Clear All”, “Show Full Content”, “Copy Name”, “Mark as Optional”, “Add Sub-section”, “Create New”, “Round Prices”, “Export As”, “Additional Discount”, “Issuing Entity”, “Quote Title”, “Property Type”, “Site Address”, “General Info”, “Payment Schedule”, “Terms and Conditions”, “Additional Notes”. The phone’s section list writes the same tabs “General info · Payment schedule · Terms and conditions · Additional notes”, and menus mix “Create contract from this quote”, “Copy confirmation link”, “Share a view-only link”.",
+  "why": "Mixed casing makes menus look stitched together; the phone already shows the house case.",
+  "proposal": "Sentence case for every label, button, menu row and tab (as the phone does): “Rename quote”, “Duplicate and edit”, “Save as template”, “Version history”, “Copy link”, “Blank quote”, “Add a payment”, “Expand all”, “General info”, “Payment schedule”, “Terms and conditions”… (DS-level: a lint for Title Case in DropdownItem / Button children).",
+  "effort": "S",
+  "shots": [
+   "4-quote-kebab.png",
+   "4-quotes-page-kebab.png",
+   "4-quote-screen-edit-390.png",
+   "4-quote-draft.png"
+  ],
+  "code": [
+   "components/quotes/editor/editor-header.tsx:170",
+   "components/leads/quotes/quotes-toolbar.tsx:125",
+   "components/leads/quotes/quotes-table.tsx:402",
+   "components/quotes/editor/general-info.tsx:64",
+   "components/quotes/editor/editor-tabs.tsx"
+  ]
+ },
+ {
+  "id": "4-28",
+  "area": "Quotes (counts and nouns)",
+  "route": "/quotes/[id] · /quotes (phone)",
+  "kind": "copy",
+  "severity": "med",
+  "title": "“lines” and “items” for the same thing, counted in four formats",
+  "now": "Desk: tab “Items (16)”, card head “Items (16)”, sum row “Sum · 16 priced items”, totals “Subtotal · 16 items”. Phone: “Items 19”, header “16 lines · S$49,838”, Quote screen “16 lines · valid until …” then “16 lines” again above the cards, client page “19 lines · valid until…”. Elsewhere “FROM A TEMPLATE · 3 SAVED”, “BY CATEGORY · 11 ·”, “Waiting on client · 3”.",
+  "why": "“Lines” is a spreadsheet word; a client reading “19 lines” on their quote doesn’t know what it means.",
+  "proposal": "“items” everywhere (studio and client). One count format: the house Tabs count badge on tabs (“Items 16”), “16 items” in sentences. Drop the second “16 lines” above the phone cards.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-quote-items-390.png",
+   "4-quote-screen-390.png",
+   "4-confirm-sent-390.png"
+  ],
+  "code": [
+   "components/quotes/screen/quote-screen.tsx:86",
+   "components/quotes/confirm/confirm-page.tsx:205",
+   "components/quotes/editor/items/items-table.tsx:680"
+  ]
+ },
+ {
+  "id": "4-29",
+  "area": "Quotes › totals card",
+  "route": "/quotes/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Three discount rows and a “Round Prices” link beside Total",
+  "now": "“Subtotal · 16 items S$45,723.00 · Discount S$0.00 · Additional Discount [% ▾][0.00] · + Add a discount · GST 9% ● · Total Round Prices S$49,838.07 · Margin · owners only 24.1% · S$11,020”, plus a per-line DISCOUNT column.",
+  "why": "Four places to discount with no discount on the quote; “Additional Discount” and “Add a discount” read as the same.",
+  "proposal": "Rows: Subtotal · GST 9% · Total (+ margin for owners). “+ Add a discount” as the only discount entry until one exists; then the named discount rows. “Round prices…” moves to the Items ⋮.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/items-summary.tsx:111",
+   "components/quotes/editor/items/items-summary.tsx:136",
+   "components/quotes/editor/items/items-summary.tsx:145"
+  ]
+ },
+ {
+  "id": "4-30",
+  "area": "Quotes › Signature",
+  "route": "/quotes/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Signature section says “Client signs online” twice and “signed on approval”",
+  "now": "Switch “Client signs online”; the box “Client signs online — Requested when you send · signed on approval”; under it “NRIC: Requested when you send” (italic).",
+  "why": "“Signed on approval” is internal (approval is the studio’s own step); the label repeats the switch.",
+  "proposal": "Box: “Olivia signs here when she accepts the quote online.” NRIC: “Asked when you send”. Switch stays.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png"
+  ],
+  "code": [
+   "components/quotes/editor/signature/signature-section.tsx:110"
+  ]
+ },
+ {
+  "id": "4-31",
+  "area": "Quotes › General Info",
+  "route": "/quotes/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "General Info: “Issuing Entity” vs “Issued by”; a helper about “Remarks field”",
+  "now": "“Issuing Entity” with helper “GST-Registered” (contracts and Finance say “Issued by”); Remarks helper “Prints where the quote’s template has the Remarks field” (also on VOs); “Project Ref #”, “Customer ID”, “Quote Title”; “Add a second client” floats alone in an empty half-row.",
+  "why": "“Entity” is a legal/system word; the Remarks helper explains the template’s internals.",
+  "proposal": "“Issued by” with helper “GST registered”; Remarks helper “Shows on the printed quote” (or none); “Project ref”; “Title”; put “Add a second client” as a text button under the Client field.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft.png",
+   "4-quote-vo.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/items-summary.tsx:67",
+   "components/quotes/editor/general-info.tsx:97",
+   "components/quotes/editor/general-info.tsx:73",
+   "components/quotes/editor/general-info.tsx:94"
+  ]
+ },
+ {
+  "id": "4-32",
+  "area": "Create Quote modal",
+  "route": "/quotes (Create Quote)",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Create Quote: three names for the moment, cards cut where they differ",
+  "now": "Button “Create Quote” → dialog “Start a quote” → phone “Who is this quote for?”. Eyebrows “FROM A TEMPLATE · 3 SAVED”, “MORE WAYS TO START”. Cards: “Blank Quote — The default template’s settings, an empty t…”, and all three templates read “Starts with Hacking Works · Masonry Wor…” (the part that differs is cut). “Draft with Maison AI — Describe the scope — we draft a categorized quote from your 10-item price book”. Upload tag “XLSX · CSV · PDF · 5 AI CREDITS”.",
+  "why": "Three identical truncated lines give no reason to pick a template; US spelling and “10-item” are noise.",
+  "proposal": "Button and title “New quote”. Card meta: what differs (“HDB 4-room · 6 sections”). “Blank quote — Start with an empty quote”. “Draft with Maison AI — Describe the work; Maison AI drafts it from your Price book.” (British “categorised” if kept). Upload tag in sentence case: “Excel, CSV or PDF · 5 credits”.",
+  "effort": "S",
+  "shots": [
+   "4-create-quote.png",
+   "4-create-quote-390.png"
+  ],
+  "code": [
+   "components/quotes/create-quote-modal.tsx:206",
+   "components/quotes/create-quote-modal.tsx:357",
+   "components/quotes/create-quote-modal.tsx:368",
+   "components/quotes/create-quote-modal.tsx:425"
+  ]
+ },
+ {
+  "id": "4-33",
+  "area": "Default quote template (printed words)",
+  "route": "/quotes/[id]/preview · /confirm/[token] · /quote/[token]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Default quote prints “Sales Contract” on a quote the client only confirms",
+  "now": "Default Quote PDF heads every quote with “Sales Contract” and “CONTRACT FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES”, prints “Gst 9%:” and a footer “Tel: … Fax: …”. The confirm page beside it says “Confirm this quote … the agreement and the signature come after.” A VO heads “Variation order VO-1 — to contract OM-10009” (a quote number called a contract).",
+  "why": "The client is told this is not the contract while the paper says it is; “Gst” and “Fax” read as careless.",
+  "proposal": "Seeded house style: heading “Quotation”, sub-heading “QUOTATION FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES”, “GST 9%:”, drop Fax. VO heading “Variation order VO-1 to quotation OM-10009”. (Studios keep their own words once they edit.)",
+  "effort": "S",
+  "shots": [
+   "4-quote-preview.png",
+   "4-confirm-sent.png",
+   "4-confirm-vo.png"
+  ],
+  "code": [
+   "lib/templates/presets.ts:50",
+   "lib/templates/fields.ts:89"
+  ]
+ },
+ {
+  "id": "4-34",
+  "area": "Client view-only and confirm pages",
+  "route": "/quote/[token] · /confirm/[token]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Client pages say “preparing” for a sent quote; passed validity shown as current",
+  "now": "The view-only page of OM-10007 (already Sent to Client, validity passed 24 Sep) says “Hi Serena, this is the quote Germaine is preparing for you. It updates here as they work on it — there’s nothing to confirm or sign on this page.” The phone confirm card reads “19 lines · valid until 24 Sep ’26” after that date, with Confirm quote live and no word that it passed.",
+  "why": "The client reads a sent quote as unfinished, or confirms a price the studio no longer stands behind.",
+  "proposal": "Words by state — sent: “Hi Serena, here is your quote from Germaine. It stays up to date on this page.”; passed: “This price was valid until 24 Sep — ask Germaine if it still stands.” beside the total.",
+  "effort": "S",
+  "shots": [
+   "4-quote-view.png",
+   "4-quote-view-390.png",
+   "4-confirm-sent-390.png"
+  ],
+  "code": [
+   "lib/quotes/view-link.ts:45",
+   "components/quotes/confirm/confirm-page.tsx:205"
+  ]
+ },
+ {
+  "id": "4-35",
+  "area": "Company › Templates › Brand kit",
+  "route": "/company/templates/brand",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Brand kit: paragraphs on every card and a preview that ignores the kit",
+  "now": "Two-line intro (“Every template starts from this kit — … A template can still differ on its own Brand tab.”), two-line helpers under “Logo and marks” and “Colours”, and beside the only preview a four-line note: “Default Quote PDF sets its own Brand ink, Brand grey and Band colours, and its own fonts, so changing those here doesn’t show on it.” “Save changes / Discard” in the header, while every other editor saves as you go. Three Qanvast SuperTrust badges (2024 · 2025 · 2026).",
+  "why": "The owner changes a colour and the preview does not move — the note admits it. A save button here and autosave elsewhere makes studios unsure whether work is kept.",
+  "proposal": "Preview a sample that follows the kit (or show the kit applied to the default template with its overrides cleared for the preview). One-line intro, card helpers removed (“PNG, JPG or SVG” stays as the dropzone’s caption). Autosave with the house “Saved” label, as the template editor.",
+  "effort": "M",
+  "shots": [
+   "4-tpl-brand.png",
+   "4-tpl-brand-full.png"
+  ],
+  "code": [
+   "components/company/templates/brand-kit-view.tsx:125",
+   "components/company/company-ghosts.tsx:448"
+  ]
+ },
+ {
+  "id": "4-36",
+  "area": "Company › Templates galleries",
+  "route": "/company/templates/*",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Gallery cards: truncated meta, raw first words, capitals and “A4”",
+  "now": "“Ready-made · 9 milestones · 6 …” (the weeks cut), “No schedule started from it yet · edi…”, “Not used yet · edited 15 Oct ’26 by …”, contract cards “4 headings · Contract date Dea…” (the template’s first words with its field names), T&C card “TERMS AND CONDITIONS FOR…”, tags “AT HANDOVER”, “STUDIO DEFAULT”, “DEFAULT”, “TERMS”, “NOTES”; quote card “Used by 6 quotes · A4”, payment card “Default: 10/30/30/30 · 4 milestones · 10/30/30/30”.",
+  "why": "Cards are cut before the useful fact; capitals and A4 add noise.",
+  "proposal": "One meta line per card with the one fact that tells cards apart (“9 milestones · 6 weeks”, “11 clauses”, “10/30/30/30”), a second line only when used (“Used by 6 quotes”). Tags sentence case. Drop “A4”, “4 headings”, the raw first words.",
+  "effort": "S",
+  "shots": [
+   "4-tpl-schedules.png",
+   "4-tpl-contracts.png",
+   "4-tpl-terms.png",
+   "4-tpl-payments.png",
+   "4-tpl-quotes.png"
+  ],
+  "code": [
+   "components/company/templates/schedules/schedule-templates-gallery.tsx:67",
+   "components/company/templates/contract-templates-gallery.tsx",
+   "components/company/templates/quote-templates-gallery.tsx:81"
+  ]
+ },
+ {
+  "id": "4-37",
+  "area": "Folders and default views",
+  "route": "/company/templates/* · /company/price-book · /company/price-book/sections · Send for signature picker",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Folders sit in three places and two tabs of one page open in different views",
+  "now": "Galleries draw a band titled with a checkbox “☐ Folders” above the cards; the contract template picker draws “Folders” under the templates; the Price book list draws folders as table rows; the T&Cs templates modal as rows on top. Price book › My Items opens as a table, My Sections (same page) as a grid.",
+  "why": "Same object, different place; the “Folders” checkbox looks like a filter.",
+  "proposal": "Folders always first, as rows in list view and cards in grid view; no “Folders” checkbox heading (each folder has its own box). One default view per page (list for the Price book’s both tabs).",
+  "effort": "S",
+  "shots": [
+   "4-tpl-quotes.png",
+   "4-send-signature.png",
+   "4-pb-items.png",
+   "4-pb-sections.png"
+  ],
+  "code": [
+   "components/company/templates/library-gallery.tsx",
+   "components/om/folders/"
+  ]
+ },
+ {
+  "id": "4-38",
+  "area": "Contract template picker",
+  "route": "/quotes/[id] (Send for signature) · /quotes (Create contract)",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The contract picker draws text cards in capitals; the gallery draws pages",
+  "now": "Choose a contract template shows each template as an uppercase title (“INTERIOR DESIGN SERVICE AGREEMENT”) over its raw first words in grey, plus a “LAST USED” tag; Company › Templates › Contracts and the quote template picker draw the real page thumbnail.",
+  "why": "The same templates look different in the two places a studio meets them.",
+  "proposal": "Use the gallery’s thumbnail (the contract paper renderer) in the picker, title in sentence case under it, “Last used” as a sentence-case chip.",
+  "effort": "S",
+  "shots": [
+   "4-send-signature.png",
+   "4-tpl-contracts.png"
+  ],
+  "code": [
+   "components/contracts/contract-template-picker.tsx",
+   "components/contracts/render/contract-paper.tsx"
+  ]
+ },
+ {
+  "id": "4-39",
+  "area": "Price book · Terms templates",
+  "route": "/company/price-book · /quotes/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "“My Items”, “My Sections”, “My Templates” for the studio’s shared library",
+  "now": "Price book tabs “My Items · My Sections”; row menus “Save section to My Sections”, “From My Items · Kitchen carpentry…”; Terms / Notes cards’ link “My Templates”, whose modal is titled “Terms and Conditions Templates” with “Manage Templates” and a filled “Create New” beside each template’s “Add”.",
+  "why": "“My” reads personal, yet the book is the whole studio’s; the modal’s filled Create New out-shouts the action the user came for (Add).",
+  "proposal": "Tabs “Items · Sections”; “Save to Price book”; “From the Price book · …”; link “Templates”; modal title “Terms and conditions templates”, “Create New” as an outlined secondary.",
+  "effort": "S",
+  "shots": [
+   "4-pb-items.png",
+   "4-quote-terms-templates.png",
+   "4-items-section-menu.png"
+  ],
+  "code": [
+   "lib/company/folder-libraries.ts:13",
+   "components/quotes/editor/text/templates-modal.tsx:127"
+  ]
+ },
+ {
+  "id": "4-40",
+  "area": "Price book › item dialog and Import",
+  "route": "/company/price-book",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Item dialog: a helper under nearly every field",
+  "now": "Subtitle “Lines already on a quote keep what they copied; new picks take these values.”, then helpers “The studio’s units — Settings › Quotes & pricing”, “27.27% of the cost”, “What a quote line starts at”, “The studio’s trades — Settings › Quotes & pricing”, “Who supplies it — the same product from two vendors is two items”, “A product or spec page — the line keeps it; it never prints”, “A photo shows on the card and in the Add Item box, and goes onto every line picked from it.”, “Ordered on top of the quote’s quantity, for cuts and breakage”. Import: a two-line subtitle, “The book’s own export reads back in — the sheet carries no photos”, “For rows without a vendor of their own — from Company › Finance › Vendors”.",
+  "why": "Eight explanations for a form of eight fields; the useful one (“27.27% of the cost”) drowns.",
+  "proposal": "Keep the markup % and the subtitle (one line). Unit and Trade selects end with “Manage units…” / “Manage trades…” instead of a helper. Everything else into one HelpLink “How the Price book works”. Import subtitle: “Excel or CSV, up to 500 rows.”",
+  "effort": "S",
+  "shots": [
+   "4-pb-item-dialog.png",
+   "4-pb-item-proposed.png",
+   "4-pb-import.png"
+  ],
+  "code": [
+   "components/company/price-book/item-dialog.tsx:159",
+   "components/company/price-book/item-dialog.tsx:178",
+   "components/company/price-book/item-dialog.tsx:197",
+   "components/company/price-book/item-dialog.tsx:206",
+   "components/company/price-book/item-dialog.tsx:212"
+  ]
+ },
+ {
+  "id": "4-41",
+  "area": "Quotes › Items card",
+  "route": "/quotes/[id] (Client view open)",
+  "kind": "defect",
+  "severity": "low",
+  "title": "With Client view open, the Items card loses its title; toolbar wraps",
+  "now": "At 1440 with the eye’s Client view pane open, the Items card head shows only a chevron — “Items (16)” is gone — and Create ▾ / full-screen drop to a second row.",
+  "why": "The section’s name disappears exactly when the studio is comparing it with the client’s view.",
+  "proposal": "Fold the toolbar the way it folds at ≤1024 (search · New section · Create ▾ · ⋮) when the card is narrower than its controls; the title never shrinks to zero.",
+  "effort": "S",
+  "shots": [
+   "4-quote-client-view-pane.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/items-section.tsx",
+   "components/quotes/editor/section-card.tsx"
+  ]
+ },
+ {
+  "id": "4-42",
+  "area": "Upload a quote",
+  "route": "/quotes?upload=1",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Upload a quote opens a 1200-wide dialog for one field and one dropzone",
+  "now": "The xl modal holds “Client*”, one helper line and a dropzone, then ~600px of white.",
+  "why": "An empty giant dialog reads as broken or still loading.",
+  "proposal": "Open Upload a quote at the m (600) width, height to content (the house scale).",
+  "effort": "S",
+  "shots": [
+   "4-upload-quote.png"
+  ],
+  "code": [
+   "components/quotes/create-quote-modal.tsx:324"
+  ]
+ },
+ {
+  "id": "4-43",
+  "area": "Contract and library editors",
+  "route": "/contracts/[id] · /templates/payments/[id] · /templates/schedules/[id] · /templates/tasks/[id] · /templates/terms/[id]",
+  "kind": "defect",
+  "severity": "low",
+  "title": "“Saved 7 Sept ’26” — a second copy of the Saved label drifts from the house date",
+  "now": "lib/contracts/model.ts:48 builds the month with toLocaleString('en-SG') → “Sept”; the quote editor’s own copy (quote-editor.tsx:118) uses displayDate → “Sep”.",
+  "why": "The same label reads two ways; lib/format.ts:37 already warns about exactly this.",
+  "proposal": "One savedLabel in lib/format.ts on MONTHS, used by the quote, contract and library editors.",
+  "effort": "S",
+  "shots": [
+   "4-contract-draft.png",
+   "4-lib-schedule.png"
+  ],
+  "code": [
+   "lib/contracts/model.ts:48",
+   "components/quotes/editor/quote-editor.tsx:118",
+   "lib/format.ts:37"
+  ]
+ },
+ {
+  "id": "4-44",
+  "area": "Quotes › Items sum row",
+  "route": "/quotes/[id]",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The sum row adds quantities of different units",
+  "now": "“Sum · 16 priced items” shows QTY “2516” — 885 sqft + 78 ft run + 46 point + Lots — and repeats the total under UNIT PRICE.",
+  "why": "A number nobody can use, in bold, invites a wrong reading.",
+  "proposal": "Leave Qty and Unit price empty on the sum row unless every counted line shares one unit.",
+  "effort": "S",
+  "shots": [
+   "4-quote-draft-full.png",
+   "4-items-right.png"
+  ],
+  "code": [
+   "components/quotes/editor/items/items-table.tsx:50",
+   "components/quotes/editor/items/items-table.tsx:680"
+  ]
+ },
+ {
+  "id": "4-45",
+  "area": "Contract document",
+  "route": "/contracts/[id] · /contracts/[id]/preview · /sign/[token]",
+  "kind": "defect",
+  "severity": "low",
+  "title": "A space before punctuation after every field chip",
+  "now": "“The contract sum is S$77,900.12 , inclusive of GST…”, “(UEN UEN )”, “Dear Client name ,” on the paper, the preview and the client’s signing page.",
+  "why": "Reads as a typo on the document the client signs.",
+  "proposal": "Trim the space the token renderer adds after a resolved value (or the seeded text’s leading space) so punctuation hugs the value.",
+  "effort": "S",
+  "shots": [
+   "4-contract-preview-top.png",
+   "4-sign-signed.png",
+   "4-tpl-contracts.png"
+  ],
+  "code": [
+   "lib/contracts/agreement.ts:14",
+   "lib/contracts/agreement.ts:18",
+   "lib/contracts/tokens.ts"
+  ]
+ },
+ {
+  "id": "4-46",
+  "area": "Tools › Quotes",
+  "route": "/quotes",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The row’s hover View button covers the Created date",
+  "now": "Hovering a row parks “View” and ⋮ over the visible right edge; at 1440 they sit on the CREATED / SENT TO CLIENT cells (“10 Sep ’2…”).",
+  "why": "REG-446 / REG-448: a hover control never covers a value the row exists to show.",
+  "proposal": "Reserve the actions’ room at the table’s end (a 120px tail track), or drop the hover View — the title already opens the quote.",
+  "effort": "S",
+  "shots": [
+   "4-quotes-row-menu.png",
+   "4-quotes-row-hover.png"
+  ],
+  "code": [
+   "components/leads/quotes/quotes-table.tsx:369"
+  ]
+ },
+ {
+  "id": "4-47",
+  "area": "Printed quote",
+  "route": "/quotes/[id]/preview · /confirm/[token]",
+  "kind": "defect",
+  "severity": "low",
+  "title": "An empty “IC” line prints when the NRIC is blank",
+  "now": "The header block prints “IC” with nothing after it on Olivia’s and Serena’s quotes.",
+  "why": "A blank label on the client’s paper looks unfinished.",
+  "proposal": "Skip a details row whose value is empty (the template keeps the row for when it is filled).",
+  "effort": "S",
+  "shots": [
+   "4-quote-preview.png",
+   "4-confirm-sent.png"
+  ],
+  "code": [
+   "components/templates/render/canvas.tsx",
+   "lib/templates/data.ts"
+  ]
+ },
+ {
+  "id": "4-48",
+  "area": "Contracts › template editor",
+  "route": "/templates/contracts/[id]",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "“How fields fill in” answers with a snackbar",
+  "now": "The text button shows a snackbar: “Fields fill in from the lead, the quote and your studio when a contract starts from this template”.",
+  "why": "Snackbars report what just happened; help that vanishes in four seconds is lost.",
+  "proposal": "Make it the house Tooltip (or HelpLink) on the button.",
+  "effort": "S",
+  "shots": [
+   "4-lib-contract.png"
+  ],
+  "code": [
+   "components/contracts/editor/contract-template-editor.tsx:277"
+  ]
+ },
+ {
+  "id": "4-49",
+  "area": "Quotes › Comments drawer",
+  "route": "/quotes/[id]",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Comments drawer says it is empty twice and its button says “Submit”",
+  "now": "“0 Comments” then “No comments on this quote’s lines yet. Comment on a line from its ⋯ menu, or pick one below.”; composer “Chat with your team here”, button “Submit”, caption “Clients can’t see these comments”.",
+  "why": "Say it once; “Submit” is a form word.",
+  "proposal": "Drop “0 Comments”; empty line “No comments yet — pick a line below.”; placeholder “Write a comment”; button “Send”.",
+  "effort": "S",
+  "shots": [
+   "4-quote-comments.png"
+  ],
+  "code": [
+   "components/quotes/editor/line-comments.tsx"
+  ]
+ },
+ {
+  "id": "4-50",
+  "area": "Phone Preview",
+  "route": "/quotes/[id]/preview (390)",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "Phone Preview headings in capitals; sentence case on the Quote screen",
+  "now": "Preview at 390 lists “MASONRY · PLUMBING · FITTINGS”; the Quote screen’s cards say “Masonry”; the client page “CARPENTRY”.",
+  "why": "The same heading changes case between two screens a tap apart.",
+  "proposal": "Sentence case (“Masonry”) for reading-card headings everywhere.",
+  "effort": "S",
+  "shots": [
+   "4-quote-preview-390.png",
+   "4-quote-draft-390.png",
+   "4-confirm-sent-390.png"
+  ],
+  "code": [
+   "components/quotes/confirm/quote-stage.tsx"
+  ]
+ },
+ {
+  "id": "4-51",
+  "area": "Contracts › signed banner",
+  "route": "/contracts/[id] (signed)",
+  "kind": "copy",
+  "severity": "low",
+  "title": "“…an Owner or an Admin can move it back from the status” is unclear",
+  "now": "Signed banner: “Marked signed on 8 Aug ’26. This is the copy kept at that moment; an Owner or an Admin can move it back from the status.” + outlined “Signing record”, beside a filled “Download signed copy”.",
+  "why": "“Move it back from the status” doesn’t say how or why.",
+  "proposal": "“Signed on 8 Aug ’26 — this copy is locked. An Owner or Admin can undo the signing from the status menu.”",
+  "effort": "S",
+  "shots": [
+   "4-contract-signed.png"
+  ],
+  "code": [
+   "components/contracts/editor/contract-banner.tsx:56",
+   "lib/contracts/next-step.ts:85"
+  ]
+ },
+ {
+  "id": "4-52",
+  "area": "Variation order in the editor",
+  "route": "/quotes/[id] (VO)",
+  "kind": "noise",
+  "severity": "low",
+  "title": "A VO stacks two purple banners and quote-only words",
+  "now": "Banner 1 “A change to the contract of HDB 5-Room — Aisha Rahman (P-2026-003): S$62,702.25 today, S$62,157.25 once the client approves it. An omission is a line with a minus quantity.”; banner 2 “Sent to the client on 16 Oct ’26, opened 13 min ago (4 times) — they have version 1. Edits here change what they see on their link; to change the variation order and keep what they saw, revise it.” The Remarks helper still says “quote’s template”; the Template card shows on a VO.",
+  "why": "Two dense banners before any field.",
+  "proposal": "One banner, one line: “Changes HDB 5-Room — Aisha Rahman’s contract by −S$545 · with Aisha since 16 Oct.” The how-to (“minus quantity”) as a Tooltip on the Items head; hide the Template card on a VO.",
+  "effort": "S",
+  "shots": [
+   "4-quote-vo.png"
+  ],
+  "code": [
+   "components/quotes/editor/variation-bar.tsx",
+   "components/quotes/editor/quote-bars.tsx:82"
+  ]
+ }
+]

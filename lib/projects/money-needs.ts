@@ -1,6 +1,7 @@
 import 'server-only'
 import type { Viewer } from '@/lib/leads/assign-policy'
 import { displayDate, dayWords, phoneDisplay } from '@/lib/format'
+import { dayLabel, dayOf } from './schedule-model'
 import { money2 } from '@/lib/quotes/math'
 import { ago } from '@/lib/templates/ago'
 import { fetchProjectCosts } from '@/lib/finance/queries'
@@ -45,6 +46,10 @@ export const moneyHref = (projectId: string, open?: string | null, step?: 'remin
   `/projects/${projectId}/money${open ? `?open=${encodeURIComponent(open)}${step ? (step === 'send' ? '&send=1' : `&do=${step}`) : ''}` : ''}${hash ? `#${hash}` : ''}`
 
 const day = (ms: number | null | undefined) => (ms ? displayDate(new Date(ms)).replace(/ ’\d\d$/, '') : '')
+/** (the Dashboard redesigned, 2026-10-26 — P-13 "dates one way") A day the money is due by — the Needs you list's own planning day, "Fri 2 Oct"
+    (`dayLabel`, as its milestone rows' "was due Fri 2 Oct" and every date people plan by, Dane UAT 5.13); a day that looks back (spent, paid)
+    keeps `day`. The list reached the Dashboard's inbox reading "due 2 Oct" beside "was due Fri 2 Oct". */
+const dueDay = (ms: number | null | undefined) => (ms ? dayLabel(dayOf(new Date(ms))) : '')
 const firstName = (name: string) => name.split(/\s+/)[0] ?? name
 
 export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: number): Promise<NeedRow[]> {
@@ -68,6 +73,9 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
   const href = (open?: string | null, step?: Parameters<typeof moneyHref>[2], hash?: string) => moneyHref(projectId, open, step, hash)
   const label = (i: InvoiceView) => i.label ?? `${i.stageName} invoice`
 
+  /* (the calm UI build 2026-10-27, 1-08 · 1-31 · 1-32 · W-022 · W-203 · W-239) the rows read as a studio owner says them: the record and its
+     vendor ("Bill AF-7781 from AquaFlow Plumbing Works"), "Germaine’s expense: …", "margin left on this work", "Refund S$ … to Benjamin" —
+     words only; every row, its kind, key, amount and step are as they were */
   /* ── approvals (Q-03: first) ── */
   if (v.approves && !locked) {
     for (const i of m.invoices.filter((x) => x.state === 'awaiting' && x.amountMinor > 0)) {
@@ -82,19 +90,19 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
   if (cs && cv) {
     if (cv.approvesPo) for (const p of cs.pos.filter((x) => x.state === 'awaiting')) {
       push({ key: `money:po-approve:${p.id}`, kind: 'cost-po-approve', group: 'ok', tab: 'money', tone: 'approve', ref: p.id, amountMinor: p.totalMinor,
-        title: `${p.number} to ${vendorName(p.vendorId)}`, meta: `${nameOf(p.submittedBy)} submitted it ${ago(p.submittedAt ?? p.createdAt, now)}${p.againstQuote ? ` · leaves ${p.againstQuote.pct}% against the quote` : ''}`,
+        title: `${p.number} to ${vendorName(p.vendorId)}`, meta: `${nameOf(p.submittedBy)} submitted it ${ago(p.submittedAt ?? p.createdAt, now)}${p.againstQuote ? ` · margin left on this work: ${p.againstQuote.pct}%` : ''}`,
         action: { label: 'Approve and send', href: href(p.id, 'approve') }, secondary: { label: 'Send back', href: href(p.id, 'sendback') }, inline: 'approve-po' })   // (R2-A) the tab's own row's second button
     }
     if (cv.approvesExpense) for (const e of cs.expenses.filter((x) => x.state === 'pending')) {
       push({ key: `money:expense-approve:${e.id}`, kind: 'cost-expense-approve', group: 'ok', tab: 'money', tone: 'approve', ref: e.id, amountMinor: e.amountMinor,
-        title: `${e.paidBy === 'member' ? `${firstName(nameOf(e.claimantId))}’s claim` : 'An expense'} — “${e.description}”`, meta: `${e.category} · ${day(e.spentOn)} · logged by ${nameOf(e.createdBy)}`,
+        title: `${e.paidBy === 'member' ? `${firstName(nameOf(e.claimantId))}’s expense` : 'Expense'}: ${e.description}`, meta: `${e.category} · ${day(e.spentOn)} · logged by ${nameOf(e.createdBy)}`,
         action: { label: 'Approve', href: href(e.id, 'approve') }, secondary: { label: 'Send back', href: href(e.id, 'sendback') }, inline: 'approve-expense' })   // (R2-A) the tab's own row's second button
     }
     /* (S44R — UAT row 361, call C8, as recommended; REVERSES F1-Q10) a bill over the limit with no PO, or more than its PO by over the tolerance,
        waits for an Owner's or an Admin's OK before anyone pays it — approved in the row */
     if (cv.approvesPo) for (const b of cs.bills.filter((x) => x.waits)) {
       push({ key: `money:bill-approve:${b.id}`, kind: 'cost-bill-approve', group: 'ok', tab: 'money', tone: 'approve', ref: b.id, amountMinor: b.totalMinor,
-        title: `${vendorName(b.vendorId)}’s bill ${b.reference}`, meta: `${b.approvalWhy === 'differs' ? `More than ${cs.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : 'Over the approval limit, on no PO'} · recorded by ${nameOf(b.createdBy)} ${ago(b.createdAt, now)} — waiting for your OK before it is paid`,
+        title: `Bill ${b.reference} from ${vendorName(b.vendorId)}`, meta: `${b.approvalWhy === 'differs' ? `More than ${cs.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : 'Over the approval limit, on no PO'} · recorded by ${nameOf(b.createdBy)} ${ago(b.createdAt, now)} — waiting for your approval before it is paid`,
         action: { label: 'Approve', href: href(b.id, 'approve') }, inline: 'approve-bill' })
     }
     /* ── ours, and late (S-05: the one red) — in the money group, so a hold or a completed project keeps them (needs-you.ts `holdSplit`) ── */
@@ -102,13 +110,13 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
       for (const b of cs.bills.filter((x) => x.overdueMinor > 0 && !x.waits)) {   // (S44R, C8) a waiting bill is its approval row's, never Pay's
         const late = daysOverdue(b.dueOn, now)
         push({ key: `money:bill-overdue:${b.id}`, kind: 'cost-bill-overdue', group: 'money', tab: 'money', tone: 'late', ref: b.id, amountMinor: b.overdueMinor,
-          title: `${vendorName(b.vendorId)}’s bill ${b.reference}`, meta: `Due ${day(b.dueOn)}${late > 0 ? ` · ${dayWords(late)} overdue` : ''}${b.poId ? ` · on ${cs.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : ''}`,
+          title: `Bill ${b.reference} from ${vendorName(b.vendorId)}`, meta: `Due ${dueDay(b.dueOn)}${late > 0 ? ` · ${dayWords(late)} overdue` : ''}${b.poId ? ` · on ${cs.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : ''}`,
           action: { label: 'Pay', href: href(b.id, 'pay') } })
       }
       for (const p of cs.pos.filter((x) => x.overdueMinor > 0 && !x.billIds.length)) {
         const late = daysOverdue(p.dueOn, now)
         push({ key: `money:po-overdue:${p.id}`, kind: 'cost-po-overdue', group: 'money', tab: 'money', tone: 'late', ref: p.id, amountMinor: p.overdueMinor,
-          title: `${p.number} to ${vendorName(p.vendorId)}`, meta: `To be paid by ${day(p.dueOn)}${late > 0 ? ` · ${dayWords(late)} overdue` : ''}`,
+          title: `${p.number} to ${vendorName(p.vendorId)}`, meta: `To be paid by ${dueDay(p.dueOn)}${late > 0 ? ` · ${dayWords(late)} overdue` : ''}`,
           action: { label: 'Pay', href: href(p.id, 'pay') } })
       }
     }
@@ -124,7 +132,7 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
     /* group 'late' (the work), not 'money': a vendor's delivery waits behind approvals and the client's money in Q-03's order, and on hold it
        rests under "Paused while on hold" as the rest of the work does (needs-you.ts `holdSplit`) */
     push({ key: `money:po-late:${p.id}`, kind: 'cost-po-late', group: 'late', tab: 'money', tone: 'neutral', ref: `po-late:${p.id}`,
-      title: lateDeliveryTitle(p.number, p.deliveryLateDays), meta: `${vendorName(p.vendorId)} · expected ${day(p.expectedOn)}${p.title ? ` · ${p.title}` : ''}`,
+      title: lateDeliveryTitle(p.number, p.deliveryLateDays), meta: `${vendorName(p.vendorId)} · expected ${dueDay(p.expectedOn)}${p.title ? ` · ${p.title}` : ''}`,
       action: { label: 'Mark delivered', href: href(p.id) } })
   }
   /* end P-B */
@@ -138,7 +146,7 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
     const tel = telHref(client.phone)
     push({ key: `money:overdue:${i.id}`, kind: 'money-overdue', group: 'money', tab: 'money', tone: 'neutral', ref: i.id, amountMinor: i.overdueMinor,
       title: `${label(i)} · ${i.stageName}`,
-      meta: `${late <= 1 ? 'A day' : dayWords(late)} overdue · due ${day(i.dueAt)}${chased ? ` · ${chased.charAt(0).toLowerCase()}${chased.slice(1)}` : ''} — call ${client.firstName}${tel ? ` on ${phoneDisplay(client.phone)}` : ''}${m.toCreditMinor ? ` · ${money2(m.toCreditMinor)} to credit against it` : ''}`,   // (invented copy)
+      meta: `${late <= 1 ? 'A day' : dayWords(late)} overdue · due ${dueDay(i.dueAt)}${chased ? ` · ${chased.charAt(0).toLowerCase()}${chased.slice(1)}` : ''} — call ${client.firstName}${tel ? ` on ${phoneDisplay(client.phone)}` : ''}${m.toCreditMinor ? ` · ${money2(m.toCreditMinor)} to credit against it` : ''}`,   // (invented copy)
       action: { label: 'Record a payment', href: href(i.id, 'record') },
       secondary: tel ? { label: `Call ${client.firstName}`, href: tel } : { label: 'Remind on WhatsApp', href: href(i.id, 'remind') } })
   }
@@ -147,7 +155,7 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
   if (pay?.viewer.confirms) for (const p of pay.list.filter((x) => x.status === 'to_confirm')) {
     const inv = m.invoices.find((i) => i.id === p.invoiceId)
     push({ key: `money:confirm:${p.id}`, kind: 'money-confirm', group: 'money', tab: 'money', tone: 'neutral', ref: p.id, amountMinor: p.amountMinor,
-      title: `${p.source === 'client' ? client.firstName : p.by} says they paid for ${p.invoiceNumber ?? `the ${p.stageName} invoice`}`,
+      title: `${p.source === 'client' ? client.firstName : p.by} says they paid ${p.invoiceNumber ?? `the ${p.stageName} invoice`}`,
       meta: `${p.stageName} · paid ${day(p.paidOn)}${p.reference ? ` · reference ${p.reference}` : ''}${p.trusted ? ' · it counts already — check it arrived' : ''}`,
       action: { label: 'Confirm', href: href(p.id, 'confirm') },
       ...(p.proof ? { secondary: { label: 'See the bank’s confirmation', href: href(p.id, 'confirm') } } : inv ? { secondary: { label: 'Open the invoice', href: href(inv.id) } } : {}) })
@@ -156,7 +164,7 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
     const late = daysOverdue(i.dueAt, now)
     const chased = remindedWords(i.remindedCount, i.lastRemindedAt)
     push({ key: `money:overdue:${i.id}`, kind: 'money-overdue', group: 'money', tab: 'money', tone: 'neutral', ref: i.id, amountMinor: i.overdueMinor,
-      title: `${label(i)} · ${i.stageName}`, meta: `${late <= 1 ? 'A day' : dayWords(late)} overdue · due ${day(i.dueAt)}${chased ? ` · ${chased.charAt(0).toLowerCase()}${chased.slice(1)}` : ''}${m.toCreditMinor ? ` · ${money2(m.toCreditMinor)} to credit against it` : ''}`,
+      title: `${label(i)} · ${i.stageName}`, meta: `${late <= 1 ? 'A day' : dayWords(late)} overdue · due ${dueDay(i.dueAt)}${chased ? ` · ${chased.charAt(0).toLowerCase()}${chased.slice(1)}` : ''}${m.toCreditMinor ? ` · ${money2(m.toCreditMinor)} to credit against it` : ''}`,
       action: { label: 'Record a payment', href: href(i.id, 'record') }, secondary: { label: 'Remind on WhatsApp', href: href(i.id, 'remind') } })
   }
   /* (simplify round 3, the owner's "you decide" 2026-10-10) Due today and nobody will remind the client by themselves — the due-day message is
@@ -232,8 +240,8 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
       const due = Math.min(m.invoices.find((i) => i.id === c.invoiceId)?.refundDueMinor ?? 0, c.amountMinor)
       if (due <= 0) continue
       push({ key: `money:to-refund:${c.id}`, kind: 'money-to-refund', group: 'money', tab: 'money', tone: 'neutral', ref: c.id, amountMinor: due,
-        title: `${money2(due)} to refund on ${c.number}`, meta: `${client.firstName} paid more than ${c.invoiceLabel} owes after the credit note`,
-        action: { label: 'Record the refund', href: href(c.id) } })
+        title: `Refund ${money2(due)} to ${client.firstName} (${c.number})`, meta: `${client.firstName} paid more than ${c.invoiceLabel} owes after the credit note`,
+        action: { label: 'Record', href: href(c.id) } })   // (the calm UI build 2026-10-27, W-602) the title says the refund
     }
   }
   /* (pending modules S07 — the projects card's D-14, as recommended) a client's overpayment held as their credit: the next invoice that owes
@@ -262,7 +270,7 @@ export async function fetchMoneyNeeds(projectId: string, viewer: Viewer, now: nu
     const poId = i.key.startsWith('po-over-') ? i.key.slice('po-over-'.length) : null
     push({ key: `money:insight:${i.key}`, kind: 'money-insight', group: 'money', tab: 'money', tone: 'neutral', ref: poId ?? `insight:${i.key}`,   // a PO waiting for approval already says what it leaves against the quote — one fact, once
       title: i.title, meta: i.message,
-      action: poId ? { label: 'Open the PO', href: href(poId) } : i.key === 'funded' ? { label: 'See what is owed', href: href(null, null, 'billing') } : i.key === 'vos' ? { label: 'Open the changes', href: href(null, null, 'changes') } : { label: 'Open the costs', href: href(null, null, 'costs') } })
+      action: poId ? { label: 'Open the PO', href: href(poId) } : i.key === 'funded' ? { label: 'See what’s to collect', href: href(null, null, 'billing') } : i.key === 'vos' ? { label: 'Open the variation orders', href: href(null, null, 'changes') } : { label: 'Open the costs', href: href(null, null, 'costs') } })
   }
 
   return out.map((r, n) => ({ r, n })).sort((a, z) => RANK[a.r.kind] - RANK[z.r.kind] || a.n - z.n).map(({ r }) => r)

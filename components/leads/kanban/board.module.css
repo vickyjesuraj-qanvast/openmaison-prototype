@@ -138,6 +138,19 @@
   font: var(--om-type-subheading-m);
 }
 .assignLink:hover { color: var(--om-color-on-primary-variant); }
+/* (the calm UI build 2026-10-27 — audit 2-06 · T-02) the table's rule on the card: "No task" in grey at rest, "Add task" on the card's hover or the
+   button's focus; the person-plus beside a lead's avatars on hover — and both always under a finger */
+.restLink .onHover { display: none; align-items: center; gap: var(--om-spacing-1); }
+.restLink .atRest { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.card:hover .restLink .onHover, .restLink:focus-visible .onHover { display: inline-flex; }
+.card:hover .restLink .atRest, .restLink:focus-visible .atRest { display: none; }
+.onHoverTool { display: inline-flex; opacity: 0; transition: opacity var(--motion-hover); }
+.card:hover .onHoverTool, .onHoverTool:focus-within { opacity: 1; }
+@media (hover: none) {
+  .restLink .onHover { display: inline-flex; }
+  .restLink .atRest { display: none; }
+  .onHoverTool { opacity: 1; }
+}
 /* "+n" overflow box — the table's (table.module.css .plusBox), REG-195. */
 .plusBox {
   width: 24px; height: 24px;

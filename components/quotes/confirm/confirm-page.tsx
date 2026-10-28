@@ -8,10 +8,10 @@ import { DangerButton, Dialog } from '@/components/om/dialog'
 import { QuoteStage, readingLineCount } from './quote-stage'
 import { useClientPhoneModel, waNumber } from './client-layout'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
+import { PrivateLinkBadge } from './private-link-badge'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
-import { displayDate, displayDateLong } from '@/lib/format'
+import { displayDate, displayDateLong, startOfDay } from '@/lib/format'
 import { docTotals } from '@/lib/templates/data'
 import { money2 } from '@/lib/quotes/math'
 import type { ClientQuote } from '@/lib/quotes/client-quote'
@@ -64,6 +64,9 @@ export function ConfirmPage({ token, data, extras }: { /** (pending modules S04)
   /* (pending modules S04 — card: "'Viewed' on the quote link … the follow-up cue") The page's first ask from a browser that ran it says the client
      opened the quote — a chat app drawing the link's card runs no script, so it never counts. Only while the quote shows (never "Not ready yet"). */
   const shows = extras.open || !!quote.confirmedAt || quote.status === 'Signed'
+  /* (4-34) the client's clock, read once: a quote still open past its Valid until says the price may have moved */
+  const [openedAt] = useState(() => Date.now())
+  const passed = !quote.confirmedAt && quote.status !== 'Signed' && !!data.data.quote.validUntil && startOfDay(new Date(data.data.quote.validUntil)) < startOfDay(new Date(openedAt))
   useEffect(() => { if (shows) void stampQuoteSeen({ token, via: 'confirm' }).catch(() => {}) }, [token, shows])
   /* (UX audit Q6 → K4, P-12) On the phone model the lines read as cards; "View as printed" opens the A4 in the viewer (the stage's). */
   const phone = useClientPhoneModel()
@@ -190,7 +193,7 @@ export function ConfirmPage({ token, data, extras }: { /** (pending modules S04)
           {brand.logo ? <img className={shell.logo} src={brand.logo} alt="" /> : null}
           <span className={shell.studio}>{studioName}</span>
         </span>
-        <MetaChip color="green" icon="lock">Private link</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
+        <PrivateLinkBadge />   {/* (the calm UI build 2026-10-27, 4-09 · W-028) one badge on every client page */}
       </header>
       <div className={`${shell.body} ${styles.pageBody}`}>
         {/* (K4 — P-12) The phone model's total card: what the quote comes to, before the reading — drawn there only (confirm-page.module.css) */}
@@ -200,12 +203,14 @@ export function ConfirmPage({ token, data, extras }: { /** (pending modules S04)
             <span className={styles.bigLabel}>{vo ? 'Change to the contract' : 'Total'}</span>
             <strong className={styles.bigAmount}>{vo && totals.totalMinor > 0 ? '+' : ''}{money2(totals.totalMinor)}</strong>
             <span className={styles.totalLine}>
-              {lines ? `${lines} ${lines === 1 ? 'line' : 'lines'}` : null}
-              {lines && data.data.quote.validUntil ? ' · ' : null}
-              {data.data.quote.validUntil ? `valid until ${displayDate(data.data.quote.validUntil)}` : null}
+              {lines ? `${lines} ${lines === 1 ? 'item' : 'items'}` : null}
+              {lines && data.data.quote.validUntil && !passed ? ' · ' : null}
+              {data.data.quote.validUntil && !passed ? `valid until ${displayDate(data.data.quote.validUntil)}` : null}
               {vo ? `${lines ? ' · ' : ''}your contract goes from ${money2(vo.before)} to ${money2(vo.after)}` : null}
             </span>
-            <span className={styles.totalAction}><Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="description" size={20} />} onPress={() => setPrinted(true)} data-testid="view-as-printed">View as printed</Button></span>
+            {/* (the calm UI build 2026-10-27, 4-34 · W-419) a price past its Valid until says so beside the total — never "valid until" a passed day */}
+            {passed && data.data.quote.validUntil ? <span className={styles.totalLine} data-testid="confirm-validity-passed">This price was valid until {displayDate(data.data.quote.validUntil)} — ask {designerFirst} if it still stands.</span> : null}
+            <span className={styles.totalAction}><Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="description" size={20} />} onPress={() => setPrinted(true)} data-testid="view-as-printed">See it as printed</Button></span>
           </section>
         ) : null}
         {/* (sweep S1) a link opened before the studio sent the quote shows nothing of it — no draft, no prices — only the card's "Not ready yet" */}

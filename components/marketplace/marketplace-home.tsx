@@ -1,12 +1,11 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
-import { Chips } from '@/components/om/chips'
-import { ChipRail } from '@/components/om/chip-rail'
+import { Tabs } from '@/components/om/tabs'
 import { ScopePill } from '@/components/om/scope-pill'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -24,22 +23,27 @@ import { Banners } from './banners'
 import { BrandCard, DealCard } from './cards'
 import { DealDialog } from './deal-dialog'
 import { MarketplaceGhost } from './marketplace-ghost'
+import { InfoTip } from '@/components/om/info-tip'
 import { useMarket, vendorHref } from './use-market'
 import pageStyles from '@/app/leads/leads.module.css'
 import gallery from '@/components/company/templates/quote-templates-gallery.module.css'
 import styles from './marketplace.module.css'
 
 const SHORT: Record<BrandSort, string> = { popular: 'Popular', recent: 'Recent', reviews: 'Reviews' }
-/** The All chip's own value — never a category's name (the house Chips take '' for nothing picked). */
-const ALL = '__all'
+/** (the calm UI build 2026-10-27, W-125) Where the feed comes from — said by the header's info glyph, no longer a line under the list. */
+const MARKET_SOURCE ='Brands and deals come from Qanvast’s partners. Each brand sets its own prices and terms.'
+/** The two views as the house Tabs name them (the address keeps `?view=deals`). */
+const VIEW_TABS: { view: MarketView; label: string; href: string }[] = [{ view: 'brands', label: 'Brands', href: '/marketplace' }, { view: 'deals', label: 'Deals', href: '/marketplace?view=deals' }]
 
 /**
  * (pending modules S24 — card studio:marketplace; 1.0's /marketplace) Qanvast's partner brands and their deals, for every studio role but
- * Accounting (1.0: owner · admin · id). The banners at the top; Brands · Deals as the house chips with their counts; the search (1.0's
- * "Search brands", here over each view's own words) and the sort (1.0's Most popular · Most recent · Most reviews, a featured brand first);
- * the categories as a chip rail (1.0's, each with its count, the empty ones left out); the brands as the house gallery's cards, twelve at a
- * time with Show more (1.0's PER_PAGE, its infinite scroll made a press). A deal opens its dialog; a brand its page. What the page shows lives
- * in the address (`?view=deals&category=Kitchen&sort=recent&shown=24`, `?deal=<id>` opens a deal), so Back from a brand returns to it.
+ * Accounting (1.0: owner · admin · id). The banners at the top; the search (1.0's "Search brands", here over each view's own words) and the sort
+ * (1.0's Most popular · Most recent · Most reviews, a featured brand first); the brands as the house gallery's cards, twelve at a time with Show
+ * more (1.0's PER_PAGE, its infinite scroll made a press). A deal opens its dialog; a brand its page. What the page shows lives in the address
+ * (`?view=deals&category=Kitchen&sort=recent&shown=24`, `?deal=<id>` opens a deal), so Back from a brand returns to it.
+ * (the calm UI build 2026-10-27, 6-01 · 6-27 — the owner's own example) Brands | Deals are the house Tabs under the header, no counts (a press
+ * switches in place, as the chips did — the address follows); the categories (1.0's, the empty ones left out) are ONE scope pill,
+ * "Category: All ▾", beside the search and the sort — one row, every filter kept; the line on where the feed comes from is the header's info glyph.
  */
 export function MarketplaceHome({ data }: { data: MarketplaceData }) {
   const router = useRouter()
@@ -52,6 +56,8 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
   const [dealId, setDealId] = useState<string | null>(() => params.get('deal'))
   const [sortOpen, setSortOpen] = useState(false)
   const sortRef = useRef<HTMLButtonElement>(null)
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLButtonElement>(null)
   const [menu, setMenu] = useState<{ b: BrandCardView } | null>(null)
   const menuAnchor = useRef<HTMLElement | null>(null)
   /* an arrival on this page while it is open (⌘K's deal, Maison AI's row, a link in a notice) carries its own view and deal: taken as it
@@ -82,7 +88,16 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
     try { window.history.replaceState(null, '', hereOf(o)) } catch { /* the address is a convenience */ }
   }
   const pickView = (v: MarketView) => { setView(v); setShown(PAGE_SIZE); setQuery(''); write({ view: v, shown: PAGE_SIZE }) }
-  const pickCategory = (c: string) => { setCategory(c); setShown(PAGE_SIZE); write({ category: c, shown: PAGE_SIZE }) }
+  const pickCategory = (c: string) => { setCategory(c); setCatOpen(false); setShown(PAGE_SIZE); write({ category: c, shown: PAGE_SIZE }) }
+  /* the house Tabs are links (a new tab, a copied address); a plain press switches the view in place, as the chips did — no round trip */
+  const onTabs = (e: MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    const tab = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[role="tab"]')
+    const v = VIEW_TABS.find((t) => t.href === tab?.getAttribute('href'))?.view
+    if (!v) return
+    e.preventDefault()
+    if (v !== view) pickView(v)
+  }
   const pickSort = (s: BrandSort) => { setSort(s); setSortOpen(false); write({ sort: s }) }
   /** A deal's dialog — over the view it was opened from, or (a banner, Maison AI) over Deals; the address says both in one write. */
   const openDeal = (id: string, inView?: MarketView) => {
@@ -122,7 +137,6 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
   ]
   useMaisonAi(suggestions)
 
-  const counts = { brands: data.brands.length, deals: data.deals.length }
   const menuRows = (b: BrandCardView) => (
     <>
       <DropdownItem onSelect={() => { setMenu(null); router.push(withFrom(`/marketplace/${b.id}`, here)) }}>Open</DropdownItem>
@@ -138,7 +152,12 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
   return (
     <PageReveal skeleton={ghost}>
       <div className={pageStyles.body} data-testid="marketplace">
-        <PageHeader title="Marketplace" />
+        <PageHeader title="Marketplace" scrollShadow={empty} after={empty ? undefined : <InfoTip text={MARKET_SOURCE} label="Where the brands and deals come from" testId="market-source" />} />   {/* (the calm UI build 2026-10-27, W-125) the glyph beside the title */}
+        {empty ? null : (
+          <div className={styles.tabsHost} onClickCapture={onTabs} data-testid="market-views">
+            <Tabs items={VIEW_TABS.map((t) => ({ label: t.label, href: t.href }))} activeHref={view === 'deals' ? VIEW_TABS[1]!.href : VIEW_TABS[0]!.href} aria-label="Marketplace views" className={styles.stickyTabs} />
+          </div>
+        )}
         <div className={styles.content}>
           {data.banners.length ? <Banners banners={data.banners} here={here} onDeal={(id) => openDeal(id, 'deals')} /> : null}
           {empty ? (
@@ -150,8 +169,11 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
               <div className={styles.filters}>
                 <div className={styles.bar}>
                   <div className={styles.views}>
-                    <Chips label="Show" testId="market-views" value={view} onChange={(v) => pickView(v as MarketView)}
-                           options={[{ value: 'brands', label: `Brands · ${counts.brands}` }, { value: 'deals', label: `Deals · ${counts.deals}` }]} />
+                    {view === 'brands' && data.categories.length > 1 ? (
+                      <span className={styles.pillAnchor} data-testid="market-categories">
+                        <ScopePill ref={catRef} label={`Category: ${category || 'All'}`} short={category || 'All'} open={catOpen} scoped={!!category} onClick={() => setCatOpen((o) => !o)} />
+                      </span>
+                    ) : null}
                   </div>
                   <div className={styles.tools}>
                     <ToolbarSearch query={query} onQuery={(q) => { setQuery(q); setShown(PAGE_SIZE) }} placeholder={view === 'brands' ? 'Search brands' : 'Search deals'} label={view === 'brands' ? 'Search brands' : 'Search deals'} />
@@ -162,20 +184,14 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
                     ) : null}
                   </div>
                 </div>
-                {view === 'brands' && data.categories.length > 1 ? (
-                  <ChipRail label="Categories" className={styles.rail}>
-                    {/* (pending modules S25 — a bug fix: the house Chips read '' as nothing picked, so All never showed as the pick) All is its own value */}
-                    <Chips label="Categories" testId="market-categories" value={category || ALL} onChange={(v) => pickCategory(v === ALL ? '' : v)}
-                           options={[{ value: ALL, label: `All · ${counts.brands}` }, ...data.categories.map((c) => ({ value: c.name, label: `${c.name} · ${c.count}` }))]} />
-                  </ChipRail>
-                ) : null}
               </div>
               {visible.length === 0 ? (
                 <TabSearchEmpty noun={view} searching={query.trim() !== ''} onClearAll={() => { setQuery(''); pickCategory('') }} />
               ) : (
                 <div className={gallery.grid} role="list" aria-label={view === 'brands' ? 'Brands' : 'Deals'} data-kb-list={view === 'brands' ? 'brand' : 'deal'} data-testid={`market-${view}`}>
                   {view === 'brands'
-                    ? (visible as BrandCardView[]).map((b) => <BrandCard key={b.id} b={b} here={here} menuOpen={menu?.b.id === b.id} onMenu={(x, el) => { menuAnchor.current = el; setMenu({ b: x }) }} onDeal={(d) => openDeal(d.id)} />)
+                    ? (visible as BrandCardView[]).map((b) => <BrandCard key={b.id} b={b} here={here} menuOpen={menu?.b.id === b.id} onMenu={(x, el) => { menuAnchor.current = el; setMenu({ b: x }) }} onDeal={(d) => openDeal(d.id)}
+                                                                         onDeals={(x) => router.push(withFrom(`/marketplace/${x.id}`, here))} />)
                     : (visible as DealView[]).map((d) => <DealCard key={d.id} d={d} now={data.now} viewerId={data.viewer.id} onOpen={(x) => openDeal(x.id)} />)}
                 </div>
               )}
@@ -185,11 +201,14 @@ export function MarketplaceHome({ data }: { data: MarketplaceData }) {
                   <Button variant="secondary" appearance="outlined" onPress={() => { const n = shown + PAGE_SIZE; setShown(n); write({ shown: n }) }} data-testid="market-more">Show more</Button>
                 </div>
               ) : null}
-              <p className={styles.source}>Brands and deals come from Qanvast’s partners. Each brand sets its own prices and terms.</p>
             </>
           )}
         </div>
       </div>
+      <PortalMenu open={catOpen} anchor={catRef} onClose={() => setCatOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Category">
+        <DropdownItem role="menuitemradio" checked={!category} onSelect={() => pickCategory('')}>All</DropdownItem>
+        {data.categories.map((c) => <DropdownItem key={c.name} role="menuitemradio" checked={category === c.name} onSelect={() => pickCategory(c.name)}>{c.name}</DropdownItem>)}
+      </PortalMenu>
       <PortalMenu open={sortOpen} anchor={sortRef} onClose={() => setSortOpen(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Sort brands">
         {SORTS.map((s) => <DropdownItem key={s.key} role="menuitemradio" checked={sort === s.key} onSelect={() => pickSort(s.key)}>{s.label}</DropdownItem>)}
       </PortalMenu>

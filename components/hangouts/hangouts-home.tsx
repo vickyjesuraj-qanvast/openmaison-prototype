@@ -5,6 +5,8 @@ import { useMemo, useState, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { Tooltip } from '@/components/om/tooltip'
 import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'
 import { MetaChip } from '@/components/om/meta-chip'
@@ -36,6 +38,8 @@ import styles from './hangouts.module.css'
  * ended); one press — Apply (Owners and Admins, while places are left), the event's page once the studio takes part. Its scopes are 1.0's
  * chips (All · Upcoming · Applied · Confirmed) in plain words. The events come from Qanvast's feed (lib/hangouts/feed.ts); the demo's are
  * samples and the page says so. *(invented copy: the scope words, the cards' lines, the empty state, the sample line)*
+ * (the calm UI build 2026-10-27, 2-26 · 2-09 · T-03 · T-05) No filled button on a card but the day's one job (Open today's chats) — Apply is
+ * outlined; the sample line is said once, behind the bar's "?", never as a word on every card; the facts' labels in sentence case.
  */
 export function HangoutsHome({ data }: { data: HangoutsData }) {
   const router = useRouter()
@@ -87,7 +91,7 @@ export function HangoutsHome({ data }: { data: HangoutsData }) {
         <div className={styles.content}>
           {data.events.length === 0 ? (
             <EmptyState icon="group" tone="plain" title="No Hangouts from Qanvast right now" testId="hangouts-empty"
-                        help="When Qanvast plans a Hangout — homeowners meeting designers at tables in one venue — it shows here, and you can apply for a place." />
+                        help="When Qanvast plans a Hangout — clients meeting designers at tables in one venue — it shows here, and you can apply for a place." />
           ) : (
             <>
               <div className={styles.bar}>
@@ -98,6 +102,7 @@ export function HangoutsHome({ data }: { data: HangoutsData }) {
                 </div>
                 <div className={styles.tools}>
                   <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search Hangouts" label="Search Hangouts" />
+                  {data.sample ? <Tooltip label={SAMPLE_LINE}><IconButton icon="help" label="About these Hangouts" data-testid="hangouts-sample" /></Tooltip> : null}
                 </div>
               </div>
               {shown.length === 0 ? (
@@ -107,7 +112,6 @@ export function HangoutsHome({ data }: { data: HangoutsData }) {
                   {shown.map((e) => <EventCard key={e.id} e={e} runs={data.runs} busy={busy === e.id} onApply={() => { void apply(e) }} onWithdraw={() => { void withdraw(e) }} onOpen={() => router.push(hangoutHref(e.id, defaultView(e.phase, true)))} />)}
                 </div>
               )}
-              {data.sample ? <p className={styles.source} data-testid="hangouts-sample">Sample Hangouts written for the demo — Qanvast’s own events come through its feed.</p> : null}
             </>
           )}
         </div>
@@ -116,13 +120,16 @@ export function HangoutsHome({ data }: { data: HangoutsData }) {
   )
 }
 
+/** (the calm UI build 2026-10-27, 2-09) the demo's note, said once behind the bar's "?" */
+const SAMPLE_LINE = 'Sample Hangouts written for the demo — Qanvast’s own events come through its feed.'
+
 function EventCard({ e, runs, busy, onApply, onWithdraw, onOpen }: { e: HangoutListItem; runs: boolean; busy: boolean; onApply: () => void; onWithdraw: () => void; onOpen: () => void }) {
   const taking = e.participation === 'confirmed'
   const href = hangoutHref(e.id, taking ? defaultView(e.phase, true) : undefined)   // the view it opens on rides the address, so its loader draws it
   const line = eventLine(e)
   const press = eventPress(e, runs)
   return (
-    <Card title={e.daysLine} metaRight={e.sample ? 'Sample' : undefined} testId="hangout-card">
+    <Card title={e.daysLine} testId="hangout-card">
       <div className={styles.cardBody} data-kb-row data-kb-id={e.id} data-phase={e.phase} data-participation={e.participation}>
         <div className={styles.cardTop}>
           <div className={styles.headText}>
@@ -133,7 +140,7 @@ function EventCard({ e, runs, busy, onApply, onWithdraw, onOpen }: { e: HangoutL
             {e.customerProfile ? <p className={styles.about}>{e.customerProfile}</p> : null}
           </div>
           <span className={styles.press}>
-            {press?.kind === 'apply' ? <Button onPress={onApply} isDisabled={busy} data-testid="hangout-apply">{busy ? 'Applying…' : press.label}</Button> : null}
+            {press?.kind === 'apply' ? <Button variant="primary" appearance="outlined" onPress={onApply} isDisabled={busy} data-testid="hangout-apply">{busy ? 'Applying…' : press.label}</Button> : null}
             {press?.kind === 'who' ? <span className={styles.help}>{press.label}</span> : null}
             {press?.kind === 'withdraw' ? <Button variant="secondary" appearance="outlined" onPress={onWithdraw} isDisabled={busy} data-testid="hangout-withdraw">{press.label}</Button> : null}
             {press?.kind === 'open' ? <Button variant="primary" appearance={e.phase === 'today' ? 'filled' : 'outlined'} onPress={onOpen} data-testid="hangout-open">{press.label}</Button> : null}

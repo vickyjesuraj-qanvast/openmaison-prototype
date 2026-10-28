@@ -67,6 +67,14 @@
   .wrap { transition: none; }
 }
 
+/* (the calm UI build 2026-10-27 — the audit's 5-50 · 6-28 · 1-43) the button steps aside while the page has something under its resting place
+   (maison-fab.tsx `useStepAside` writes `data-aside`): it sinks a little and fades; one holding keyboard focus stays. At a desk (`fade`) its own
+   box still takes a press (the pointer nearing brings it back first); under a finger (`pass`, a filled button under it) the tap goes through
+   to that button. Reduced motion: at once (the rules above). */
+.wrap[data-aside]:not(:focus-within) { transform: translateY(16px) scale(0.92); opacity: 0; }
+.wrap[data-aside="pass"]:not(:focus-within) { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .wrap[data-aside] { transition: none; } }
+
 /* (gaps build E, item 3) The file viewer's strip of the folder's files runs along the bottom edge: while it is up the button steps over it
    (REG-358's way — `components/leads/files/file-viewer.tsx` publishes the flag and the strip's measured height). */
 :global(body[data-om-file-strip]) .wrap { bottom: calc(var(--app-file-strip-height, 72px) + var(--om-spacing-4)); }

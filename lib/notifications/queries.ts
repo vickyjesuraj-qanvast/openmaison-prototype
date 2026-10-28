@@ -6,8 +6,9 @@ import { sessionMemberId } from '@/lib/db/session'   // (pending modules S43A) t
 import { DEFAULT_RULES, DEFAULT_TEMPLATES, parseRules, parseTemplates, type Channel, type FeedAct, type FeedRow, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { fetchContactedLeadIds } from '@/lib/leads/queries'
+import { isUntouchedLead } from '@/lib/leads/filters'
 import { runsLeads, runsMoney } from '@/lib/settings/roles'
-import { displayDate, titleCaseName } from '@/lib/format'
+import { displayDate, isOverdue, startOfDay, titleCaseName } from '@/lib/format'
 
 /* (REG-604) Notifications: the rules and messages (settings), the feed (stored rows + the follow-ups derived now). */
 
@@ -42,9 +43,8 @@ export async function derivedDue(memberId: string, role: string, rules: Notifica
     /* (pending modules S27) "has had contact" is the listing's own rule (`lastContactOf`: a contact log, a Contacted entry, a meeting held — a
        Hangout chat at the studio's table) — so the bell never calls a lead untouched while Last contact names a contact */
     const contacted = await fetchContactedLeadIds(rows.map((l) => l.id))
-    const limit = now - rules.untouchedMinutes * 60_000
     for (const l of rows) {
-      if (contacted.has(l.id) || l.createdAt.getTime() > limit) continue
+      if (!isUntouchedLead({ stage: l.stage, createdAt: l.createdAt, contacted: contacted.has(l.id) }, now, rules.untouchedMinutes)) continue   // (the Dashboard redesigned, P-13) the one rule, shared with the Dashboard
       if (rules.stopWhenClosed && CLOSED.has(l.stage)) continue
       const mine = links.filter((x) => x.leadId === l.id).map((x) => x.memberId)
       if (!(mine.includes(memberId) || (mine.length === 0 && runsLeads(role)))) continue   // (S44O — C6) an unassigned lead's: the lead desk's too
@@ -77,13 +77,21 @@ export async function derivedDue(memberId: string, role: string, rules: Notifica
       if (!(mine.includes(memberId) || (mine.length === 0 && runsStudio(role)))) continue
       const due = t.dueAt.getTime()
       const href = pid ? `/projects/${pid}/tasks?open=${t.id}` : lead ? `/leads/${lead.id}/tasks?open=${t.id}` : `/tasks?open=${t.id}`
-      const where = lead ? `On ${lead.name}` : 'A studio task'
-      if (due <= now) { if (dueOn) out.push({ id: `task-${t.id}`, kind: 'task_due', title: `Overdue: ${t.title}`, body: where, href, at: due, readAt: null, channels: channelsOf(rules, 'task_due'), derived: true, fields: { '{task}': t.title } }) }
-      else if (soonOn && due - now <= SOON_MS) { const m = Math.max(1, Math.round((due - now) / 60_000)); out.push({ id: `task-soon-${t.id}`, kind: 'task_due_soon', title: `${t.kind === 'Follow-up' ? 'Follow-up' : 'Due'} in ${m} min: ${t.title}`, body: where, href, at: due - SOON_MS, due, readAt: null, channels: channelsOf(rules, 'task_due_soon'), derived: true, fields: { '{task}': t.title, '{when}': `in ${m} ${m === 1 ? 'minute' : 'minutes'}` } }) }
+      /* (the calm UI build 2026-10-27 — the audit's 1-20 · W-073: one date a row, in its time line) the task's own words, then whose — the due
+         day is the row's meta (`dueLine`), never a second time in its title (was "Due today: … / On Cheryl Lim / Due today") */
+      const where = lead ? lead.name : 'A general task'
+      /* (the Dashboard redesigned, 2026-10-26 — P-13 "one overdue clock", his Build mark) Overdue is the task lists' own rule, `isOverdue`: due
+         on a day before today — never the moment its time passed (a date-only task read "Overdue" from the midnight of its own day while My
+         tasks said Due today). Stamped at its due day's local midnight, so the line's "n days late" counts calendar days as the lists do. A task
+         due today whose time has gone (or that has none) is "Due today": the due-soon row's words and glyph, riding the channels the overdue
+         notice rode at that moment — so nothing new is sent. */
+      if (isOverdue(t.dueAt, now)) { if (dueOn) out.push({ id: `task-${t.id}`, kind: 'task_due', title: t.title, body: where, href, at: startOfDay(t.dueAt), readAt: null, channels: channelsOf(rules, 'task_due'), derived: true, fields: { '{task}': t.title } }) }
+      else if (due <= now) { if (dueOn) out.push({ id: `task-soon-${t.id}`, kind: 'task_due_soon', title: t.title, body: where, href, at: due, due, readAt: null, channels: channelsOf(rules, 'task_due'), derived: true, fields: { '{task}': t.title, '{when}': 'today' } }) }
+      else if (soonOn && due - now <= SOON_MS) { const m = Math.max(1, Math.round((due - now) / 60_000)); out.push({ id: `task-soon-${t.id}`, kind: 'task_due_soon', title: t.title, body: where, href, at: due - SOON_MS, due, readAt: null, channels: channelsOf(rules, 'task_due_soon'), derived: true, fields: { '{task}': t.title, '{when}': `in ${m} ${m === 1 ? 'minute' : 'minutes'}` } }) }
       /* (gaps build, package C — 15) a running project's task, the lead time before its due day — "Due tomorrow" · "Due in 3 days" (the day count is by local midnights, as the row's own) */
       else if (soonOn && pid) {
         const days = Math.round((new Date(t.dueAt.getFullYear(), t.dueAt.getMonth(), t.dueAt.getDate()).getTime() - new Date(new Date(now).getFullYear(), new Date(now).getMonth(), new Date(now).getDate()).getTime()) / 86_400_000)
-        if (days >= 0 && days <= alertDays) out.push({ id: `task-soon-${t.id}`, kind: 'task_due_soon', title: `${days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`}: ${t.title}`, body: where, href, at: Math.max(due - alertDays * 86_400_000, now - 60_000), due, readAt: null, channels: channelsOf(rules, 'task_due_soon'), derived: true, fields: { '{task}': t.title, '{when}': days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days` } })   // (pending modules S18) `due`: the bell's due line read "Due in 29 min" on a task due days ahead
+        if (days >= 0 && days <= alertDays) out.push({ id: `task-soon-${t.id}`, kind: 'task_due_soon', title: t.title, body: where, href, at: Math.max(due - alertDays * 86_400_000, now - 60_000), due, readAt: null, channels: channelsOf(rules, 'task_due_soon'), derived: true, fields: { '{task}': t.title, '{when}': days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days` } })   // (pending modules S18) `due`: the bell's due line read "Due in 29 min" on a task due days ahead
       }
     }
   }

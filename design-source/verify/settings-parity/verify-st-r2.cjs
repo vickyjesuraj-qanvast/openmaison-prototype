@@ -13,6 +13,9 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
 const as = (id) => sql(`update members set is_you = case id when '${id}' then 1 else 0 end`)
 const MICHELLE0 = sql(`select coalesce(manager_id, 'none') || '|' || accepting_leads from members where id='michelle'`)
 const row = (page, name) => page.getByTestId('member-row').filter({ has: page.locator('span[class*="__name"]').filter({ hasText: new RegExp(`^${name}`) }) })
+const memberMore = async (p, r) => { await r.getByTestId('member-more').click(); await p.waitForTimeout(350) }   // (the calm UI build 2026-10-27, a deliberate change) a member row's other presses are in its ⋮ (5-01)
+const menuItem = (p, name) => p.getByRole('menuitem', { name: new RegExp(`^${name}`) })
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) Who may do what is Roles & access' drawer now (5-04)
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -45,7 +48,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
 
   await step('deactivate names the open work, and Undo brings the member back', async () => {
     await page.goto(`${BASE}/company/members`); await ready(page)
-    await row(page, 'Michelle').getByRole('button', { name: 'Deactivate' }).click()
+    await memberMore(page, row(page, 'Michelle')); await menuItem(page, 'Deactivate').click()
     const dlg = page.getByRole('dialog', { name: 'Deactivate Michelle?' })
     ok('the confirm names her open leads', /open lead/.test(await dlg.innerText()), (await dlg.innerText()).slice(0, 160))
     await shot('02-deactivate-confirm')
@@ -59,7 +62,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     const lead = sql(`select l.id from leads l where l.deleted_at is null and l.stage not in ('Won','Lost') and exists (select 1 from lead_assignees a where a.lead_id=l.id and a.member_id='sarah') limit 1`)
     const other = sql(`select l.id from leads l where l.deleted_at is null and not exists (select 1 from lead_assignees a where a.lead_id=l.id) limit 1`)
     await page.goto(`${BASE}/company/members`); await ready(page)
-    await row(page, 'Sarah').getByRole('button', { name: 'Deactivate' }).click()
+    await memberMore(page, row(page, 'Sarah')); await menuItem(page, 'Deactivate').click()
     await page.getByRole('dialog', { name: 'Deactivate Sarah?' }).getByRole('button', { name: 'Deactivate' }).click(); await snack(page, 'Sarah deactivated')
     await page.reload(); await ready(page)
     ok('Sarah listed under Deactivated with Reactivate', /Sarah/.test(await page.getByTestId('members-inactive').innerText()) && (await page.getByTestId('members-inactive').getByRole('button', { name: 'Reactivate' }).count()) === 1)
@@ -76,6 +79,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     // (one-home N-06, a deliberate change of this rule) Settings › Studio keeps no team list — Company › Members (above) names her; the role
     // columns count only the active team.
     const designers = sql(`select count(*) from members where role='Designer' and is_active=1`)
+    await openRoles(page)
     ok('Settings › Studio counts her nowhere', new RegExp(`Designer · ${designers}`, 'i').test(await page.getByRole('table', { name: 'Who may do what' }).getByRole('row').first().innerText()) && (await page.getByTestId('studio-team').count()) === 0, `${designers} active Designers`)
     await page.goto(`${BASE}/company/members`); await ready(page)
     await page.getByTestId('members-inactive').getByRole('button', { name: 'Reactivate' }).click(); await snack(page, 'Sarah reactivated')
@@ -87,7 +91,9 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     await page.goto(`${BASE}/company/members`); await ready(page)
     ok('an Admin cannot change the Owner’s role', await row(page, 'Dane').getByTestId('member-role').locator('button, input').first().isDisabled())
     ok('nor their own', await row(page, 'Germaine').getByTestId('member-role').locator('button, input').first().isDisabled())
-    ok('nor deactivate the Owner', await row(page, 'Dane').getByRole('button', { name: 'Deactivate' }).isDisabled())
+    await memberMore(page, row(page, 'Dane'))
+    ok('nor deactivate the Owner', await menuItem(page, 'Deactivate').isDisabled())
+    await page.keyboard.press('Escape'); await page.waitForTimeout(250)
     await page.getByRole('button', { name: 'Add member' }).click()
     const dlg = page.getByRole('dialog', { name: 'Add member' })
     await dlg.getByRole('combobox', { name: 'Role' }).click(); await page.waitForTimeout(300)
@@ -98,8 +104,10 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     as('dane')
     await page.goto(`${BASE}/company/members`); await ready(page)
     ok('the Owner cannot change their own role', await row(page, 'Dane').getByTestId('member-role').locator('button, input').first().isDisabled())
-    ok('and is never offered Deactivate on themself', (await row(page, 'Dane').getByRole('button', { name: 'Deactivate' }).count()) === 0)
-    await page.goto(`${BASE}/settings?section=studio`); await ready(page)
+    await memberMore(page, row(page, 'Dane'))
+    ok('and is never offered Deactivate on themself', (await menuItem(page, 'Deactivate').count()) === 0)
+    await page.keyboard.press('Escape'); await page.waitForTimeout(250)
+    await page.goto(`${BASE}/settings?section=studio`); await ready(page); await openRoles(page)
     ok('Who may do what: only an Owner makes an Owner', JSON.stringify(await page.getByTestId('may-owner').locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach')))) === '["yes","no","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     sql(`update members set role='Designer' where id='germaine'`)
   })
@@ -111,7 +119,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     ok('Notifications: switches disabled, no Edit', await page.getByTestId('event-new_lead').locator('input[type="checkbox"]').first().isDisabled() && (await page.getByRole('button', { name: 'Edit', exact: true }).count()) === 0)   // exact: the rail's AI credits button (REG-699) holds "edit"
     await shot('05-designer-notifications')
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
-    ok('Profile: read-only, no Save changes', (await page.getByTestId('read-only-line').count()) === 1 && (await page.getByRole('button', { name: 'Save changes' }).count()) === 0 && await page.getByLabel('Company name').isDisabled())
+    ok('Profile: read-only, no Save', (await page.getByTestId('read-only-line').count()) === 1 && (await page.getByRole('button', { name: /^(Save|Save changes)$/ }).count()) === 0 && await page.getByLabel('Company name').isDisabled())   // (the calm UI build 2026-10-27, a deliberate change) the header's one Save (5-18)
     await shot('06-designer-profile')
     await page.goto(`${BASE}/company/templates/brand`); await ready(page)
     ok('Brand kit: read-only, no Save changes', (await page.getByTestId('read-only-line').count()) === 1 && (await page.getByRole('button', { name: 'Save changes' }).count()) === 0)
@@ -123,7 +131,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     await shot('07-designer-template-menu')
     await page.keyboard.press('Escape')
     await page.goto(`${BASE}/company/integrations`); await ready(page)
-    ok('Integrations: no connect or simulate', (await page.getByRole('button', { name: /Connect a Facebook page|Simulate/ }).count()) === 0)
+    ok('Integrations: no connect or try', (await page.getByRole('button', { name: /Connect a Facebook page|Simulate|^Try it$/ }).count()) === 0)   // (the calm UI build 2026-10-27, a deliberate change) Simulate … (demo) reads Try it (W-377)
   })
 
   await step('More › Company on a phone', async () => {

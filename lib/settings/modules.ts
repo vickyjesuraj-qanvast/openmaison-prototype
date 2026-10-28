@@ -20,7 +20,7 @@ export const SETTINGS_MODULES = [
   { key: 'projects', label: 'Projects', live: true },   // (REG-921, Projects round 1) live with the project numbers; round 7 grows it
   { key: 'quotes', label: 'Quotes & pricing', live: true },
   { key: 'finance', label: 'Finance', live: true },   // (gaps build F1) live with money out: Settings › Finance › Costs · (simplify S-15) every money rule's one home
-  { key: 'notifications', label: 'Notifications', live: true },
+  { key: 'notifications', label: 'Studio notifications', live: true },   // (the calm UI build 2026-10-27 — B1's request, 1-41) the studio's, apart from Your profile › Your notifications; the key and `?section=notifications` stay
 ] as const
 export type SettingsModule = 'studio' | 'leads' | 'meetings' | 'projects' | 'quotes' | 'notifications' | 'finance'
 export const settingsHref = (key: string) => `/settings?section=${key}`

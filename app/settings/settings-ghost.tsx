@@ -5,28 +5,25 @@ import { useSearchParams } from 'next/navigation'
 import { Bone } from '@/components/shell/skeleton'
 import { GhostChips, GhostField, GhostTextButton, Line, Slot, Words, cycle, labelled } from '@/components/shell/ghost-kit'
 import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
-import { MODULE_LINKS, SETTINGS_MODULES, parseSettingsModule, type ModuleLink, type SettingsModule } from '@/lib/settings/modules'
-import { DEFAULT_LEAD_VISIBILITY, DEFAULT_QUOTE_APPROVAL, DEFAULT_QUOTE_RULES, DEFAULT_TEMPLATE_APPROVAL, LEAD_VISIBILITY_OPTIONS, QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, VISIBILITY_HELP, VISIBILITY_POINTER } from '@/lib/settings/types'
+import { SETTINGS_MODULES, parseSettingsModule, type SettingsModule } from '@/lib/settings/modules'
+import { LEAD_VISIBILITY_OPTIONS, QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, VISIBILITY_HELP } from '@/lib/settings/types'
 import {
-  APPROVAL_RULES, COST_APPROVALS_WORDS, DOCUMENT_NUMBERS_HELP, EVENTS_CARD, EVENTS_PERSONAL, FEE_FIRST_WORDS, VO_BILLING_WORDS, FINANCE_PROFILE_POINTER, HOW_LEADS_MOVE_NOTE, INVOICES_HELP,
-  INVOICE_APPROVAL_POINTER, LEAD_SOURCES_HELP, LEAD_STAGES_HELP, NOTIFICATIONS_HELP, OWNER_APPROVALS_HELP, PROJECTS_MONEY_POINTER, PROJECTS_VISIBILITY_POINTER,
-  PAYMENT_TERMS_HELPER, PROJECT_NUMBERS_HELP, PROJECT_NUMBER_HELPERS, STAGE_ASK_WORDS, STAGE_RECORDS, UNTOUCHED_HELP, UPDATE_REVIEW_WORDS, WHO_MAY_HELP, WHO_SEES_LEADS_MORE,
-  financeModuleHelp, leadsModuleHelp, linkedText, projectsModuleHelp, quotesModuleHelp, studioHelp, type Linked,
+  APPROVAL_RULES, COST_APPROVALS_WORDS, DOCUMENT_NUMBERS_HELP, DOCUMENT_NUMBERS_HOW, EVENTS_CARD, EVENTS_PERSONAL, FEE_FIRST_WORDS, FINANCE_GROUP_LABELS, VO_BILLING_WORDS, HOW_LEADS_MOVE_NOTE, INVOICES_HELP,
+  INVOICE_APPROVAL_POINTER, LEAD_SOURCES_HELP, LEAD_STAGES_HELP, NOTIFICATIONS_HELP, OWNER_APPROVALS_HELP, OWNER_APPROVALS_TITLE, ROLES_ROW, WORDING_WORDS,
+  PAYMENT_TERMS_HELPER, PROJECT_NUMBERS_HELP, PROJECT_NUMBER_HELPERS, STAGE_ASK_WORDS, STAGE_RECORDS, UNTOUCHED_HELP, UPDATE_REVIEW_WORDS, WHO_SEES_LEADS_MORE,
+  financeModuleHelp, leadsModuleHelp, linkedText, projectsModuleHelp, quotesModuleHelp, studioHelp,
   MEETINGS_WORDS, MEETING_CARDS, checklistWordsLine, meetingsModuleHelp, weightsTotalLine,
 } from '@/lib/settings/copy'
 import { AIMS, DIMENSIONS, FEATURES } from '@/lib/meetings/model'   // (pending modules S23) the Meetings module's rows and fields
 import { categoryLabel, checklistFor } from '@/lib/meetings/checklists'
 import meetingsCard from './meetings-settings.module.css'
-import { REACH_LABEL, ROLE_COLUMNS, RULE_PLACES, permissionGroups, permissionRows } from '@/lib/settings/permissions'
+import { ROLE_COLUMNS } from '@/lib/settings/permissions'
 import { ALL_STAGES } from '@/lib/leads/enums'
-import { CHANNELS, EVENTS } from '@/lib/notifications/model'
+import { CHANNELS, EVENTS, IN_APP_ONLY } from '@/lib/notifications/model'
 import { DOCS, TICKET_DOC } from '@/lib/settings/document-numbers'
-import { ACCOUNTING, MARKETING, opensPath } from '@/lib/settings/roles'
 import styles from './settings.module.css'
-import { YOURS_LINE } from './module-head'   // (pending modules S46C · M2)
 import choice from '@/components/om/choice-card.module.css'
 import updateReview from '@/components/projects/updates/update-review-setting.module.css'
-import own from './studio-settings.module.css'   // (parity P-38) Who may do what's group bands
 import docs from './document-numbers.module.css'   // (simplify S-15) Finance's Document numbers rows
 import stagesCard from './lead-stages-card.module.css'   // (pending modules S05) Lead stages
 import { useSeedFlag, useSeedStudio, useViewerShape } from '@/lib/ghost-shape'   // (parity map, FB-114) · (pending modules S31) the studio's name, a studio of one
@@ -48,21 +45,19 @@ import { COST_ROLES, COST_ROLE_HELP, MARKETING_COST_HELP, COST_VISIBILITY_HELP, 
  * rows' own lists — the roles' rules, the stages, the documents, the events), so it wraps in the ghost where it wraps on the page at every
  * width; a phone's labelled cells take their names' room (`labelled`), the head's links are the buttons they stand for (`GhostTextButton`).
  */
-type Head = { title: string; help: string; pointers?: readonly (string | Linked)[]; nested?: boolean }
+/* (the calm UI build 2026-10-27, 5-17) a module's head is its one help line now — its title is for screen readers (the tab names it) and its
+   doors are the module's last line, *Related:*, below the ghost's first cards; Notifications' head keeps one door, Sent messages */
+type Head = { help: string; door?: string }
 /* (pending modules S31) the open studio's name, as the help lines print it (the app shell's seed — the demo's "Demo Studio" in its base) */
 const headsFor = (STUDIO: string): Record<SettingsModule, Head> => ({
-  studio: { title: 'Roles & access', help: studioHelp(STUDIO) },   /* (one-home N-06) · (pending modules S14) the module's name and help */
-  /* (pending modules S14) the pointer to Who sees leads' one home — the page sets it under the head, in the head's own block */
-  leads: { title: 'Lead management', help: leadsModuleHelp(STUDIO), nested: true, pointers: [`${VISIBILITY_POINTER} Roles & access › Who sees leads.`] },
-  meetings: { title: 'Meetings', help: meetingsModuleHelp(STUDIO) },   /* (pending modules S23) */
-  /* (REG-921) · (parity P-38) the Who sees leads pointer · (simplify S-15) the door to Finance */
-  projects: { title: 'Projects', help: projectsModuleHelp(STUDIO), nested: true, pointers: [PROJECTS_VISIBILITY_POINTER, PROJECTS_MONEY_POINTER] },
-  quotes: { title: 'Quotes & pricing', help: quotesModuleHelp(STUDIO) },
-  /* (gaps build F1) · (simplify S-15) where how a client pays is kept */
-  finance: { title: 'Finance', help: financeModuleHelp(STUDIO), nested: true, pointers: [FINANCE_PROFILE_POINTER] },
-  notifications: { title: 'Notifications', help: NOTIFICATIONS_HELP },
+  studio: { help: studioHelp(STUDIO) },   /* (one-home N-06) · (pending modules S14) the module's name and help */
+  leads: { help: leadsModuleHelp(STUDIO) },
+  meetings: { help: meetingsModuleHelp(STUDIO) },   /* (pending modules S23) */
+  projects: { help: projectsModuleHelp(STUDIO) },
+  quotes: { help: quotesModuleHelp(STUDIO) },
+  finance: { help: financeModuleHelp(STUDIO) },
+  notifications: { help: NOTIFICATIONS_HELP, door: WORDING_WORDS.sent },
 })
-const said = (t: string | Linked) => (typeof t === 'string' ? t : linkedText(t))
 
 function Setting({ title, help, children, action }: { title: string; help: string; children: ReactNode; action?: number }) {
   const head = <div className={styles.settingHead}><Words className={styles.settingTitle}>{title}</Words><Words className={styles.settingHelp}>{help}</Words></div>
@@ -126,23 +121,18 @@ function SetupGhost() {
   )
 }
 
-/** The module's head as ModuleHead draws it: the title, the help, the read-only line for whoever may only read it, the *Kept in Company:* links
-    (the buttons they are); then, for a module that sets them under its head, the pointers — in the head's own block, as the page nests it. */
-function ModuleHeadGhost({ head, links, readOnly }: { head: Head; links: readonly ModuleLink[]; readOnly: boolean }) {
-  const inner = (
+/** The module's head as ModuleHead draws it: the help, the head's own door (Notifications' Sent messages), the read-only line for whoever may
+    only read it. */
+function ModuleHeadGhost({ head, readOnly }: { head: Head; readOnly: boolean }) {
+  return (
     <div className={styles.sectionHead}>
-      <Words as="h2" className={styles.sectionTitle}>{head.title}</Words>
       <Words as="p" className={styles.sectionHelp}>{head.help}</Words>
+      {head.door ? <Words className={styles.headDoor}>{head.door}</Words> : null}
       {/* (pending modules S14 — found on the way) the one read-only line every module draws under its title for whoever may only read it
           (ModuleHead `readOnly`) — the ghost drew none, so a Designer's page moved down on reveal */}
       {readOnly ? <p className={note.note}><Bone w={20} h={20} r={4} /><Words>Only Owners and Admins change these.</Words></p> : null}
-      {links.length ? <div className={styles.moduleLinks}><Words className={styles.settingHelp}>Kept in Company:</Words>{links.map((l) => <GhostTextButton key={l.label} icon label={l.label} />)}</div> : null}
-      {/* (pending modules S46C · M2) the line every module draws for every role: where a member's own settings are */}
-      <div className={styles.moduleLinks}><Words className={styles.settingHelp}>{YOURS_LINE.words}</Words><GhostTextButton icon label={YOURS_LINE.label} /></div>
     </div>
   )
-  const pointers = (head.pointers ?? []).map((t) => <Words key={said(t)} className={styles.settingHelp}>{said(t)}</Words>)
-  return head.nested ? <div className={styles.sectionHead}>{inner}{pointers}</div> : <>{inner}{pointers}</>
 }
 
 export function SettingsGhost() {
@@ -158,11 +148,10 @@ export function SettingsGhost() {
   /* (S44O — call C6) Marketing's Settings is Lead management alone — no strip, its one Kept in Company link (Integrations), theirs to change */
   const desk = useViewerShape('role.marketing')
   const open = keeper ? 'finance' : desk ? 'leads' : parseSettingsModule(asked)
-  const links = MODULE_LINKS[open].filter((l) => (!keeper || (!l.path.startsWith('/settings') && opensPath(ACCOUNTING, l.path))) && (!desk || opensPath(MARKETING, l.path)))
   return (
     <CompanyGhostFrame title={92} tabs={keeper || desk ? undefined : SETTINGS_MODULES.map((m) => m.label)} active={SETTINGS_MODULES.findIndex((m) => m.key === open)} label="Loading settings">
       <section className={styles.panel}>
-        <ModuleHeadGhost head={headsFor(studioName)[open]} links={links} readOnly={!runs && !desk} />
+        <ModuleHeadGhost head={headsFor(studioName)[open]} readOnly={!runs && !desk} />
         {open === 'studio' && (setupFirst || (runs && params.get('setup') === '1')) ? <SetupGhost /> : null}
         {open === 'studio' ? <StudioCards /> : open === 'leads' ? <LeadsCards runs={runs || desk} /> : open === 'meetings' ? <MeetingsCards runs={runs} /> : open === 'projects' ? <ProjectsCards runs={runs} /> : open === 'finance' ? <FinanceCards runs={runs} keeper={keeper} /> : open === 'quotes' ? (
           <>
@@ -173,7 +162,7 @@ export function SettingsGhost() {
               <Choices options={TEMPLATE_APPROVAL_OPTIONS} />
             </Setting>
           </>
-        ) : <NotificationsCards />}
+        ) : <NotificationsCards runs={runs} />}
       </section>
     </CompanyGhostFrame>
   )
@@ -183,7 +172,6 @@ export function SettingsGhost() {
     (parity P-38), each role's answer labelled in its row on a phone. The rows are the page's own (`permissionRows` at the studio's defaults). */
 function StudioCards() {
   const owner = useViewerShape('role.owner')   // (pending modules S41b-1)
-  const groups = permissionGroups(permissionRows({ visibility: DEFAULT_LEAD_VISIBILITY, quoteApproval: DEFAULT_QUOTE_APPROVAL, templateApproval: DEFAULT_TEMPLATE_APPROVAL, paymentLock: DEFAULT_QUOTE_RULES.paymentLock }))   // the studio's defaults
   return (
     <>
       <Setting title="Who sees leads" help={`${VISIBILITY_HELP}${linkedText(WHO_SEES_LEADS_MORE)}`}>
@@ -202,30 +190,13 @@ function StudioCards() {
           ))}
         </div>
       </Setting>
-      <Setting title="Who may do what" help={linkedText(WHO_MAY_HELP)}>
-        <div className={`${styles.eventTable} ${styles.roleTable} ${own.roles}`}>   {/* (parity map, FB-114) five roles, as the page */}
-          {/* each role's head is its name and its count — in words, so a tablet's narrow column wraps it as the page's does */}
-          <div className={styles.eventHead}><Bone w={44} h={10} />{ROLE_COLUMNS.map((r) => <span key={r} className={styles.eventCol}><Words>{`${r} · 1`}</Words></span>)}</div>
-          {groups.map((g) => (
-            <div key={g.area}>
-              <div className={own.group}><Words>{g.area}</Words></div>
-              {g.rows.map((row) => (
-                <div key={row.key} className={styles.eventRow}>
-                  <EventName icon={false} label={row.action} help={RULE_PLACES[row.key] ? `Set under ${RULE_PLACES[row.key]!.label}` : undefined} />
-                  {ROLE_COLUMNS.map((r) => {
-                    const reach = row.reach[r]
-                    return (
-                      <span key={r} {...labelled(styles.eventCol, r)}>
-                        {reach === 'yes' ? <Bone w={20} h={20} r={4} /> : <Words className={reach === 'no' ? styles.reachNo : styles.reachText}>{reach === 'no' ? '—' : REACH_LABEL[reach]}</Words>}
-                      </span>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          ))}
+      {/* (the calm UI build, 5-04) What each role can do — one row: its title, the roles named, See the list (the table is in the drawer) */}
+      <div className={styles.setting}>
+        <div className={styles.settingHeadRow}>
+          <div className={styles.settingHead}><Words className={styles.settingTitle}>{ROLES_ROW.title}</Words><Words className={styles.settingHelp}>{ROLE_COLUMNS.join(', ')}</Words></div>
+          <GhostTextButton label={ROLES_ROW.open} />
         </div>
-      </Setting>
+      </div>
     </>
   )
 }
@@ -261,7 +232,7 @@ function LeadsCards({ runs }: { runs: boolean }) {
       <Setting title="Untouched leads" help={UNTOUCHED_HELP}>
         <div className={styles.numGrid}><GhostField /></div>
       </Setting>
-      <Setting title="Lead sources" help={`${LEAD_SOURCES_HELP} Not set yet — these are the defaults.`}>   {/* the demo studio's sources are still the defaults */}
+      <Setting title="Lead sources" help={LEAD_SOURCES_HELP}>   {/* (the calm UI build, W-281) the defaults' sentence is gone */}
         <ul className={styles.trades}>{Array.from({ length: 18 }, (_, i) => <li key={i}><Bone w={cycle([74, 92, 80, 70, 88, 76, 84, 78, 66], i)} h={32} r={4} /></li>)}</ul>   {/* (REG-729) the tokens are r4 now */}
       </Setting>
     </>
@@ -324,7 +295,7 @@ function ProjectsCards({ runs }: { runs: boolean }) {
   const owners = <span {...labelled(styles.eventWho, 'Who approves')}><Words>Owners and Admins</Words></span>
   return (
     <>
-      <Setting title="What waits for an Owner or an Admin" help={OWNER_APPROVALS_HELP}>
+      <Setting title={OWNER_APPROVALS_TITLE} help={OWNER_APPROVALS_HELP}>
         <div className={`${styles.eventTable} ${updateReview.table}`}>
           <div className={styles.eventHead} role="row"><Bone w={32} h={10} /><Bone w={88} h={10} /><span className={styles.eventCol}><Bone w={20} h={10} /></span></div>
           {/* the updates' review names who reviews and, for whoever sets it, the press that adds one */}
@@ -352,7 +323,8 @@ function FinanceCards({ runs, keeper }: { runs: boolean; keeper: boolean }) {
   return (
     <>
       <div className={styles.setting}>
-        <div className={styles.settingHead}><Words className={styles.settingTitle}>Document numbers</Words><Words className={styles.settingHelp}>{DOCUMENT_NUMBERS_HELP}</Words></div>
+        <div className={styles.settingHead}><Words className={styles.settingTitle}>Document numbers</Words><Words className={styles.settingHelp}>{DOCUMENT_NUMBERS_HELP}</Words>
+          <div className={styles.how}><GhostTextButton label={DOCUMENT_NUMBERS_HOW} iconEnd /></div></div>   {/* (the calm UI build, 5-34) the rules' fold, closed */}
         <div className={docs.rows}>
           {docRows.map((x) => (
             <div key={x.label} className={docs.row}>
@@ -366,7 +338,7 @@ function FinanceCards({ runs, keeper }: { runs: boolean; keeper: boolean }) {
         {runs ? <div className={styles.settingActions}><Slot kind="btn" w={84} /><Slot kind="btn" w={154} /></div> : null}
       </div>
       <div className={styles.cardGroup}>
-        <Words as="h3" className={styles.groupLabel}>Money in</Words>
+        <Words as="h3" className={styles.groupLabel}>{FINANCE_GROUP_LABELS.in}</Words>
         <div className={styles.cardStack}>
           <div className={styles.setting}>
             <div className={styles.settingHead}><Words className={styles.settingTitle}>Invoices</Words><Words className={styles.settingHelp}>{INVOICES_HELP}</Words></div>
@@ -383,16 +355,18 @@ function FinanceCards({ runs, keeper }: { runs: boolean; keeper: boolean }) {
 }
 
 /** Notifications: the events, each with who hears it and its three channels — every event the page lists, each channel labelled on a phone. */
-function NotificationsCards() {
+function NotificationsCards({ runs }: { runs: boolean }) {
   return (
     <Setting title={EVENTS_CARD.title} help={`${EVENTS_CARD.help}${linkedText(EVENTS_PERSONAL)}`}>
-      <div className={styles.eventTable}>
-        <div className={styles.eventHead}><Bone w={48} h={10} /><Bone w={32} h={10} /><span className={styles.eventCol}><Bone w={40} h={10} /></span><span className={styles.eventCol}><Bone w={36} h={10} /></span><span className={styles.eventCol}><Bone w={60} h={10} /></span></div>
+      <div className={`${styles.eventTable} ${styles.wording}`}>
+        <div className={styles.eventHead}><Bone w={48} h={10} /><Bone w={32} h={10} /><span className={styles.eventCol}><Bone w={40} h={10} /></span><span className={styles.eventCol}><Bone w={36} h={10} /></span><span className={styles.eventCol}><Bone w={60} h={10} /></span><span /></div>
         {EVENTS.map((e) => (
           <div key={e.key} className={styles.eventRow}>
             <EventName label={e.label} help={e.help} />
             <span {...labelled(styles.eventWho, 'Who')}><Words>{e.who}</Words></span>
             {CHANNELS.map((c) => <span key={c.key} {...labelled(styles.eventCol, c.label)}><Slot kind="switch" /></span>)}
+            {/* (the calm UI build, 5-05) the row's Edit wording (See wording for a reader) — none on a notice that stays in the app */}
+            <span className={`${styles.eventCol} ${styles.wordingCell}`}>{IN_APP_ONLY.has(e.key) ? null : <GhostTextButton label={runs ? WORDING_WORDS.edit : WORDING_WORDS.see} />}</span>
           </div>
         ))}
       </div>

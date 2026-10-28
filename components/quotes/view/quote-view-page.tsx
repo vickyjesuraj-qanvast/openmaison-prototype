@@ -5,7 +5,7 @@ import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every 
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
+import { PrivateLinkBadge } from '@/components/quotes/confirm/private-link-badge'
 import { displayDate, displayDateLong } from '@/lib/format'
 import { docTotals } from '@/lib/templates/data'
 import { money2 } from '@/lib/quotes/math'
@@ -37,6 +37,9 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
   const [printed, setPrinted] = useState(false)
   const [pages, setPages] = useState(0)
   const [now, setNow] = useState(() => data.now)
+  /* (the calm UI build 2026-10-27, W-227 · T-11) "last changed": the house's near words within a week, else the house date with its year */
+  const changedNow = Math.max(now, data.now)
+  const changedWords = changedNow - data.changedAt < 7 * 86_400_000 ? agoText(data.changedAt, changedNow) : displayDate(new Date(data.changedAt))
   const lines = useMemo(() => readingLineCount(data.design, data.data, data.view), [data.design, data.data, data.view])
   const stampRef = useRef(data.stamp)
   useEffect(() => { stampRef.current = data.stamp }, [data.stamp])
@@ -69,7 +72,7 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
           {data.brand.logo ? <img className={shell.logo} src={data.brand.logo} alt="" /> : null}
           <span className={shell.studio}>{data.studio}</span>
         </span>
-        <MetaChip icon="visibility">View only</MetaChip>
+        <PrivateLinkBadge />   {/* (the calm UI build 2026-10-27, 4-09 · W-028) one badge on every client page — the card says it is a look */}
       </header>
       <div className={`${shell.body} ${confirm.pageBody}`}>
         {/* (K4 — P-12) the phone model's total card, before the reading — drawn there only */}
@@ -77,8 +80,8 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
           <span className={shell.eyebrow}>{q.number} · Version {q.version}</span>
           <span className={confirm.bigLabel}>{data.ready ? (q.title || `Quote ${q.number}`) : 'Not ready yet'}</span>
           {data.ready ? <strong className={confirm.bigAmount}>{money2(totals.totalMinor)}</strong> : null}
-          <span className={confirm.totalLine}>{data.ready ? `${lines ? `${lines} ${lines === 1 ? 'line' : 'lines'}` : 'view only'}${data.data.quote.validUntil ? ` · valid until ${displayDate(data.data.quote.validUntil)}` : ''} · last changed ${agoText(data.changedAt, Math.max(now, data.now))}` : words}</span>
-          {data.ready ? <span className={confirm.totalAction}><Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="description" size={20} />} onPress={() => setPrinted(true)} data-testid="view-as-printed">View as printed</Button></span> : null}
+          <span className={confirm.totalLine}>{data.ready ? `${lines ? `${lines} ${lines === 1 ? 'item' : 'items'}` : 'view only'}${data.data.quote.validUntil ? ` · valid until ${displayDate(data.data.quote.validUntil)}` : ''} · last changed ${changedWords}` : words}</span>
+          {data.ready ? <span className={confirm.totalAction}><Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="description" size={20} />} onPress={() => setPrinted(true)} data-testid="view-as-printed">See it as printed</Button></span> : null}
         </section>
         {/* (S02) while the quote waits for the studio's approval (a revision on its way) the stage stays empty and the card says so */}
         <QuoteStage design={data.design} brand={data.brand} data={data.data} view={data.view} totalMinor={totals.totalMinor} show={data.ready} printed={printed} onPrinted={setPrinted} onPages={setPages} />
@@ -89,7 +92,7 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
               <h2 className={shell.cardTitle}>{q.title || `Quote ${q.number}`}</h2>
               <p className={shell.cardText} data-testid="quote-view-words">{words}</p>
               <div className={confirm.total}><span>Total</span><strong data-testid="quote-view-total">{money2(totals.totalMinor)}</strong></div>
-              <p className={shell.fine} data-testid="quote-view-changed">Last changed {agoText(data.changedAt, Math.max(now, data.now))}</p>
+              <p className={shell.fine} data-testid="quote-view-changed">Last changed {changedWords}</p>
             </>
           ) : (
             <>
@@ -104,7 +107,7 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
         <div className={confirm.bar} data-state={data.ready ? 'view' : 'not-ready'} data-testid="quote-view-bar">
           <p className={confirm.barNote}>{data.ready ? words : null}</p>
           <div className={confirm.barRow}>
-            {data.ready ? <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="quote-view-download-bar">Download</Button> : null}
+            {data.ready ? <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="quote-view-download-bar">Download</Button>   /* (the calm UI build 2026-10-27) “Download a copy” pushed Message {designer} 48px off a 390 screen — the bar keeps the one word */ : null}
             {to ? <Button size="lg" iconStart={<Icon name="chat" size={20} />} onPress={message} data-testid="quote-view-message-bar">Message {designerFirst}</Button> : null}
           </div>
         </div>

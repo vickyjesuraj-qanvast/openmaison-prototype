@@ -289,8 +289,8 @@ function StartSheet({ open, projectId, name, today, onClose, onStarted }: { open
             ) : null}
 
             {dep ? (
-              <section className={m.region} aria-label="Money" data-testid="start-sheet-money">
-                <span className={m.label}>Money</span>
+              <section className={m.region} aria-label="Payments" data-testid="start-sheet-money">
+                <span className={m.label}>Payments</span>   {/* (the calm UI build 2026-10-27, 3-02) */}
                 {dep.mode === 'awaiting' ? <p className={m.line}>{`The ${dep.stage} invoice waits for an Owner or an Admin to approve it.`}</p> : (
                   <div className={m.tick}>
                     <Checkbox isSelected={deposit} onChange={setDeposit} data-testid="start-sheet-deposit">{`${dep.mode === 'send' ? 'Send' : 'Submit'} the ${dep.stage} invoice${dep.mode === 'submit' ? ' for approval' : ''} · ${money2(dep.amountMinor)}`}</Checkbox>

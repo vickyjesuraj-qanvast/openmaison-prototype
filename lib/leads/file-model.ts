@@ -1,5 +1,5 @@
 import type { LeadFile, Member } from '@/lib/db/schema'
-import { displayDateWeekday, parseInputDate, startOfDay } from '@/lib/format'
+import { displayDateLong, parseInputDate, startOfDay } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 
 /* Lead Details › Files (931-39056) — pure model shared by the grid, the list, the move dialog and the viewer. */
@@ -173,7 +173,7 @@ export function folderPath<T extends LeadFile>(files: T[], folderId: string | nu
 export function groupByDay<T extends LeadFile>(files: T[]): { day: number; label: string; files: T[] }[] {
   const map = new Map<number, T[]>()
   for (const f of files) { const d = startOfDay(f.createdAt); const list = map.get(d); if (list) list.push(f); else map.set(d, [f]) }
-  return [...map.entries()].sort((a, b) => b[0] - a[0]).map(([day, list]) => ({ day, label: displayDateWeekday(new Date(day)), files: list }))
+  return [...map.entries()].sort((a, b) => b[0] - a[0]).map(([day, list]) => ({ day, label: displayDateLong(new Date(day)), files: list }))   // (the calm UI build 2026-10-27 — T-11 · 2-24) the house date, "Mon, 7 Sep ’26" — the long weekday ("Monday, 7 Sep ’26") was the grid’s alone
 }
 
 /**

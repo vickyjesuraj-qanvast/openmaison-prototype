@@ -28,16 +28,16 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
       && (await page.getByTestId('folder-card').locator('[class*="folderName"]').allInnerTexts()).join('|') === seeded.join('|'), `${atTop} at the top · ${seeded.join(', ')}`)
     ok('the demo folders each hold something', (await page.getByTestId('folder-card').allInnerTexts()).every((t) => /[1-9]\d* template/.test(t)))
     // (REG-666) the status is one pill, its counts add up to All; the to-do shows as a chip while something waits
-    ok('the status is one pill, “Status: All”, and the to-do shows as a chip', await page.getByRole('button', { name: /^Status: All/ }).isVisible() && await page.getByRole('button', { name: /1 awaiting approval/ }).isVisible())
+    ok('the status is one pill, “Status: All”, and the to-do shows as a chip', await page.getByRole('button', { name: /^Status: All/ }).isVisible() && await page.getByRole('button', { name: /^1 approval$/ }).isVisible())   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     await page.getByRole('button', { name: /^Status: All/ }).click(); await page.waitForTimeout(300)
     const menu = (await page.getByRole('menuitemradio').allInnerTexts()).map((t) => t.trim())
     const n = (label) => Number((menu.find((m) => m.startsWith(label)) ?? '').split('·').pop())
-    ok('each template counts once — the choices add up to All', n('All') === 4 && n('Awaiting approval') + n('Published') + n('Drafts') === 4, menu.join(' | '))
+    ok('each template counts once — the choices add up to All', n('All') === 4 && n('Waiting for approval') + n('Published') + n('Drafts') === 4, menu.join(' | '))   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await shot(page, 'gal-00-quotes-seeded-1440')
     // New Folder
-    await page.getByRole('button', { name: 'New Folder', exact: true }).click(); await page.waitForTimeout(300)
-    const dlg = page.getByRole('dialog', { name: 'Create Folder' })
+    await page.getByRole('button', { name: 'New folder', exact: true }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
+    const dlg = page.getByRole('dialog', { name: 'New folder' })   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     await dlg.getByRole('textbox').fill('hdb'); await dlg.getByRole('button', { name: 'Save' }).click(); await page.waitForTimeout(300)
     ok('a sibling’s name is refused, case aside', await dlg.getByText('A folder here already has this name').isVisible())
     await dlg.getByRole('textbox').fill('Condo'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)
@@ -54,7 +54,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     const HDB = folderId('quotes', 'HDB')
     await page.getByRole('button', { name: 'Open HDB' }).click(); await ready(page)
     ok('a folder opens in the URL, showing what it holds', page.url().includes(`folder=${HDB}`) && await page.getByTestId('library-card').count() === 2)
-    await page.getByRole('button', { name: 'New Folder', exact: true }).click(); await page.getByRole('dialog', { name: 'Create Folder' }).getByRole('textbox').fill('BTO'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)
+    await page.getByRole('button', { name: 'New folder', exact: true }).click(); await page.getByRole('dialog', { name: 'New folder' }).getByRole('textbox').fill('BTO'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     const BTO = folderId('quotes', 'BTO')
     ok('New Folder inside a folder nests it', !!BTO && sql(`select parent_id from library_folders where id='${BTO}'`) === HDB)
     await card(page, '4-Room BTO').getByRole('checkbox').check({ force: true }); await card(page, '5-Room BTO').getByRole('checkbox').check({ force: true }); await page.waitForTimeout(300)
@@ -81,12 +81,12 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     await shot(page, 'gal-03-find-1440')
     await page.getByRole('searchbox', { name: 'Search templates' }).fill(''); await page.waitForTimeout(300)
     // the to-do chip narrows to what waits — here, at the top
-    await page.getByRole('button', { name: /1 awaiting approval/ }).click(); await page.waitForTimeout(300)
-    ok('the to-do chip narrows to what waits, saying where it lives', await page.getByTestId('library-card').count() === 1 && /Show flats/.test(await page.getByTestId('library-card').first().innerText()) && await page.getByRole('button', { name: /^Status: Awaiting approval/ }).isVisible())
-    await page.getByRole('button', { name: /1 awaiting approval/ }).click(); await page.waitForTimeout(300)
+    await page.getByRole('button', { name: /^1 approval$/ }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
+    ok('the to-do chip narrows to what waits, saying where it lives', await page.getByTestId('library-card').count() === 1 && /Show flats/.test(await page.getByTestId('library-card').first().innerText()) && await page.getByRole('button', { name: /^Status: (Awaiting|Waiting for) approval/ }).isVisible())   // (the calm UI build 2026-10-27, a deliberate change) W-034
+    await page.getByRole('button', { name: /^1 approval$/ }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     // inside a folder, the pill and the search stay inside it; the crumb stays; its counts are the folder's
     await page.getByRole('button', { name: 'Open HDB' }).click(); await ready(page)
-    ok('inside HDB nothing waits, so no to-do chip; the crumb holds the bar’s left', await page.getByRole('button', { name: /^(approval )?\d+ awaiting approval$/ }).count() === 0 && await page.getByTestId('folder-crumbs').isVisible())   // (the rail's Company badge also says "awaiting approval")
+    ok('inside HDB nothing waits, so no to-do chip; the crumb holds the bar’s left', await page.getByRole('button', { name: /^(approval )?\d+ approvals?$/ }).count() === 0 && await page.getByTestId('folder-crumbs').isVisible())   // (the rail's Company badge also says "awaiting approval")   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     await page.getByRole('button', { name: /^Status: All/ }).click(); await page.waitForTimeout(300)
     const inHdb = (await page.getByRole('menuitemradio').allInnerTexts()).map((t) => t.trim())
     ok('the pill counts what is in HDB', /^All · 2$/.test(inHdb[0] ?? ''), inHdb.join(' | '))
@@ -115,7 +115,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     // rename, then delete with Undo
     await page.getByTestId('folder-card').filter({ hasText: 'Condo' }).getByRole('button', { name: 'Actions for Condo' }).click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: 'Rename' }).click(); await page.waitForTimeout(300)
-    await page.getByRole('dialog', { name: 'Rename Folder' }).getByRole('textbox').fill('Condos'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)
+    await page.getByRole('dialog', { name: 'Rename folder' }).getByRole('textbox').fill('Condos'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     ok('Rename Folder', !!folderId('quotes', 'Condos'))
     await page.getByTestId('folder-card').filter({ hasText: 'HDB' }).getByRole('button', { name: 'Actions for HDB' }).click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: 'Delete' }).click(); await page.waitForTimeout(300)
@@ -126,7 +126,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     await page.locator('[role="status"][aria-live="polite"]').getByRole('button', { name: 'Undo' }).click(); await page.waitForTimeout(1300)
     ok('Undo puts it all back', !!folderId('quotes', 'HDB') && sql(`select parent_id from library_folders where id='${BTO}'`) === HDB)
     // the Deleted sheet keeps Quotes' heads
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /^Deleted Templates/ }).click(); await page.waitForTimeout(600)
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /^Deleted templates/i }).click(); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const heads = await page.getByRole('columnheader').allInnerTexts()
     ok('Deleted Templates keeps Version · Deleted by · On quotes', ['Version', 'Deleted by', 'On quotes'].every((h) => heads.some((x) => x.toLowerCase().includes(h.toLowerCase()))), heads.join(','))
     await ctx.close()
@@ -136,7 +136,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     sql(`update members set is_you = case when id='sarah' then 1 else 0 end`)
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     await page.goto(`${BASE}/company/templates/quotes`); await ready(page)
-    ok('a Designer cannot make a folder', await page.getByRole('button', { name: 'New Folder', exact: true }).isDisabled())
+    ok('a Designer cannot make a folder', await page.getByRole('button', { name: 'New folder', exact: true }).isDisabled())   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
     ok('nor select quote templates — there is nothing they may do with them', await page.getByTestId('library-card').first().getByRole('checkbox').count() === 0)
     await page.getByTestId('folder-card').first().getByRole('button', { name: /^Actions for/ }).click(); await page.waitForTimeout(300)
     const dis = await page.getByRole('menuitem').evaluateAll((els) => els.map((e) => `${e.textContent}:${e.getAttribute('aria-disabled')}`))
@@ -147,14 +147,14 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
   await step('each library', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     // REG-797 (UX audit S8): My Items opens as the list; this walk reads every library's cards, so it picks the grid as a member can
-    await page.addInitScript(() => { try { localStorage.setItem('om.price-book-items.list', '0') } catch {} })
+    await page.addInitScript(() => { try { localStorage.setItem('om.price-book-items.list', '0'); localStorage.setItem('om.price-book-sections.list', '0') } catch {} })   // (the calm UI build 2026-10-27, a deliberate change) 4-37: My Sections opens as the list too — this walk reads the cards
     const libs = [['contracts', '/company/templates/contracts', 'Residential'], ['tasks', '/company/templates/tasks', 'Handover'], ['texts', '/company/templates/terms', 'Carpentry'], ['payments', '/company/templates/payments', 'Big jobs'], ['book-items', '/company/price-book', 'Doors and windows'], ['book-sections', '/company/price-book/sections', 'Kitchens']]
     for (const [lib, path, name] of libs) {
       await page.goto(`${BASE}${path}`); await ready(page)
       const mine = sql(`select group_concat(name, '|') from (select name from library_folders where library='${lib}' and parent_id is null and deleted_at is null order by name)`)
       const shown = (await page.getByTestId('folder-card').locator('[class*="folderName"]').allInnerTexts()).join('|')
       ok(`${lib}: its own folders, each holding something`, shown === mine && (await page.getByTestId('folder-card').allInnerTexts()).every((t) => /[1-9]\d* (template|item|section)/.test(t)), shown.replace(/\|/g, ', '))
-      await page.getByRole('button', { name: 'New Folder', exact: true }).click(); await page.getByRole('dialog', { name: 'Create Folder' }).getByRole('textbox').fill(name); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)
+      await page.getByRole('button', { name: 'New folder', exact: true }).click(); await page.getByRole('dialog', { name: 'New folder' }).getByRole('textbox').fill(name); await page.keyboard.press('Enter'); await page.waitForTimeout(1200)   // (the calm UI build 2026-10-27, a deliberate change) T-01 · T-13
       await page.getByRole('button', { name: `Open ${mine.split('|')[0]}`, exact: true }).click(); await ready(page)   // a demo folder, which holds something
       const first = page.getByTestId('library-card').first()
       await first.getByRole('button', { name: /^More options for/ }).click(); await page.waitForTimeout(250)

@@ -11,7 +11,8 @@
 .tab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 .tabIcon { position: relative; display: inline-flex; }
 .mark { position: absolute; top: -2px; right: -5px; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); box-shadow: 0 0 0 2px var(--om-color-surface-default); }
-.tabLabel { font: var(--om-type-caption-s); }
+.tabLabel { font: var(--om-type-caption-s); text-align: center; white-space: nowrap; }   /* (the calm UI build 2026-10-27, 6-17) "Whole room" on one line, as its four neighbours */
+@media (max-width: 767px) { .tabLabel.tabLabel { white-space: normal; } }   /* … and whole on two on a phone's 64 dock tab (320) — doubled, order-proof */
 /* (phone-2 · F156) The rail pads a notch's right inset in its own white (the editor's .rail): its two rules — under the tabs, over
    the go line — run on under that inset to the screen's edge, never stopping 47px short. The pieces are 0 wide without an inset. */
 .tabs:not([data-variant='dock']) { position: relative; padding-right: var(--viz-inset-r, 0px); }
@@ -68,6 +69,11 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 .knob[data-off] { opacity: 0.55; }
 .knobLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .go { width: 100%; min-height: 36px; }
+/* (the calm UI build 2026-10-27, 6-04) Generate takes the row; the tune button (Versions and Quality) sits at its end. A doubled class so the
+   DS button's own width never wins on load order (responsive.md › Load order). */
+.goRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.goRow > .go.go { flex: 1 1 auto; width: auto; min-width: 0; }
+.optsHead { text-align: center; }
 /* (REG-704) the price on the button: the verb to the left, the chip at the right edge (the approved proposal's Generate) */
 .go[data-priced] { justify-content: space-between; }
 .goLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
@@ -82,7 +88,7 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 @media (max-height: 860px) and (min-width: 1025px) {
   .foot { gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-3); max-height: 42dvh; overflow-y: auto; overscroll-behavior: contain; }
   .changeList[data-capped] { max-height: calc(var(--chip-h) * 1.5 + var(--om-spacing-2)); }
-  .go { position: sticky; bottom: 0; z-index: 1; }
+  .goRow { position: sticky; bottom: 0; z-index: 1; background: var(--om-color-surface-default); }
 }
 /* (F016) 768–800px tall at any rail width: nothing is picked yet, so the greyed Generate already says it — the idle hint ("Pick a
    finish, a style or a light first.") steps out of sight (still read aloud) and the panel keeps the room. Describe folds in its own CSS. */

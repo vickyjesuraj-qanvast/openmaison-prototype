@@ -190,12 +190,13 @@ async function held(b, opts, url, fn, arg) {
       const heldRows = await d.locator('[data-testid="meeting-row"][data-status="held"]').count()
       const logRows = await d.locator('[data-testid="meeting-row"][data-status="held"]').filter({ hasText: 'Logged at Met' }).count()
       await go(d, '/company/reports/meetings', 2000)
-      await d.getByTestId('meeting-report-range').getByRole('radio', { name: 'All' }).click().catch(() => {}); await settle(d, 900)
+      await d.getByTestId('meeting-report-range').getByRole('button').first().click().catch(() => {}); await settle(d, 400)   // (the calm UI build 2026-10-27, a deliberate change) B5 5-19: the period is the house pill
+      await d.getByRole('menuitemradio', { name: /^All/ }).first().click().catch(() => {}); await settle(d, 900)
       const v = Number((await text(d.getByTestId('meeting-tile-held').locator('[class*="__value"]'))).replace(/\D/g, ''))
       ok(heldRows > 0 && v === heldRows, `C-02: Meetings held (All) = the held rows Tools › Meeting Copilot lists (${v} · ${heldRows})`)
       ok(logRows > 0, `…the Met logs no meeting holds among them (${logRows})`)
       const help = await text(d.getByTestId('meeting-tile-held').locator('[class*="__help"]'))
-      ok(/^\d+ of \d+ with the co-pilot on$|^All with the co-pilot on$/.test(help), 'call C·1: “n of m with the co-pilot on”', help)
+      ok(/^\d+ of \d+ with (the co-pilot|Meeting Copilot) on$|^All with (the co-pilot|Meeting Copilot) on$/.test(help) /* (the calm UI build 2026-10-27, a deliberate change) T-01: "Meeting Copilot", one spelling */, 'call C·1: “n of m with the co-pilot on”', help)
       await shot(d, '03-reports-meetings')
       await C.close()
     }
@@ -320,7 +321,8 @@ async function held(b, opts, url, fn, arg) {
       as('dane')
       const C = await context(opts()); const d = await page(C, 'chat')
       await go(d, '/chat', 2000)
-      ok(/Its messages open here\. A client reads theirs on their page; Team, Direct, Group and Studio ones stay in the studio\./.test(await text(d.getByTestId('chat-pick'))), 'C-25: the empty pane in plain words')
+      /* (the calm UI build 2026-10-27, a deliberate change) the empty pane is its title alone (1-21 · W-314) — the rows and the composer say who reads a conversation */
+      ok((await text(d.getByTestId('chat-pick'))).trim() === 'Pick a conversation', 'C-25: the empty pane in plain words')
       ok(!d.url().includes('c='), 'nothing open: the address names none')
       /* C-13 · C-14: a member by the name the studio stored; an empty start leaves no row */
       sql(`delete from conversation_messages where conversation_id in (select id from conversations where kind = 'direct' and pair_key like '%huimin%')`)
@@ -411,7 +413,7 @@ async function held(b, opts, url, fn, arg) {
       /* the to-do chip: once the tab has opened with Briefs to save, its ghost draws the chip */
       const T = await context(opts()); const t = await page(T, 'todo')
       await go(t, `/leads/${KEVIN}/meetings`, 2000)
-      const chip = await t.getByText(/Briefs to save/).count()
+      const chip = await t.getByText(/Briefs to save|Summaries to save/).count()   // (the calm UI build 2026-10-27, a deliberate change) B2: "Summaries to save"
       await t.reload({ waitUntil: 'load' });
       const seen = await t.evaluate((k) => localStorage.getItem(`om.shape.lead.${k}.meetings.save.first`), KEVIN)
       ok(chip === 0 || /true|1/.test(String(seen)), 'C-19: the tab remembers its Briefs to save chip for its ghost', String(seen))

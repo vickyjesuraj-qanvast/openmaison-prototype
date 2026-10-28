@@ -137,10 +137,10 @@ const NOTE_ID = 'probe-s44q-note'
     sql(`update leads set name = ${serena0} where id = '${SERENA}'`)
     /* the editor: the description dialog and the T&Cs editor draw the stored body through the allowlist */
     await go(p, `/quotes/${Q1}`); await settle(p, 1500)
-    await p.getByRole('button', { name: 'Client view', exact: true }).first().click(); await settle(p, 1200)   // the editor's live client view pane draws the stored words too
+    await p.getByRole('button', { name: 'More options', exact: true }).first().click(); await settle(p, 300); await p.getByRole('menuitem', { name: /^Client view/ }).click(); await settle(p, 1200)   // (the calm UI build 2026-10-27, a deliberate change) 4-03: the Client view pane is the header ⋮'s row   // the editor's live client view pane draws the stored words too
     await openTerms()
     let c = await clean(p)
-    ok(allClean(c) && /Probe safe words/.test(await p.getByRole('textbox', { name: 'Terms and Conditions', exact: true }).innerText()) && /Probe safe words/.test(await p.getByTestId('client-view-pane').innerText().catch(() => '')), `the quote editor — its client view pane and its T&Cs editor load the words, nothing runs (${show(c)})`)
+    ok(allClean(c) && /Probe safe words/.test(await p.getByRole('textbox', { name: 'Terms and conditions', exact: true }).innerText()) && /Probe safe words/.test(await p.getByTestId('client-view-pane').innerText().catch(() => '')), `the quote editor — its client view pane and its T&Cs editor load the words, nothing runs (${show(c)})`)
     await p.locator('button[data-rich]').first().click(); await settle(p, 700)
     const dlg = p.getByRole('dialog', { name: 'Words on this line' })   // (S44I — call C2, a deliberate change of this rule: a line's Description dialog is Words on this line)
     c = await clean(p)
@@ -151,7 +151,7 @@ const NOTE_ID = 'probe-s44q-note'
     await dlg.getByRole('button', { name: 'Save', exact: true }).click(); await settle(p, 2200)
     const saved = sql(`select coalesce(description_html, '') from quote_items where id = '${Q1_LINE}'`)
     ok(/PROBEMARK/.test(saved) && !dirty(saved), `a description saved with a script, a handler and a script link keeps its words, drops the rest (${saved.slice(0, 90)})`)
-    const terms1 = p.getByRole('textbox', { name: 'Terms and Conditions', exact: true })
+    const terms1 = p.getByRole('textbox', { name: 'Terms and conditions', exact: true })
     await terms1.click(); await p.keyboard.press('Meta+a'); await p.keyboard.type('PROBEMARK terms'); await boldAll(terms1)
     await settle(p, 2200)
     const savedT = sql(`select terms_html from quotes where id = '${Q1}'`)
@@ -244,15 +244,15 @@ const NOTE_ID = 'probe-s44q-note'
     as('germaine')
     await go(p, `/contracts/${C_OLIVIA}`); await settle(p, 1000)
     await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 700)
-    ok(/OM-10001 is still a Draft — approve and send it first/.test(await snackText(p)) && await p.getByRole('dialog', { name: 'Send for digital signature' }).count() === 0, 'a Designer is still held, with the rule')
+    ok(/OM-10001 is still a Draft — approve and send it first/.test(await snackText(p)) && await p.getByRole('dialog', { name: 'Send for signature' }).count() === 0, 'a Designer is still held, with the rule')
     as('dane')
     await go(p, `/contracts/${C_OLIVIA}`); await settle(p, 1000)
     await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 800)
-    const sd = p.getByRole('dialog', { name: 'Send for digital signature' })
+    const sd = p.getByRole('dialog', { name: 'Send for signature' })
     ok(await sd.count() === 1, 'Dane (an Owner, an approver): Send opens — no dead end')
     ok(/OM-10001 is still a Draft — sending this approves it/.test(await sd.getByTestId('send-notes').innerText().catch(() => '')), 'the dialog says so first: “OM-10001 is still a Draft — sending this approves it”')
     await shot(p, 'pm2-s44q-approver-send-1440')
-    await sd.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 2200)
+    await sd.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 2200)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     ok(sql(`select status from contracts where id = '${C_OLIVIA}'`) === 'Sent to Client', 'the agreement goes out')
     ok(sql(`select status || '|' || approved_by || '|' || (approved_at is not null) from quotes where id = '${Q1}'`) === 'Approved|dane|1', 'and OM-10001 is Approved, on the record as Dane’s')
     putContract(); putBack(Q1, kept[Q1])
@@ -286,10 +286,10 @@ const NOTE_ID = 'probe-s44q-note'
     sql(`update quotes set terms_html = '', terms_visible = 1 where id = '${Q1}'`)
     await go(p, `/quotes/${Q1}`); await settle(p, 1500)
     await openTerms()
-    await p.locator('#section-terms').getByRole('button', { name: 'My Templates' }).click(); await settle(p, 700)
-    const tm = p.getByRole('dialog', { name: /Terms and Conditions Templates/ })
+    await p.locator('#section-terms').getByRole('button', { name: 'Templates', exact: true }).click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) W-270
+    const tm = p.getByRole('dialog', { name: /Terms and conditions templates/i })   // (the calm UI build 2026-10-27, a deliberate change) 4-39 · W-270: sentence case
     await tm.locator('[class*="card"], li, article').filter({ hasText: 'Terms and Conditions for Renovation Works' }).first().getByRole('button', { name: 'Add', exact: true }).click(); await settle(p, 1800)
-    const tcText = await p.getByRole('textbox', { name: 'Terms and Conditions', exact: true }).innerText()
+    const tcText = await p.getByRole('textbox', { name: 'Terms and conditions', exact: true }).innerText()
     ok(/\{studio_name\}/.test(tcText) && !/\[Studio Name\]/.test(tcText) && !/Demo Studio Pte Ltd/.test(tcText), 'the template’s [Studio Name] lands as {studio_name} — never the studio’s name as fixed words')
     ok(/\{studio_name\}/.test(sql(`select terms_html from quotes where id = '${Q1}'`)), '…and is saved so')
     const brandWithRo = JSON.parse(sql(`select value from settings where key = 'brand'`)); brandWithRo.details.entities.push({ ...brandWithRo.details.entities[0], id: 'probe-ro-well', name: 'RO-Well Pte Ltd' })
@@ -324,7 +324,7 @@ const NOTE_ID = 'probe-s44q-note'
     // ── 9a · the client view pane follows General Info's second client as it is typed (triage §12.8) ─────────────────────────────────
     console.log('9a · The client view pane names a second client as typed (§12.8)')
     await go(p, `/quotes/${Q1}`); await settle(p, 1500)
-    await p.getByRole('button', { name: 'Client view', exact: true }).first().click(); await settle(p, 1000)
+    await p.getByRole('button', { name: 'More options', exact: true }).first().click(); await settle(p, 300); await p.getByRole('menuitem', { name: /^Client view/ }).click(); await settle(p, 1000)   // (the calm UI build 2026-10-27, a deliberate change) 4-03
     await p.getByRole('button', { name: 'Add a second client' }).click(); await settle(p, 300)
     await p.getByRole('textbox', { name: 'Second client', exact: true }).fill('Probe Second'); await settle(p, 1200)
     ok(/Olivia Martinez & Probe Second/.test(await p.getByTestId('client-view-pane').innerText()), 'the pane prints “Olivia Martinez & Probe Second” at once — no save and reload')

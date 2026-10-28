@@ -4,7 +4,9 @@
 .tile[data-tone='primary'] .value { color: var(--om-color-primary-default); }
 /* (fix-A, A-32 → parity P-30 · C-04) the caption wraps where the tile is narrow, rather than cut — the default now, so a ghost's tile drawn on
    this class wraps as its page's does; `data-nowrap` keeps one line, cut */
-.label { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; }
+/* (the calm UI build 2026-10-27 — the audit's T-06 · 1-17 · 3-38: capitals only for a status) the caption in sentence case, the house body-s —
+   a figure's name is a fact, not a status (was caption-s in capitals, "WON · 90 DAYS") */
+.label { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; }
 .tile[data-nowrap] .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .value { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .value[data-grade='good'] { color: var(--om-color-tertiary-green-default); }
@@ -15,6 +17,30 @@
    the house focus ring */
 .tile[data-press] { font: inherit; color: inherit; text-align: start; text-decoration: none; border: 0; margin: 0; width: 100%; cursor: pointer; }
 .tile[data-press]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* ── (the calm pass 2026-10-26, additive — his "too busy … simplify" and the Claude Design option he took) `look="card"`: the tile as a white
+   card with no border and no shadow (the Dashboard's Pulse) — a small capitals label, the value at the page's figure size, one caption line
+   with the figure's thin line at its end, an age bar thin and wordless (the caption says it). Written before the phone's fit steps below, so a
+   long figure still steps down its type on a phone (same weight, later wins). ── */
+.tile[data-look='card'] { gap: var(--om-spacing-2); padding: var(--stat-tile-pad, var(--om-spacing-6)); background: var(--om-color-surface-default); }
+.tile[data-look='card'] .value { font: var(--om-type-heading-h1); }
+@media (max-width: 1024px) {
+  .tile[data-look='card'] .value { font: var(--om-type-heading-h2); }
+  /* the caption is a sentence: the house's 14 on touch and a tablet (responsive.md § On the move) */
+  .tile[data-look='card'] .help { font: var(--om-type-body-m); }
+}
+@media (max-width: 767px) { .tile[data-look='card'] .value { font: var(--om-type-heading-h3); } }
+@media (hover: hover) { .tile[data-look='card'][data-press]:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); } }
+.tile[data-look='card'][data-press] { transition: background-color var(--motion-hover); }
+/* the caption and the thin line share the card's last line; a narrow card puts the line under its words */
+.foot { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-3); min-width: 0; }
+.foot > .help { flex: 1 1 128px; min-width: 0; }
+.spark { flex: none; display: block; overflow: visible; }
+.sparkLine { fill: none; stroke: var(--om-color-primary-default); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.sparkTarget { stroke: var(--om-color-on-surface-border); stroke-width: 1; stroke-dasharray: 2 3; }
+.sparkNow { fill: var(--om-color-primary-default); }
+.tile[data-look='card'] .agingWrap { margin-top: var(--om-spacing-1); }
+.tile[data-look='card'] .aging { height: 6px; border-radius: var(--om-radius-full); }
 
 /* (parity P-30 · C-04 · Q-15) The house row of tiles (StatTiles): one row from 1025 up; at 768–1024 never a tile under ~176px
    (`--tiles-mid`, from the count: ≤3 stay one row, 4 → 2 + 2, 5–6 → 3 + 2 / 3 + 3); two per row on a phone, an odd last tile taking the
@@ -49,4 +75,44 @@
    By the row's own width, so a ghost on the same row reads the same. */
 @container stat-tiles (max-width: 263px) {
   .tiles > * { grid-column: 1 / -1; }
+}
+
+/* ── (the Dashboard redesigned, 2026-10-26 — P-03 · Q-04, additive) A tile's caption with a mark at its end, its comparison, its weeks, its
+   ages and a last quiet line — drawn only when a tile is given them, so every other tile is as before. ── */
+.tileHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-width: 0; }
+.tileHead > .label { min-width: 0; }
+.delta { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.delta[data-tone='good'] { color: var(--om-color-tertiary-green-default); }
+.delta[data-tone='bad'] { color: var(--om-color-tertiary-red-default); }
+/* the weeks: one hue, light to the past, a deeper tint for now — a tint, never the filled primary (his § 2); the house 4 rounding on their data ends, 2px apart */
+.trend { display: flex; align-items: flex-end; gap: 2px; height: 24px; margin-top: var(--om-spacing-1); }
+.bar { flex: 1 1 0; min-width: 0; height: 2px; border-radius: var(--om-radius-1) var(--om-radius-1) 0 0; background: var(--om-color-primary-variant-hover); }
+.bar[data-now] { background: color-mix(in srgb, var(--om-color-primary-default) 45%, var(--om-color-surface-default)); }
+.bar[data-none] { height: 2px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); }
+/* a sum by age: one bar of bands, the older the deeper (a client's lateness stays neutral — S-05: no red) */
+.agingWrap { display: flex; flex-direction: column; gap: var(--om-spacing-1); margin-top: var(--om-spacing-2); }
+.aging { display: flex; gap: 2px; height: 8px; border-radius: var(--om-radius-1); overflow: hidden; }
+.agingBand { display: block; flex: 1 1 0; min-width: 4px; background: var(--om-color-primary-variant-hover); }
+.agingBand[data-band='1'] { background: var(--om-primitive-primary-l30); }
+.agingBand[data-band='2'] { background: color-mix(in srgb, var(--om-color-primary-default) 45%, var(--om-color-surface-default)); }
+/* (the calm pass 2026-10-26, additive) a band's tone, when given: a client's lateness amber (theirs — his correction 2), the studio's own red */
+.agingBand[data-tone='theirs'] { background: var(--om-color-tertiary-yellow-default); }
+.agingBand[data-tone='late'] { background: var(--om-color-tertiary-red-default); }
+.agingWords { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+.note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* `look="strip"` (StatTiles): ONE bordered strip, a hairline between the tiles instead of a gap and a fill — the Dashboard's Pulse. Each cell
+   (a tile, or what holds one) draws its rule on its left and top; the strip's own edge clips the first column's and the first row's, so the
+   rules sit only between. */
+.tiles[data-look='strip'] { gap: 0; border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); overflow: hidden; }
+.tiles[data-look='strip'] > * { min-width: 0; display: flex; box-shadow: calc(-1 * var(--om-border-1)) 0 0 0 var(--om-color-surface-variant), 0 calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }
+.tiles[data-look='strip'] .tile { flex: 1 1 auto; background: transparent; border-radius: 0; padding: var(--om-spacing-4); }
+.tiles[data-look='strip'] .tile[data-press] { transition: background-color var(--motion-hover); }
+@media (hover: hover) { .tiles[data-look='strip'] .tile[data-press]:hover { background: var(--om-color-hover-04p); } }
+.tiles[data-look='strip'] .tile[data-press]:focus-visible { outline-offset: -2px; }
+/* (P-03) …and on a tablet and a phone the strip's lines are sentences: the house's 14 (responsive.md § On the move — never under 14 for a
+   value, a name or a sentence) */
+@media (max-width: 1024px) {
+  .tiles[data-look='strip'] .help, .tiles[data-look='strip'] .note, .tiles[data-look='strip'] .delta { font: var(--om-type-body-m); }
+  .tiles[data-look='strip'] .agingWords { font: var(--om-type-body-s); }
 }

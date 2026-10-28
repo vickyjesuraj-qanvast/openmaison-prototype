@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
-import { Chips } from '@/components/om/chips'
-import { ChipRail } from '@/components/om/chip-rail'
+import { ScopePill } from '@/components/om/scope-pill'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Dialog } from '@/components/om/dialog'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
@@ -70,6 +71,9 @@ export function ProjectChoices({ data, views }: { data: ChoicesData; /** (simpli
   const [pickedGroup, setPickedGroup] = useState<ChoiceGroupBy | null>(null)
   const group: ChoiceGroupBy = pickedGroup ?? stored ?? 'room'
   const pickGroup = (g: ChoiceGroupBy) => { setPickedGroup(g); try { window.localStorage.setItem(GROUP_KEY, g) } catch { /* private window */ } }
+  /* (the calm UI build 2026-10-27, 3-08 · T-10) how the list is grouped is the list's one scope pill — "Group: By room ▾" */
+  const [groupOpen, setGroupOpen] = useState(false)
+  const groupRef = useRef<HTMLSpanElement>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [editing, setEditing] = useState<'new' | ChoiceView | null>(null)
   const [option, setOption] = useState<{ choice: ChoiceView; source: ChoiceSource | null; editing: OptionView | null } | null>(null)
@@ -170,9 +174,10 @@ export function ProjectChoices({ data, views }: { data: ChoicesData; /** (simpli
   }
 
   const add = viewer.mayChange ? (phone ? (
-    <Tooltip label="Add a choice" shortcut="create"><IconButton icon="add" label="Add a choice" variant="primary" onClick={() => setEditing('new')} data-kb="create" data-kb-label="Add a choice" data-testid="choices-add" /></Tooltip>
+    /* (the calm UI build 2026-10-27, 3-12 · W-473) one create grammar on every tab: "New choice" */
+    <Tooltip label="New choice" shortcut="create"><IconButton icon="add" label="New choice" variant="primary" onClick={() => setEditing('new')} data-kb="create" data-kb-label="New choice" data-testid="choices-add" /></Tooltip>
   ) : (
-    <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setEditing('new')} data-kb="create" data-kb-label="Add a choice" data-testid="choices-add">Add a choice</Button>
+    <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setEditing('new')} data-kb="create" data-kb-label="New choice" data-testid="choices-add">New choice</Button>
   )) : null
 
   const asBoard = (c: ChoiceView) => ({
@@ -199,11 +204,20 @@ export function ProjectChoices({ data, views }: { data: ChoicesData; /** (simpli
         <EmptyState icon="palette" title="No choices yet" testId="choices-empty"
                     help={done ? `No choices were put to ${client.firstName} on this project.`   /* (fix-C, C-16) a completed project reads only */
                       : `Put a choice to ${client.firstName} — the paint colours, a countertop, the tiles. Add the options from Materials, the Price book, a render or a photo, then share it: ${reaches ? `${client.firstName} picks one on the portal.` : client.invited ? 'the portal’s Choices are switched off, so choose it with them.' : `${client.firstName} picks one once invited to the portal.`}`}
-                    primary={viewer.mayChange ? { label: 'Add a choice', icon: 'add', onPress: () => setEditing('new') } : null}
+                    primary={viewer.mayChange ? { label: 'New choice', icon: 'add', onPress: () => setEditing('new') } : null}
                     secondary={viewer.mayChange && !client.invited ? { label: `Invite ${client.firstName}`, icon: 'person_add', onPress: () => setInviting(true), testId: 'choices-invite' } : null} />
       ) : (
         <>
-          {milestones.length ? <div><ChipRail label="Group"><Chips label="Group" options={GROUP_OPTIONS} value={by} onChange={(v) => pickGroup(v as ChoiceGroupBy)} testId="choices-group" /></ChipRail></div> : null}
+          {milestones.length ? (
+            <div>
+              <span ref={groupRef} data-testid="choices-group">
+                <ScopePill label={`Group: ${GROUP_OPTIONS.find((o) => o.value === by)?.label ?? 'By room'}`} open={groupOpen} onClick={() => setGroupOpen((o) => !o)} />
+              </span>
+              <PortalMenu open={groupOpen} anchor={groupRef} onClose={() => setGroupOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Group">
+                {GROUP_OPTIONS.map((o) => <DropdownItem key={o.value} role="menuitemradio" checked={by === o.value} onSelect={() => { setGroupOpen(false); pickGroup(o.value) }}>{o.label}</DropdownItem>)}
+              </PortalMenu>
+            </div>
+          ) : null}
           {found.length === 0 ? (
             <TabSearchEmpty noun="choices" searching={!!query.trim()} onClearAll={() => setQuery('')} />
           ) : (
@@ -213,7 +227,7 @@ export function ProjectChoices({ data, views }: { data: ChoicesData; /** (simpli
                   <h3 className={styles.groupHead}>{g.label}<span className={styles.groupCount}>{`· ${g.list.length}`}</span></h3>
                   <div className={styles.cards}>
                     {g.list.map((c) => (
-                      <ChoiceCard key={c.id} c={c} clientFirst={client.firstName} invited={client.invited} section={client.section} stage={project.stage} today={today} now={now} gstPct={data.gstPct}
+                      <ChoiceCard key={c.id} c={c} groupedBy={by} clientFirst={client.firstName} invited={client.invited} section={client.section} stage={project.stage} today={today} now={now} gstPct={data.gstPct}
                                   mayChange={viewer.mayChange} busy={busy === c.id} onAction={onAction} onOption={onOption}
                                   onAdd={(source, ch) => setOption({ choice: ch, source, editing: null })} />
                     ))}

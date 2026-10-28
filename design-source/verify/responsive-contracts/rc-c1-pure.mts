@@ -19,7 +19,7 @@ ok(/send the PDF to Olivia/.test(f({ uploaded: true }).text), 'an uploaded PDF �
 const sent = f({ status: 'Sent to Client', sentAt: NOW - 20 * 60_000, expiresAt: NOW + 7 * DAY })
 ok(sent.primary === 'remind' && sent.label === 'Remind' && sent.lead === null && /^With Olivia for signature — sent 20 min ago · not opened yet · link open until 29 Oct ’26\.$/.test(sent.text) && !!sent.more, `Sent → Remind; "${sent.text}"`)
 const opened = f({ status: 'Sent to Client', sentAt: NOW - 3 * DAY, viewedAt: NOW - 2 * DAY, expiresAt: NOW + 4 * DAY })
-ok(/sent 3d ago · opened 2d ago · link open until/.test(opened.text), 'Sent and opened → "sent 3d ago · opened 2d ago · link open until …"')
+ok(/* (the calm UI build 2026-10-27, a deliberate change) 1-24: lib/templates/ago spells the span out */ /sent 3 days ago · opened 2 days ago · link open until/.test(opened.text), 'Sent and opened → "sent 3 days ago · opened 2 days ago · link open until …"')
 const soon = f({ status: 'Sent to Client', sentAt: NOW - 6 * DAY, expiresAt: NOW + 5 * 3_600_000 })
 ok(/link closes in 5 h/.test(soon.text) && soon.primary === 'remind', 'a link closing within a day → "link closes in 5 h", still Remind')
 const expired = f({ status: 'Sent to Client', sentAt: NOW - 9 * DAY, expiresAt: NOW - 2 * DAY })
@@ -30,8 +30,8 @@ ok(letterSent.primary === null && /Sent to Olivia to read and keep/.test(letterS
 const signedOnline = f({ status: 'Signed', signedAt: NOW - 30 * DAY, signedBy: 'Ryan D’Souza', leadStage: 'Quote Sent', quoteNumber: 'OM-10004' })
 ok(signedOnline.primary === 'won' && signedOnline.label === 'Move to Won' && /^Signed on 22 Sep ’26 by Ryan D’Souza online · OM-10004 is signed through it · the lead is still in Quote Sent\.$/.test(signedOnline.text), `Signed online, lead before Won → Move to Won; "${signedOnline.text}"`)
 const signedWon = f({ status: 'Signed', signedAt: NOW - 2 * DAY, signedBy: null, leadStage: 'Won' })
-ok(signedWon.primary === 'download' && signedWon.label === 'Download signed copy' && /Signed 2d ago · marked by the studio · OM-10001 is signed through it\.$/.test(signedWon.text) && !/lead is still/.test(signedWon.text), 'Marked signed, lead Won → Download signed copy, no "lead is still"')
-ok(/an Owner or an Admin can move it back/.test(signedWon.more ?? '') && /stays signed; duplicate it/.test(signedOnline.more ?? ''), 'the longer words: the desk banner’s, by who signed')
+ok(signedWon.primary === 'download' && signedWon.label === 'Download signed copy' && /* (the calm UI build 2026-10-27, a deliberate change) 1-24: lib/templates/ago spells the span out */ /Signed 2 days ago · marked by the studio · OM-10001 is signed through it\.$/.test(signedWon.text) && !/lead is still/.test(signedWon.text), 'Marked signed, lead Won → Download signed copy, no "lead is still"')
+ok(/An Owner or Admin can undo the signing from the status menu/.test(signedWon.more ?? '')   /* (the calm UI build 2026-10-27, a deliberate change) 4-51's words */ && /stays signed; duplicate it/.test(signedOnline.more ?? ''), 'the longer words: the desk banner’s, by who signed')
 ok(f({ status: 'Signed', signedAt: NOW, leadStage: 'Lost' }).primary === 'download', 'Signed on a Lost lead → Download signed copy, never Move to Won')
 
 // ── the clauses ──

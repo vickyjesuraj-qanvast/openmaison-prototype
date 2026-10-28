@@ -25,7 +25,10 @@ export const xrayColumnDefs = (otherStudio: string): readonly TableColumnDef[] =
   { key: 'status', label: 'Status', track: '150px' },
 ]
 const COL_CLASS: Record<string, string | undefined> = { item: styles.colItem, trade: styles.colTrade, yours: styles.colYours, theirs: styles.colTheirs, diff: styles.colDiff, status: styles.colStatus }
-const STATUS_WORD: Record<XrayRow['status'], string> = { matched: 'Matched', 'yours-only': 'Only in yours', 'theirs-only': 'Only in theirs', unpriced: 'No price given' }
+const STATUS_WORD: Record<XrayRow['status'], string> = { matched: 'Matched', 'yours-only': 'Only in yours', 'theirs-only': 'Only in theirs', unpriced: 'No price' }
+/** (the calm UI build 2026-10-27, 6-05 — T-04) The Status chip says which side has the line; a line with no price says "No price" once, in their
+    cell — so a no-price row's chip reads its side (Matched, or Only in theirs), never the price a second time. The stored status is unchanged. */
+const shownStatus = (r: XrayRow): XrayRow['status'] => (r.status === 'unpriced' ? (r.yoursMinor === null ? 'theirs-only' : 'matched') : r.status)
 /** (Dane UAT 7.04) The Status chip wears the legend's colour — only in yours green, only in theirs red — so a row says which side has it
     without the 3px bar alone; Matched and No price given stay plain (a pairing you made is a match). Whole-row tints would fight the
     row's hover and the frozen Item column. */
@@ -44,7 +47,7 @@ function RowMenu({ name, actions }: { name: string; actions: RowAction[] }) {
       <span className={styles.actionsInner}>
         <span className={styles.float} ref={anchor}>
           {/* (REG-729) the parked row action is the house 36 primary kebab, as every table's (it was bare) */}
-          <Tooltip label="More actions" disabled={open}><IconButton icon="more_vert" label={`More actions for ${name}`} size={36} variant="primary" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} /></Tooltip>
+          <Tooltip label="More actions" disabled={open}><IconButton icon="more_vert" label={`More actions for ${name}`} size={36} variant="primary" className={styles.kebab} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} /></Tooltip>
         </span>
       </span>
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name}>
@@ -66,7 +69,8 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
   const D = useColumnDrag(columns, onReorder)
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
-  /* (REG-638) yours − theirs, as the Real difference tile reads it: "−" = ours less. A line printing a word has no price to set against theirs. */
+  /* (REG-638) yours − theirs, as the Like-for-like difference tile reads it: "−" = yours less. A line printing a word has no price to set against
+     theirs. (the calm UI build 2026-10-27, 6-05 — T-08) a row with no difference leaves its cell empty; a side that hasn't the line reads "—". */
   const diffOf = (r: XrayRow) => (r.yoursMinor !== null && r.theirsMinor !== null && r.status === 'matched' && !r.yourWord ? r.yoursMinor - r.theirsMinor : null)
   const qtyOf = (n: number, unit: string) => `${Number.isInteger(n) ? n : Number(n.toFixed(2))} ${unit}`
   return (
@@ -83,10 +87,11 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
       </div>
       {rows.map((r) => {
         const diff = diffOf(r)
-        const cell = (key: string, cls: string | undefined, children: React.ReactNode) => (
+        const cell = (key: string, cls: string | undefined, children: React.ReactNode, empty = false) => (
           <div key={key} className={`${styles.cell} ${cls ?? ''} ${L.pinned(key) ? styles.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}
-               data-label={key === 'theirs' ? otherStudio : undefined}>{children}</div>
+               data-label={key === 'theirs' ? otherStudio : undefined} data-empty={empty || undefined}>{children}</div>
         )
+        const status = shownStatus(r)
         const cells: Record<string, () => React.ReactNode> = {
           item: () => cell('item', styles.colItem, (
             <span className={styles.itemText}>
@@ -95,16 +100,16 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
             </span>
           )),
           trade: () => cell('trade', styles.colTrade, <span className={styles.oneLine}>{r.trade}</span>),
-          yours: () => cell('yours', styles.colYours, r.yoursMinor === null ? <span className={styles.muted}>--</span> : r.yourWord ? <span className={styles.muted}>{r.yourWord}</span> : (
+          yours: () => cell('yours', styles.colYours, r.yoursMinor === null ? <span className={styles.muted}>—</span> : r.yourWord ? <span className={styles.muted}>{r.yourWord}</span> : (
             <span className={styles.figure}><span className={styles.num}>{money(r.yoursMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.yours, r.qty.unit)}</span> : null}</span>
           )),
-          theirs: () => cell('theirs', styles.colTheirs, r.theirsMinor === null ? <span className={styles.muted}>--</span> : r.theirsMinor === 0 ? <span className={styles.muted}>No price given</span> : (   /* (sweep S3) one name for a line with no price: the Status chip's and the legend's */
+          theirs: () => cell('theirs', styles.colTheirs, r.theirsMinor === null ? <span className={styles.muted}>—</span> : r.theirsMinor === 0 ? <span className={styles.muted}>No price</span> : (   /* (sweep S3) one name for a line with no price; (the calm UI build, 6-05) said here once */
             <span className={styles.figure}><span className={styles.num}>{money(r.theirsMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.theirs, r.qty.unit)}</span> : null}
               {/* (pending modules S21 — 1.0's arithmetic check) what their own rate × quantity makes, when it isn't what they state */}
               {r.slip ? <span className={styles.qty} data-tone="slip" data-testid="xray-slip">{money(r.slip.computedMinor)} at their rate</span> : null}</span>
           )),
-          diff: () => cell('diff', styles.colDiff, diff === null ? <span className={styles.muted}>--</span> : <span className={styles.num} data-sign={diff < 0 ? 'less' : diff > 0 ? 'more' : 'same'}>{diff === 0 ? 'same' : `${diff < 0 ? '−' : '+'}${money(Math.abs(diff))}`}</span>),
-          status: () => cell('status', styles.colStatus, <MetaChip color={r.by === 'you' ? 'default' : STATUS_COLOR[r.status]}>{r.by === 'you' ? 'Paired by you' : STATUS_WORD[r.status]}</MetaChip>),
+          diff: () => cell('diff', styles.colDiff, diff === null ? null : <span className={styles.num} data-sign={diff < 0 ? 'less' : diff > 0 ? 'more' : 'same'}>{diff === 0 ? 'same' : `${diff < 0 ? '−' : '+'}${money(Math.abs(diff))}`}</span>, diff === null),
+          status: () => cell('status', styles.colStatus, <MetaChip color={r.by === 'you' ? 'default' : STATUS_COLOR[status]}>{r.by === 'you' ? 'Paired by you' : STATUS_WORD[status]}</MetaChip>),
         }
         const acts = rowActions?.(r) ?? []
         return (

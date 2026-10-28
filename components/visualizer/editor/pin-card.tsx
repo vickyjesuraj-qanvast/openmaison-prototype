@@ -269,7 +269,7 @@ export function ClientNotes({ version, notes, now, client, onReply, onClose }: {
   ))
   const replyBox = (
     <>
-      <NoteBox label="Reply" placeholder={`Reply — ${client} sees it on the renders link`} value={text} onChange={setText} onSubmit={() => { void send() }} onEscape={onClose} />
+      <NoteBox label="Reply" placeholder={`Reply — ${client} sees it on the link you shared`} value={text} onChange={setText} onSubmit={() => { void send() }} onEscape={onClose} />
       <span className={styles.actions}><Button isDisabled={!text.trim() || busy} onPress={() => { void send() }} data-testid="viz-client-note-send">{busy ? 'Sending…' : 'Reply'}</Button></span>
     </>
   )

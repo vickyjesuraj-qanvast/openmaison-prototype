@@ -55,7 +55,7 @@ export function DetailBulkBar({ count, actions, onClear, inset = false }: Detail
           {actions.map((a) => (
             /* (REG-713) ⌫ presses Delete — it asks first, as the press does; Delete Forever never gets a key (Q-19) */
             <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={(e) => a.onClick(e)}
-                    data-kb={a.tone === 'danger' && /^Delete( All)?$/.test(a.label) ? 'delete' : undefined}>
+                    data-kb={a.tone === 'danger' && /^Delete( all)?$/i.test(a.label) ? 'delete' : undefined}>
               {a.label}
             </button>
           ))}

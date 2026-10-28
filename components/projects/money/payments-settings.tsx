@@ -59,7 +59,7 @@ export function PaymentSettings({ rules, team, canManage, collection }: Pick<Pay
     }
     void write({ confirmer: c, memberId: null }, c === 'owner' ? 'The Owner confirms every client’s payment' : 'Each project’s designer confirms its client’s payments')
   }
-  const trustLabel = 'Trust the client’s proof'
+  const trustLabel = 'Count a client’s proof of payment before you check it'   // (the calm UI build 2026-10-27, 5-34 · W-414)
   return (
     <>
       <div className={s.setting} id="payment-settings" data-testid="payment-settings">

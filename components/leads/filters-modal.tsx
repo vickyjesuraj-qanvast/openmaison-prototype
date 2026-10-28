@@ -61,7 +61,10 @@ export function MembersPane({ team, value, onToggle }: { team: readonly Pick<Mem
 }
 
 export function FiltersModal({
-  open, value, team, onClose, onApply, now, sources = SOURCES, resultCount,}: {
+  open, value, team, onClose, onApply, now, sources = SOURCES, resultCount, withSort = true,}: {
+  /** (the calm UI build 2026-10-27 — audit 2-43, T-04) The table's heads sort, so its Filters drop the Sort tab; the kanban and the phone's cards,
+   *  which have no heads, keep it (Newest / Oldest at the top) */
+  withSort?: boolean
   /** (Leads on the move, L3 — A-11) How many leads the live filters leave — the phone sheet's Done says it: "Show 9 leads". */
   resultCount?: number
   /** (REG-599) The sources to offer: the studio's live list plus any retired source still on a lead (the caller computes it). */
@@ -86,14 +89,16 @@ export function FiltersModal({
   /* (REG-353) ≤767 this is the canvas' Filters bottom sheet (1g, 2o): it rises off the bottom edge and the
      160px category rail lies down as a scrolling tab strip over the options. */
   const sheet = useSheetLayout()
-  const [tab, setTab] = useState<Tab>('sort')
+  const firstTab: Tab = withSort ? 'sort' : 'quick'
+  const tabs = withSort ? TABS : TABS.filter((t) => t.key !== 'sort')
+  const [tab, setTab] = useState<Tab>(firstTab)
   const [draft, setDraft] = useState<LeadFilters>(value)
   const [q, setQ] = useState('')
   const [wasOpen, setWasOpen] = useState(false)
 
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setDraft(value); setTab('sort'); setQ('') }
+    if (open) { setDraft(value); setTab(firstTab); setQ('') }
   }
 
   const dots = activeGroups(draft)
@@ -178,7 +183,7 @@ export function FiltersModal({
             ) : (
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
-                {TABS.map((t) => (
+                {tabs.map((t) => (
                   <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={styles.tab}
                           data-active={tab === t.key || undefined} onClick={() => { setTab(t.key); setQ('') }}>
                     <span>{t.label}</span>
@@ -281,7 +286,7 @@ export function FiltersModal({
             </div>
             )}
             <SurfaceFoot shadow={bodyScrolls}>
-              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
+              <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear</Button>
               {/* (REG-464) The draft is already applied — Done only closes. (Leads on the move, A-11) On a phone it says what the list now holds. */}
               <Button onPress={onClose} data-testid="filters-done">{sheet && resultCount !== undefined ? `Show ${resultCount} lead${resultCount === 1 ? '' : 's'}` : 'Done'}</Button>
             </SurfaceFoot>

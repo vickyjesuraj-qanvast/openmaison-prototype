@@ -125,7 +125,7 @@ const PAGES = [
         const s = sheet(p)
         const words = await s.innerText().catch(() => '')
         const sug = await suggestions(p)
-        ok(await s.locator('[data-testid="maison-ask"]').count() === 1 && /Answers from your records/.test(words) && sug.length >= 2, `${name}: the one sheet — the Ask box and ${sug.length} suggestions`)
+        ok(await s.locator('[data-testid="maison-ask"]').count() === 1 && /Ask Maison AI/.test(words) && sug.length >= 2, `${name}: the one sheet — the Ask box and ${sug.length} suggestions`)   // (the calm UI build 2026-10-27, a deliberate change) the box's helper "Answers from your records" went (W-113); the box is "Ask Maison AI"
         let soon = false
         for (const label of sug) {
           if (!(await s.isVisible().catch(() => false))) await fab(p)
@@ -156,7 +156,8 @@ const PAGES = [
       const active = Number(sql(`select count(*) from members where is_active = 1`))
       ok(new RegExp(`${active} members`).test(await a.innerText()) && await a.locator('[data-testid="maison-row"]').count() === active, `the team: every active member with their leads, projects and tasks (${active})`)
       a = await ask(p, 'studio overview')
-      ok(/Your studio today/.test(await a.innerText()) && await a.locator('[data-testid="maison-row"][data-ask]').count() >= 3, 'the studio today: each line asks for the list behind it')
+      /* (Dashboard redesign 2026-10-26, a deliberate change — his P-10) the studio today answers as figures, each a door that asks for its list */
+      ok(/Your studio today/.test(await a.innerText()) && await a.locator('[data-testid^="maison-figure-"][data-press]').count() >= 3, 'the studio today: each figure asks for the list behind it')
       a = await ask(p, 'Cash flow')
       ok(/Cash flow/.test(await a.innerText()) && await a.locator('[data-testid="maison-row"] span[aria-hidden] > span').count() >= 1, 'cash flow from Reports › Finance — with bars drawn in the answer')
       await shot(p, '02-ask-cashflow-bars-1440')
@@ -290,20 +291,34 @@ const PAGES = [
     if (want(6)) {
       console.log('6 · The lead brief’s two, the editors’ own words')
       const more = async () => { const b = p.locator('section[aria-label="Maison AI brief"]').getByRole('button', { name: 'Show more' }); if (await b.count()) { await b.click(); await settle(p, 700) } }
-      await go(p, `/leads/${SERENA}`); await more()
-      const review = p.getByRole('button', { name: 'Attach a client review' })
-      if (await review.count()) {
-        await review.first().click(); await settle(p, 1500)
-        ok(/OpenMaison keeps no client reviews yet|No client reviews on record/.test(await p.locator('main').innerText()), '“Attach a client review”: says 2.0 keeps none, and offers the studio’s own finished homes')
-      } else ok(false, 'Serena’s brief has “Attach a client review”')
-      await go(p, `/leads/${MUTHU}`); await more()
-      const year = p.getByRole('button', { name: 'Remind me in a year' })
-      ok(await year.count() >= 1 && await p.getByRole('button', { name: 'Add to newsletter list' }).count() === 0, 'the Lost brief: “Remind me in a year” where the newsletter button was')
-      if (await year.count()) {
-        await year.first().click(); await settle(p, 1200)
-        const yearOn = new Date(); yearOn.setFullYear(yearOn.getFullYear() + 1)
-        ok(/Check in with Muthu/.test(await p.locator('main').innerText()) && new RegExp(`’${String(yearOn.getFullYear()).slice(2)}`).test(await p.locator('main').innerText()), '…a task a year from now, shown first')
+      /* (the calm UI build 2026-10-27, a deliberate change — the audit's 2-01, B2's ledger) the lead's Overview keeps ONE brief card with one action;
+         every other brief action is a suggestion in the Maison AI sheet (the page registers them all). Same rule: each action is a press away and
+         acts — the brief's card when it holds it, else the sheet; its answer or proposal shows where it was pressed. */
+      const briefOrSheet = async (label) => {
+        const own = p.locator('section[aria-label="Maison AI brief"]').getByRole('button', { name: label })
+        if (await own.count()) { await own.first().click(); await settle(p, 1500); return p.locator('section[aria-label="Maison AI brief"]') }
+        await fab(p)
+        const inSheet = sheet(p).getByRole('button', { name: label, exact: true })
+        if (!(await inSheet.count())) return null
+        await inSheet.first().click(); await waitPanel(p); await settle(p, 600)
+        return panel(p)
       }
+      await go(p, `/leads/${SERENA}`); await more()
+      const reviewSaid = await briefOrSheet('Attach a client review')
+      if (reviewSaid) {
+        ok(/OpenMaison keeps no client reviews yet|No client reviews on record/.test(await reviewSaid.innerText()), '“Attach a client review”: says 2.0 keeps none, and offers the studio’s own finished homes')
+      } else ok(false, 'Serena’s brief has “Attach a client review” (its card, or the Maison AI sheet)')
+      await p.keyboard.press('Escape'); await settle(p, 300)
+      await go(p, `/leads/${MUTHU}`); await more()
+      const newsletter = await p.getByRole('button', { name: 'Add to newsletter list' }).count()
+      const yearSaid = await briefOrSheet('Remind me in a year')
+      ok(!!yearSaid && newsletter === 0 && await p.getByRole('button', { name: 'Add to newsletter list' }).count() === 0, 'the Lost brief: “Remind me in a year” where the newsletter button was')
+      if (yearSaid) {
+        const yearOn = new Date(); yearOn.setFullYear(yearOn.getFullYear() + 1)
+        const said = await yearSaid.innerText()
+        ok(/Check in with Muthu/.test(said) && new RegExp(`’${String(yearOn.getFullYear()).slice(2)}`).test(said), '…a task a year from now, shown first')
+      }
+      await p.keyboard.press('Escape'); await settle(p, 300)
       /* the quote editor understands its own page */
       await go(p, `/quotes/${Q1}`); await fab(p)
       await ask(p, 'check the margins please')
@@ -337,7 +352,8 @@ const PAGES = [
       as('priya')
       await go(p, '/company/finance'); await fab(p)
       a = await ask(p, 'Who owes the studio money?')
-      ok(/Who owes the studio/.test(await a.innerText()) && /Owed to you/.test(await a.innerText()), 'Accounting gets the books’ own answer (Reports › Finance’s figures)')
+      /* (the calm UI build 2026-10-27, a deliberate change — §2's vocabulary) Reports › Finance's figure reads "To collect" (was "Owed to you") */
+      ok(/Who owes the studio/.test(await a.innerText()) && /To collect/.test(await a.innerText()), 'Accounting gets the books’ own answer (Reports › Finance’s figures)')
       a = await ask(p, 'What is overdue?')
       ok(/Not for Accounting/.test(await a.innerText()), 'and “Not for Accounting” on the projects’ schedules')
       ok(!/Which leads need attention/.test(await sheet(p).innerText()), 'Accounting’s chips are the books’ and their own tasks')
@@ -351,7 +367,7 @@ const PAGES = [
       await go(p, '/leads')
       await p.locator('[data-search-tile]').click(); await settle(p, 400)
       await p.getByRole('combobox', { name: 'Search the studio' }).fill('Germaine'); await settle(p, 1200)
-      const people = p.getByRole('dialog', { name: 'Search' }).getByRole('group', { name: 'People' })
+      const people = p.getByRole('dialog', { name: 'Search' }).getByRole('group', { name: 'Members' })   // (the calm UI build 2026-10-27, a deliberate change) the studio's people are Members (T-01; was People)
       const landed = p.waitForURL(/\/company\/members\?(.*&)?open=germaine/, { timeout: 10000 }).then(() => true, () => false)
       await people.getByRole('option').first().click()
       const viaOpen = await landed; await settle(p, 1200)

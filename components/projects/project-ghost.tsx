@@ -118,20 +118,19 @@ export function ProjectGhost({ tab, shape, siteBar }: { tab?: string; shape?: Pr
           <span className={hdr.crumb}><Line w={56} lh={16} h={10} /></span>
           <div className={hdr.titleRow}>
             <span className={hdr.title}><Line w={220} lh={24} h={20} /></span>
-            <span className={hdr.chips}>{(s.typeChip ? [72, 132] : [72]).map((w, i) => <Slot key={i} kind="chip" w={w} />)}</span>
           </div>
         </div>
         {books ? null : <>
         <div className={hdr.actions}>
           <span className={frame.anchor}><Slot kind="btn" w={176} /></span>
-          <span className={`${frame.anchor} ${frame.primary}`}><Slot kind="btn" w={132} fill /></span>
+          <span className={`${frame.anchor} ${frame.primary}`} data-on-overview={slug === '' || undefined}><Slot kind="btn" w={132} fill /></span>   {/* (the calm UI build 2026-10-27, 3-09 · 3-31) as the header: no chips, no button on a phone's Overview */}
         </div>
         <div className={hdr.titleActions}><Slot kind="icon" /></div>
         </>}
       </div>
       {/* (simplify S-03) the strip's seven groups — Money only for whoever sees money */}
       {/* (S43E, F3-03 W3-04) the open tab’s place, so the strip never jumps sideways at the hand-over (S42 A-10’s rule, here too) */}
-      <GhostTabs labels={books ? ['Money', 'Files'] : PROJECT_TAB_GROUPS.filter((g) => g.key !== 'money' || s.money).map((g) => g.label)}
+      <GhostTabs labels={books ? ['Payments', 'Files'] : PROJECT_TAB_GROUPS.filter((g) => g.key !== 'money' || s.money).map((g) => g.label)}
                  active={books ? (slug === 'files' ? 1 : 0) : Math.max(0, PROJECT_TAB_GROUPS.filter((g) => g.key !== 'money' || s.money).findIndex((g) => g.key === groupOf(slug).key))} />
       <div className={frame.row} aria-hidden>
         {body ? null : <InfoColumnGhost sections={s.customFields ? [...PROJECT_SECTIONS, CUSTOM_SECTION] : PROJECT_SECTIONS} />}

@@ -148,7 +148,7 @@ export function InvoicePaperSetting({ paper, entities, canManage, sample: given 
         </div>
         {canManage ? <div className={s.settingActions}>
           <Button variant="secondary" appearance="outlined" onPress={() => setDraft(saved)} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="invoice-paper-save">{busy ? 'Saving…' : 'Save the paper'}</Button>
+          <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="invoice-paper-save">{busy ? 'Saving…' : 'Save'}   {/* (the calm UI build 2026-10-27, 5-18 · W-017) one Save label */}</Button>
         </div> : null}
       </div>
       <Dialog open={large} onClose={() => setLarge(false)} title="A sample invoice" subtitle={entity ? `On ${entity.name}’s paper, as it stands — unsaved changes included` : 'On the studio’s paper, as it stands — unsaved changes included'} size="modal" width={880} portal>

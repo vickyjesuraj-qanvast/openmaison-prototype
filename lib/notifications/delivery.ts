@@ -494,7 +494,7 @@ export async function deliverNotice(kind: EventKey, channels: OutboundChannel[],
     if (batch) {
       const { notify } = await import('./emit')
       const owners = (await db.select({ id: members.id }).from(members).where(and(eq(members.role, 'Owner'), eq(members.isActive, true)))).map((m) => m.id)
-      await notify('send_held', owners, { title: `A large send waits for your OK — ${live.length} people`, body: n.title, href: '/settings?section=notifications#sent-messages', leadId: n.leadId ?? null, actorId: null })
+      await notify('send_held', owners, { title: `A large send is waiting for your approval — ${live.length} people`, body: n.title, href: '/settings?section=notifications#sent-messages', leadId: n.leadId ?? null, actorId: null })
     }
     return sent
   } catch { return 0 }

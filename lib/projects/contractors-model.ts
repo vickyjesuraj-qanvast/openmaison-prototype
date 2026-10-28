@@ -169,7 +169,7 @@ export function lineOf(c: Contractor, jobs: CrewJob[], today: number, days: numb
   const words = state === 'free' ? `Free ${windowWordsOf(days)}`
     : state === 'over' ? `${peak - cap} over`
       : state === 'full' ? 'Full'
-        : `Room for ${cap - peak} more`
+        : `${cap - peak} free ${cap - peak === 1 ? 'slot' : 'slots'}`   // (the calm UI build 2026-10-27, 3-15 · W-526) was "Room for n more"
   const when = freeFrom !== null ? `free from ${dayMonth(freeFrom)}` : lateSite ? `${lateSite.site?.visible ? `${lateSite.site.client}’s site` : 'a site'} runs late` : now.length ? 'no end date' : later[0]?.start != null ? `next on ${dayMonth(later[0].start)}` : 'nothing booked'
   /* the Members view's count grammar — "2 of 1" — then when they are free */
   return { contractor: c, jobs: now, later, peak, state, freeFrom, words, detail: `${peak} of ${cap} · ${when}` }
@@ -264,7 +264,7 @@ export function availabilityOver(c: Contractor, jobs: CrewJob[], from: number, t
   if (!mine.length) return { state: 'free', words: 'Free on these days' }
   const on = mine.find((j) => j.site?.visible)
   const where = on ? ` — on ${on.site!.client}’s ${on.milestone ? on.milestone.title.toLowerCase() : on.trade.toLowerCase()}` : ''
-  if (peak < cap) return { state: 'room', words: `Room for ${cap - peak} more on these days${where}` }
+  if (peak < cap) return { state: 'room', words: `${cap - peak} free ${cap - peak === 1 ? 'slot' : 'slots'} on these days${where}` }   // (the calm UI build 2026-10-27, W-526)
   return { state: peak > cap ? 'over' : 'full', words: `Full on these days${where}` }
 }
 

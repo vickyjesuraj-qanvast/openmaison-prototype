@@ -17,3 +17,24 @@
 @media (max-width: 767px) {
   .roles.roles > :first-child, .roles.roles > * > :not(.group) { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* (the calm UI build 2026-10-27, 5-04) What each role can do, in the house Drawer: the help, the roles' chips, then the table one role at a
+   time — the action (with its *Set under …* link) and that role's answer, two tracks at every width (a phone keeps them side by side: one
+   role, so no cell needs its role's name again — the stack's labels step aside, and the head with them, as the event table's does). */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.one.one > :first-child, .one.one > * > :not(.group) { grid-template-columns: minmax(0, 1fr) minmax(96px, auto); }
+.one .reachText { text-align: right; }
+@media (max-width: 767px) {
+  .one.one > * > :not(.group) { align-items: center; gap: var(--om-spacing-3); }
+  .one.one [data-label]::before { content: none; }
+}
+/* All roles — the six side by side, as the page's table drew them, on the tracks a tablet's column gave them (the drawer is that wide); a phone
+   stacks each row with every cell labelled by its role (settings.module.css .roleTable, the event table's stack)
+   — wider than the drawer, so it scrolls sideways inside its own box (.allScroll), never the page */
+.allScroll { overflow-x: auto; max-width: 100%; }
+.all.all { min-width: 736px; }
+.all.all > :first-child, .all.all > * > :not(.group) { grid-template-columns: minmax(200px, 1.4fr) repeat(6, minmax(88px, 1fr)); }
+@media (max-width: 767px) {
+  .all.all { min-width: 0; }
+  .all.all > :first-child, .all.all > * > :not(.group) { grid-template-columns: minmax(0, 1fr); }
+}

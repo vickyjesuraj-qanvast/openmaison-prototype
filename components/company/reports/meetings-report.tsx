@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Chips } from '@/components/om/chips'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
+import { HowCounted, PickPill } from './report-pill'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
@@ -18,7 +19,7 @@ import { useTableColumns, type TableColumn, type TableColumnDef } from '@/compon
 import { Button } from '@/components/ds'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ExportDialog } from '@/components/leads/export-dialog'
-import { Card, CardRule } from '@/components/leads/detail/card'
+import { CardRule } from '@/components/leads/detail/card'
 import { Row } from '@/components/projects/overview/row'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -27,10 +28,10 @@ import { setFlagPref } from '@/lib/prefs'
 import { displayDate } from '@/lib/format'
 import { BLANK } from '@/lib/leads/row-text'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
-import { tierOf } from '@/lib/meetings/model'
+import { TIER_LABEL, tierLabel } from '@/lib/meetings/model'   // (the calm UI build 2026-10-27 — B2's request, 2-20 · 5-09) the tiers in words, as the meetings list says them
 import { kindLabel } from '@/lib/meetings/objections'
 import {
-  CHECK_TITLE, COACHING_EMPTY, COACHING_TITLE, DEFAULT_RANGE, FOOT_NOTE, MEMBERS_EMPTY, MEMBERS_HELP, OBJECTIONS_EMPTY, OBJECTIONS_HELP, OBJECTIONS_TITLE,
+  COACHING_EMPTY, COACHING_TITLE, DEFAULT_RANGE, FOOT_NOTE, MEMBERS_EMPTY, MEMBERS_HELP, OBJECTIONS_EMPTY, OBJECTIONS_HELP, OBJECTIONS_TITLE,
   OBJECTION_TILE_LABELS, OUTCOMES, OUTCOME_LABEL, RANGES, SHAPE, TIER_WORDS, checkWaitLine, meetingsReport, meetingsSheet, pctText, rangeLabel, scoreText, tileFigures,
   type MeetingsRange, type MeetingsReport as Report, type MemberMeetings, type ObjectionFact, type Outcome,
 } from '@/lib/meetings/report-model'
@@ -59,11 +60,14 @@ const OUTCOME_COLOR: Record<Outcome, 'green' | 'default' | 'yellow'> = { ahead: 
 const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
   { key: 'meetings', label: 'Meetings', track: 'minmax(112px, 112fr)' },
-  { key: 'ahead', label: 'Went ahead', track: 'minmax(136px, 136fr)' },
+  /* (the calm UI build 2026-10-27 — 5-09 · W-409) the heads in plain words; the keys (Column settings' memory) unchanged */
+  { key: 'ahead', label: 'Won after', track: 'minmax(136px, 136fr)' },
   { key: 'score', label: 'Average score', track: 'minmax(152px, 152fr)' },
   { key: 'checklist', label: 'Checklist covered', track: 'minmax(176px, 176fr)' },
-  { key: 'tips', label: 'Tips acted on', track: 'minmax(152px, 152fr)' },
+  { key: 'tips', label: 'Tips used', track: 'minmax(152px, 152fr)' },
 ]
+/** (the calm UI build 2026-10-27 — 5-09 · W-166) the deal score card asks its question — one place for the page and its ghost */
+export const CHECK_HEAD = 'Is the deal score right?'
 const OBJECTION_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'lead', label: 'Lead', track: 'minmax(200px, 200fr)', locked: true },
   { key: 'date', label: 'Date', track: 'minmax(120px, 120fr)' },
@@ -139,25 +143,25 @@ export function MeetingsReport({ data, initialRange = DEFAULT_RANGE }: { data: M
   const columns = columnsFor === 'objections' ? objectionCols : memberCols
   return (
     <div data-testid="meeting-report">
-      <div className={styles.bar}>
-        <ChipRail label="Range">
-          <Chips label="Range" testId="meeting-report-range" options={RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => setRange(v === 'all' ? null : (Number(v) as MeetingsRange))} />
-        </ChipRail>
-        <span className={styles.barEnd}>
-          {/* the house reports' grammar — what the range filters on, then the count in range (invented copy) */}
-          <span className={styles.caption} data-testid="meeting-report-caption">{`Filtering on meeting date · ${plural(report.held, 'meeting')} held in range`}</span>
-          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="meeting-report-export">Export</Button>
+      {/* (the calm UI build 2026-10-27 — 5-19, T-10) the reports' one bar: the house Period pill — what it counts by and how many meetings it
+          holds is its tooltip (the old caption, invented copy) — then Export */}
+      <div className={styles.pickBar}>
+        <span className={styles.picks}>
+          <PickPill name="Period" testId="meeting-report-range" tip={{ testId: 'meeting-report-caption', text: `Counts meetings by the day they were held · ${plural(report.held, 'meeting')} held` }} scoped={range !== DEFAULT_RANGE}
+                    options={RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => setRange(v === 'all' ? null : (Number(v) as MeetingsRange))} />
         </span>
+        <span className={styles.pickEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="meeting-report-export">Export</Button></span>
       </div>
 
       <StatTiles className={styles.tiles} testId="meeting-report-tiles">
         {tiles.map((t, i) => <StatTile key={t.label} testId={`meeting-tile-${['held', 'ahead', 'score', 'length', 'tips'][i]}`} label={t.label} value={t.value} help={t.help} />)}
       </StatTiles>
 
-      <section className={styles.section} aria-label="By team member">
+      {/* (the calm UI build 2026-10-27 — 5-41 · W-036) "Member", the house word */}
+      <section className={styles.section} aria-label="By member">
         <div className={styles.sectionHead}>
           <div>
-            <span className={styles.sectionTitle}>By team member</span>
+            <span className={styles.sectionTitle}>By member</span>
             <span className={styles.sectionHelp}>{MEMBERS_HELP}</span>
           </div>
           {mobile ? null : (
@@ -169,7 +173,7 @@ export function MeetingsReport({ data, initialRange = DEFAULT_RANGE }: { data: M
         {report.members.length === 0 ? (
           <p className={styles.empty} data-testid="meeting-members-empty">{MEMBERS_EMPTY}</p>
         ) : (
-          <ReportTable css={styles} table={MEMBERS_TABLE} label="By team member" testId="meeting-report-members" rowTestId="meeting-member-row" rows={report.members}
+          <ReportTable css={styles} table={MEMBERS_TABLE} label="By member" testId="meeting-report-members" rowTestId="meeting-member-row" rows={report.members}
                        columns={memberCols.columns} onReorder={memberCols.reorder} render={(r, key) => memberCell(r, key)} />
         )}
       </section>
@@ -183,7 +187,8 @@ export function MeetingsReport({ data, initialRange = DEFAULT_RANGE }: { data: M
       <ObjectionsSection report={report} nameOf={nameOf} team={team} columns={objectionCols.columns} onReorder={objectionCols.reorder}
                          onColumns={mobile ? undefined : () => setColumnsFor('objections')} />
 
-      <p className={styles.foot}>{FOOT_NOTE}</p>
+      {/* (the calm UI build 2026-10-27 — T-05) the method, one press away */}
+      <HowCounted testId="meeting-report-foot">{FOOT_NOTE}</HowCounted>
 
       <ColumnSettingsDrawer open={columnsFor !== null} onClose={() => setColumnsFor(null)} pinning={{ max: 3 }} columns={columns.all} onSave={columns.save} onReset={columns.reset} />
       <ExportDialog open={exporting} title="Export Meetings report" onClose={() => setExporting(false)} download={(format) => download(format)}
@@ -192,14 +197,28 @@ export function MeetingsReport({ data, initialRange = DEFAULT_RANGE }: { data: M
   )
 }
 
-/** A By team member cell. */
+/**
+ * (the calm UI build 2026-10-27 — 5-23, T-06) A card of the report's rows under the house section head — the bold sentence-case title the page's
+ * other sections wear (By member · Objections), not the lead Overview's caps caption: one head style on a Company page. The frame is the
+ * Overview card's own (card.module.css `.card`, composed).
+ */
+function RowsCard({ title, testId, children }: { title: string; testId: string; children: ReactNode }) {
+  return (
+    <section className={styles.rowsCard} aria-label={title} data-card={testId}>
+      <div className={styles.sectionHead}><div><span className={styles.sectionTitle}>{title}</span></div></div>
+      <div className={styles.panel}>{children}</div>
+    </section>
+  )
+}
+
+/** A By member cell. */
 function memberCell(r: MemberMeetings, key: string): ReactNode {
   switch (key) {
     case 'member': return <span className={styles.memberCell}><Avatar name={r.name} color={r.color} size={36} tooltip={false} /><span className={styles.memberText}><span className={styles.memberName}>{r.name}</span><span className={styles.memberRole}>{r.role}</span></span></span>
     case 'meetings': return <span className={styles.num}>{r.meetings}</span>
     case 'ahead': return <span className={styles.stat}><span className={styles.statValue}>{pctText(r.aheadShare)}</span><span className={styles.statHelp}>{`${r.ahead} of ${r.meetings}`}</span></span>
     /* the house cell: the figure, its line under it; an empty figure is the house "--" with no line under it (parity P-35 · C-11) */
-    case 'score': return <span className={styles.stat}><span className={styles.statValue}>{scoreText(r.score)}</span>{r.score !== null ? <span className={styles.statHelp}>{`${tierOf(r.score)} · ${plural(r.scored, 'meeting')}`}</span> : null}</span>
+    case 'score': return <span className={styles.stat}><span className={styles.statValue}>{scoreText(r.score)}</span>{r.score !== null ? <span className={styles.statHelp}>{`${tierLabel(r.score)} · ${plural(r.scored, 'meeting')}`}</span> : null}</span>
     case 'checklist': return <span className={styles.num}>{pctText(r.checklist)}</span>
     case 'tips': return <span className={styles.stat}><span className={styles.statValue}>{pctText(r.tipsShare)}</span>{r.tipsSeen ? <span className={styles.statHelp}>{`${r.tipsActed} of ${plural(r.tipsSeen, 'tip')}`}</span> : null}</span>
     default: return null
@@ -209,7 +228,7 @@ function memberCell(r: MemberMeetings, key: string): ReactNode {
 /** Coaching — 1.0's coaching suggestions as the Overview card's rows: the member, what to do, the evidence. */
 function CoachingCard({ report }: { report: Report }) {
   return (
-    <Card title={COACHING_TITLE} testId="meeting-coaching">
+    <RowsCard title={COACHING_TITLE} testId="meeting-coaching">
       <div className={ov.body}>
         {report.coaching.length ? (
           <div className={ov.group}>
@@ -221,7 +240,7 @@ function CoachingCard({ report }: { report: Report }) {
           <p className={ov.line} data-testid="meeting-coaching-empty">{COACHING_EMPTY}</p>
         )}
       </div>
-    </Card>
+    </RowsCard>
   )
 }
 
@@ -230,29 +249,30 @@ function CheckCard({ report }: { report: Report }) {
   const c = report.check
   const settings = withFrom('/settings?section=meetings', HERE)
   return (
-    <Card title={CHECK_TITLE} testId="meeting-score-check">
+    <RowsCard title={CHECK_HEAD} testId="meeting-score-check">
       <div className={ov.body}>
         {c ? (
           <>
             <div className={ov.group}>
-              {/* (pending modules S23) (invented copy) the verdict — 1.0's "Score predictions are well-calibrated / need improvement" in plain words */}
+              {/* (pending modules S23) (invented copy) the verdict — 1.0's "Score predictions are well-calibrated / need improvement" in plain words;
+                  (the calm UI build 2026-10-27 — W-166) the card asks "Is the deal score right?" and the verdict answers it */}
               {c.good
-                ? <Row icon="check_circle" state="done" name="Scores match what happened" caption="Most meetings turned out as their deal score said" meta={`${pctText(c.share)} · ${c.matched} of ${c.meetings}`} two wrap testId="meeting-score-verdict" />
-                : <Row icon="tune" name="Scores don’t match what happened yet" href={settings} two wrap testId="meeting-score-verdict"
-                       caption={`Check the weights in Settings › Meetings${c.weights.length ? ` — try more on ${joinAnd(c.weights.map((w) => w.label))}` : ''}`}
+                ? <Row icon="check_circle" state="done" name="Yes — scores match what happened" caption="Most meetings turned out as their deal score said" meta={`${pctText(c.share)} · ${c.matched} of ${c.meetings}`} two wrap testId="meeting-score-verdict" />
+                : <Row icon="tune" name="Not yet" href={settings} two wrap testId="meeting-score-verdict"
+                       caption={c.weights.length ? `Try giving ${joinAnd(c.weights.map((w) => w.label))} more weight in Settings › Meetings` : 'Check the weights in Settings › Meetings'}
                        meta={`${pctText(c.share)} · ${c.matched} of ${c.meetings}`} />}
             </div>
             <CardRule inset={0} />
             <div className={ov.group}>
               {c.tiers.map((t) => (
-                <Row key={t.tier} icon={t.share >= 0.6 ? 'check_circle' : 'radio_button_unchecked'} state={t.share >= 0.6 ? 'done' : undefined} name={t.tier}
+                <Row key={t.tier} icon={t.share >= 0.6 ? 'check_circle' : 'radio_button_unchecked'} state={t.share >= 0.6 ? 'done' : undefined} name={TIER_LABEL[t.tier]}
                      caption={`${TIER_WORDS[t.tier].band} · ${TIER_WORDS[t.tier].expects}`} meta={`${t.matched} of ${t.meetings} · ${pctText(t.share)}`} two wrap testId="meeting-score-tier" />
               ))}
             </div>
           </>
         ) : <p className={ov.line} data-testid="meeting-score-wait">{checkWaitLine(report.scoredForCheck)}</p>}
       </div>
-    </Card>
+    </RowsCard>
   )
 }
 

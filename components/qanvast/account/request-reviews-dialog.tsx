@@ -79,7 +79,7 @@ export function RequestReviewsDialog({ open, onClose, studio, link, finished, le
   }
   const pick = step === 'pick'
   return (
-    <Dialog open={open} onClose={onClose} title={pick ? 'Request reviews' : 'Send on WhatsApp'} width={600} size="modal" closeOnScrim={false}
+    <Dialog open={open} onClose={onClose} title={pick ? 'Ask for reviews' : 'Send on WhatsApp'} width={600} size="modal" closeOnScrim={false}
             footer={pick ? (
               <>
                 <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>

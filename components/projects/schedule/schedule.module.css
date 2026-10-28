@@ -14,6 +14,15 @@
 .headline { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 .headline[data-alert] { color: var(--om-color-tertiary-red-default); }
 .subline { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 3-23 · T-04 · T-05) the summary says it in one block: the headline, its paragraph as the headline's quiet second
+   sentence (never red), then one line — the days variation orders add · who sees the schedule (they left the toolbar) */
+.headlineLead { color: inherit; }
+.headline .headlineMore.headlineMore { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.summaryMeta { margin: var(--om-spacing-1) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.summaryMeta .sees.sees { margin-left: calc(-1 * var(--om-spacing-2)); }
+.askLine, .menuRow { display: contents; }   /* (the calm UI build 2026-10-27, 3-01) a handle's box takes no box of its own */
+.sourceNotYet { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (the calm UI build 2026-10-27, 3-34) */
+.voWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .stats { display: flex; flex-wrap: wrap; gap: var(--om-spacing-8); margin: 0; }
 .stat { display: flex; flex-direction: column; gap: var(--om-spacing-0-5); }
 .stat dt { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
@@ -75,6 +84,12 @@
 .name { max-width: 100%; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nameBtn:hover .name { color: var(--om-color-primary-default); }
 .line { max-width: 100%; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (the calm UI build 2026-10-27, 3-23 · T-12) a status line is the fact the row is about ("Blocked · waiting on the plumber for …") — it wraps to a
+   second line instead of an ellipsis (the row grows; its cells share the grid row) */
+.line.line { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+/* (the calm UI build 2026-10-27, 3-23 · T-06) the row's payment and its moved days as sentence-case words beside the name, not capitals tags */
+.payWord { flex: none; font: var(--om-type-body-s); color: var(--om-color-on-tertiary-yellow-variant); white-space: nowrap; }
+.shiftWord { flex: none; font: var(--om-type-body-s); color: var(--om-color-on-tertiary-blue-variant); white-space: nowrap; }
 .line[data-alert] { color: var(--om-color-tertiary-red-default); }
 .line[data-warn] { color: var(--om-color-on-tertiary-yellow-variant); }   /* (B-06) should have started — amber, not late's red */
 

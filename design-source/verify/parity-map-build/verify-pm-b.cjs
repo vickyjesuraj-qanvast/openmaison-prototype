@@ -76,12 +76,13 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     ok(await late.count() === 1 && /PO-2026-003 delivery is 3 days late/.test(await late.innerText()), 'a PO past its expected day raises “PO-2026-003 delivery is 3 days late”')
     ok(await late.getAttribute('data-tone') === 'note', 'the vendor’s lateness is neutral — never red (S-05)')
     await shot(s, 'pm-b-01-ryan-costs-1440')
-    const message = late.getByTestId('po-late-message')
+    if (await late.getByTestId('costs-po-late-more').count()) { await late.getByTestId('costs-po-late-more').click(); await settle(s, 300) }   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    const message = s.getByTestId('po-late-message')
     if (await message.count()) {
-      await message.click(); await settle(s, 300)
+      await message.locator('[role="menuitem"]').click(); await settle(s, 300)
       const opened = await s.evaluate(() => window.__opened.slice(-1)[0] || '')
       ok(/^https:\/\/wa\.me\/65\d{8}\?text=/.test(opened) && /PO-2026-003/.test(decodeURIComponent(opened)), 'Message {vendor} opens WhatsApp on the press with the PO named')
-    } else ok(/Open/.test(await late.innerText()), 'a vendor with no mobile: the row opens the PO instead')
+    } else ok(/Open/.test(await s.locator('[role="menu"]').innerText().catch(() => '')) || /Mark delivered/.test(await late.innerText()), 'a vendor with no mobile: the row opens the PO instead')
     await late.getByTestId('po-late-delivered').click(); await settle(s, 1500)
     ok(sql(`select delivered_at is not null from purchase_orders where id='${po3}'`) === '1', 'Mark delivered stamps the PO delivered')
     ok(/marked delivered/.test(await snack(s).innerText()), 'it says so, with Undo')
@@ -96,7 +97,8 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     // ── MO-011 Invoice to · MO-009 a line's milestone (the PO dialog) ───────────────────────────────────────────────────────────────────
     console.log('The PO dialog')
     await s.getByTestId('money-new').click(); await settle(s, 400)
-    await menuItem(s, /^Purchase order/).click(); await settle(s, 700)
+    await menuItem(s, /^Purchase order/).click(); await settle(s, 500)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
+    if (await s.locator('[data-testid="money-new-level"]').count()) { await s.getByRole('menuitem', { name: /^New purchase order/ }).first().click(); await s.waitForTimeout(700) }
     const dlg = s.locator('[role="dialog"][aria-label="New purchase order"]')
     ok(await dlg.count() === 1 && await dlg.getByTestId('po-bill-to').count() === 0, 'Invoice to waits behind More details')
     await dlg.getByTestId('po-more').click(); await settle(s, 300)

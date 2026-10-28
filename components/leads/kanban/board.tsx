@@ -11,7 +11,7 @@ import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
-import { displayDateLong, isOverdue, moneySGD, phoneLocal, relativeTime } from '@/lib/format'
+import { displayDateLong, isOverdue, moneySGD, phoneLocal } from '@/lib/format'
 import { ScopePill } from '@/components/om/scope-pill'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import type { NextMove } from '@/components/leads/stage-dropdown'
@@ -19,7 +19,7 @@ import { spring } from '@/lib/motion'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead, projectHoldsDelete } from '@/lib/leads/stage-policy'
-import { BLANK, stageAge } from '@/lib/leads/row-text'
+import { agoWords, stageAge } from '@/lib/leads/row-text'
 import styles from './board.module.css'
 
 type Band = { tone: 'green' | 'yellow'; label: string; stages: readonly Stage[] }
@@ -278,7 +278,8 @@ function KanbanCard({
         </span>
         <span className={styles.cardMetaRight}>
           {/* (UX audit L3) The date says what it is: the lead's last update (it read as a bare "2d ago" — taken for the lead's age). */}
-          <span className={styles.cardAgo}>Updated {relativeTime(lead.updatedAt, new Date(now))}</span>
+          {/* (the calm UI build 2026-10-27 — 2-35, W-067) in words: "Updated 2 days ago", never "2d" */}
+          <span className={styles.cardAgo}>Updated {agoWords(lead.updatedAt, now)}</span>
           <span className={styles.kebabWrap} ref={kebabWrap}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <button type="button" className={styles.cardKebab} aria-label={`More actions for ${lead.name}`}
@@ -298,16 +299,17 @@ function KanbanCard({
               {canDelete ? <DropdownItem tone="danger" disabled={!!lead.project} title={lead.project ? projectHoldsDelete(lead.project.number) : undefined} onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
               {canReturnLead(lead) ? (
                 /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */
-                <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>{lead.returnStatus === 'rejected' ? 'Appeal the return' : 'Return Lead'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
+                <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>{lead.returnStatus === 'rejected' ? 'Appeal the return' : 'Return to Qanvast'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
               ) : null}
             </PortalMenu>
           </span>
         </span>
       </div>
+      {/* (the calm UI build 2026-10-27 — 2-35 · T-08) the meta line skips what is empty — a "--" inside the sentence read as a glitch */}
       <div className={styles.cardMeta}>
-        <span>{hitPhone(phoneLocal(lead.phone))}</span><span>·</span>   {/* (leads on the move, A-16 · REG-456) grouped, "9665 2018", as the table and the cards print it */}
-        <span>{lead.budgetMinor > 0 ? hit(moneySGD(lead.budgetMinor)) : BLANK}</span><span>·</span>   {/* (UX audit L8) no budget known reads "--" */}
-        <span>{hit(lead.source)}</span>
+        <span>{hitPhone(phoneLocal(lead.phone))}</span>   {/* (leads on the move, A-16 · REG-456) grouped, "9665 2018", as the table and the cards print it */}
+        {lead.budgetMinor > 0 ? <><span>·</span><span>{hit(moneySGD(lead.budgetMinor))}</span></> : null}   {/* (UX audit L8) no budget known: nothing */}
+        <span>·</span><span>{hit(lead.source)}</span>
         {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDateLong(new Date(lead.onHoldFollowUp)))}</span></> : null}
         {/* (UX audit L3) how long the lead has sat in this column */}
         <span>·</span><span data-testid="card-stage-age">{stageAge(lead, now)}</span>
@@ -321,11 +323,12 @@ function KanbanCard({
           {extra > 0 ? <Tag appearance="outlined">{`+${extra}`}</Tag> : null}
         </button>
       ) : (
-        /* Same affordance as the table's TASKS cell (REG-44 → REG-90): a task-less lead can still receive tasks from the board */
-        <button type="button" className={styles.assignLink} aria-label={`Add a task for ${lead.name}`}
+        /* Same affordance as the table's TASKS cell (REG-44 → REG-90): a task-less lead can still receive tasks from the board — (the calm UI
+           build — 2-06) "No task" at rest, "Add task" on the card's hover or the button's focus, always under a finger */
+        <button type="button" className={`${styles.assignLink} ${styles.restLink}`} aria-label={`Add a task for ${lead.name}`}
                 onClick={(e) => onTaskClick(lead, e.currentTarget)}>
-          <Icon name="add" size={20} />
-          Add task
+          <span className={styles.atRest}>No task</span>
+          <span className={styles.onHover}><Icon name="add" size={20} />Add task</span>
         </button>
       )}
       <div className={styles.cardDivider} />
@@ -336,11 +339,11 @@ function KanbanCard({
             <ScopePill ref={pillRef} label={lead.stage} open={stageOpen} onClick={() => { if (pillRef.current) onStageClick(lead, pillRef.current) }} />
           </span>
         ) : null}
+        {/* (the calm UI build — 2-06) one look for "assign": the grey person-plus — alone on a lead with no member, on hover beside the avatars */}
         {lead.assignees.length === 0 ? (
-          <button type="button" className={styles.assignLink} onClick={(e) => onAssign(lead, e.currentTarget)}>
-            <Icon name="person_add" size={20} />
-            Assign
-          </button>
+          <Tooltip label="Assign members">
+            <IconButton icon="person_add" label={`Assign members to ${lead.name}`} size={24} onClick={(e) => onAssign(lead, e.currentTarget)} />
+          </Tooltip>
         ) : (
           <>
             {shownAssignees.map((m) => (
@@ -348,10 +351,12 @@ function KanbanCard({
             ))}
             {/* Assignees the measured foot cannot hold: the table's "+n" box (table.tsx / REG-195). */}
             {restAssignees > 0 ? <span className={styles.plusBox}>+{restAssignees}</span> : null}
-            <Tooltip label="Assign members">
-              <IconButton icon="person_add" label={`Assign members to ${lead.name}`} size={24} variant="primary"
-                          onClick={(e) => onAssign(lead, e.currentTarget)} />
-            </Tooltip>
+            <span className={styles.onHoverTool}>
+              <Tooltip label="Assign members">
+                <IconButton icon="person_add" label={`Assign members to ${lead.name}`} size={24}
+                            onClick={(e) => onAssign(lead, e.currentTarget)} />
+              </Tooltip>
+            </span>
           </>
         )}
       </div>
@@ -455,7 +460,7 @@ export function KanbanBoard({
                         <div className={styles.noResults}>
                           <span className={styles.noResultsTitle}>No results found</span>
                           <span className={styles.noResultsSub}>{query.trim() ? 'Check your spelling and try again.' : 'No leads match this filter.'}</span>
-                          <button type="button" className={styles.clearLink} onClick={onClearSearch}>Clear All</button>
+                          <button type="button" className={styles.clearLink} onClick={onClearSearch}>Clear all</button>
                         </div>
                       ) : (
                         <div className={styles.dropHint}>Drag a lead here</div>

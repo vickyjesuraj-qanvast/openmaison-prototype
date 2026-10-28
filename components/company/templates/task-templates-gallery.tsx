@@ -6,7 +6,6 @@ import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
 import { templateKind } from '@/lib/company/sections'
 import type { TaskTemplateRow, TaskTemplatesData } from '@/lib/company/task-templates'
@@ -38,7 +37,9 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
   const open = useCallback((id: string) => router.push(`/templates/tasks/${id}?from=${encodeURIComponent(here)}`), [router, here])
   /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
   const create = async (fn: () => Promise<unknown>, what: string) => { try { open(await newIdOf(fn())) } catch (e) { fail(what, reasonOf(e)) } }
-  const keeps = (t: TaskTemplateRow) => [t.keepMembers ? 'members' : null, t.keepDescription ? 'descriptions' : null].filter(Boolean).join(' · ')
+  /* (the calm UI build 2026-10-27, the UI audit's 4-36 · T-06) the steps' due dates ride the same words — they were a capitals tag beside the name */
+  const keeps = (t: TaskTemplateRow) => [t.keepMembers ? 'members' : null, t.keepDescription ? 'descriptions' : null, t.tasks.some((s) => s.dueDays !== null) ? 'due dates' : null].filter(Boolean).join(' · ')
+  const usedLine = (t: TaskTemplateRow) => `Added to ${t.usedBy} ${t.usedBy === 1 ? 'lead' : 'leads'}`
 
   return (
     <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'tasks', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Task templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="task-templates"
@@ -47,7 +48,7 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
         <DropdownDivider />
         <DropdownItem onSelect={() => { close(); setFromLead(place.folderId) }}>From a lead’s tasks…</DropdownItem>
       </>)}
-      filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]}
+      filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]} filterLabel="Use"   /* (the calm UI build 2026-10-27, W-383) named by what it filters */
       searchText={(t) => t.tasks.map((s) => s.title).join(' ')}
       thumb={(t) => (
         <span className={styles.checklist}>
@@ -58,9 +59,9 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
       )}
       glyph={(t) => <span className={styles.glyphChecks}>{Array.from({ length: Math.min(4, Math.max(1, t.tasks.length)) }).map((_, i) => <span key={i} className={styles.glyphCheck} />)}</span>}
       meta={(t) => `${t.tasks.length} ${t.tasks.length === 1 ? 'step' : 'steps'}${keeps(t) ? ` · keeps ${keeps(t)}` : ''}`}
-      usage={(t) => (t.usedBy === 0 ? 'Not used yet' : `Added to ${t.usedBy} ${t.usedBy === 1 ? 'lead' : 'leads'}`)}
+      usage={(t) => (t.usedBy === 0 ? 'Not used yet' : usedLine(t))}
+      foot={(t) => (t.usedBy ? usedLine(t) : '\u00a0')}   /* (4-36 · W-049) nothing until it is used; edited and by whom are the list's Updated · Updated by */
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} lead${t.usedBy === 1 ? '' : 's'}`)}
-      chips={(t) => (t.tasks.some((s) => s.dueDays !== null) ? <MetaChip>Due dates</MetaChip> : null)}
       columns={[
         { key: 'steps', label: 'Steps', track: '110px', sortable: (t) => t.tasks.length, cell: (t) => <span>{t.tasks.length}</span> },
         { key: 'keeps', label: 'Keeps', track: '220px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{keeps(t) || '—'}</span> },
@@ -71,7 +72,7 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
       onDuplicate={(t) => create(() => duplicateTaskTemplate(t.id), 'duplicate the template')}
       onRename={(t, name) => renameTaskTemplate(t.id, name)}
       onDelete={(t) => deleteTaskTemplate(t.id)}
-      deleteMessage={(t) => (t.usedBy ? `The tasks it already added to ${t.usedBy} ${t.usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.')}
+      deleteMessage={(t) => (t.usedBy ? `The tasks it already added to ${t.usedBy} ${t.usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted templates.` : 'You can restore it from Deleted templates.')}
       onRestore={(ids) => restoreTaskTemplates(ids)} onDeleteForever={(ids) => deleteTaskTemplatesForever(ids)} onEmptyTrash={() => emptyTaskTemplateTrash()}
       /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a template the viewer wrote (or
          any, for an Owner or an Admin), the rule said in the row with its author's name; Empty Trash counts only those */

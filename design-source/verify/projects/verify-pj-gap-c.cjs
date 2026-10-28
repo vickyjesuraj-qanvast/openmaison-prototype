@@ -99,12 +99,14 @@ const TODAY = dayNum(Date.now())
     await section('Ready-made schedules and the Start card', async () => {
       await go('/company/templates/schedules')
       const lib = await p.locator('main, body').first().innerText()
-      ok(['HDB BTO', 'HDB resale', 'Condo', 'Landed', 'Commercial fit-out'].every((n) => lib.includes(n)) && /Ready-made · /.test(lib), 'the library holds the five ready-made schedules, each saying so')
+      ok(['HDB BTO', 'HDB resale', 'Condo', 'Landed', 'Commercial fit-out'].every((n) => lib.includes(n)) && /ready-made/i.test(lib), 'the library holds the five ready-made schedules, each saying so')   // (the calm UI build 2026-10-27, a deliberate change) 4-36: ready-made follows the facts
       await shot('library-ready-made-1440')
       await go(`/projects/${marcus}/schedule`)
       const st = () => p.locator('[data-testid="start-schedule"]').innerText()
-      ok(/Condo \(ready-made\)/.test(await st()) && /Picked for a Condo 3-bedder — the ready-made Condo schedule/.test(await st()), 'a direct condo project with no quote: the Start card picks the ready-made Condo schedule and says why')
-      ok(/No quote on this project yet/.test(await st()), 'A quote shows, unusable, with why')
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-34) the select names the ready-made template it picked (its helper went: the preview
+         shows what it makes); a way that can't be used is one grey line, not a disabled card */
+      ok(/Condo \(ready-made\)/.test(await st()), 'a direct condo project with no quote: the Start card picks the ready-made Condo schedule')
+      ok(/Make a quote first to build from it/.test(await st()) && await p.locator('[data-testid="start-schedule"] [role="radio"]').filter({ hasText: /^A quote/ }).count() === 0, 'A quote is not offered; one line says what opens it')
       await shot('start-preselect-1440', true)
       /* Settings › Projects: a Partial renovation starts from HDB BTO */
       await go('/settings?section=projects')
@@ -138,6 +140,8 @@ const TODAY = dayNum(Date.now())
       ok(/It starts once Carpentry fabrication and Electrical & plumbing allow it/.test(await also.innerText()), '…said in a sentence')
       /* (12) its words and a colour, saved with one sentence and one Undo */
       await panel().getByLabel('Description').fill('Two coats throughout; the feature wall in Sage Whisper.')
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-46) the bar's colour sits under the panel's More options */
+      if (await panel().locator('[data-testid="panel-more-options"]').count()) { await panel().locator('[data-testid="panel-more-options"]').click(); await p.waitForTimeout(300) }
       await panel().locator('[data-testid="panel-color"]').getByRole('radio', { name: 'Teal' }).click()
       await p.locator('[data-testid="panel-save"]').click(); await p.waitForTimeout(1600)
       ok(/changed its description and coloured its bar teal/.test(await snack().innerText()) && sql(`select color from project_milestones where id='${M(ryan, 'Painting')}'`) === 'teal', 'Save: "changed its description and coloured its bar teal"')
@@ -197,14 +201,15 @@ const TODAY = dayNum(Date.now())
     await section('More time asked and answered', async () => {
       const carp = M(ryan, 'Carpentry fabrication'), paint = M(ryan, 'Painting')
       await go(`/projects/${ryan}/schedule`)
-      ok(/Michelle asks for more time on Carpentry fabrication/.test(await p.locator('[data-testid="schedule-asks"]').innerText()), 'the tab says what waits on an Owner: Michelle’s ask')
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-01) the band above the list is gone: the asking row says it, and its ⋮ opens the ask */
+      ok(await p.locator('[data-testid="schedule-asks"]').count() === 1 && /More time asked, to /.test(await p.locator('[data-testid="schedule-asks"]').innerText()), 'the tab says what waits on an Owner: Michelle’s ask, on its row')
       ok(/More time asked, to /.test(await row('Carpentry').innerText()), 'the row says it')
       await go('/projects')
       await go(`/projects/${ryan}`)
       /* (simplify S-20, a deliberate change of this rule) the ask is a Needs your OK row — approve in the row; its words open the milestone */
       /* (simplify round 2) Needs you shows six rows, the others under "Show n more" — unfold it before reading a row that may sit past the sixth */
       { const more = p.locator('[data-testid="needs-more"]'); if (await more.count() && /Show \d+ more/.test(await more.innerText())) { await more.click(); await p.waitForTimeout(300) } }
-      ok(/More time on Carpentry fabrication/.test(await p.locator('[data-testid="need-approve-more-time"]').innerText().catch(() => '')) && await p.locator('[data-testid="need-approve-more-time"]').getByRole('button', { name: 'Approve' }).count() === 1, 'Needs your OK: "More time on Carpentry fabrication" · Approve')
+      ok(/(asks for 1 week more on|More time on) Carpentry fabrication/.test(await p.locator('[data-testid="need-approve-more-time"]').innerText().catch(() => ''))   /* (the calm UI build 2026-10-27, a deliberate change) the person and the ask first (1-08 · W-048) */ && await p.locator('[data-testid="need-approve-more-time"]').getByRole('button', { name: 'Approve' }).count() === 1, 'Needs your OK: "More time on Carpentry fabrication" · Approve')
       await p.locator('[data-testid="need-approve-more-time"] a').first().click().catch(() => {}); await p.waitForTimeout(1500)
       ok(p.url().includes(`/projects/${ryan}/schedule?open=${carp}`), 'the row opens the Schedule at that milestone')   // (parity P-05 · A-18) it pressed nowhere
       await go('/projects')
@@ -212,10 +217,18 @@ const TODAY = dayNum(Date.now())
       const bellRow = p.locator('[data-testid="notification-row"]').filter({ hasText: 'Michelle asks for 1 week more on Carpentry fabrication' }).first()
       ok(await bellRow.count() === 1, 'the bell: "Michelle asks for 1 week more on Carpentry fabrication"')
       /* (simplify round 2, a deliberate change of this rule — P2 §6.7) the ask answers in the bell's row too: Approve · Decline under its words; the
-         words still open the record (the row's first button) */
-      ok(await bellRow.getByTestId('notification-approve').count() === 1 && /^Decline$/.test((await bellRow.getByTestId('notification-send-back').innerText().catch(() => '')).trim()), 'the bell row carries Approve · Decline')
-      await bellRow.locator('button').first().click(); await p.waitForTimeout(1800)
-      ok(/\/schedule\?open=/.test(p.url()) && await panel().locator('[data-testid="panel-more-ask"]').isVisible(), 'its row opens the milestone, the ask in its panel')
+         words still open the record (the row's first button)
+         (the calm UI build 2026-10-27, a deliberate change) 1-03 · 1-20: one home for approvals — the bell's row and its ⋮ (Review on the Dashboard ·
+         Decline) open the Dashboard's Review pane on the ask; the milestone's own panel still answers it (below, opened from the Schedule) */
+      await bellRow.getByRole('button', { name: /^More for / }).click(); await p.waitForTimeout(400)
+      ok(await p.getByTestId('notification-approve').count() === 1 && /^Decline$/.test((await p.getByTestId('notification-send-back').innerText().catch(() => '')).trim()), 'the bell row’s ⋮ carries Review on the Dashboard · Decline')
+      await p.keyboard.press('Escape'); await p.waitForTimeout(300)
+      await bellRow.locator('button').first().click(); await p.waitForTimeout(2200)
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-03 · 1-20) the row goes to `/dashboard?review=<record>`; the inbox reads it once and lets
+         the address go (needs-inbox.tsx — a reload doesn't open it again), so the rule is read on the page: the Dashboard, its Review pane open on this ask */
+      ok(/\/dashboard(\?|$)/.test(p.url()) && await p.locator('[data-testid="review-pane"]').first().isVisible().catch(() => false) && /Michelle asks for 1 week more on Carpentry fabrication/.test(await p.locator('[data-testid="review-pane"]').first().innerText().catch(() => '')), 'its row opens the Dashboard’s Review pane on the ask')
+      await go(`/projects/${ryan}/schedule?open=${carp}`)
+      ok(await panel().locator('[data-testid="panel-more-ask"]').isVisible(), '…and the milestone’s own panel holds the ask')
       await shot('more-ask-panel-1440')
       const end0 = endOf(ryan, 'Carpentry fabrication'), paint0 = sql(`select start_date from project_milestones where id='${paint}'`)
       await panel().locator('[data-testid="approve-more"]').click(); await p.waitForTimeout(400)
@@ -238,7 +251,8 @@ const TODAY = dayNum(Date.now())
          dialog opens on the Overview, with the tab's sentence and Undo */
       await go(`/projects/${ryan}`)
       { const more = p.locator('[data-testid="needs-more"]'); if (await more.count() && /Show \d+ more/.test(await more.innerText())) { await more.click(); await p.waitForTimeout(300) } }
-      await p.locator('[data-testid="need-approve-more-time"] [data-testid="need-send-back"]').click(); await p.waitForTimeout(500)
+      await p.locator('[data-testid="need-approve-more-time"] [data-testid="need-more"]').click(); await p.waitForTimeout(300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — Send back / Decline is the row's ⋮ (3-05 · 3-22) */
+      await p.locator('[data-testid="need-send-back"] [role="menuitem"]').click(); await p.waitForTimeout(500)
       ok(await dialog().locator('[data-testid="decline-more-dialog"]').isVisible() && !p.url().includes('/schedule'), 'the row’s Decline opens the Schedule’s own dialog on the Overview')
       await dialog().getByLabel('A note (optional)').fill('Not this week')
       await dialog().locator('[data-testid="decline-more-dialog-go"]').click(); await p.waitForTimeout(1800)
@@ -398,7 +412,8 @@ const TODAY = dayNum(Date.now())
       ok(await p.locator('[data-testid="outside-badge"]').count() >= 2, 'the rows show the outside people beside the members')
       await p.locator('[data-kb-row]').filter({ hasText: 'Wardrobe laminate delivered' }).first().getByRole('button', { name: /^Open Wardrobe/ }).click(); await p.waitForTimeout(900)
       const sec = p.locator('[data-testid="panel-outside"]')
-      ok(/Jason Lim \(Lamitak\)/.test(await sec.innerText()) && /Supplier · 9182 7340/.test(await sec.innerText()) && /Not sent yet/.test(await sec.innerText()), 'the task’s panel: who, a supplier, their mobile, not sent yet')
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-23 · W-103) a supplier reads "Vendor", Finance's word (lib/leads/outside.ts OUTSIDE_LABEL; the stored kind stays `supplier`) */
+      ok(/Jason Lim \(Lamitak\)/.test(await sec.innerText()) && /Vendor · 9182 7340/.test(await sec.innerText()) && /Not sent yet/.test(await sec.innerText()), 'the task’s panel: who, a supplier (“Vendor”), their mobile, not sent yet')
       const lam = sql(`select id from lead_tasks where lead_id='${benLead}' and title='Wardrobe laminate delivered'`)
       const [wa] = await Promise.all([ctx.waitForEvent('page', { timeout: 6000 }), sec.locator('[data-testid="outside-send"]').click()])
       await wa.waitForURL(/wa\.me/, { timeout: 5000 }).catch(() => {})
@@ -464,9 +479,12 @@ const TODAY = dayNum(Date.now())
       ok(live() === before, 'Undo: the same seven milestones back, ids and all')
       /* (15) the alerts' lead time */
       const days = endOf(ryan, 'Painting') - TODAY
+      /* (the calm UI build 2026-10-27, a deliberate change) the bell's due rows fold under one line at its end ("Due · n · Show"); open it before reading them */
+      const openDue = async () => { const f = p.locator('[data-testid="notifications-due-fold"]'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await p.waitForTimeout(400) } }
       as('michelle')
       await go('/projects')
       await p.locator('[data-notifications-tile]').click(); await p.waitForTimeout(1200)
+      await openDue()
       const bell0 = await p.locator('[data-testid="notifications-panel"]').innerText()
       as('dane')
       await go('/settings?section=projects')
@@ -476,13 +494,17 @@ const TODAY = dayNum(Date.now())
       as('michelle')
       await go('/projects')
       await p.locator('[data-notifications-tile]').click(); await p.waitForTimeout(1200)
+      await openDue()
       const bell1 = await p.locator('[data-testid="notifications-panel"]').innerText()
       ok(days > 3 && days <= 20 ? !bell0.includes(`Ends in ${days} days: Painting`) && bell1.includes(`Ends in ${days} days: Painting`) : true, `the bell rings for Painting ${days} days ahead only once the lead time reaches it`)
       as('dane')
       sql(`delete from settings where key='project_schedule_rules'`)
       /* (16) the Tasks page */
       await go('/tasks')
-      await p.locator('[data-testid="task-source"]').getByRole('radio', { name: 'Projects' }).click(); await p.waitForTimeout(800)
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-26) whose tasks is the scope pill's second group at every width (was a segment beside
+         the pill on a desk): open the pill, pick the row — the same `task-source` handle, "All" reads "Leads and projects" */
+      const pickSource = async (name) => { await p.locator('button').filter({ hasText: /^All tasks/ }).first().click(); await p.waitForTimeout(400); await p.locator('[data-testid="task-source"]').getByRole('menuitemradio', { name, exact: true }).click(); await p.waitForTimeout(800) }
+      await pickSource('Projects')
       const groups = p.locator('[data-testid="task-group"]')
       ok(await groups.count() >= 2 && /P-2026-002 · HDB 5-Room — Benjamin Han/.test(await groups.allInnerTexts().then((a) => a.join('\n'))) && await p.locator('[data-testid="task-group-link"]').count() === await groups.count(), 'Projects: the tasks grouped by project, each with Go to project')
       /* (parity P-27 · Q-10, a deliberate change of this rule) a project's task names the project in the For column — its name, the number under it */
@@ -490,9 +512,9 @@ const TODAY = dayNum(Date.now())
         ok(rowsN > 0 && await p.locator('[data-kb-list="task"] [data-kb-row] [data-testid="task-for-project"]').count() === rowsN && (await p.locator('[data-testid="task-for-project"]').allInnerTexts()).every((t) => /\n\s*P-20\d\d-\d{3}\s*$/.test(t)), 'only project tasks are listed — each names its project, the number under it') }
       ok(/^For$/i.test((await p.locator('[role="columnheader"][data-col="lead"]').innerText().catch(() => '')).trim()), 'the column head reads “For”')
       await shot('tasks-by-project-1440')
-      await p.locator('[data-testid="task-source"]').getByRole('radio', { name: 'Leads' }).click(); await p.waitForTimeout(800)
+      await pickSource('Leads')
       ok(await p.locator('[data-kb-list="task"] [data-kb-row]').count() > 0 && await p.locator('[data-kb-list="task"] [data-kb-row] [data-testid="task-for-project"]').count() === 0 && await groups.count() === 0, 'Leads: the pipeline’s tasks only, not grouped')   // (parity P-27)
-      await p.locator('[data-testid="task-source"]').getByRole('radio', { name: 'All' }).click(); await p.waitForTimeout(500)
+      await pickSource('Leads and projects')
       await p.getByRole('button', { name: 'More options' }).first().click(); await p.waitForTimeout(300)
       await p.getByRole('menuitemcheckbox', { name: /Group by project/ }).click(); await p.waitForTimeout(800)
       ok(/Leads/.test(await groups.allInnerTexts().then((a) => a.join('\n'))) && await groups.count() >= 3, 'Group by project on All: each project, then the leads’ tasks')
@@ -506,7 +528,8 @@ const TODAY = dayNum(Date.now())
       const m = await mc.newPage()
       m.on('pageerror', (e) => errors.push(`390: ${String(e).slice(0, 160)}`))
       await go(`/projects/${ryan}/schedule`, m)
-      ok(await m.locator('[data-testid="schedule-asks"]').isVisible() && /More time asked/.test(await m.locator('[data-testid="phone-milestone"]').filter({ hasText: 'Carpentry' }).first().innerText()), '390: the ask above the rows and on Carpentry’s row')
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-01) the ask is said on Carpentry's row, no longer in a band above the rows */
+      ok(await m.locator('[data-testid="phone-milestone"]').filter({ hasText: 'Carpentry' }).first().locator('[data-testid="schedule-asks"]').count() === 1 && /More time asked/.test(await m.locator('[data-testid="phone-milestone"]').filter({ hasText: 'Carpentry' }).first().innerText()), '390: the ask on Carpentry’s row')
       ok(await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'no sideways scroll at 390')
       await shot('phone-schedule-390', true, m)
       await m.locator('[data-testid="phone-milestone"]').filter({ hasText: 'Carpentry' }).first().click(); await m.waitForTimeout(1000)
@@ -517,7 +540,7 @@ const TODAY = dayNum(Date.now())
       ok(await m.locator('[data-testid="outside-badge"]').count() >= 2, '390: the outside people on the task cards')
       await shot('phone-tasks-390', true, m)
       await go('/tasks', m)
-      await m.locator('button').filter({ hasText: /All Tasks/ }).first().click(); await m.waitForTimeout(600)
+      await m.locator('button').filter({ hasText: /All tasks/i }).first().click(); await m.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) T-13: "All tasks"
       ok(/Leads and projects/.test(await m.locator('body').innerText()), '390: whose tasks rides in the scope’s sheet (the toolbar stays one row)')
       await shot('phone-tasks-scope-390', false, m)
       await mc.close()

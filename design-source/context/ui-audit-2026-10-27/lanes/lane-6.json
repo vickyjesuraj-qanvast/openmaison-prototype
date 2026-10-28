@@ -1,0 +1,352 @@
+[
+  {
+    "id": "6-01", "area": "Marketplace", "route": "/marketplace (+ ?view=deals, 390)", "kind": "noise", "severity": "high",
+    "title": "Marketplace home: 11 counts, two badges per photo, cut words, a fake logo",
+    "now": "Above the fold at 1440: a 220px banner with its own '1 / 3' counter and pagers; view chips 'Brands · 14' 'Deals · 10'; a second chip rail 'All · 14' 'Furniture · 3' 'Lighting · 3' 'Flooring · 2' 'Kitchen · 3' 'Bathroom · 3' 'Paint · 1' 'Curtains & Blinds · 2' 'Smart Home · 3'; search + 'Sort: Most popular ▾'. Every card: photo carrying a filled purple 'Featured' badge AND the first deal's title as a second badge, cut ('12% off every sofa fo…', 'Buy three pendants, …', 'Kitchen month: 15% …', 'S$0.50 off every sqft above 800 s…', 'Studio bundle: ten switches and a …'); a monogram tile standing in for a logo ('O&L', 'LL', 'H&E', 'FX'); name; categories; '128 reviews · 2 deals' or '✓ In your vendors · 76 reviews…' (cut); a ⋮. Foot: 'Brands and deals come from Qanvast’s partners. Each brand sets its own prices and terms.' Measure: 236 words, 44 controls, 12 font styles, 48 boxes, 7 truncated strings in the first screen. On a phone the ⋮ sits on the photo beside the badge and the cut deal titles wrap to two cut lines.",
+    "why": "A studio owner comes here to find a supplier or a deal. He reads past eleven numbers that don't change a decision, two badges fighting on every photo, deal words cut mid-sentence, and a coloured monogram that looks like a logo but isn't one.",
+    "proposal": "One control row: search · 'Category: All ▾' scope pill (REG-297: one single-choice dimension is a scope pill, not nine chips) · 'Sort: Most popular ▾'. Brands | Deals as the house Tabs with no counts (or drop the Deals view and show 'Deals ending soon' as one horizontal strip of deal cards above the brands). Card = photo with at most ONE badge, the deal count ('2 deals') in its corner — never the deal's sentence; drop 'Featured' from the card (featured brands already sort first under Most popular; the brand page keeps it); name; ONE meta line: category, or '✓ In your vendors' when it is one. Drop the review count from the card (the brand page says '128 reviews on Qanvast'); draw a real logo only when the brand has one, else nothing. Keep the ⋮ (Open · WhatsApp · Add to my vendors). Banner half as tall (≈120) or a single one; the foot line becomes a Tooltip on an info icon beside the title.",
+    "effort": "M",
+    "shots": ["6-marketplace.png", "6-marketplace-full.png", "6-marketplace-deals.png", "6-marketplace-390-full.png", "6-market-card-menu-390.png"],
+    "code": ["components/marketplace/marketplace-home.tsx:154", "components/marketplace/marketplace-home.tsx:169", "components/marketplace/marketplace-home.tsx:188", "components/marketplace/cards.tsx:26", "components/marketplace/cards.tsx:36", "components/marketplace/cards.tsx:43-49", "components/marketplace/cards.tsx:51-53", "components/marketplace/banners.tsx:28-49"]
+  },
+  {
+    "id": "6-02", "area": "Compliance Navigator › Your studio", "route": "/compliance", "kind": "noise", "severity": "high",
+    "title": "Compliance cards: a paragraph, four actions and a duplicate tag on each",
+    "now": "Intro: 'The studio’s own registrations and accreditations — 2 of 5 done. The steps carry Demo Studio Pte Ltd and UEN 201234567M from Company › Profile, where each one is recorded as done.' Then five cards, each with: a Title Case title ('Check / Apply as HDB Renovation Contractor', 'BCA Licensed Contractors Verification', 'ACRA Business Profile (BizFile+)'), a subtitle, an agency tag top-right repeating the title ('HDB', 'CASETRUST', 'WSH COUNCIL', 'BCA', 'ACRA'), 'DONE' / 'TO DO' + 'Dane · 15 Sep ’26', a three-line paragraph, purple '+ Add a note', purple 'Show the steps ⌄', outlined 'Open HDB Portal', purple '✎ Record in Company › Profile'. 16 purple text actions in the first screen; the page is 1,832px.",
+    "why": "The owner wants one answer: which registrations are still to do and where to do them. Each card makes him read ~60 words and choose between four controls; 'The steps carry … UEN …' is the system talking about itself.",
+    "proposal": "Header line: '2 of 5 done' (a progress line under the title); drop the rest of the intro. Card = sentence-case title ('HDB renovation contractor listing', 'CaseTrust accreditation', 'bizSAFE certificate', 'BCA licence check', 'ACRA business profile') + the status chip + who · when; the about paragraph cut to its first sentence, the rest inside the expanded steps; ONE verb on the card, outlined 'Open HDB portal'; a ⋮ (PortalMenu) with 'Record as done in Company › Profile' and 'Add a note'; the whole card head expands the steps (chevron at its end, no 'Show the steps' link). Drop the agency tag (the title names the agency).",
+    "effort": "M",
+    "shots": ["6-compliance.png", "6-compliance-full.png"],
+    "code": ["components/compliance/navigator.tsx:72-74", "components/compliance/navigator.tsx:82-88", "components/compliance/navigator.tsx:93-97", "components/compliance/navigator.tsx:104-108", "components/compliance/navigator.tsx:152"]
+  },
+  {
+    "id": "6-03", "area": "Quote X-Ray › result", "route": "/quote-x-ray/[id]", "kind": "noise", "severity": "high",
+    "title": "X-Ray summary says the same difference three times, in two money styles",
+    "now": "Eyebrow 'Comparing your quote (Demo Studio Pte Ltd · OM-10008 · Whole-home renovation) with the quote from Flo Design'; a two-line 24px headline 'On paper, Flo Design is S$31,407.00 cheaper; after counting the work each quote leaves out, ours is only S$20,963.00 more like-for-like.'; three tiles 'YOURS (DEMO STUDIO PTE LTD) S$ 62.5K line totals, before GST' · 'FLO DESIGN S$ 31.1K line totals, before GST' · 'REAL DIFFERENCE S$ 21K ours more, like-for-like'; then a three-line footnote 'On paper the difference is S$31,407.00 — their quote leaves out S$16,204.00 of work yours includes (and yours leaves out S$5,760.00 of theirs), plus 4 lines with no price given. Both sides are compared on their line totals, before discounts and GST — with them, OM-10008 comes to S$68,176.23.' Money as 'S$ 21K' (space, K) and 'S$20,963.00' (no space, cents) on one card. At 390 this one card is the whole first screen (page 6,618px).",
+    "why": "The point of X-Ray is one number and what to say. The owner has to reconcile S$31,407.00, S$ 31.1K → S$ 62.5K and S$ 21K vs S$20,963.00, and read the studio's legal name inside a tile label.",
+    "proposal": "Drop the eyebrow (the crumb names the lead; put 'OM-10008' as the link in the Yours tile's help). Headline one line: 'Flo Design looks S$31,407 cheaper. Like-for-like, yours is S$20,963 more.' Tiles labelled 'Yours' · 'Flo Design' · 'Like-for-like difference', whole dollars (S$62,511 · S$31,104 · S$20,963), no K, no cents, no legal name. The footnote becomes a 'How we counted' Tooltip on the difference tile.",
+    "effort": "S",
+    "shots": ["6-xray-result.png", "6-xray-result-full.png", "6-xray-result-390.png"],
+    "code": ["components/xray/xray-reading.tsx:42-50", "lib/xray/compare.ts:76"]
+  },
+  {
+    "id": "6-04", "area": "AI Visualizer › editor", "route": "/visualizer/[designId] (1440 + 390)", "kind": "noise", "severity": "high",
+    "title": "Visualizer editor: two filled buttons and five instruction lines at rest",
+    "now": "Filled 'Share with client' (top bar) and filled 'Generate' (rail foot) — two primaries (on a phone 'Share' + 'Generate'); credits chip '11,610'; a full-width purple bar 'Click a square on the photo to pick its finish, or choose a style or a light on the right — then Generate.' + 'Got it'; panel sub '7 surfaces on the photo · tap one to pick its finish'; 'Missed one? Draw it on the photo, or add it by name and tap where it is.'; under Generate 'Pick a finish, a style or a light first.' and 'Makes 1 version · Fast  Change'. 52 controls, 8 text colours in view.",
+    "why": "The screen's one job is pick a finish → Generate. Five overlapping instructions and two filled buttons make the owner hunt for the next press; 'Share with client' shouts even before there is anything new to share.",
+    "proposal": "Generate is the one filled button; 'Share with client' becomes outlined (the house's secondary). Keep ONE instruction: the hint bar until Got it. Move 'Missed one?…' into the panel's + button Tooltip ('Add a surface the photo missed'); show the line under Generate only while Generate is refused (it already is); move 'Makes 1 version · Fast  Change' into the tune button's Tooltip / menu beside Generate. Say 'click' on a desk in the panel sub too (it says 'tap one' at 1440).",
+    "effort": "S",
+    "shots": ["6-viz-editor.png", "6-viz-editor-390.png"],
+    "code": ["components/visualizer/editor/visualizer-editor.tsx:1206", "components/visualizer/editor/rail.tsx:185", "components/visualizer/editor/rail.tsx:219", "components/visualizer/editor/panels/surfaces-panel.tsx:130", "components/visualizer/editor/panels/surfaces-panel.tsx:194", "lib/visualizer/model.ts:475"]
+  },
+  {
+    "id": "6-05", "area": "Quote X-Ray › Item by item", "route": "/quote-x-ray/[id]", "kind": "noise", "severity": "med",
+    "title": "Item table says each row's status three ways, plus '--' everywhere",
+    "now": "Each row carries a coloured left bar, the card head a legend ('● only in yours ● only in theirs ● no price given'), a STATUS column chip in capitals ('MATCHED', 'ONLY IN YOURS', 'ONLY IN THEIRS', 'NO PRICE GIVEN'), and the Flo Design cell says 'No price given' again on the same row. 'Difference' shows '--' on 10 of 24 rows (phone cards: 'Difference · --'). Item names cut ('Kitchen carpentry, top and bot…', 'Plumbing works, kitchen and …'). The count is in the header chip '24 ITEMS COMPARED' and again in 'Item by item  24 compared'.",
+    "why": "Three signals for one fact and a column of dashes make a 24-row table read like 70 things; the cut item names are the one thing the owner needs to recognise a line.",
+    "proposal": "Keep the Status chip, in sentence case ('Only in yours'); drop the left bar and the legend. A row with no price leaves Difference blank (no '--') and says 'No price' once, in the theirs cell. Drop the header chip '24 ITEMS COMPARED' (the card head says it). Let the Item column wrap to two lines instead of cutting.",
+    "effort": "S",
+    "shots": ["6-xray-result-full.png", "6-xray-result-390-table.png"],
+    "code": ["components/xray/xray-reading.tsx:96-98", "components/xray/xray-table.tsx:28-30", "components/xray/xray-table.tsx:101", "components/xray/xray-result.tsx:146"]
+  },
+  {
+    "id": "6-06", "area": "Tools › Floorplan to 3D Isometric · 3D Space Planner · ⌘K", "route": "/floorplan-3d · /planner · ⌘K", "kind": "inconsistency", "severity": "med",
+    "title": "Floor-plan photo → 3D lives in two places under five names",
+    "now": "Tools tile 'Floorplan to 3D Isometric' (help 'A 3D view from a floor-plan photo — dollhouse or top-down') → /floorplan-3d ('Turn any floor plan photo into a marketing-ready 3D view'). The 3D Space Planner does the same: New ▾ 'From a floor-plan photo…', the New layout dialog's card 'A floor-plan photo — Straightened, its rooms placed on it, then a 3D picture', the dialog 'Make a 3D picture', then a '3D picture' dialog; ⌘K lists 'Make a 3D picture — 3D Space Planner · from a floor-plan photo' (and no Floorplan tool under Create); the planner's View ▾ has 'Isometric — The 3D view at 35°, every length to one scale'. Names: 3D view · 3D picture · 3D Isometric · Isometric · dollhouse.",
+    "why": "Two doors for one job with different results confuse a studio ('which one do I use?'), and 'Isometric' is a drafting word most studio owners don't use. The owner's rule is one home per thing (REG-1360).",
+    "proposal": "One home: the Floorplan tool owns photo → 3D picture. The planner's 'From a floor-plan photo…', its card in the New layout dialog, its Maison AI row and ⌘K's 'Make a 3D picture' become doors to /floorplan-3d (?from=) — or, if the planner keeps a photo start, it is only 'Trace a floor-plan photo' (start a layout over it) with no 3D picture of its own. One name for the picture: '3D floor plan' (looks 'Dollhouse' · 'Top-down'). Tool name 'Floor plan to 3D'; View ▾ 'Isometric' → '3D at an angle'.",
+    "effort": "M",
+    "shots": ["6-tools-popover.png", "6-planner-new-menu.png", "6-search-planner.png", "6-floorplan3d.png", "6-planner-view-menu.png"],
+    "code": ["components/shell/tools-popover.tsx:30", "lib/global-search/model.ts:318", "lib/global-search/model.ts:433", "components/planner/new-layout-dialog.tsx:113", "components/planner/home/planner-home.tsx:59-71", "components/planner/photo/photo-dialog.tsx:220", "components/planner/picture/picture-dialog.tsx:102"]
+  },
+  {
+    "id": "6-07", "area": "AI Visualizer (home, editor, share, Files, website trial)", "route": "/visualizer · /visualizer/[designId] · /site/try", "kind": "copy", "severity": "med",
+    "title": "'Renders' on the cards, 'versions' in the editor — one thing, two names",
+    "now": "Home card 'Lead · Met · 3 rooms · 5 renders'; list column 'Renders'; delete 'Kevin Ng and its 5 renders go to Deleted Designs'; Maison AI 'Which renders did clients pick this week?'. In the editor: 'VERSIONS 3', 'V3 · Relit · Golden Hour', 'Makes 1 version', share 'Pick up to 6 versions', Present 'Everything in V3'. Files keeps a 'Renders' folder; the website trial says '3 of 3 free renders left'.",
+    "why": "The owner counts '5 renders' on the card, opens it and sees 'Versions 3' for the room — he can't tell if these are the same pictures.",
+    "proposal": "'Version' for every picture Generate makes, everywhere in the app: card '5 versions', list column 'Versions', delete '…and its 5 versions go to Deleted Designs', Maison AI 'Which versions did clients pick this week?'. Keep 'render' only as the verb's result on the website if marketing wants it, or say '3 of 3 free versions left'.",
+    "effort": "S",
+    "shots": ["6-visualizer.png", "6-viz-list.png", "6-viz-editor.png", "6-viz-share.png", "6-site-try.png"],
+    "code": ["components/visualizer/home/visualizer-home.tsx:79", "components/visualizer/home/visualizer-home.tsx:220", "components/visualizer/home/visualizer-home.tsx:225", "components/visualizer/home/visualizer-home.tsx:245"]
+  },
+  {
+    "id": "6-08", "area": "Every tool", "route": "/quote-x-ray/[id] · /visualizer/[designId] · /planner/[layoutId] · /floorplan-3d · /market-insights · /marketplace/[brandId] · /compliance", "kind": "noise", "severity": "med",
+    "title": "Capital-letter tags used for dates, counts, names and topics, not statuses",
+    "now": "MetaChip (the DS Tag uppercases, meta-chip.module.css:12) on facts: X-Ray header '29 SEP ’26' '24 ITEMS COMPARED'; key points 'IMPACT: HIGH' 'IMPACT: MILD'; Visualizer top bar 'LEAD · MET'; Planner top bar 'P-2026-002 · BENJAMIN HAN'; Floorplan 'BETA' and 'We found' chips '3 BEDROOMS 2 BATHROOMS KITCHEN LIVING / DINING AREA 1 SERVICE YARD 2 STOREROOMS 11 ROOMS IN TOTAL'; Market Insights featured tags 'SINGAPORE HDB RESALE SITE VISIT'; brand header 'FEATURED'; deal dialog 'UNTIL 11 DEC ’26'; Compliance agency tags 'HDB' 'CASETRUST' 'WSH COUNCIL'. Plus uppercase captions ('WHAT YOU’LL GET', 'YOUR PLAN, STRAIGHTENED', 'DESCRIBE A CHANGE', 'THE NEXT GENERATE', 'RECENT COMPARISONS', 'LEAD', 'THE OTHER STUDIO’S QUOTE').",
+    "why": "Capitals read as alarms or statuses; when a date, a count and a project number all shout, the real statuses (Done, Late, Mandatory) stop standing out.",
+    "proposal": "MetaChip only for a status (Done · To do · Featured · Beta). Dates and counts go into the header's plain meta line ('29 Sep ’26 · 24 items'); identity chips in editor top bars go (the crumb / Back says whose); topic tags become the article page's plain tag links on both pages; 'We found' as a plain sentence ('3 bedrooms, 2 bathrooms, kitchen, living / dining, service yard, 2 storerooms'); 'Impact: high' goes (order the cards by impact). Uppercase captions above fields go (6-14). If the DS Tag must stay uppercase, ask the house for a sentence-case 'fact' chip.",
+    "effort": "M",
+    "shots": ["6-xray-result.png", "6-viz-editor.png", "6-planner-editor.png", "6-fp3d-step2.png", "6-insights.png", "6-brand.png", "6-market-deal-dialog.png", "6-compliance.png"],
+    "code": ["components/om/meta-chip.module.css:12", "components/xray/xray-result.tsx:146", "components/xray/xray-reading.tsx:83", "components/visualizer/editor/topbar.tsx:54", "components/planner/editor/planner-topbar.tsx:63", "components/market-insights/cards.tsx:70", "components/marketplace/brand-page.tsx:81", "components/marketplace/deal-dialog.tsx:57", "components/compliance/navigator.tsx:87"]
+  },
+  {
+    "id": "6-09", "area": "Quote X-Ray › Recent comparisons / record ⋮", "route": "/quote-x-ray · /quote-x-ray/[id]", "kind": "inconsistency", "severity": "med",
+    "title": "X-Ray deletes forever while designs and layouts go to a Deleted sheet",
+    "now": "ConfirmDialog 'Delete this comparison?' — '… will be deleted permanently. This can’t be undone.' The AI Visualizer says 'Kevin Ng and its 5 renders go to Deleted Designs — you can restore them there.' and the 3D Space Planner has its own Deleted sheet.",
+    "why": "Principle 4 (Nothing is lost: every remove offers Undo, records delete softly). The owner learns that Delete is safe in two tools and loses a sent comparison in the third.",
+    "proposal": "Soft delete with the house Undo snackbar ('Comparison deleted · Undo') and 'Deleted comparisons' in the X-Ray page's ⋮, as Deleted Designs; Delete forever only from that sheet. (REG-641's who-may-delete rule stays.)",
+    "effort": "M",
+    "shots": ["6-xray.png", "6-xray-menu.png"],
+    "code": ["components/xray/xray-workspace.tsx:370-374", "components/visualizer/home/visualizer-home.tsx:245"]
+  },
+  {
+    "id": "6-10", "area": "AI Visualizer home · Quote X-Ray setup · Floorplan to 3D", "route": "/visualizer · /quote-x-ray · /floorplan-3d", "kind": "noise", "severity": "med",
+    "title": "Three different 'how it works' boxes, each 4–6 lines on the page",
+    "now": "Visualizer home: purple box, title 'Turn a room photo into a finished design, in minutes — and show the client before a single tile is ordered.' + three numbered steps (4 lines) + ✕, shown above a gallery that already has designs. X-Ray: purple box, title 'Client comparing your quote with another studio’s? Upload theirs — we check it against yours, item by item.' + three ✓ rows + 'Takes a moment. Always check the numbers before you send anything to a client.' + ✕ (fills a phone's first screen, 1,344px page). Floorplan: white hero with three numbered steps and a 'What you’ll get' gallery. The Planner, Marketplace, Market Insights and Compliance have none.",
+    "why": "A studio that uses the tool daily reads past the same paragraph every visit; three looks for one pattern make the tools feel like three products.",
+    "proposal": "One house pattern: a one-line description under the page title plus a 'How it works' text link that opens the steps in a Drawer (or the house Tooltip); the box itself only on a first run (the Visualizer already has a first-run welcome, REG-735). X-Ray keeps 'Always check the numbers before you send anything to a client.' as the line beside Compare, where it matters.",
+    "effort": "M",
+    "shots": ["6-visualizer.png", "6-xray.png", "6-xray-390-full.png", "6-floorplan3d.png"],
+    "code": ["components/visualizer/home/intro.tsx:17-21", "components/xray/intro-copy.ts:4-10", "lib/floorplan-3d/model.ts:60-70"]
+  },
+  {
+    "id": "6-11", "area": "Marketplace › brand page", "route": "/marketplace/[brandId] (1440 + 390)", "kind": "noise", "severity": "med",
+    "title": "Brand page repeats itself: counts on heads, demo links, its own name on its deals",
+    "now": "Header 'Oak & Linen' + 'FEATURED' chip + outlined 'Add to my vendors' + filled 'WhatsApp'. Card heads with counts 'DEALS · 2', 'PRODUCTS · 4', 'QUESTIONS · 2'. About ends with 'Not in your vendors yet'. Web links shows 'A demo address — a real brand’s link opens here' three times (website, Instagram, Facebook). The brand's own deal cards repeat 'OAK & LINEN' above each title; Contact repeats the header's WhatsApp. Each product row has an outlined '+ Add to Price book' (4 in a column). On a phone the deal titles cut ('12% off every sofa for design…', 'Free fabric upgrade on dini…').",
+    "why": "Every repeated fact is another line to read before the owner finds the products and the deal he came for; three identical 'demo address' lines read as broken.",
+    "proposal": "Drop '· n' after card heads. Drop 'Not in your vendors yet' (the header's Add to my vendors already says it). Hide links whose address is a demo (or one line in the card: 'Links open on the live app'). On a brand's own page the deal card drops the brand line. Product rows: the verb as a text button '+ Add' with the row's name in its accessible label (one verb, quieter). Deal titles wrap to two lines on a phone.",
+    "effort": "S",
+    "shots": ["6-brand.png", "6-brand-full.png", "6-brand-390.png"],
+    "code": ["components/marketplace/brand-page.tsx:81-85", "components/marketplace/brand-page.tsx:106", "components/marketplace/brand-page.tsx:121-124", "components/marketplace/brand-page.tsx:140", "components/marketplace/brand-page.tsx:147", "components/marketplace/brand-page.tsx:154", "components/marketplace/brand-page.tsx:195", "components/marketplace/cards.tsx:77", "lib/marketplace/model.ts:222"]
+  },
+  {
+    "id": "6-12", "area": "Market Insights", "route": "/market-insights · /market-insights/[articleId]", "kind": "noise", "severity": "med",
+    "title": "Market Insights says 'Sample' three ways and counts every category",
+    "now": "A purple banner 'Sample articles written for the demo — their figures are illustrative, not market data.', then every card's eyebrow 'TRENDS · SAMPLE', 'REPORTS · SAMPLE' … (6×), then on the article 'A sample article written for the demo. Its figures are illustrative — not market data.' Chips with counts 'All · 6' 'Trends · 2' 'Reports · 2' 'Case Studies · 1' 'Industry News · 1' (Title Case). Featured card tags as capital chips 'SINGAPORE HDB RESALE SITE VISIT'; the article page draws tags as boxed Title Case links 'Singapore HDB Budgets Pricing'. Byline 'OpenMaison Editors' on every card plus a foot 'Articles come from OpenMaison’s editors.'; filled 'Featured' badge on the photo.",
+    "why": "Reading the same disclaimer eight times and counts on five chips is pure noise; two drawings of tags look like two features.",
+    "proposal": "Say Sample once per page: keep the list's banner and the article's note, drop '· Sample' from the eyebrows. Chips without counts, sentence case ('Case studies', 'Industry news'). Tags drawn one way on both pages (the article's plain tag links). Drop the foot line (the byline says it).",
+    "effort": "S",
+    "shots": ["6-insights.png", "6-insights-full.png", "6-insights-article-full.png"],
+    "code": ["components/market-insights/cards.tsx:16", "components/market-insights/cards.tsx:64", "components/market-insights/cards.tsx:70", "components/market-insights/insights-home.tsx:107", "components/market-insights/article-page.tsx:64-67", "lib/market-insights/model.ts:46-47"]
+  },
+  {
+    "id": "6-13", "area": "Compliance Navigator › Rules by home", "route": "/compliance?tab=rules", "kind": "noise", "severity": "med",
+    "title": "'MANDATORY' on 34 of 38 rows; a one-column table head per group",
+    "now": "'Rules for an HDB flat' above an 'HDB flat' chip (said twice); a second chip row 'Every phase · Design · Execution · Handover'; '38 rules · 34 mandatory · each project ticks its own on its Compliance tab'; each group (Title Case 'Permits & Approvals', 'Professional Engagement', 'Neighbour Notification') is a card table whose only head is 'RULE'; every row a red 'MANDATORY' chip, the agency, and a purple 'Details ⌄'. 15 purple words in the first screen.",
+    "why": "When nearly every rule is mandatory the red chip stops meaning anything; a one-column head and a 'Details' word on each row add nothing to read.",
+    "proposal": "Mark the 4 exceptions 'Optional' and drop 'MANDATORY'; the count line says '38 rules — 34 you must follow'. Drop the 'RULE' head (a one-column list needs none). The row expands on a press of the row (chevron at its end; no 'Details' word). Drop 'Rules for an HDB flat' (the picked chip says it). Sentence-case group names ('Permits and approvals').",
+    "effort": "S",
+    "shots": ["6-compliance-rules.png", "6-compliance-rules-full.png"],
+    "code": ["components/compliance/navigator.tsx:184", "components/compliance/navigator.tsx:192-196"]
+  },
+  {
+    "id": "6-14", "area": "Quote X-Ray › setup", "route": "/quote-x-ray (1440 + 390)", "kind": "noise", "severity": "low",
+    "title": "Every X-Ray field is labelled twice",
+    "now": "Caption 'LEAD' over a select whose own label is 'Lead*'; caption 'THE OTHER STUDIO’S QUOTE' over a drop box titled 'The other studio’s quote'; Upload two quotes: 'YOUR QUOTE' over 'Your quote' and the same 'THE OTHER STUDIO’S QUOTE'.",
+    "why": "Two labels per field doubles the reading and the capitals shout over the field itself.",
+    "proposal": "Drop the uppercase captions; the field's label and the box's title carry it.",
+    "effort": "S",
+    "shots": ["6-xray.png", "6-xray-upload-two.png"],
+    "code": ["components/xray/xray-workspace.tsx:279", "components/xray/xray-workspace.tsx:310-311", "components/xray/xray-workspace.tsx:318-329", "components/xray/intro-copy.ts:14"]
+  },
+  {
+    "id": "6-15", "area": "Quote X-Ray › Recent comparisons", "route": "/quote-x-ray", "kind": "noise", "severity": "low",
+    "title": "A trash icon on every Recent comparison row at rest",
+    "now": "Each row: 'Olivia Martinez · vs Flo Design' / '1 Oct ’26 · OM-10001 · Whole-home renovat…' + chevron + a visible trash IconButton.",
+    "why": "The house way is one verb on the row and the rest in its ⋮; a delete in reach of every row invites a slip (and here it deletes forever — 6-09).",
+    "proposal": "The row opens the comparison; a ⋮ (PortalMenu) holds Open the quote · Delete, as the record page's ⋮ (Run again · Open the quote · Delete).",
+    "effort": "S",
+    "shots": ["6-xray.png"],
+    "code": ["components/xray/xray-workspace.tsx:361-362"]
+  },
+  {
+    "id": "6-16", "area": "3D Space Planner › editor", "route": "/planner/[layoutId]", "kind": "copy", "severity": "med",
+    "title": "Planner's 'Under it' card and a filled 'Shared with client' state",
+    "now": "Rooms panel card 'Under it: Proposed layout' with switch 'Show the floor plan', 'Faint · Half · Strong', switch 'Move the floor plan to line it up', purple 'Change its size…', purple 'Take it away', then '+ Add a level'. Top bar: a filled 'Shared with client' (a state, past tense, on a filled button); the title cuts to 'SkyOasis — proposed …' while a 'P-2026-002 · BENJAMIN HAN' chip takes the room.",
+    "why": "'Under it' and 'Take it away' are vague; the owner can't tell 'it' from the layout. A filled past-tense button reads as an unfinished step.",
+    "proposal": "Card title 'Floor plan underneath'; 'Move the floor plan to line it up' → 'Line up the floor plan'; 'Change its size…' → 'Set its size…'; 'Take it away' → 'Remove floor plan' inside the card's ⋮. Top bar: outlined 'Share' with a quiet 'Shared 17 Oct' line beside it once shared; drop the identity chip so the layout's name fits.",
+    "effort": "S",
+    "shots": ["6-planner-editor.png", "6-planner-share.png"],
+    "code": ["components/planner/editor/panels.tsx:104-109", "components/planner/editor/planner-topbar.tsx:63", "components/planner/editor/planner-topbar.tsx:77-78"]
+  },
+  {
+    "id": "6-17", "area": "AI Visualizer › editor › Tools tab", "route": "/visualizer/[designId]", "kind": "copy", "severity": "med",
+    "title": "Visualizer 'Tools' tab speaks in system words",
+    "now": "A tab named 'Tools' inside a tool opened from Tools; sub 'Whole-room passes and a surface drawn by hand — describe a change in the box above Generate'; group 'THE NEXT GENERATE' with 'Your picks — Surfaces, furniture, style and light — whatever you’ve picked' / 'Empty the room' / 'Furnish the room'; group 'BY HAND' + 'Draw a surface'.",
+    "why": "'Whole-room passes' and 'The next Generate' are how the engine thinks, not how a designer does.",
+    "proposal": "Tab 'Whole room'; sub 'Empty or furnish the whole room, or draw a surface the photo missed'; group 'What Generate does'; 'Your picks' → 'Only what I picked'; drop the 'BY HAND' head (the Draw a surface button says it).",
+    "effort": "S",
+    "shots": ["6-viz-panel-tools.png", "6-viz-tools-390.png"],
+    "code": ["components/visualizer/editor/panels/tools-panel.tsx:61", "components/visualizer/editor/panels/tools-panel.tsx:69-70", "components/visualizer/editor/panels/tools-panel.tsx:100"]
+  },
+  {
+    "id": "6-18", "area": "AI Visualizer › editor ⋮", "route": "/visualizer/[designId]", "kind": "inconsistency", "severity": "low",
+    "title": "Editor ⋮ repeats the toolbar under other names",
+    "now": "⋮: 'Before and after · Present · Moodboard · Download · Save to Files · Add to a quote… · Share with the client… · Delete'. The stage bar already has 'Compare' (its tooltip 'Before and after · V2') and a download icon; the top bar has 'Share with client'.",
+    "why": "One action with two names (Compare / Before and after) and three doors to share make the owner wonder whether they differ.",
+    "proposal": "One name: 'Before and after' on the stage bar too. Drop Download and 'Share with the client…' from the ⋮ (both in view), or drop the stage's download icon — one place each.",
+    "effort": "S",
+    "shots": ["6-viz-editor-menu.png", "6-viz-editor.png"],
+    "code": ["components/visualizer/editor/visualizer-editor.tsx:1000", "components/visualizer/editor/visualizer-editor.tsx:1265-1278"]
+  },
+  {
+    "id": "6-19", "area": "Share / send across the tools", "route": "/marketplace/[brandId] · /marketplace?deal= · /quote-x-ray/[id] · /planner/[layoutId] · /visualizer/[designId]", "kind": "inconsistency", "severity": "low",
+    "title": "Five verbs for 'send it on WhatsApp'",
+    "now": "Brand page 'WhatsApp'; deal dialog 'Get deal on WhatsApp'; X-Ray 'Send to client' → 'Send via WhatsApp' + 'Copy message'; Planner 'Shared with client' → 'Send to Benjamin on WhatsApp' + 'Copy link' + 'Stop sharing'; Visualizer 'Share with client' → 'Create link'.",
+    "why": "The same press reads differently in every tool; 'Create link' doesn't say the client gets anything.",
+    "proposal": "One pattern in every send / share dialog: filled 'Send on WhatsApp', outlined 'Copy link' (or 'Copy message'). Visualizer 'Create link' → 'Share 1 version' (the count follows the picks); the brand page's button 'WhatsApp Oak & Linen' (its ⋮ row already says that).",
+    "effort": "S",
+    "shots": ["6-brand.png", "6-market-deal-dialog.png", "6-xray-send.png", "6-planner-share.png", "6-viz-share.png"],
+    "code": ["components/marketplace/brand-page.tsx:74", "components/marketplace/deal-dialog.tsx:50", "components/planner/editor/planner-topbar.tsx:78"]
+  },
+  {
+    "id": "6-20", "area": "AI Visualizer home · 3D Space Planner home", "route": "/visualizer · /planner", "kind": "inconsistency", "severity": "low",
+    "title": "Two twin galleries with different heads; list heads cut to 'ROO…'",
+    "now": "Visualizer: title 'All designs', toolbar Kind: All ▾ · new-folder icon · New ▾ · search · grid/list · ⋮, and a 'Folders' row whose only control is a lone select-all checkbox. Planner: title '5 layouts', no folder icon, no folders. Visualizer list view heads cut: 'ROO…', 'REND…' (track 110px).",
+    "why": "Same gallery, two shapes; a table head that can't hold its word breaks the house head rule (REG-723).",
+    "proposal": "Title both by what they hold ('Designs', 'Layouts') with the count in the Kind pill; folders in both or neither; drop the lone checkbox in the folder row (selection shows on hover / press, as cards). Give Rooms / Renders tracks room for their labels.",
+    "effort": "S",
+    "shots": ["6-visualizer.png", "6-viz-list.png", "6-planner.png"],
+    "code": ["lib/company/folder-libraries.ts:13", "components/visualizer/home/visualizer-home.tsx:225", "components/planner/home/planner-home.tsx:147-157"]
+  },
+  {
+    "id": "6-21", "area": "Cards across the tools", "route": "/visualizer · /planner · /marketplace · /quote-x-ray · /marketplace/[brandId] 390", "kind": "noise", "severity": "med",
+    "title": "Card lines cut off the fact that matters",
+    "now": "Visualizer card 'Living room, Master bedroom, Kitch…' hides '· edited 12 Sep ’26 by Michelle'; Planner 'P-2026-002 · 5 rooms · 101.0 …', 'HDB 5-Room — Benjamin Han · edit…', 'Personal · 16 rooms · 2 levels · …', 'Executive Condo — Ryan D’Souza · …'; Marketplace '✓ In your vendors · 76 reviews…' and the cut deal ribbons; X-Ray recents 'Whole-home renovat…' ×3; phone brand page deal titles cut.",
+    "why": "'Who touched it last and when' is what an owner scans a gallery for; it is exactly the part the ellipsis eats.",
+    "proposal": "Drop the least useful part so the key fact fits on one line: Visualizer 'Kevin Ng · 3 rooms' + 'Edited 12 Sep by Michelle' (the room list goes to the design's page); Planner '5 rooms · 101 m²' + 'Benjamin Han · edited 17 Oct' (project number goes, '101.0' → '101'); X-Ray recents 'OM-10001 · 1 Oct ’26' (the job name goes); deal titles wrap to two lines.",
+    "effort": "S",
+    "shots": ["6-visualizer.png", "6-planner.png", "6-marketplace.png", "6-xray.png", "6-brand-390.png"],
+    "code": ["components/visualizer/home/visualizer-home.tsx:220", "components/planner/home/planner-home.tsx:154-155", "components/marketplace/cards.tsx:51-53", "components/xray/xray-workspace.tsx:358"]
+  },
+  {
+    "id": "6-22", "area": "Tools › Floorplan to 3D Isometric (today's simplification — leftovers)", "route": "/floorplan-3d", "kind": "copy", "severity": "med",
+    "title": "Floorplan leftovers: Regenerate filled, prototype words, rooms that don't add up",
+    "now": "Done step: filled 'Regenerate' while 'Download' is outlined. Under the view: 'Sample · HDB 4-Room — its views were made ahead with the image model the live app uses.'; on the landing: 'On the prototype, your own plan is straightened but not drawn in 3D — the sample plans go all the way.' (invented copy, 2026-10-27). Captions in capitals 'WHAT YOU’LL GET', 'YOUR PLAN, STRAIGHTENED', 'WE FOUND', 'STYLE', 'YOUR 3D FLOOR PLAN', 'SWITCH STYLE'. 'We found' names 3+2+1+1+1+2 = 10 rooms but ends '11 ROOMS IN TOTAL' (a room kind with no group is counted, not named). 'Floorplan' in the title vs 'floor plan' in every line; 'BETA' chip at the header's far right. Steps say 'Pick dollhouse or top-down' while the cards say 'Dollhouse' / 'Top-down'.",
+    "why": "After a 3D view appears the owner wants to download it — the filled button points him to redo it. 'The image model the live app uses' is the prototype talking to its builders, in front of a client in a demo.",
+    "proposal": "Done: filled 'Download', outlined 'Try another take' (was Regenerate). Sample line: 'Sample plan — ready-made views'; drop the landing's prototype hint (keep the held line after a studio's own upload). Captions in sentence case. The total counts what it names, or names the eleventh ('1 walk-in wardrobe'). Title 'Floor plan to 3D' (see 6-06); 'Beta' as the chip text, beside the title.",
+    "effort": "S",
+    "shots": ["6-floorplan3d.png", "6-fp3d-step2.png", "6-fp3d-step3.png"],
+    "code": ["components/floorplan-3d/floorplan-tool.tsx:245", "components/floorplan-3d/floorplan-tool.tsx:281", "components/floorplan-3d/floorplan-tool.tsx:315-334", "lib/floorplan-3d/model.ts:61-76", "lib/planner/photo.ts:88-97"]
+  },
+  {
+    "id": "6-23", "area": "Quote X-Ray › Say this · Key points", "route": "/quote-x-ray/[id]", "kind": "noise", "severity": "med",
+    "title": "Each talking point is said, then explained again in small print",
+    "now": "Point 1: '“The other quote doesn’t appear to include the vinyl flooring for the living room, which ours includes at S$7,224.00 — worth checking, as it would likely be an extra cost later.”' then 'Missing from their quote · “Vinyl flooring, supply and install” (Flooring) is in our quote at S$7,224.00 but does not appear in Flo Design’s quote — the client would likely pay for it later.' 'Say it as a question' appears under point 2 only. 'Key points you can use': cards with 'IMPACT: HIGH', a paragraph, 'Sources · renotalk.com · uchify.com', and 'You can ask Flo Design how they handle this with Blum Aventos.'",
+    "why": "The owner wants three sentences he can say. Each comes with a second sentence that repeats it, and the brand cards read like research notes.",
+    "proposal": "Show the sentence only; the evidence behind an info Tooltip ('Why') on the point's number. 'Say it as a question' as one toggle in the card head that applies to every point that has one, or drop it. Rename 'Say this' → 'What to tell the client'; 'Key points you can use' → 'Brands worth a word'. Drop the Impact chips (order the cards by impact); sources as a Tooltip.",
+    "effort": "S",
+    "shots": ["6-xray-result.png", "6-xray-result-390-scrolled.png"],
+    "code": ["components/xray/xray-reading.tsx:52-71", "components/xray/xray-reading.tsx:75-90"]
+  },
+  {
+    "id": "6-24", "area": "Marketplace › deal dialog", "route": "/marketplace?deal=<id>", "kind": "noise", "severity": "low",
+    "title": "Deal dialog says its end date twice and asks again after 'You asked'",
+    "now": "Chip 'UNTIL 11 DEC ’26' and, two lines below, '7 Oct ’26 – 11 Dec ’26'. After '✓ You asked for this deal on WhatsApp on 20 Oct ’26' the filled 'Get deal on WhatsApp' stays as the call to action.",
+    "why": "Same date twice; a filled button after the ask invites a second, duplicate ask to the brand.",
+    "proposal": "One line: 'Runs 7 Oct – 11 Dec ’26' (the 'ends in n days' chip only inside the last week). Once asked, the button becomes outlined 'Ask again on WhatsApp'.",
+    "effort": "S",
+    "shots": ["6-market-deal-dialog.png"],
+    "code": ["components/marketplace/deal-dialog.tsx:50", "components/marketplace/deal-dialog.tsx:57", "components/marketplace/deal-dialog.tsx:60", "components/marketplace/deal-dialog.tsx:74"]
+  },
+  {
+    "id": "6-25", "area": "Marketplace › brand page › Add to Price book", "route": "/marketplace/[brandId]", "kind": "copy", "severity": "low",
+    "title": "'Add to Price book' dialog confirms with 'Add to My Items'",
+    "now": "Title 'Add to Price book', subtitle 'It joins My Items with its words, picture and page, with Oak & Linen as its vendor. Oak & Linen joins your vendors too.', Category 'No category' with helper 'One of the studio’s trades', Cost '2480.00' (the list says 'S$2,480 per piece'), filled 'Add to My Items'.",
+    "why": "Two names for one press; 'its words, picture and page' is system talk.",
+    "proposal": "Title 'Add to Price book', button 'Add'. Subtitle 'Oak & Linen becomes its vendor and joins your vendors.' Helper 'Your trades, from Settings'.",
+    "effort": "S",
+    "shots": ["6-brand-add-product.png"],
+    "code": ["components/marketplace/add-product-dialog.tsx:83", "components/marketplace/add-product-dialog.tsx:88", "components/marketplace/add-product-dialog.tsx:91", "components/marketplace/add-product-dialog.tsx:105"]
+  },
+  {
+    "id": "6-26", "area": "Rail › Tools popover", "route": "rail Tools (every page)", "kind": "inconsistency", "severity": "low",
+    "title": "Marketplace sits on the rail while Market Insights is a Tools tile",
+    "now": "Rail: Marketplace (storefront) as its own item. Tools popover: 'TOOLS' head, Quotes · Quote X-Ray · Contracts · AI Visualizer · Floorplan to 3D Isometric (Beta, wraps to two lines) · Market Insights · Compliance Navigator · 3D Space Planner · Meeting Copilot. Quotes and Contracts are the studio's record lists among the tools (REG-413, REG-534). Two 3D tools side by side whose names don't say how they differ.",
+    "why": "Two feeds of the same kind in two homes; the owner has to remember which one is on the rail.",
+    "proposal": "Marketplace joins Market Insights in Tools (or both on the rail) — one home for 'from Qanvast / OpenMaison' content. Name the 3D pair by what you do: 'Floor plan to 3D' (a picture from a photo) and '3D Space Planner' (lay out furniture); see 6-06.",
+    "effort": "S",
+    "shots": ["6-tools-popover.png"],
+    "code": ["components/shell/tools-popover.tsx:25-34", "components/shell/app-rail.tsx:41"]
+  },
+  {
+    "id": "6-27", "area": "Views and filters across the tools", "route": "/marketplace · /market-insights · /compliance · /quote-x-ray · /visualizer · /planner", "kind": "inconsistency", "severity": "low",
+    "title": "Switching a view is chips, tabs, a segmented control or a pill, by page",
+    "now": "Marketplace 'Brands · 14 / Deals · 10' as Chips with counts (the Deals view drops Sort and Categories); Market Insights categories as Chips with counts; Compliance 'Your studio / Rules by home' as Tabs; X-Ray 'For a lead / Upload two quotes' as a segmented control; Visualizer and Planner 'Kind: All ▾' scope pill with counts in its menu ('All · 2', 'Leads · 1', 'Personal · 1'); Planner editor 'Top · 3D · Walk' segmented.",
+    "why": "Same job, four drawings: the owner relearns the control on every page.",
+    "proposal": "Two views of a page = Tabs (Marketplace Brands | Deals like Compliance); a mode inside a form or editor = segmented (X-Ray setup, Planner Top/3D/Walk); one filter dimension = scope pill (Marketplace and Market Insights categories, as Visualizer / Planner Kind). No counts on view tabs.",
+    "effort": "M",
+    "shots": ["6-marketplace.png", "6-insights.png", "6-compliance.png", "6-xray.png", "6-viz-kind.png"],
+    "code": ["components/marketplace/marketplace-home.tsx:153-169", "components/market-insights/insights-home.tsx:107", "components/compliance/navigator.tsx:44"]
+  },
+  {
+    "id": "6-28", "area": "Phone (390 touch)", "route": "/quote-x-ray/[id] · /visualizer/[designId]", "kind": "defect", "severity": "low",
+    "title": "Phone: Maison AI button sits on X-Ray's 'Send to client'; purple ⋮ on X-Ray cards",
+    "now": "At 390 at rest the Maison AI button (≈326–374 × 806–854) covers the right end of the filled 'Send to client' in the Say this head; on the Visualizer editor it sits on the stage's top-right corner. X-Ray's phone item cards draw their ⋮ in purple, every other card's ⋮ is grey. Visualizer phone version thumbs each carry a ⋮ plus a sent-arrow badge.",
+    "why": "A covered primary and a coloured kebab are small trust breakers in a live demo.",
+    "proposal": "The FAB steps aside when a filled button sits under it (or waits for the first scroll, as it slides away on scroll); the X-Ray card ⋮ in the house grey; on phone thumbs keep the ⋮ only on the selected version.",
+    "effort": "S",
+    "shots": ["6-xray-result-390.png", "6-xray-result-390-table.png", "6-viz-editor-390.png"],
+    "code": ["components/shell/maison-fab.tsx", "components/xray/xray-table.tsx:101"]
+  },
+  {
+    "id": "6-29", "area": "Website", "route": "/site · /site/pricing · /site/changelog · /site/try", "kind": "copy", "severity": "low",
+    "title": "Website names modules differently from the app",
+    "now": "Platform menu 'Finance & Margins' (app: Finance); pillar 'Design Meetings' (app: Meeting Copilot); changelog areas 'Leads & CRM', 'Client Portal' (app: Leads, Client portal); comparison row 'Built-in visualiser and 3D planner' (app: AI Visualizer, 3D Space Planner); changelog 'X-ray any quote in seconds — Drop in a quote — yours or a competitor’s — and see straight through it.' (the app's Quote X-Ray compares two quotes); trial 'Their quote / Your quote' vs the app's 'The other studio’s quote / Your quote'. The Floorplan tool, Marketplace and Market Insights aren't on the site's platform menu.",
+    "why": "A studio that signs up from the site looks for 'Finance & Margins' and 'visualiser' and finds other names.",
+    "proposal": "Use the app's names on the site: 'Finance', 'Leads', 'Client portal', 'AI Visualizer and 3D Space Planner, built in'; changelog 'Quote X-Ray: compare a quote with another studio’s, line by line'; the trial's 'Their quote' matches the app once the app takes 'Their quote' (shorter — see words).",
+    "effort": "S",
+    "shots": ["6-site.png", "6-site-try.png"],
+    "code": ["lib/site/platform.ts:46", "lib/site/platform.ts:145", "lib/site/platform.ts:299", "lib/site/changelog.ts:14", "lib/site/changelog.ts:253-254", "lib/trial/policy.ts:203-209"]
+  },
+  {
+    "id": "6-30", "area": "3D Space Planner › New ▾", "route": "/planner", "kind": "noise", "severity": "low",
+    "title": "Five ways to start a layout, three of them alike",
+    "now": "New ▾: 'From a template or a flat…', 'From an example…', 'From a floor-plan photo…', 'For a project…', 'Blank'.",
+    "why": "Template, flat and example are the same thing to a studio (a ready-made plan); the photo row duplicates the Floorplan tool (6-06).",
+    "proposal": "Three rows: 'From a ready-made flat…' (templates, examples and HDB / condo flats in one picker with tabs), 'For a project…', 'Blank'.",
+    "effort": "S",
+    "shots": ["6-planner-new-menu.png"],
+    "code": ["components/planner/home/planner-home.tsx:59-71", "components/planner/new-layout-dialog.tsx:113"]
+  },
+  {
+    "id": "6-31", "area": "3D Space Planner › editor › Finishes", "route": "/planner/[layoutId] (3D)", "kind": "noise", "severity": "low",
+    "title": "Finishes panel: ten chips, three heads and the rooms shown twice",
+    "now": "Panel: 'Finishes / Bedroom 2 · study · Floor: Ash Wide Plank', five room chips, Floor | Walls, 'Use on every room', 'Search 450 materials', 'Template colour — The floor as the flat came', 'YOUR STUDIO', ten category chips (All · Flooring · Tiles · Stone · Laminates · Paints · Countertops · Wallpapers · Fabrics · Metals · Glass), 'FLOORING 18'. In 3D the same five rooms are also a strip over the canvas.",
+    "why": "The owner picks a room, then a material; everything else is in the way.",
+    "proposal": "Categories as a scope pill ('Flooring ▾') next to the search; rooms in one place only (the canvas strip in 3D, the panel's chips in Top); drop the 'YOUR STUDIO' head (a studio swatch wears a small mark).",
+    "effort": "M",
+    "shots": ["6-planner-share.png", "6-planner-finishes.png"],
+    "code": ["components/planner/editor/panels.tsx"]
+  },
+  {
+    "id": "6-32", "area": "AI Visualizer · 3D Space Planner", "route": "/visualizer · /planner", "kind": "copy", "severity": "low",
+    "title": "'Personal' for a showroom concept; project numbers lead the cards",
+    "now": "Kind 'Personal' (Visualizer 'Showroom — kitchen concept'; Planner 'Personal · 16 rooms · 2 levels'); Planner cards lead with 'P-2026-002 · 5 rooms' and the editor's chip 'P-2026-002 · BENJAMIN HAN'; Visualizer card and top bar 'Lead · Met'.",
+    "why": "'Personal' reads as private to one member; a project number means nothing to a designer scanning for 'Benjamin's flat'.",
+    "proposal": "'Personal' → 'Studio’s own' (the studio tasks' idea of 'no client'); lead with the client's name, the number only on hover / in the list view's column; drop the lead's stage ('Met') from the design card.",
+    "effort": "S",
+    "shots": ["6-visualizer.png", "6-planner.png", "6-viz-kind.png"],
+    "code": ["components/visualizer/home/kind-label.ts:8", "components/planner/home/planner-home.tsx:147", "components/planner/home/planner-home.tsx:154"]
+  },
+  {
+    "id": "6-33", "area": "AI Visualizer › Present", "route": "/visualizer/[designId] (⋮ › Present)", "kind": "noise", "severity": "low",
+    "title": "Present lists the change twice and titles itself in dot-chains",
+    "now": "Title 'Living room · V3 · Relit · Golden Hour'; 'WHAT CHANGED FROM V2 — Lighting · Golden Hour' then 'EVERYTHING IN V3' lists Lighting · Golden Hour again; foot outlined 'Before and after · V2' + filled 'Done'.",
+    "why": "A client-facing presentation should read cleanly; the same row twice looks like a mistake.",
+    "proposal": "Title 'Living room — V3'; one list 'In V3' with a 'New' mark on what changed from V2.",
+    "effort": "S",
+    "shots": ["6-viz-present.png"],
+    "code": ["components/visualizer/editor/dialogs/present-dialog.tsx:193"]
+  },
+  {
+    "id": "6-34", "area": "Market Insights", "route": "/market-insights · /market-insights/[articleId]", "kind": "defect", "severity": "low",
+    "title": "A hole in the featured card; the article title shown twice",
+    "now": "The featured card leaves ≈90px of white between the title and the excerpt (the excerpt is pushed to the card's foot). On the article page the title is the L2 header's title and again the H1 right below it.",
+    "why": "The hole reads as missing content; the repeated title wastes the first screen.",
+    "proposal": "Excerpt directly under the title; the article's L2 header shows 'Market Insights' as the crumb only (no title), the H1 carries it.",
+    "effort": "S",
+    "shots": ["6-insights.png", "6-insights-article-full.png"],
+    "code": ["components/market-insights/cards.tsx:58-76", "components/market-insights/article-page.tsx:46"]
+  },
+  {
+    "id": "6-35", "area": "AI Visualizer › editor", "route": "/visualizer/[designId]", "kind": "copy", "severity": "low",
+    "title": "Small word drift in the Visualizer editor",
+    "now": "Tab 'Surfaces' vs panel title 'Surfaces & materials'; hint 'Click a square…' vs panel 'tap one to pick its finish' on a desk; Style note 'Kevin’s style: Contemporary — Modern is the nearest, first below.' with a 'Closest match' tag; Lighting sub 'The photo previews it as you pick — Generate keeps it'; Furniture rows 'Now: Emerald velvet · Keep'.",
+    "why": "Each is small; together they make the panel feel written by different people.",
+    "proposal": "Panel title 'Surfaces' (as its tab); 'click' on a desk; Style note 'Kevin likes Contemporary — Modern is the closest look'; Lighting sub 'Preview on the photo — Generate keeps it'.",
+    "effort": "S",
+    "shots": ["6-viz-editor.png", "6-viz-panel-style.png", "6-viz-panel-furniture.png"],
+    "code": ["components/visualizer/editor/panels/surfaces-panel.tsx:130", "components/visualizer/editor/panels/style-panel.tsx:61", "components/visualizer/editor/panels/style-panel.tsx:82", "components/visualizer/editor/panels/lighting-panel.tsx:36"]
+  }
+]

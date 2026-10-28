@@ -40,7 +40,7 @@ const LEAD = sql(`select lead_id from quotes where id='${Q1}'`)
   await step('price book modal', async () => {
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
     // REG-773 (UX audit Q7): the Create strip's tile reads Price book (it read My Items)
-    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)
+    await page.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'From Price book' }).click(); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) one door each (4-03): the Price book is Create ▾ › From Price book (and each section's foot)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     const rows = await dlg.getByTestId('folder-pick-row').allInnerTexts()
     ok('My Items opens on its folders, then what sits at the top', rows.length === 2 && /Kitchen/.test(rows[0]) && /Wet works/.test(rows[1]), rows.map((r) => r.replace(/\n/g, ' ')).join(' | '))
@@ -58,7 +58,7 @@ const LEAD = sql(`select lead_id from quotes where id='${Q1}'`)
 
   await step('my templates (T&Cs · Notes)', async () => {
     await page.goto(`${BASE}/quotes/${Q1}#terms`); await ready(page)
-    await page.getByRole('button', { name: 'My Templates', exact: true }).first().click(); await page.waitForTimeout(500)   // Terms comes before Notes
+    await page.getByRole('button', { name: 'Templates', exact: true }).first().click(); await page.waitForTimeout(500)   // Terms comes before Notes — (the calm UI build 2026-10-27, a deliberate change) W-270: “Templates”
     const dlg = page.getByRole('dialog', { name: 'Terms and Conditions Templates' })
     ok('My Templates opens on the library’s folders', await dlg.getByRole('button', { name: 'Open folder HDB' }).isVisible() && !(await dlg.getByRole('button', { name: 'Open folder Site rules' }).isVisible().catch(() => false)), 'Site rules holds notes only — not offered for Terms')
     await dlg.getByRole('button', { name: 'Open folder HDB' }).click(); await page.waitForTimeout(300)
@@ -78,9 +78,9 @@ const LEAD = sql(`select lead_id from quotes where id='${Q1}'`)
 
   await step('contract picker', async () => {
     await page.goto(`${BASE}/leads/${LEAD}/contracts`); await ready(page)
-    await page.getByRole('button', { name: /^New Contract|^Create Contract/ }).first().click(); await page.waitForTimeout(300)
-    await page.getByRole('menuitem', { name: /From Template/i }).click(); await page.waitForTimeout(900)
-    const dlg = page.getByRole('dialog', { name: 'Choose a contract template' })
+    await page.getByRole('button', { name: /^New contract|^Create contract/i }).first().click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) W-562: sentence case
+    await page.getByRole('menuitem', { name: /From (a )?Template/i }).click(); await page.waitForTimeout(900)   // (the calm UI build 2026-10-27, a deliberate change) W-199: “From a template”
+    const dlg = page.getByRole('dialog', { name: 'Which agreement should they sign?' })   // (the calm UI build 2026-10-27, a deliberate change) W-136
     const cards = await dlg.getByTestId('folder-card').allInnerTexts()
     ok('the contract picker opens on its folders', cards.length === 2 && /Agreements/.test(cards[0]) && /Variations/.test(cards[1]), cards.map((c) => c.replace(/\n/g, ' ')).join(' | '))
     await dlg.getByRole('button', { name: 'Open Agreements' }).click(); await page.waitForTimeout(300)
@@ -91,8 +91,8 @@ const LEAD = sql(`select lead_id from quotes where id='${Q1}'`)
 
   await step('choose template (tasks)', async () => {
     await page.goto(`${BASE}/leads/${LEAD}/tasks`); await ready(page)
-    await page.getByRole('button', { name: /^Add Task/ }).first().click(); await page.waitForTimeout(300)
-    await page.getByRole('menuitem', { name: 'Use Template' }).click(); await page.waitForTimeout(500)
+    await page.getByRole('button', { name: /^(Add Task|New task)/ }).first().click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) B2: New task ▾ › From a template
+    await page.getByRole('menuitem', { name: /^(Use Template|From a template)/ }).click(); await page.waitForTimeout(500)
     const rows = await page.getByTestId('folder-pick-row').allInnerTexts()
     ok('Choose Template opens on the folders', rows.length === 2 && /Lead follow-up/.test(rows[0]) && /Meetings/.test(rows[1]), rows.map((r) => r.replace(/\n/g, ' ')).join(' | '))
     await page.getByRole('button', { name: 'Open folder Lead follow-up' }).click(); await page.waitForTimeout(300)

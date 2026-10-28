@@ -57,11 +57,15 @@ a.row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-d
 .rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .rowLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
 .rowEnd { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-secondary); margin-top: 2px; }
+/* (the calm UI build 2026-10-27, 6-11) the demo's addresses said once, under the card's rows, in the rows' 8 */
+.linksNote { margin: 0; padding: var(--om-spacing-1) var(--om-spacing-2) 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* a header chip or button that carries a handle of its own (the brand's Featured · its Add to my vendors) */
+.chipHost { display: inline-flex; }
 
 /* the deals: the gallery's cards, three across in the right stack */
 .deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--om-spacing-4); padding: 0 var(--om-spacing-5) var(--om-spacing-5); }
 
-/* the products: a picture, the words, the price, and the one press — Add to Price book, or the door to it */
+/* the products: a picture, the words, the price, and the one press — + Add (to the Price book), or the door to it */
 .product { display: flex; gap: var(--om-spacing-3); align-items: flex-start; padding: var(--om-spacing-3) var(--om-spacing-2); min-width: 0; }
 .product + .product { box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); }
 .productPic { composes: thumb from '../om/thumb.module.css'; width: 64px; height: 64px; }
@@ -113,3 +117,10 @@ a.row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-d
   .productState { text-align: left; }
   .row2 { grid-template-columns: 1fr; }
 }
+
+/* (the calm UI build 2026-10-27) the brand page's ghost on a phone: the lines the page's words wrap to there (Services' paragraph, a deal's title
+   and its asked line — the words wrap now, never cut; a product's description) */
+.ghostPhone { display: none; }
+@media (max-width: 767px) { .ghostPhone.ghostPhone { display: flex; flex-direction: column; } }
+/* (the calm UI build 2026-10-27, 6-11) the About card's vendor line, held empty for a brand not in the vendors (StateSpace) */
+.stateSpace { visibility: hidden; }

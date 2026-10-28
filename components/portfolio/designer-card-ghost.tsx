@@ -17,7 +17,7 @@ export function DesignerCardGhost({ when = false, compact = false }: { when?: bo
         <span className={styles.who}>
           <Line w={96} lh={24} h={14} className={styles.name} />
           <Line w={220} lh={16} h={10} className={styles.title} />
-          <span className={styles.known}><Bone w={124} h={20} r={4} /><Bone w={104} h={20} r={4} /></span>
+          <GhostLines className={`${styles.known} ${styles.ghostLines}`} lh={16} h={10} lines={['70%', ['45%', 'phone']]} />   {/* (the calm UI build 2026-10-27 — 5-24) the known-for line — (closing regression, a bug fix) two lines on a phone, as the page's wraps */}
         </span>
       </div>
       {compact ? null : <GhostLines className={`${styles.bio} ${styles.ghostLines}`} lines={['88%', ['40%', 'phone']]} />}

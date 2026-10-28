@@ -89,7 +89,7 @@ export function OutsideDialog({ open, value, recent, onClose, onSave, onRemove, 
               <Button onPress={() => { void save() }} isDisabled={busy} data-testid="outside-save">{value ? 'Save' : 'Add'}</Button>
             </>}>
       <form className={styles.form} onSubmit={(e) => { e.preventDefault(); void save() }} noValidate data-testid="outside-dialog">
-        <p className={styles.lede}>A subcontractor or a supplier — no sign-in. Send them the task on WhatsApp from the task.</p>
+        <p className={styles.lede}>A vendor or a contractor — no sign-in. Send them the task on WhatsApp from the task.</p>   {/* (the calm UI build 2026-10-27, 1-23 · W-103) Finance's words */}
         {!value && others.length ? (
           <div className={styles.recent}>
             <span className={styles.caption}>On other tasks</span>
@@ -146,7 +146,7 @@ export function OutsideSection({ o, onAdd, onEdit, onSend, onRemove, testId = 'p
           </div>
         </>
       ) : (
-        <span><button type="button" className={styles.link} onClick={onAdd} data-testid="outside-add"><Icon name="add" size={20} />Add a subcontractor or supplier</button></span>
+        <span><button type="button" className={styles.link} onClick={onAdd} data-testid="outside-add"><Icon name="add" size={20} />Add a vendor or contractor</button></span>
       )}
     </section>
   )

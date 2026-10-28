@@ -29,7 +29,7 @@ const STYLE_CLASS: Partial<Record<string, string>> = { h1: styles.styleH1, h2: s
  * Text ▾ · B · I · U · List · + ▾, with the rest one tap further under + ▾. `onESign` / `onOutline` are the desk's: the Document
  * screen's bar carries ≡ and the Contract screen's folds carry the signature fields and the gates. The desk's bar is unchanged.
  */
-export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutline, outlineOpen, disabled, writing }: {
+export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutline, outlineOpen, disabled, writing, locked = false }: {
   editor: React.RefObject<DocEditorHandle | null>
   state: DocState
   values: TokenValues
@@ -40,6 +40,9 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
   disabled?: boolean
   /** (pending modules S29) Write with AI — the writing help's trigger, before Insert a field. */
   writing?: ReactNode
+  /** (The calm UI build 2026-10-27, 4-18) A signed copy: no formatting tools at all — greyed they read as a broken editor and the banner already
+   *  says it is locked. Only the Outline's toggle stays, so a closed Outline still opens. */
+  locked?: boolean
 }) {
   const narrow = useMediaQuery(TABLET_DOWN)
   const [menu, setMenu] = useState<'style' | 'align' | 'smart' | null>(null)
@@ -49,6 +52,20 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
   const [linkOpen, setLinkOpen] = useState(false)
   const image = useImagePick(editor)
   if (narrow) return <ToolRow editor={editor} state={state} values={values} disabled={disabled} writing={writing} />
+  if (locked) {
+    return (
+      <div className={styles.bar} role="toolbar" aria-label="Document" data-locked="">
+        <div className={styles.barTools} />
+        <div className={styles.barEnd}>
+          {onOutline ? (
+            <Tooltip label={outlineOpen ? 'Hide outline' : 'Show outline'}>
+              <button type="button" className={styles.styleBtn} aria-pressed={!!outlineOpen} data-open={outlineOpen || undefined} onClick={onOutline} aria-label="Outline"><Icon name="list" size={24} weight={300} /></button>
+            </Tooltip>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
   const keep = (e: React.MouseEvent) => e.preventDefault()   // the selection survives the press
   const tool = (icon: string, label: string, onClick: () => void, active = false, weight: 300 | 400 = 300) => (
     <Tooltip key={label} label={label} keys={FORMAT_KEYS[label]}>
@@ -162,7 +179,7 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
             )}
           </Dropdown>
         </span>
-        <Button variant="secondary" appearance={eSignOpen ? 'filled' : 'text'} isDisabled={disabled} aria-pressed={eSignOpen} iconStart={<Icon name="draw" size={20} />} onPress={onESign}>eSignatures</Button>
+        <Button variant="secondary" appearance={eSignOpen ? 'filled' : 'text'} isDisabled={disabled} aria-pressed={eSignOpen} iconStart={<Icon name="draw" size={20} />} onPress={onESign}>Signatures</Button>
       </div>
       <LinkDialog open={linkOpen} onClose={() => setLinkOpen(false)} onAdd={(u) => editor.current?.link(u)} />
     </div>

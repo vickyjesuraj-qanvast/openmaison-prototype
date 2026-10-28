@@ -22,16 +22,18 @@ import { marginCell, profitGrade, tierOf, TIER_LABEL, type ProfitView } from './
 /* (parity map, FB-065 · FB-076 — his "build everything that's in 1.0" 2026-10-10) GST and Expenses join the reports: GST reverses REG-1307's
    "Tax report dropped"; Expenses is 1.0's expenses-only report. Each sits beside its kin — GST after Cash flow, Expenses after Vendor spend. */
 export type ReportKey = 'pl' | 'ar' | 'ap' | 'profitability' | 'cashflow' | 'gst' | 'vendors' | 'expenses' | 'commissions' | 'statement'
+/* (the calm UI build 2026-10-27 — 5-06 · 5-20 · T-01) the reports in the one money vocabulary: To collect (what clients still owe), To pay (what the
+   studio still owes), Collected, Commission — the keys and `?report=` values are unchanged */
 export const REPORTS: { key: ReportKey; label: string; help: string }[] = [
   { key: 'pl', label: 'Profit and loss', help: 'What was invoiced and what it cost, before GST' },
-  { key: 'ar', label: 'Owed to you', help: 'Clients’ unpaid invoices by how late they are — and the net once what you owe is taken off' },
-  { key: 'ap', label: 'You owe', help: 'Vendors’ and claims’ balances by how late they are' },
-  { key: 'profitability', label: 'Profitability', help: 'Profit and margin by project, by type, by designer and by budget' },
-  { key: 'cashflow', label: 'Cash flow', help: 'Money in and out by month against the same month last year, and what the next 90 days hold' },
+  { key: 'ar', label: 'To collect', help: 'Clients’ unpaid invoices by how late they are — and the net once what you have to pay is taken off' },
+  { key: 'ap', label: 'To pay', help: 'Vendors’ and claims’ balances by how late they are' },
+  { key: 'profitability', label: 'Profitability', help: 'Expected profit and margin by project, by type, by designer and by budget' },
+  { key: 'cashflow', label: 'Cash flow', help: 'Collected and paid out by month against the same month last year, and what the next 90 days hold' },
   { key: 'gst', label: 'GST', help: 'The GST you charged on invoices and paid on bills and expenses, and the net to pay' },
-  { key: 'vendors', label: 'Vendor spend', help: 'What each vendor was committed, paid and is owed' },
+  { key: 'vendors', label: 'Vendor spend', help: 'What each vendor was committed, was paid and is still to be paid' },
   { key: 'expenses', label: 'Expenses', help: 'Approved expenses by category, with their GST and the claims paid back' },
-  { key: 'commissions', label: 'Commissions', help: 'What each member earned, was paid and is owed — and what each project is expected to pay' },
+  { key: 'commissions', label: 'Commission', help: 'What each member earned, was paid and is still to be paid — and what each project is expected to pay' },
   { key: 'statement', label: 'Client statement', help: 'One project’s invoices, payments and credit notes, with the balance' },
 ]
 export const isReportKey = (v: unknown): v is ReportKey => REPORTS.some((r) => r.key === v)
@@ -74,7 +76,11 @@ export type Cell = string | number | null
 /** `toneKey` (simplify S-13): the one cell the tone colours — the figure that carries the meaning, never every money cell on the row. */
 export type ReportRow = { id: string; cells: Record<string, Cell>; tone?: 'green' | 'yellow' | 'red'; toneKey?: string; strong?: boolean; href?: string }
 export type ReportTable = { key: string; title: string; help?: string; columns: ReportColumn[]; rows: ReportRow[]; total?: ReportRow | null; empty: string }
-export type ReportTile = { label: string; value: string; help?: string; grade?: 'good' | 'warn' | 'bad' }
+/** (the Dashboard redesigned, 2026-10-26 — P-13 "one Owed to you") `minor` = a money tile's own figure, unformatted — so a card that writes sums
+    as a record card does ("S$ 34,803", `moneyCard`) shows the report's own number, never a second count of it. The report draws `value`. */
+export type ReportTile = { label: string; value: string; help?: string; grade?: 'good' | 'warn' | 'bad'; minor?: number
+  /** (the calm UI build 2026-10-27 — 5-07, T-05) how the figure is worked out — the tile's value says it on hover and focus, off the page */
+  how?: string }
 export type Report = { key: ReportKey; title: string; help: string; tiles: ReportTile[]; tables: ReportTable[] }
 
 /** What a cell prints (the screen and the export read this one function). */
@@ -244,7 +250,7 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
   if (key === 'pl') {
     const sent = i.projects.flatMap((p) => p.money.invoices.filter((v) => v.status === 'sent' && inRange(v.sentAt, range)).map((v) => ({ v, p })))
     const kinds: { key: string; label: string; pick: (k: string, outside: boolean) => boolean }[] = [
-      { key: 'stage', label: 'Payment stages', pick: (k) => k === 'stage' },
+      { key: 'stage', label: 'Scheduled payments', pick: (k) => k === 'stage' },   // (the calm UI build 2026-10-27 — §2: "stage" is a lead's or a project's; a payment part is a payment)
       { key: 'variation', label: 'Variation orders billed on their own', pick: (k) => k === 'variation' },
       { key: 'one_off', label: 'One-off invoices', pick: (k) => k === 'one_off' },
       { key: 'external', label: 'Invoices recorded from elsewhere', pick: (k) => k === 'external' },
@@ -268,9 +274,9 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
     return {
       ...base,
       tiles: [
-        { label: 'Revenue', value: money2(revenue), help: `Invoices sent in ${range.label}, before GST` },
-        { label: 'Costs', value: money2(costTotal + commission), help: commission ? `${money2(commission)} of it commission` : 'POs sent, bills and approved expenses' },
-        { label: 'Profit', value: money2(profit), grade: profit < 0 ? 'bad' : undefined, help: profit < 0 ? 'A loss for the period' : 'Revenue less costs' },
+        { label: 'Revenue', value: money2(revenue), minor: revenue, help: `Invoices sent in ${range.label}, before GST` },
+        { label: 'Costs', value: money2(costTotal + commission), minor: costTotal + commission, help: commission ? `${money2(commission)} of it commission` : 'POs sent, bills and approved expenses' },
+        { label: 'Profit', value: money2(profit), minor: profit, grade: profit < 0 ? 'bad' : undefined, help: profit < 0 ? 'A loss for the period' : 'Revenue less costs' },
         { label: 'Margin on what was invoiced', value: revenue ? `${margin}%` : '--', grade: revenue ? ({ healthy: 'good', tight: 'warn', at_risk: 'bad' } as const)[tierOf(margin)] : undefined, help: revenue ? `${TIER_LABEL[tierOf(margin)]} · before GST, in the period` : 'Nothing invoiced in the period' },
       ],
       tables: [
@@ -295,15 +301,15 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
     return {
       ...base,
       tiles: [
-        { label: 'Owed to you', value: money2(owed), grade: old ? 'bad' : undefined, help: `${rows.length} invoice${rows.length === 1 ? '' : 's'} not paid in full${late ? ` · ${money2(late)} overdue` : ' · nothing overdue'}` },
-        { label: 'You owe', value: money2(youOwe), help: `${ap.length} balance${ap.length === 1 ? '' : 's'} to pay${apLate ? ` · ${money2(apLate)} overdue` : ''}` },
-        { label: 'Net', value: money2(net), help: net >= 0 ? 'Owed to you, less what you owe' : 'You owe more than you are owed' },
+        { label: 'To collect', value: money2(owed), minor: owed, grade: old ? 'bad' : undefined, help: `${rows.length} invoice${rows.length === 1 ? '' : 's'} not paid in full${late ? ` · ${money2(late)} overdue` : ' · nothing overdue'}` },
+        { label: 'To pay', value: money2(youOwe), minor: youOwe, help: `${ap.length} balance${ap.length === 1 ? '' : 's'} to pay${apLate ? ` · ${money2(apLate)} overdue` : ''}` },
+        { label: 'Net', value: money2(net), minor: net, help: net >= 0 ? 'To collect, less to pay' : 'More to pay than to collect' },
       ],
       tables: [
         agingTable('buckets', 'By how late', rows.map((r) => ({ amount: r.v.balanceMinor, bucket: r.bucket })), 'Nothing owed.'),
         { key: 'invoices', title: 'Invoices', empty: 'Every sent invoice is paid.', columns: [
           { key: 'invoice', label: 'Invoice', track: 'minmax(160px, 1fr)' }, { key: 'project', label: 'Project', track: 'minmax(220px, 1.4fr)' }, { key: 'client', label: 'Client', track: 'minmax(150px, 1fr)' },
-          { key: 'due', label: 'Due', kind: 'date', track: '130px' }, { key: 'late', label: 'Late by', track: '140px' }, { key: 'amount', label: 'Still owed', kind: 'money', track: '150px' }],
+          { key: 'due', label: 'Due', kind: 'date', track: '130px' }, { key: 'late', label: 'Late by', track: '140px' }, { key: 'amount', label: 'To collect', kind: 'money', track: '150px' }],
           rows: rows.map(({ v, p, bucket }) => ({ id: v.id, href: `${href(p.id)}?open=${encodeURIComponent(v.id)}`, tone: bucket >= 2 ? 'red' as const : bucket ? 'yellow' as const : undefined, toneKey: 'amount',
             cells: { invoice: v.label ?? v.stageName, project: p.name, client: p.client, due: v.dueAt, late: AGING[bucket]!, amount: v.balanceMinor } })),
           total: { id: 't', strong: true, cells: { invoice: 'Total', project: null, client: null, due: null, late: null, amount: owed } } },
@@ -317,7 +323,7 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
     return {
       ...base,
       tiles: [
-        { label: 'You owe', value: money2(owed), help: `${rows.length} balance${rows.length === 1 ? '' : 's'} to pay` },
+        { label: 'To pay', value: money2(owed), help: `${rows.length} balance${rows.length === 1 ? '' : 's'} to pay` },
         { label: 'Overdue', value: money2(late), grade: late ? 'bad' : undefined, help: late ? 'Past their due day' : 'Nothing overdue' },
         { label: 'Claims to pay back', value: money2(sum(rows.filter((r) => r.record.startsWith('Claim')), (r) => r.amount)) },
       ],
@@ -363,8 +369,15 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
       tiles: [
         { label: 'Projects', value: String(ps.length), help: 'With a contract value' },
         { label: 'Contract value', value: money2(contract) },
-        { label: 'Profit', value: g.length ? money2(profit) : '--', grade: g.length && profit < 0 ? 'bad' : undefined, help: g.length ? `Contract value less committed costs, on ${g.length} project${g.length === 1 ? '' : 's'} with costs past a tenth of the contract` : 'No project has costs past a tenth of its contract yet' },
-        { label: 'Margin on contracts', value: gContract ? `${avg}%` : '--', grade: gContract ? ({ healthy: 'good', tight: 'warn', at_risk: 'bad' } as const)[tierOf(avg)] : undefined, help: gContract ? 'Weighted by contract value · early estimates left out' : 'Shown once a project’s costs pass a tenth of its contract' },
+        /* (the calm UI build 2026-10-27 — 5-07 · W-322 · W-252) the profit a signed contract is set to make, named apart from Profit and loss's —
+           its basis said on its line (contract value and committed costs, with GST — the project's Payments tab figure; the maths is unchanged),
+           how it counts on its value's hover */
+        { label: 'Expected profit', value: g.length ? money2(profit) : '--', grade: g.length && profit < 0 ? 'bad' : undefined,
+          help: g.length ? `On signed contracts, with GST · ${g.length} project${g.length === 1 ? '' : 's'}` : 'Shown once a project’s costs pass a tenth of its contract',
+          how: 'Contract value less committed costs, both with GST, as each project’s Payments tab shows it. A project counts once its costs pass a tenth of its contract — before that it shows “--”.' },
+        { label: 'Expected margin', value: gContract ? `${avg}%` : '--', grade: gContract ? ({ healthy: 'good', tight: 'warn', at_risk: 'bad' } as const)[tierOf(avg)] : undefined,
+          help: gContract ? `${TIER_LABEL[tierOf(avg)]} · on signed contracts` : 'Shown once a project’s costs pass a tenth of its contract',
+          how: 'Expected profit over contract value, weighted by contract value · early estimates left out' },
       ],
       tables: [
         { key: 'projects', title: 'By project', help: 'Profit = contract value − committed costs, both with GST (the Money tab’s figure) — “--” until its costs pass a tenth of the contract.', empty: 'No project has a contract value yet.', columns: [
@@ -431,12 +444,13 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
     return {
       ...base,
       tiles: [
-        { label: 'Money in', value: money2(totIn), help: `Client payments, ${range.label}` },
-        { label: 'Money out', value: money2(totOut), help: 'Vendors, claims, the studio’s expenses, commission, refunds' },
+        /* (the calm UI build 2026-10-27 — W-554, §2) money received is Collected — "Money in" is no longer a Finance list's name */
+        { label: 'Collected', value: money2(totIn), help: `Client payments, ${range.label}` },
+        { label: 'Paid out', value: money2(totOut), help: 'Vendors, claims, the studio’s expenses, commission, refunds' },
         { label: 'Net', value: money2(totIn - totOut), grade: totIn - totOut < 0 ? 'bad' : 'good' },
       ],
       tables: [
-        { key: 'months', title: 'By month', help: 'Money in beside the same month last year, and the change.', empty: 'No money moved in the period.', columns: [
+        { key: 'months', title: 'By month', help: 'What was collected beside the same month last year, and the change.', empty: 'No money moved in the period.', columns: [
           { key: 'month', label: 'Month', track: 'minmax(150px, 1fr)' }, { key: 'in', label: 'In', kind: 'money', track: '150px' },
           { key: 'lastYear', label: 'In, same month last year', kind: 'money', track: '200px' }, { key: 'change', label: 'Change', track: '110px' },
           { key: 'out', label: 'Out', kind: 'money', track: '150px' }, { key: 'net', label: 'Net', kind: 'money', track: '150px' }, { key: 'running', label: 'Running', kind: 'money', track: '150px' }],
@@ -474,11 +488,11 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
         { label: 'Vendors', value: String(rows.length), help: `With money in ${range.label}, or owed` },
         { label: 'Committed', value: money2(sum(rows, (r) => Number(r.cells.committed))), help: 'With GST, as the vendors charge it' },
         { label: 'Paid', value: money2(sum(rows, (r) => Number(r.cells.paid))) },
-        { label: 'Still owed', value: money2(sum(rows, (r) => Number(r.cells.owed))), help: 'As it stands today' },
+        { label: 'To pay', value: money2(sum(rows, (r) => Number(r.cells.owed))), help: 'As it stands today' },   // (the calm UI build 2026-10-27 — W-386)
       ],
       tables: [{ key: 'vendors', title: 'By vendor', empty: 'No vendor spend in the period.', columns: [
         { key: 'vendor', label: 'Vendor', track: 'minmax(200px, 1.2fr)' }, { key: 'trade', label: 'Trade', track: 'minmax(140px, 1fr)' }, { key: 'pos', label: 'POs', kind: 'count', track: '90px' },
-        { key: 'committed', label: 'Committed', kind: 'money', track: '150px' }, { key: 'paid', label: 'Paid', kind: 'money', track: '150px' }, { key: 'owed', label: 'Still owed', kind: 'money', track: '150px' }],
+        { key: 'committed', label: 'Committed', kind: 'money', track: '150px' }, { key: 'paid', label: 'Paid', kind: 'money', track: '150px' }, { key: 'owed', label: 'To pay', kind: 'money', track: '150px' }],
         rows, total: { id: 't', strong: true, cells: { vendor: 'Total', trade: null, pos: sum(rows, (r) => Number(r.cells.pos)), committed: sum(rows, (r) => Number(r.cells.committed)), paid: sum(rows, (r) => Number(r.cells.paid)), owed: sum(rows, (r) => Number(r.cells.owed)) } } }],
     }
   }
@@ -615,17 +629,17 @@ export function buildReport(key: ReportKey, i: ReportInput, period: PeriodKey, o
       tiles: [
         { label: 'Earned', value: money2(earned), help: `On payments in ${range.label}` },
         { label: 'Paid', value: money2(paid), help: `Paid out in ${range.label}` },
-        { label: 'Owed', value: money2(i.commission.summary.owedMinor), help: 'As it stands today' },
+        { label: 'To pay', value: money2(i.commission.summary.owedMinor), help: 'As it stands today' },   // (the calm UI build 2026-10-27 — T-01) studio money still due
       ],
       tables: [
         { key: 'members', title: 'By member', empty: 'No commission in the period.', columns: [
           { key: 'member', label: 'Member', track: 'minmax(180px, 1fr)' }, { key: 'projects', label: 'Projects', kind: 'count', track: '110px' }, { key: 'earned', label: 'Earned', kind: 'money', track: '150px' },
-          { key: 'paid', label: 'Paid', kind: 'money', track: '150px' }, { key: 'owed', label: 'Owed today', kind: 'money', track: '150px' }],
+          { key: 'paid', label: 'Paid', kind: 'money', track: '150px' }, { key: 'owed', label: 'To pay today', kind: 'money', track: '150px' }],
           rows: memberRows, total: { id: 't', strong: true, cells: { member: 'Total', projects: null, earned, paid, owed: i.commission.summary.owedMinor } } },
         { key: 'projects', title: 'By project', help: 'Since each project began. Expected: today’s rule on the whole contract, before GST — Variance is earned less expected, and closes as the client pays.', empty: 'No commission earned yet.', columns: [
           { key: 'member', label: 'Member', track: 'minmax(150px, 1fr)' }, { key: 'project', label: 'Project', track: 'minmax(220px, 1.4fr)' }, { key: 'rule', label: 'Rule', track: 'minmax(200px, 1.2fr)' },
           { key: 'expected', label: 'Expected', kind: 'money', track: '140px' }, { key: 'earned', label: 'Earned', kind: 'money', track: '140px' }, { key: 'variance', label: 'Variance', kind: 'money', track: '140px' },
-          { key: 'paid', label: 'Paid', kind: 'money', track: '140px' }, { key: 'owed', label: 'Owed', kind: 'money', track: '140px' }],
+          { key: 'paid', label: 'Paid', kind: 'money', track: '140px' }, { key: 'owed', label: 'To pay', kind: 'money', track: '140px' }],
           rows: lineRows },
         { key: 'changes', title: 'Changes', help: `Every ask for another rate and every rate set or removed in ${range.label}, newest first.`, empty: 'No commission change in the period.', columns: [
           { key: 'at', label: 'Date', kind: 'date', track: '130px' }, { key: 'who', label: 'Who', track: 'minmax(130px, 1fr)' }, { key: 'project', label: 'Applies to', track: 'minmax(220px, 1.4fr)' },

@@ -40,7 +40,7 @@ ok(followUpTitle('Callback requested', 'Call', 'Farah Ahmad') === 'Call Farah ba
 ok(contactChannelOf('Visit') === 'In person' && contactChannelOf('Note') === null && chipOfChannel('In person') === 'Visit' && chipOfChannel('Email') === 'Email', 'a visit is the "In person" contact channel, both ways')
 const words = savedWords({ channel: 'Call', kind: 'contact', name: 'Farah Ahmad', moved: 'Contacted', reminder: { label: 'Call back', when: 'tomorrow · 10:00 AM' }, planned: null })
 ok(words === 'Call logged — Farah is in Contacted. Call back tomorrow · 10:00 AM is in Tasks.', `the snackbar: what was kept, where the lead is, the call-back ("${words}")`)
-ok(savedWords({ channel: 'Visit', kind: 'meeting', name: 'Farah Ahmad', moved: 'Met', reminder: null, planned: null }) === 'Site visit logged — Farah is in Met.' && savedWords({ channel: 'Note', kind: 'note', name: 'Farah', moved: null, reminder: null, planned: null }) === 'Note saved.', 'the snackbar for a visit and a note')
+ok(savedWords({ channel: 'Visit', kind: 'meeting', name: 'Farah Ahmad', moved: 'Met', reminder: null, planned: null }) === 'Visit logged — Farah is in Met.' && savedWords({ channel: 'Note', kind: 'note', name: 'Farah', moved: null, reminder: null, planned: null }) === 'Note saved.', 'the snackbar for a visit and a note')   // (the calm UI build 2026-10-27, a deliberate change — 2-08: one word for the visit, the chip's)
 
 // ── Q-02: a contact log's screenshot is optional (validateStage) ──
 const d: WizardData = { ...emptyWizardData(['m1']), logs: [{ channel: 'Call', when: '23/10/2026, 4:12 PM', outcome: 'Connected', nextStepWhen: '', nextStepMode: '', files: [], notes: '' }] }

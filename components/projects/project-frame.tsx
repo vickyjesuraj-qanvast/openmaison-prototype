@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Tabs } from '@/components/om/tabs'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -399,22 +398,17 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
           backLabel={backLabelFor(from, { leadName: lead.name, fallback: `Back to ${home.label}` })}
           crumbs={crumbs}
           title={p.name}
-          chips={
-            <>
-              {/* (parity P-08 · A-04) the stage and its On hold mark left the chips: the Stage button names them, as the lead's does */}
-              <MetaChip>{p.number}</MetaChip>
-              {p.projectType ? <MetaChip icon="business_center">{p.projectType}</MetaChip> : null}
-              {/* (fix-A, A-34) the property type rides in the name it defaults to (Q-05) — said once, the name keeps its line */}
-              {p.name.includes(lead.propertyType) ? null : <MetaChip icon="home">{lead.propertyType}</MetaChip>}
-            </>
-          }
+          /* (the calm UI build 2026-10-27, 3-31 · T-04) the header is the title and the Stage button: the number, the project type and the property
+             type are Project info's and Property info's rows (the info column on the Overview, View client info on a phone) — said once */
           actions={
             <>
               {/* (parity P-08 · A-04 · D-01, the owner's pick 2026-10-08) the lead's "Stage: X ▾" at every width (it replaces fix-A A-25's chip in
                   the ≤1024 action row): the stage menu, key M; the one filled primary stays beside it */}
               {books ? null : <ProjectStageButton word={stageWord(stageFacts)} open={stageOpen} anchor={stageRef} onPress={() => setStageOpen((o) => !o)} />}
               {d.primary && !books && !(tab === 'schedule' && !d.schedule) ? (   /* (parity map, PR-022) Accounting's next steps are the Money tab's own rows */   /* (fix-B, B-16) on the Schedule's Start card (no milestones), Create schedule is the page's one filled button — (simplify S-02) whatever the top row's run */
-                <span ref={primaryRef} className={`${styles.anchor} ${styles.primary}`} data-testid="project-primary">
+                /* (the calm UI build 2026-10-27, 3-09) on a phone's Overview the brief leads with this step (lib/projects/briefs.ts `topHere`), so
+                   the header draws no button there; on the other tabs its words wrap rather than being cut */
+                <span ref={primaryRef} className={`${styles.anchor} ${styles.primary}`} data-testid="project-primary" data-on-overview={tab === '' || undefined}>
                   <Button variant="primary" onPress={pressPrimary}><span className={styles.primaryLabel}>{d.primary.label}</span></Button>
                 </span>
               ) : null}
@@ -453,6 +447,7 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
               project={{ number: p.number, stage: `${STAGE_LABEL[p.stage]}${p.hold ? ' · On hold' : ''}`, projectType: p.projectType, scope: p.scope?.length ? scopeWords(p.scope) : null, start: p.startDate, end: p.targetEndDate,
                          documents: projectInfoDocuments(d, { from: href(''), fileHref: (id) => href(`files/${id}`) }) }}   /* (simplify S-01) the signed quote, the contract and a direct project's other documents — Key documents' rows, now Project info's */
               onEdit={editRecord}
+              onEditField={(focus) => editDetails(focus)}   /* (the calm UI build 2026-10-27, 2-03 — B2's request) a section's "Add project type, scope…" opens Edit details on that field, as the lead's */
               onAssign={openAssign} onAssigneeMenu={(anchor) => openAssign(anchor)}
               onCopy={async (what, value) => {   // (REG-287) one copy format — the lead page's
                 try { await copyText(what === 'phone' ? phoneDisplay(value) : value); snackbar({ message: 'Copied to clipboard' }) }

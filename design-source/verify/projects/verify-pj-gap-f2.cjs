@@ -68,7 +68,7 @@ const PHONE = { ben: '97731968' }
     /* (simplify S-10 · Q-07, a deliberate change of this rule) money to verify and stuck are To do's groups: the payment to confirm is To collect's
        (owned by the project's Money), the PO and the ask To approve's, the overdue bill To pay's */
     ok(/INV-2026-002 · Ryan says they paid/.test(await text(s.getByTestId('todo-collect'))) && /PO-2026-008/.test(await text(s.getByTestId('todo-approve'))), 'To collect: a client payment to confirm · To approve: a PO waiting for approval')
-    ok(/Michelle asks for 5% of what the client pays/.test(await text(s.getByTestId('todo-approve'))) && /AF-7781/.test(await text(s.getByTestId('todo-pay'))), 'To approve: the open commission ask · To pay: the overdue bill')
+    ok(/Michelle asks for 5% (of what the client pays|commission)/.test( /* (the calm UI build 2026-10-27, a deliberate change) W-260 */ await text(s.getByTestId('todo-approve'))) && /AF-7781/.test(await text(s.getByTestId('todo-pay'))), 'To approve: the open commission ask · To pay: the overdue bill')
     ok(/Leaves [\d.]+% against the quote|over what the client pays/.test(await text(s.getByTestId('todo-approve'))), 'the approver reads what the PO leaves against the quote (F1 P5)')
     await shot(s, 'f2-01-overview')
 
@@ -94,7 +94,7 @@ const PHONE = { ben: '97731968' }
     await allNeeds(s)
     ok((await s.getByTestId('profit-insights').count()) === 0 && /INV-2026-006 · Mid-Project/.test(await text(s.getByTestId('invoice-overdue'))), 'no What the numbers say on the tab — the overdue invoice is its Needs you row')
     ok(/S\$1,090\.00 credited/.test(await text(s.locator(`[data-testid="money-stages"] [data-invoice="${INV('INV-2026-004')}"]`).last())), 'the invoice row says what is credited')
-    ok(/S\$1,090\.00 to refund/.test(await text(s.getByTestId('money-to-refund'))) && (await s.getByTestId('money-record-refund').count()) === 1, 'paid in full before the credit: the to-refund row — with its button now')
+    ok(/Refund S\$1,090\.00 to |S\$1,090\.00 to refund/.test( /* (the calm UI build 2026-10-27, a deliberate change) 1-08 */await text(s.getByTestId('money-to-refund'))) && (await s.getByTestId('money-record-refund').count()) === 1, 'paid in full before the credit: the to-refund row — with its button now')
     await billingView(s, 'Credit notes')
     ok(/CN-2026-002/.test(await text(s.getByTestId('money-credits'))) && /S\$90\.00/.test(await text(s.getByTestId('money-credits'))), 'the Credit notes view: CN-2026-002 with its GST at the invoice’s rate')
     await billingView(s, 'All')
@@ -172,10 +172,11 @@ const PHONE = { ben: '97731968' }
     ok(sql(`select count(*) from notifications where kind='commission_answered' and member_id='michelle' and created_at >= ${startAt}`) === '1', 'Michelle hears the answer on her bell')
     await go(s, '/company/finance/commissions')
     /* (simplify S-12, a deliberate change of this rule) one table grouped by member — Michelle's row (Pay Michelle S$x), then her projects */
-    ok(await s.locator('[data-testid="commission-member"][data-member="michelle"]').count() === 1 && /Pay Michelle/.test(await text(s.locator('[data-member="michelle"]'))), 'Commission: one table grouped by member, with Pay Michelle')
+    ok(await s.locator('[data-testid="commission-member"][data-member="michelle"]').count() === 1 && /Pay (Michelle|S\$)/.test(await text(s.locator('[data-member="michelle"]'))) /* (the calm UI build 2026-10-27, a deliberate change) B5: the member row's verb names the sum */, 'Commission: one table grouped by member, with Pay Michelle')
     ok(/All time/.test(await text(s.getByTestId('tile-commission-earned'))), 'the tiles say their period (S-13)')
     const line = s.locator(`[data-line="${P('P-2026-001')}:michelle"]`).first()
-    await line.getByTestId('commission-pay').click(); await settle(s, 600)
+    await line.getByRole('button', { name: /^More for/ }).click(); await settle(s, 300)   // (the calm UI build 2026-10-27, a deliberate change) B5 T-02: a line's Pay is its ⋮
+    await s.getByTestId('commission-pay').first().click(); await settle(s, 600)
     const owedNow = await dialog(s).getByLabel(/^Amount paid/).inputValue()
     ok(Number(owedNow.replace(/,/g, '')) > 0, `Pay opens with what is owed (${owedNow})`)
     await dialog(s).getByTestId('commission-pay-save').click(); await settle(s, 1600)
@@ -196,12 +197,13 @@ const PHONE = { ben: '97731968' }
     await go(s, '/settings?section=projects')
     ok((await s.getByTestId('credit-settings').count()) === 0, 'Settings › Projects no longer holds Credit notes')
     await go(s, '/company/reports/finance?report=ar')
-    ok(/Owed to you/.test(await text(s.getByTestId('report-head'))) && (await s.getByTestId('report-table-buckets').count()) === 1, 'Owed to you: the aging buckets')
+    // (the calm UI build 2026-10-27, a deliberate change) §2: money a client still owes is "To collect" — the report's name, and its file's
+    ok(/To collect/.test(await text(s.getByTestId('report-head'))) && (await s.getByTestId('report-table-buckets').count()) === 1, 'Owed to you: the aging buckets')
     await s.getByTestId('report-export').click(); await settle(s, 600)
     const dl = s.waitForEvent('download', { timeout: 8000 }).catch(() => null)
     await dialog(s).getByRole('button', { name: /^Export$/ }).click()
     const file = await dl; await settle(s, 800)
-    ok(!!file && /owed-to-you\.csv$/.test(file.suggestedFilename()), 'the house Export downloads the report')
+    ok(!!file && /to-collect\.csv$/.test(file.suggestedFilename()), 'the house Export downloads the report')   // (the calm UI build 2026-10-27, a deliberate change) the file takes the report's name
     await go(s, `/company/reports/finance?report=statement&project=${ben}`)
     ok(/CN-2026-002/.test(await s.locator('body').innerText()) && /INV-2026-006/.test(await s.locator('body').innerText()), 'the client statement carries the invoices and the credit note')
     await go(s, '/company/reports/finance?report=pl&period=this_year')

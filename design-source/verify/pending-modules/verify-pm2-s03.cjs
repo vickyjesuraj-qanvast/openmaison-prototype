@@ -117,11 +117,13 @@ function makePdf(text) {
     ok(!/OpenMaison/i.test(await idPage.locator('[data-testid="contract-paper"]').first().innerText().catch(() => 'x')), 'the client’s paper carries no "Prepared with OpenMaison" — the studio’s letterhead alone')
     /* send it */
     await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 700)
-    const dlg = p.getByRole('dialog').filter({ hasText: 'Send for digital signature' })
-    ok(/opens for 7 days from when you send it/.test(await dlg.innerText()), 'Send says the link opens for 7 days')
-    ok((await dlg.locator('code').innerText()).endsWith(`/sign/${tok}`), 'the link in the dialog is /sign/<token>')
+    const dlg = p.getByRole('dialog').filter({ hasText: 'Send for signature' })   // (the calm UI build 2026-10-27, a deliberate change) W-359
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-20: the link's window waits under "How signing works" (the house Tooltip), and the link rides in the message */
+    await dlg.getByRole('button', { name: 'How signing works' }).hover(); await settle(p, 800)
+    ok(/opens for 7 days from when you send it/.test(await p.locator('[role="tooltip"]').innerText().catch(() => '')), 'Send says the link opens for 7 days')
+    ok((await dlg.locator('textarea').inputValue()).includes(`/sign/${tok}`), 'the link in the dialog is /sign/<token>')
     await shot(p, 'pm2-s03-send-dialog-1440')
-    await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 1500)
+    await dlg.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const exp = Number(sql(`select sign_expires_at - strftime('%s','now') from contracts where id = '${NEW}'`))
     ok(sql(`select status from contracts where id = '${NEW}'`) === 'Sent to Client' && exp > 6.9 * 86400 && exp <= 7 * 86400 + 60, `sent: the window is 7 days from now (${Math.round(exp / 3600)} h)`)
     ok(/The link is open until/.test(await p.locator('[data-testid="contract-link-life"]').innerText().catch(() => '')), 'the editor’s banner says "The link is open until …"')
@@ -145,7 +147,7 @@ function makePdf(text) {
     ok(/expired/.test(await p.locator('[data-testid="contract-link-life"]').innerText().catch(() => '')) && await p.locator('[data-testid="contract-resend"]').count() === 1, 'the editor’s banner says it expired and offers Send again')
     /* a copy is a send: copying an expired link opens it again */
     await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE })
-    await p.getByRole('button', { name: 'Copy signing link' }).click(); await settle(p, 1500)
+    await p.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await settle(p, 300); await p.getByRole('menuitem', { name: 'Copy signing link' }).click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) 4-18: the header's link icon is the ⋮'s row
     ok(/Signing link copied — it opens for 7 days from now/.test(await snackText(p)) && Number(sql(`select sign_expires_at - strftime('%s','now') from contracts where id = '${NEW}'`)) > 6.9 * 86400, 'copying an expired link opens it again for 7 days')
     sql(`update contracts set sign_expires_at = strftime('%s','now') - 3600 where id = '${NEW}'`)
     await go(p, `/leads/${SERENA}/contracts`)
@@ -159,7 +161,7 @@ function makePdf(text) {
     await menuItem(p, 'Send the link again').click(); await settle(p, 600)
     const rem = p.getByRole('dialog').filter({ hasText: 'Send the link again' })
     ok(/opens for 7 days from now/.test(await rem.innerText()), 'the reminder says it opens the link for 7 days from now')
-    await rem.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 1500)
+    await rem.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     ok(Number(sql(`select sign_expires_at - strftime('%s','now') from contracts where id = '${NEW}'`)) > 6.9 * 86400, 'the reminder renewed the window')
     ok(sql(`select count(*) from lead_events where lead_id = '${SERENA}' and kind = 'parity_s03_contract_reminded' and at >= ${T0}`) === '1', 'the reminder leaves a trail line')
     await go(p, `/leads/${SERENA}/activity`)
@@ -178,7 +180,7 @@ function makePdf(text) {
     await snack(p).getByRole('button', { name: 'Undo' }).click().catch(() => {}); await settle(p, 1500)
     ok(sql(`select status from contracts where id = '${NEW}'`) === 'Sent to Client' && tokenOf(NEW) === tok, 'Undo puts the same link back')
     await go(p, `/contracts/${NEW}`)
-    await p.getByRole('button', { name: 'Sent to Client', exact: true }).click(); await settle(p, 400)
+    await p.getByRole('button', { name: 'Waiting for signature', exact: true }).click(); await settle(p, 400)   // (the calm UI build 2026-10-27, a deliberate change) W-363: the pill's words
     await p.getByRole('menuitemradio', { name: /Draft/ }).click(); await settle(p, 1500)
     ok(/The signing link is stopped/.test(await snackText(p)) && sql(`select status from contracts where id = '${NEW}'`) === 'Draft', 'the status pill’s Sent → Draft is the same Stop, said with Undo')
 
@@ -187,7 +189,7 @@ function makePdf(text) {
     await go(p, `/leads/${SERENA}/contracts`)
     await p.getByRole('button', { name: 'New Contract' }).click(); await settle(p, 300)
     ok(await p.getByRole('menuitem', { name: 'Create with AI' }).count() === 0, 'New Contract has no "Create with AI"')
-    await menuItem(p, 'Import from File').click(); await settle(p, 600)
+    await menuItem(p, 'Import a file').click();   /* (the calm UI build 2026-10-27, a deliberate change) W-199 */ await settle(p, 600)
     await p.locator('[role="dialog"] input[type="file"]').first().setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') }); await settle(p, 2200)
     ok(/Choose a PDF/.test(await p.getByRole('dialog').innerText()), 'a file that isn’t a PDF is refused under the box')
     await pick(p, pdfA, 'Serena signed agreement.pdf')
@@ -205,7 +207,7 @@ function makePdf(text) {
     sql(`update contracts set from_quote_id = null where id = '${IMPORTED}'`)
     await p.reload({ waitUntil: 'networkidle' }); await settle(p)
     await p.getByRole('button', { name: 'Send', exact: true }).click(); await settle(p, 700)
-    await p.getByRole('dialog').getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 1500)
+    await p.getByRole('dialog').getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     await go(idPage, `/sign/${itok}`)
     ok(await idPage.locator('[data-testid="pdf-frame"]').getAttribute('data') === `/sign/${itok}/file`, 'the client reads the PDF through the link’s own address')
     const fileOnLink = await ctx.request.get(`${BASE}/sign/${itok}/file`)
@@ -221,8 +223,9 @@ function makePdf(text) {
     ok(!!signedFile && sql(`select signed_copy from contracts where id = '${NEW}'`) === 'Scanned signed copy.pdf', 'Mark as signed keeps the signed copy itself')
     ok(await p.locator('[data-testid="contract-open-signed-copy"]').count() === 1, 'the signed banner offers the signed copy')
     await go(p, `/leads/${SERENA}/contracts`)
-    const cell = p.locator('[data-testid="contract-signed-copy-cell"]', { hasText: 'Scanned signed copy.pdf' })
-    await cell.click(); await p.waitForURL(new RegExp(`/files/${signedFile}`), { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-26 · W-375: the Signed copy column is off by default — the row's ⋮ › Signed copy opens the kept file */
+    await p.locator(`[role="row"][data-kb-id="${NEW}"]`).getByRole('button', { name: /^More actions for/ }).click({ force: true }); await settle(p, 300)
+    await p.getByRole('menuitem', { name: /^Signed copy/ }).click(); await p.waitForURL(new RegExp(`/files/${signedFile}`), { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
     ok(p.url().includes(`/files/${signedFile}`), 'the Signed Copy cell opens the kept file')
     /* Files refuses to trash it */
     await p.getByRole('button', { name: 'More options' }).first().click().catch(() => {}); await settle(p, 300)
@@ -272,7 +275,7 @@ function makePdf(text) {
     await bd.locator('[data-testid="bundle-standard-row"]').filter({ hasText: 'Terms and Conditions' }).locator('input').first().check({ force: true }).catch(async () => { await bd.locator('[data-testid="bundle-standard-row"]').filter({ hasText: 'Terms and Conditions' }).click() })
     await settle(p, 300)
     await shot(p, 'pm2-s03-send-together-1440')
-    await bd.getByRole('button', { name: 'Send via WhatsApp' }).click(); await settle(p, 2500)
+    await bd.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click(); await settle(p, 2500)   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const made = sql(`select id || '|' || quote(file_id) || '|' || status || '|' || quote(bundle_id) from contracts where lead_id = '${OLIVIA}' and template_id = '${STD}' and deleted_at is null`)
     const [STDC, stdFile, stdStatus, stdBundle] = made.split('|')
     BUNDLE = (stdBundle ?? '').replace(/'/g, '')
@@ -347,7 +350,7 @@ function makePdf(text) {
     await head.click(); await settle(p, 400)
     ok(await p.locator('[role="columnheader"][data-col="created"]').getAttribute('aria-sort') === null, '…then off')
     await listKebab(p)
-    await menuItem(p, 'Contracts Settings').click(); await p.waitForURL(/\/settings\?section=quotes/, { timeout: 15000 }); await settle(p, 1500)
+    await menuItem(p, 'Contract settings').click();   /* (the calm UI build 2026-10-27, a deliberate change) T-13 */ await p.waitForURL(/\/settings\?section=quotes/, { timeout: 15000 }); await settle(p, 1500)
     ok(p.url().includes('#contracts') && await p.locator('[data-testid="settings-contracts"]').isVisible(), 'Contracts Settings opens Settings › Quotes & pricing › Contracts')
     await shot(p, 'pm2-s03-settings-contracts-1440')
     await p.locator('[data-testid="contract-link-days"] [role="radio"]', { hasText: '14 days' }).click(); await settle(p, 1200)

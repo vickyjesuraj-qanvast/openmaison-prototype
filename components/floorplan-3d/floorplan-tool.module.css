@@ -4,7 +4,13 @@
 .content { composes: content from '../xray/xray-workspace.module.css'; }
 .content:focus { outline: none; }   /* it takes the keyboard's place when a stage changes; the stage's own controls show focus */
 .card { composes: card from '../xray/xray-workspace.module.css'; }
-.eyebrow { composes: eyebrow from '../xray/xray-workspace.module.css'; }
+/* (the calm UI build 2026-10-27, 6-22 — T-06) the stages' heads in the house card head, bold sentence case — were X-Ray's capitals caption */
+.eyebrow { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* (the calm UI build, 6-22) Beta and the prototype's info glyph, side by side in the header */
+.headActions { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+/* (the calm UI build, 6-08) We found, as one sentence with its Not quite right? */
+.found { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-2); }
+.foundText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr); gap: var(--om-spacing-6); align-items: start; }
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
 .buttons { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); }
@@ -14,6 +20,8 @@
 .well { composes: well from '../planner/photo/photo-dialog.module.css'; }
 .picture { composes: picture from '../planner/photo/photo-dialog.module.css'; }
 .render { display: block; max-width: 100%; max-height: 600px; object-fit: contain; border-radius: var(--om-radius-1); }
+/* (2026-10-27) the plan while it renders — 1.0's faded plan under the progress card, so the studio keeps it in view */
+.faded { display: block; max-width: 100%; max-height: 160px; margin: var(--om-spacing-4) auto 0; object-fit: contain; opacity: 0.5; border-radius: var(--om-radius-1); }
 .controls { composes: controls from '../planner/photo/photo-dialog.module.css'; }
 .actions { composes: actions from '../planner/photo/photo-dialog.module.css'; }
 .line { composes: line from '../planner/photo/photo-dialog.module.css'; }

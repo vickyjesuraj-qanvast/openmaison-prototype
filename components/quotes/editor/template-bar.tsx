@@ -4,41 +4,54 @@ import { useState } from 'react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
-import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { TemplateThumb } from '@/components/templates/render/document'
-import { presetLabel } from '@/lib/quotes/payments'
-import { startsWith, type PickerTemplate } from '@/lib/templates/picker'
+import type { PickerTemplate } from '@/lib/templates/picker'
 import type { QuoteTemplateState } from '@/lib/templates/queries'
 import styles from './template-bar.module.css'
 import { ProTag } from '@/components/credits/pro-tag'
 
 /**
- * (REG-489 → REG-496) The quote's template, inside General Info, as a card: the template's first page, its name and pinned
- * version, what it started the quote with, and three actions — Change (the picker), Edit template (the template editor in
- * this tab, with this quote as its origin) and Save as new template. No template = the studio default prints.
+ * (REG-489 → REG-496) The quote's template, inside General Info, as a card: the template's first page and the one line it prints with.
+ * (The calm UI build 2026-10-27, the UI audit's 4-10 · 4-02 · W-131 · W-167 · W-352) One line — "Prints with Default Quote PDF (v1)" — and one
+ * text button, Change; Edit template and Save as template are the header ⋮'s rows (and the Quote screen's ⋮ on the move, B-24). The shorthand of
+ * the template's defaults (By trade › room · 10/30/30/30 · Valid 30 days · GST · signs online · Starts with …) left the card: those settings were
+ * applied when the quote was made and each shows where it lives (Payment schedule, Valid until, Signature, the sections); they stay on the
+ * template's own Quote settings tab. When the template files the lines by trade (or room / print group), the card says so once — the note that
+ * stood above the Items table. A signed quote's card keeps no actions (`signed`). No template = the studio default prints.
  */
-export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs, locked = false }: { state: QuoteTemplateState; busy: boolean; onChange: () => void; onEdit: () => void; onSaveAs: () => void
+export function TemplateCard({ state, busy, onChange, locked = false, printsBy = null, signed = false }: { state: QuoteTemplateState; busy: boolean; onChange: () => void
+  /** (kept for the callers; the card no longer draws these two — the header ⋮ does) */
+  onEdit?: () => void; onSaveAs?: () => void
   /** (pending modules S19) the template editor is Pro: on Free the card wears the Pro tag and its presses open the lock card */
-  locked?: boolean }) {
+  locked?: boolean
+  /** (4-02) how the template files the lines when it is not by the quote's own sections — said once, here */
+  printsBy?: { view: 'category' | 'room' | 'section'; sections: boolean } | null
+  /** (4-10) a signed quote's card reads only */
+  signed?: boolean }) {
   const cur = state.current
   const pick: PickerTemplate | null = cur ? state.picker.templates.find((t) => t.id === cur.id) ?? null : null
-  const words = cur ? startsWith({ id: cur.id, name: cur.name, version: cur.pinned, isDefault: pick?.isDefault ?? false, paper: pick?.paper ?? 'A4', lastUsedAt: null, design: cur.design, defaults: cur.defaults, folderId: pick?.folderId ?? null }, (k) => presetLabel(k ?? 'default')) : null
+  const by = printsBy ? (printsBy.view === 'category' ? 'trade' : printsBy.view === 'room' ? 'room' : 'print group') : null
   return (
     <div className={styles.card} data-testid="template-card">
       <span className={styles.cardThumb}>
         {cur ? <TemplateThumb design={cur.design} brand={state.picker.brand} data={state.picker.sample} width={72} /> : <span className={styles.cardNone}><Icon name="style" size={24} weight={300} /></span>}
       </span>
       <div className={styles.cardText}>
-        <span className={styles.cardEyebrow}>Template{locked ? <> <ProTag /></> : null}</span>
-        <span className={styles.cardName}>{cur ? cur.name : 'Studio default'}{cur ? <MetaChip>{cur.deleted ? `Deleted · v${cur.pinned} still prints` : `v${cur.pinned}${cur.latest > cur.pinned ? ` · v${cur.latest} published` : ''}`}</MetaChip> : null}{pick?.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
-        <span className={styles.cardMeta}>{words ? `${words.grouping} · ${words.payments} · ${words.validity}` : 'Prints through the studio’s default template and started with its settings. Pick one to start from its sections.'}</span>   {/* (REG-580) */}
-        {words && words.sections !== 'No starter sections' ? <span className={styles.cardMeta}>Starts with {words.sections}</span> : null}
-        <span className={styles.actions}>
-          <Button appearance="text" onPress={onChange} isDisabled={busy}>{cur ? 'Change' : 'Choose a template'}</Button>
-          {cur && !cur.deleted ? <Button appearance="text" iconEnd={<Icon name="edit" size={18} />} onPress={onEdit} isDisabled={busy} className={styles.deskAction}>Edit template</Button> : null}
-          <Button appearance="text" onPress={onSaveAs} isDisabled={busy} className={styles.deskAction}>Save as new template</Button>   {/* (B-24) ≤767 these two live in the Quote screen's ⋮ */}
+        <span className={styles.cardName}>
+          {cur ? `Prints with ${cur.name} (v${cur.pinned})` : 'Prints with the studio default'}
+          {locked ? <ProTag /> : null}
         </span>
+        {cur && (cur.deleted || cur.latest > cur.pinned || pick?.isDefault) ? (
+          <span className={styles.cardMeta}>{[cur.deleted ? 'The template was deleted — this version still prints' : null, !cur.deleted && cur.latest > cur.pinned ? `v${cur.latest} is published` : null, pick?.isDefault ? 'The studio’s default' : null].filter(Boolean).join(' · ')}</span>
+        ) : null}
+        {by && printsBy?.sections ? <span className={styles.cardMeta} data-testid="print-note">Prints by {by} — your sections are for you.</span> : null}
+        {!cur ? <span className={styles.cardMeta}>Pick one to start from its sections.</span> : null}
+        {signed ? null : (
+          <span className={styles.actions}>
+            <Button appearance="text" onPress={onChange} isDisabled={busy}>{cur ? 'Change' : 'Choose a template'}</Button>
+          </span>
+        )}
       </div>
     </div>
   )
@@ -58,7 +71,7 @@ export function TemplateUpdateBanner({ current, busy, onUpdate, onKeep }: { curr
   )
 }
 
-/** ⋯ › Save as Template (REG-489): a Draft template from this quote's settings, opened in the editor on request. */
+/** ⋯ › Save as template (REG-489): a Draft template from this quote's settings, opened in the editor on request. */
 export function SaveAsTemplateDialog({ open, defaultName, busy, onClose, onSave }: { open: boolean; defaultName: string; busy: boolean; onClose: () => void; onSave: (name: string, opts: { includeText: boolean; includeSections: boolean }) => void }) {
   const [name, setName] = useState(defaultName)
   const [includeText, setIncludeText] = useState(true)   /* (REG-538) the quote's Terms and Notes ride along as text templates */

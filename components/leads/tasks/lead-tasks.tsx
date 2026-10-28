@@ -80,7 +80,8 @@ const TODO_TEST: Record<Todo, (t: TaskRow, now: number) => boolean> = {
   upcoming: (t, now) => !t.done && !!t.dueAt && !isOverdue(t.dueAt, now) && !isDueToday(t.dueAt, now),   // a day after today; undated tasks are no one's upcoming
   unassigned: (t) => !t.done && isUnassigned(t),   // (gaps build, package C — M-03) an outside person on it is someone
 }
-const TODO_LABEL: Record<Todo, string> = { overdue: 'Overdue', today: 'Due today', upcoming: 'Upcoming', unassigned: 'Unassigned' }
+/* (the calm UI build 2026-10-27, 1-06 · W-176) "Today" — the chip sits beside Overdue and Upcoming, both days; "Due" said twice. */
+const TODO_LABEL: Record<Todo, string> = { overdue: 'Overdue', today: 'Today', upcoming: 'Upcoming', unassigned: 'Unassigned' }
 const TODO_ICON: Record<Todo, string> = { overdue: 'schedule', today: 'today', upcoming: 'event', unassigned: 'person_add' }
 /** (S46C · H4) The days a link may open the page on (`?due=`) — the rail's overdue badge's, and the other two of 1.0's Due filter. */
 const DUE_LANDINGS: readonly Todo[] = ['overdue', 'today', 'upcoming']
@@ -210,7 +211,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
      keeps the list's own order */
   const byProject = studio && (grouped || source === 'projects')
   const groupOf = (t: TaskRow) => (t.lead?.project ? { key: `p:${t.lead.project.id}`, label: `${t.lead.project.number} · ${t.lead.project.name}`, href: `/projects/${t.lead.project.id}/tasks` }
-    : t.lead ? { key: 'leads', label: 'Leads', href: null } : { key: 'studio', label: 'Studio tasks', href: null })
+    : t.lead ? { key: 'leads', label: 'Leads', href: null } : { key: 'studio', label: 'General tasks', href: null })   /* (the calm UI build 2026-10-27, 1-16) the scope's word */
   const rank = (t: TaskRow) => (t.lead?.project ? `0${t.lead.project.number}` : t.lead ? '1' : '2')
   const visible = useMemo(() => {
     const ordered = byProject ? [...matched].sort((a, b) => rank(a).localeCompare(rank(b), undefined, { numeric: true })) : matched
@@ -371,7 +372,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
   /* (UX audit 2026-09-30, T11) Assign and Mark as completed lead the bar — the listing's bulk bar gained Assign (REG-610) */
   const bulkFirst = [
     { label: 'Assign', onClick: (e?: React.MouseEvent<HTMLButtonElement>) => { const el = e?.currentTarget; if (el) setAssign((a) => (a?.taskId === BULK ? null : { taskId: BULK, ...bulkPos(el) })) } },
-    { label: 'Mark as completed', onClick: () => { const ids = [...selected]; setSelected(new Set()); void setDone(ids, true) } },
+    { label: 'Mark as done', onClick: () => { const ids = [...selected]; setSelected(new Set()); void setDone(ids, true) } },   /* (the calm UI build 2026-10-27, W-044) */
   ]
   /* (Leads on the move, L4 — P-10 · C-04) A phone's bar is three: Mark done · Assign · More… (the rest in a sheet — Save as Template · Duplicate ·
      Delete), so nothing runs off the screen; the desk and a tablet keep the row of five. */
@@ -383,9 +384,9 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
     { label: 'More…', onClick: (e?: React.MouseEvent<HTMLButtonElement>) => { bulkMoreAnchor.current = e?.currentTarget ?? null; setBulkMore(true) } },
   ]
   const bulkActions = phone ? bulkPhone : allTasks
-    ? [...bulkFirst, { label: 'Delete All', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: allTasks }) }]
+    ? [...bulkFirst, { label: 'Delete all', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: allTasks }) }]   /* (the calm UI build 2026-10-27, T-13 · 1-42) also the rail page's way to delete every task */
     : [...bulkFirst,
-        { label: 'Save as Template', onClick: () => setSaveTemplateFor(selectedIds) },
+        { label: 'Save as a template', onClick: () => setSaveTemplateFor(selectedIds) },
         // The noun follows the count, as the attach snackbar below already does — one ticked row read "1 tasks duplicated".
         { label: 'Duplicate', onClick: () => { setSelected(new Set()); void run('duplicate the tasks', () => duplicateTasks(selectedIds), `${selectedIds.length === 1 ? '1 task' : `${selectedIds.length} tasks`} duplicated`) } },
         { label: 'Delete', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: false }) },
@@ -400,7 +401,8 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
   return (
     <>
     {/* (REG-735) with no task yet the header's Add Task steps back too — the empty card carries both ways in */}
-    {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} group={studio ? { on: grouped, onToggle: () => setGrouped(!grouped) } : undefined} /> }) : null}
+    {/* (the calm UI build 2026-10-27, 1-42) the rail page's ⋮ drops Delete all — select all, then the bulk bar's Delete all */}
+    {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} deleteAll={!studio} group={studio ? { on: grouped, onToggle: () => setGrouped(!grouped) } : undefined} /> }) : null}
     <div className={styles.tab} data-open={openId ? '' : undefined} data-studio={studio || undefined}>
       {notice}
       <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
@@ -418,7 +420,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
       />
       {tasks.length === 0 && !adding ? (
         /* No tasks yet → the sibling tabs' empty card (T9); the inline add row takes over as soon as one starts. */
-        <TasksEmpty onCreate={startAdd} onTemplate={() => setChooseTemplate(true)} />
+        <TasksEmpty onCreate={startAdd} onTemplate={() => setChooseTemplate(true)} quiet={!studio} />
       ) : nothingMatches && !adding ? (
         <TabSearchEmpty noun="tasks" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_TASK_FILTERS) }} />
       ) : (
@@ -469,9 +471,9 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
       <DetailBulkBar count={selected.size} actions={bulkActions} onClear={() => setSelected(new Set())} />
       <PortalMenu open={bulkMore && selected.size > 0} anchor={bulkMoreAnchor} onClose={() => setBulkMore(false)} role="menu" width={MENU_WIDTH.standard} sheetTitle={`${selected.size} selected`}>
         <div data-testid="tasks-bulk-more">
-          {allTasks ? null : <DropdownItem onSelect={() => { setBulkMore(false); setSaveTemplateFor(selectedIds) }}>Save as Template</DropdownItem>}
+          {allTasks ? null : <DropdownItem onSelect={() => { setBulkMore(false); setSaveTemplateFor(selectedIds) }}>Save as a template</DropdownItem>}
           {allTasks ? null : <DropdownItem onSelect={() => { setBulkMore(false); setSelected(new Set()); void run('duplicate the tasks', () => duplicateTasks(selectedIds), `${selectedIds.length === 1 ? '1 task' : `${selectedIds.length} tasks`} duplicated`) }}>Duplicate</DropdownItem>}
-          <DropdownItem tone="danger" onSelect={() => { setBulkMore(false); setDeleting({ ids: selectedIds, all: allTasks }) }}>{allTasks ? 'Delete All' : 'Delete'}</DropdownItem>
+          <DropdownItem tone="danger" onSelect={() => { setBulkMore(false); setDeleting({ ids: selectedIds, all: allTasks }) }}>{allTasks ? 'Delete all' : 'Delete'}</DropdownItem>
         </div>
       </PortalMenu>
 
@@ -505,7 +507,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
         />
       ) : null}
       <ConfirmDialog
-        open={!!deletingComment} title="Delete Comment" confirmLabel="Yes" cancelLabel="No"
+        open={!!deletingComment} title="Delete comment" confirmLabel="Yes" cancelLabel="No"
         message="Are you sure you want to delete this comment? This action cannot be undone."
         onCancel={() => setDeletingComment(null)}
         onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteComment(id), 'Comment deleted') }}
@@ -524,7 +526,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
             const a = assign; const t = assignTask; setAssign(null)
             if (a?.taskId === ADD) { setAddMembers(memberIds); return }   // (T4) the new task's members — nothing is written until it is saved
             if (a?.taskId === BULK) { bulkAssign(memberIds); return }   // (T11)
-            if (t) void run('update the members', () => setTaskAssignees(t.id, memberIds), 'Members updated')
+            if (t) void run('update the members', () => setTaskAssignees(t.id, memberIds), 'Members saved')
           }}
           position={assign}
         />
@@ -566,7 +568,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
         onCreate={(name) => { void run('add the tag', () => createTag(name), undefined, REFRESH) }}
       />
       <ConfirmDialog
-        open={!!deletingTag} title="Delete Tag" confirmLabel="Yes" cancelLabel="No"
+        open={!!deletingTag} title="Delete tag" confirmLabel="Yes" cancelLabel="No"
         message="Are you sure you want to delete this tag? It will be removed from every task. This action cannot be undone."
         onCancel={() => setDeletingTag(null)}
         onConfirm={() => { const id = deletingTag; setDeletingTag(null); if (id) void run('delete the tag', () => deleteTag(id), 'Tag deleted', REFRESH) }}
@@ -612,7 +614,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
                      onClose={() => setOutsideFor(null)} onSave={(v) => (outsideTask ? saveOutside(outsideTask, v) : Promise.resolve(null))}
                      onRemove={outsideTask && outsideOf(outsideTask) ? () => { const t = outsideTask; void saveOutside(t, null) } : undefined} />
       <ExportDialog
-        open={exportOpen} now={now} title="Export Tasks"
+        open={exportOpen} now={now} title="Export tasks"
         download={(format) => downloadTasks(tasks, format, new Date(now))}
         onClose={() => setExportOpen(false)}
         onDone={(name, format) => snackbar({ message: `Exported ${tasks.length} tasks as ${format} · ${name}` })}

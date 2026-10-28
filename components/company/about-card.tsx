@@ -11,7 +11,6 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { RichEditor } from '@/components/quotes/editor/text/rich-editor'
 import { HelpLink } from './help-link'
-import { LeaveGuard } from './leave-guard'
 import { addAboutPhoto, makeAboutCover, removeAboutPhoto, restoreAboutPhoto, saveStudioAbout, setAboutOrder } from '@/app/company/about-actions'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import { newId } from '@/lib/uid'
@@ -27,7 +26,10 @@ export type AboutSetup = { about: StudioAbout; photos: { id: string; src: string
  * cover). The facts and socials above are read from here as they are — entered once (1.0 asked for them twice, M-156). Save lands it with
  * Undo; a photo is kept the moment it is picked and removed with Undo. Owners and Admins change it.
  */
-export function AboutCard({ data, canRun }: { data: AboutSetup; canRun: boolean }) {
+/** (the calm UI build 2026-10-27 — 5-18 · 5-36) The About page's form, held by Profile so its one Discard · Save sits in the page header on the
+    About page tab (the card's own pair went) and its leave guard stays up whichever tab is open. */
+export type AboutForm = ReturnType<typeof useAboutForm>
+export function useAboutForm(data: AboutSetup, canRun: boolean) {
   const router = useRouter()
   const snackbar = useSnackbar()
   const [saved, setSaved] = useState<StudioAbout>(data.about)
@@ -36,7 +38,6 @@ export function AboutCard({ data, canRun }: { data: AboutSetup; canRun: boolean 
   const [awards, setAwards] = useState(data.about.awards.map((a) => ({ ...a, yearText: a.year ? String(a.year) : '' })))
   const [busy, setBusy] = useState(false)
   const [tried, setTried] = useState(false)
-  const input = useRef<HTMLInputElement>(null)
   const yearError = yearProblem(year, data.now)
   const now = (): StudioAbout => ({ year: year.trim() ? Number(year) : null, story, awards: awards.filter((a) => a.name.trim()).map((a) => ({ id: a.id, name: a.name.trim(), year: /^\d{4}$/.test(a.yearText) ? Number(a.yearText) : null })) })
   const dirty = canRun && JSON.stringify(now()) !== JSON.stringify(saved)
@@ -53,6 +54,14 @@ export function AboutCard({ data, canRun }: { data: AboutSetup; canRun: boolean 
       router.refresh(); return true
     } catch { snackbar({ message: 'Couldn’t save the About page — please try again' }); return false } finally { setBusy(false) }
   }
+  return { year, setYear, story, setStory, awards, setAwards, busy, tried, yearError, dirty, reset, save }
+}
+
+export function AboutCard({ data, canRun, form }: { data: AboutSetup; canRun: boolean; form: AboutForm }) {
+  const router = useRouter()
+  const snackbar = useSnackbar()
+  const input = useRef<HTMLInputElement>(null)
+  const { year, setYear, story, setStory, awards, setAwards, tried, yearError } = form
   const addPhotos = async (files: FileList | null) => {
     const list = Array.from(files ?? []).filter((f) => f.type.startsWith('image/'))
     const room = ABOUT_PHOTOS_MAX - data.photos.length
@@ -80,10 +89,10 @@ export function AboutCard({ data, canRun }: { data: AboutSetup; canRun: boolean 
   }
   return (
     <section id="about" className={card.card} aria-labelledby="profile-about" data-testid="profile-about">
-      <LeaveGuard dirty={dirty} what="the About page" onSave={save} onDiscard={reset} />
+      {/* (the calm UI build 2026-10-27 — T-05) one line; the two doors stay in it */}
       <div className={card.cardHead}>
         <h2 id="profile-about" className={card.cardTitle}>About the studio, for clients</h2>
-        <p className={card.cardHelp}>What your clients read on the About page of their portal, beside the details above and your team (each member is shown from <HelpLink href="/company/members">Company › Members</HelpLink>). Switch the page on or off under <HelpLink href="/company/portal">Company › Client portal</HelpLink>.</p>
+        <p className={card.cardHelp}>What clients read on their portal’s About page, beside your <HelpLink href="/company/members">members</HelpLink>. It is switched on under <HelpLink href="/company/portal">Client portal</HelpLink>.</p>
       </div>
       <TextField label="The year the studio began" value={year} onChange={(v) => setYear(v.slice(0, 4))} numeric="digits" maxLength={4} className={styles.year} disabled={!canRun} error={tried ? yearError ?? undefined : undefined} helper="Shown as “Est. 2012”" />
       <RichEditor label="Your story" placeholder="How the studio began, how you work, what you care about…" value={story} onChange={setStory} minHeight={200} framed />
@@ -119,12 +128,6 @@ export function AboutCard({ data, canRun }: { data: AboutSetup; canRun: boolean 
           </>
         ) : null}
       </div>
-      {canRun ? (
-        <div className={styles.actions}>
-          <Button variant="secondary" appearance="outlined" onPress={reset} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="about-save">{busy ? 'Saving…' : 'Save'}</Button>
-        </div>
-      ) : null}
     </section>
   )
 }

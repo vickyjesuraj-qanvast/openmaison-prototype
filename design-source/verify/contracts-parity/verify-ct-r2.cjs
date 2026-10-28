@@ -86,7 +86,7 @@ const waitSaved = async (page) => { await page.waitForTimeout(1600) }
   await step('the quote names its contract, and prints its signer', async () => {
     await page.goto(`${BASE}/quotes/${OM4}`); await page.getByTestId('quote-editor').waitFor(); await ready(page)
     const chip = page.getByTestId('quote-contract-chip')
-    ok('the header carries “Contract · Signed”', /Contract · Signed/i.test(await chip.innerText()))
+    ok('the header carries “Contract · Signed”', /Contract: Signed/i.test(await chip.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) 4-11: the contract as one sentence-case link
     await shot('05-quote-chip')
     sql(`update contracts set signed_by = 'Ryan A. D’Souza' where id='${RYAN}'`)
     const tpl = sql(`select id || '|' || version from quote_templates where name='4-Room BTO'`).split('|')   // a design that draws the client's signature
@@ -114,7 +114,7 @@ const waitSaved = async (page) => { await page.waitForTimeout(1600) }
     ok('the landing’s contract starts from it', sql(`select template_id from contracts where id='${id}'`) === vo)
     ok('and names the lead’s quote', sql(`select from_quote_id from contracts where id='${id}'`) === OM1)
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
-    await page.getByRole('button', { name: /New Contract/ }).click(); await page.getByRole('menuitem', { name: /From Template/ }).click()
+    await page.getByRole('button', { name: /New contract/i }).click(); await page.getByRole('menuitem', { name: /From a template/i }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-562 · W-199
     const picked = page.getByTestId('contract-template-option').filter({ hasText: 'Variation Order' })
     await picked.waitFor()
     ok('the picker opens with the default picked', (await picked.getAttribute('aria-checked')) === 'true' && /Default/i.test(await picked.innerText()))

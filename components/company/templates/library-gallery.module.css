@@ -173,6 +173,11 @@
 .gBox { display: inline-flex; flex-shrink: 0; width: 36px; height: 36px; }
 .gIcon { width: 36px; }
 .gPill { width: 114px; }
+/* (the calm UI build 2026-10-27 — the closing regression) a pill bone at the pill's own size (PillBone): the hidden pill sets the box, the bone covers it;
+   on a phone it may shrink as the page's pill does (scope-pill.module.css: min-width 0, the label ellipsized at 320) */
+.gPillBox { position: relative; display: inline-flex; flex-shrink: 0; }
+.gPillBone.gPillBone { position: absolute; inset: 0; }
+@media (max-width: 767px) { .gPillBox { min-width: 0; max-width: 100%; } }
 .gNew { width: var(--g-new, 86px); }   /* (UX audit S12) a plain New button names its thing: --g-new */
 .gSearch { width: 280px; }
 .gView { width: 72px; }

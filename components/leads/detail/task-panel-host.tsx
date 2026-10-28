@@ -130,7 +130,7 @@ export function OverviewTaskPanel({ leadId, data, openId, onClose, onOpenInTasks
           value={task?.assignees.map((m) => m.id) ?? []}
           anchor={assign?.el}
           onClose={() => setAssign(null)}
-          onApply={(memberIds) => { const t = task; setAssign(null); if (t) void run('update the members', () => setTaskAssignees(t.id, memberIds), 'Members updated') }}
+          onApply={(memberIds) => { const t = task; setAssign(null); if (t) void run('update the members', () => setTaskAssignees(t.id, memberIds), 'Members saved') }}
           position={assign}
         />
       </div>

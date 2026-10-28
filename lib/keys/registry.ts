@@ -40,6 +40,9 @@ export const AREAS: { id: AreaId; title: string; where?: string }[] = [
 export const KEYS: KeyDef[] = [
   /* everywhere */
   { id: 'search', keys: 'mod+k', label: 'Search the studio', area: 'everywhere' },
+  /* (the Dashboard redesigned 2026-10-26 — his Q-09, lane D4) the docked field on the Dashboard, the sheet's Ask box on every other page
+     (components/maison-ai/dock/maison-dock.tsx · components/shell/maison-fab.tsx answer it) — Linear's ⌘J; ⌘K stays search */
+  { id: 'maison', keys: 'mod+j', label: 'Ask Maison AI', area: 'everywhere' },
   { id: 'shortcuts', keys: '?|mod+/', label: 'Keyboard shortcuts', area: 'everywhere' },
   { id: 'find', keys: '/', label: 'Find on this page', area: 'everywhere' },
   { id: 'go.dashboard', keys: 'g d', label: 'Go to Dashboard', area: 'everywhere' },   // (pending modules S22 — 1.0's G then D) the rail's first item
@@ -53,7 +56,7 @@ export const KEYS: KeyDef[] = [
   { id: 'go.pricebook', keys: 'g b', label: 'Go to Price book', area: 'everywhere' },   // (REG-923) …and the Price book moves to G B
   { id: 'go.finance', keys: 'g f', label: 'Go to Finance', area: 'everywhere' },   // (gaps build F1) money out's lists
   { id: 'go.messages', keys: 'g m', label: 'Go to Messages', area: 'everywhere' },
-  { id: 'go.tickets', keys: 'g e', label: 'Go to Tickets', area: 'everywhere' },   // (S46 — REG-2524) the rail's Tickets — 1.0's G then E (Escalations)   // (pending modules S16 — 1.0's G then I, its Inbox) the rail's Messages, the one rail place that had no key
+  { id: 'go.tickets', keys: 'g e', label: 'Go to Issues', area: 'everywhere' },   // (the calm UI build 2026-10-27, 1-10) the rail's word; the id and the key stay   // (S46 — REG-2524) the rail's Tickets — 1.0's G then E (Escalations)   // (pending modules S16 — 1.0's G then I, its Inbox) the rail's Messages, the one rail place that had no key
   { id: 'go.notifications', keys: 'g n', label: 'Open notifications', area: 'everywhere' },
   { id: 'go.settings', keys: 'g s', label: 'Go to Settings', area: 'everywhere' },
   { id: 'undo', keys: 'mod+z', label: 'Undo, while a message offers it', area: 'everywhere' },
@@ -62,6 +65,7 @@ export const KEYS: KeyDef[] = [
   { id: 'list.next', keys: 'j|down', label: 'Next {noun}', area: 'list' },
   { id: 'list.prev', keys: 'k|up', label: 'Previous {noun}', area: 'list' },
   { id: 'list.open', keys: 'enter', label: 'Open the {noun}', area: 'list' },
+  { id: 'list.review', keys: 'r', label: 'Review the {noun}', area: 'list' },   // (the Dashboard redesigned, 2026-10-26 — P-05) Needs you's Review pane
   { id: 'list.select', keys: 'x', label: 'Select the {noun}', area: 'list' },
   { id: 'list.all', keys: 'mod+a', label: 'Select every {noun} shown', area: 'list' },
   { id: 'create', keys: 'c', label: 'Create what the page lists', area: 'list' },
@@ -146,7 +150,7 @@ export const GO: { key: string; id: string; label: string; href?: string }[] = [
   { key: 'v', id: 'go.visualizer', label: 'AI Visualizer', href: '/visualizer' },
   { key: 'b', id: 'go.pricebook', label: 'Price book', href: '/company/price-book' },   // (REG-923) was P
   { key: 'f', id: 'go.finance', label: 'Finance', href: '/company/finance' },   // (gaps build F1) · (REG-1360) Company › Finance
-  { key: 'e', id: 'go.tickets', label: 'Tickets', href: '/tickets' },   // (S46 — REG-2524) a rail place now, so its key is listed (1.0's G then E)
+  { key: 'e', id: 'go.tickets', label: 'Issues', href: '/tickets' },   // (S46 — REG-2524) a rail place now, so its key is listed (1.0's G then E)
   { key: 'm', id: 'go.messages', label: 'Messages', href: '/chat' },   // (pending modules S16) 1.0's G then I (Inbox) — the word is Messages here (one-home N-08)
   { key: 'n', id: 'go.notifications', label: 'Notifications' },
   { key: 's', id: 'go.settings', label: 'Settings', href: '/settings' },

@@ -1,0 +1,138 @@
+/*
+ * (the Dashboard redesigned, 2026-10-26 — P-04 · P-05 · Q-11 · lane D2) Needs you on the house Row (LEAD STAGES' grammar,
+ * components/projects/overview/row.tsx — composed, never copied).
+ * (the calm pass, 2026-10-26 — his "too busy … simplify" and the Claude Design option, lane C2) As the option draws it: text tabs at the
+ * head's right (the selected one a tinted pill), rows of a small glyph in one quiet tint, ONE title line, ONE caption line, the amount, ONE
+ * verb — the house Row's text button (2026-10-27, his "not happy with these buttons": the outlined boxes were this page's alone) — and the ⋮
+ * that shows on the row's hover or focus at a desk (always on touch); no hairlines between rows, no cleared ring; "Show all n" a text link.
+ * Every override of a house class is order-proof, never !important: a doubled class against a house class, and one more step against a house
+ * rule that is a class AND an attribute (`.row[data-two]` — 2026-10-27: a doubled class only tied it, and `next dev` loads the house sheet
+ * last, so the rows fell to its 36 and the verbs stacked into a ladder). Tokens only. The card's inset is the page's `--dash-card-pad` (lane C1); a row keeps 8 of it for its hover.
+ */
+
+.host { min-width: 0; --inbox-inset: calc(var(--dash-card-pad, 24px) - var(--om-spacing-2)); }
+.body.body { gap: 0; padding: 0 var(--inbox-inset) var(--inbox-inset); }   /* order-proof over stages-card's .body (the load-order lesson) */
+.list { position: relative; container-type: inline-size; }
+.item { min-width: 0; }
+/* a phone: the tabs on the body's first line, the card's whole width (a rail that scrolls when they don't fit) */
+.tabsLine { min-width: 0; padding: 0 0 var(--om-spacing-2); }
+
+/* ── the head's tabs: the house Chips (a radio group), drawn as text tabs — the selected one the option's tinted pill ── */
+.tabsRail { min-width: 0; max-width: 100%; }
+.tabs.tabs { flex-wrap: nowrap; gap: var(--om-spacing-1); }
+.tabs.tabs > [role='radio'] {
+  height: 32px; padding: 0 var(--om-spacing-3); border-color: transparent; border-radius: var(--om-radius-1); background: transparent;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums;
+}
+@media (hover: hover) { .tabs.tabs > [role='radio']:hover:not(:disabled):not([data-selected]) { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); } }
+.tabs.tabs > [role='radio'][data-selected] { background: var(--om-color-primary-variant); border-color: transparent; color: var(--om-color-primary-default); }
+
+/* ── the row: 60 tall at a desk, the glyph centred on its two lines, no rule between rows (the option) — `[data-two]` outranks the house
+   Row's own `.row[data-two] { min-height: 36px }` in either load order ── */
+.row.row[data-two] { position: relative; align-items: center; gap: var(--om-spacing-4); min-height: 60px; height: auto; padding: 0 var(--om-spacing-2); border-radius: var(--om-radius-1); }
+.row.row > a, .row.row > button { gap: var(--om-spacing-4); align-items: center; }
+.row.row[data-current] { background: var(--om-color-primary-variant); }   /* its pane is open beside the list — LEAD STAGES' current row */
+.row.row[data-fresh]::after {
+  content: ''; position: absolute; inset: 0; border-radius: var(--om-radius-1); pointer-events: none;
+  background: color-mix(in srgb, var(--om-color-primary-default) 12%, transparent); animation: fresh 1.4s ease-out forwards;
+}
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+
+/* the glyph — the option's one quiet tint on every row; red only for what is late and ours (S-05) */
+.glyph {
+  flex: 0 0 auto; width: 32px; height: 32px; border-radius: var(--om-radius-2); display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-variant); color: var(--om-color-primary-default);
+}
+.glyph[data-tone='late'] { background: var(--om-color-tertiary-red-variant1); color: var(--om-color-tertiary-red-default); }
+
+/* one title line and one caption line, each ending in "…" when the row is narrow (the full words in the house tooltip) */
+.title, .caption { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.amount { margin-left: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.capAmount { display: none; }
+/* a narrow card (a phone, a tablet held sideways): the money leads the caption, so the words keep their width */
+@container (max-width: 599px) {
+  .amount { display: none; }
+  .capAmount { display: inline; }
+}
+.channel { display: block; }
+
+/* the one verb: the house Row's text button, its words at the row's end; the verbs' slot keeps one width for the short words, so the amounts
+   before them stand in one column (the option) */
+.row.row [data-row-actions] { min-width: 96px; justify-content: flex-end; }
+/* the ⋮ after it — the row's further steps; at a desk it waits for the row's hover or focus (his correction 4), always on touch */
+.end { display: inline-flex; align-items: center; flex: 0 0 auto; margin-left: calc(-1 * var(--om-spacing-2)); margin-right: calc(-1 * var(--om-spacing-1)); }
+.more { display: inline-flex; flex: 0 0 auto; }
+@media (hover: hover) {
+  .row.row .more { opacity: 0; transition: opacity var(--motion-hover); }
+  .row.row:hover .more, .row.row:focus-within .more, .row.row[data-current] .more, .row.row .more[data-open] { opacity: 1; }
+}
+.menuRow { display: contents; }
+/* a set-aside row has no ⋮ — its Bring back keeps the verbs' column (the ⋮'s room, held empty) */
+.endSpace { flex: 0 0 auto; width: 36px; margin-left: calc(-1 * var(--om-spacing-2)); margin-right: calc(-1 * var(--om-spacing-1)); }
+@media (max-width: 767px) { .endSpace { display: none; } }
+/* R's control when Review sits in the ⋮ — the key layer presses it; no one sees it or tabs to it (the ⋮'s Review is the one in reach) */
+.keyOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── the foot: Show all n · n set aside for today · Show ── */
+.foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--om-spacing-2) var(--om-spacing-4); padding: var(--om-spacing-3) var(--om-spacing-2) 0; }
+.link { composes: link from '../../om/text-link.module.css'; }
+.setToggle { display: inline-flex; align-items: baseline; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
+.setToggle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.setDot { white-space: pre; }
+.setLink { color: var(--om-color-primary-default); }
+@media (hover: hover) { .setToggle:hover .setLink { color: var(--om-color-primary-hover); } }
+.aside.aside { opacity: 0.85; }
+
+/* ── You're all caught up (Q-11): calm — the glyph, the words, what comes next ── */
+.caught { display: flex; align-items: center; gap: var(--om-spacing-4); min-height: 60px; padding: var(--om-spacing-1) var(--om-spacing-2); }
+.caughtWords { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.caughtTitle { margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.caughtNext { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-decoration: none; overflow-wrap: anywhere; }
+a.caughtNext:hover { color: var(--om-color-on-surface-default); text-decoration: underline; }
+
+/* ── the Review pane (P-05) ── */
+.pane { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.panePhotos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-2); }
+.paneLead { grid-column: 1 / -1; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-variant); display: block; }
+.paneThumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--om-radius-1); background: var(--om-color-surface-variant); display: block; }
+.paneHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
+.paneGlyph { flex: 0 0 auto; width: 32px; height: 32px; border-radius: var(--om-radius-2); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.paneWords { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.paneTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.paneBy { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.paneBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-line; overflow-wrap: anywhere; }
+.facts { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.fact { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: var(--om-spacing-3); font: var(--om-type-body-m); }
+.fact dt { color: var(--om-color-on-surface-secondary); }
+.fact dd { margin: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+/* ── on touch: the title and the caption wrap rather than hide their end behind a tooltip a finger never sees (a caption is short by rule) ── */
+@media (hover: none) {
+  .title, .caption { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+}
+/* ── on the move (≤1024: 16 body · 14 secondary · 44 targets — responsive.md § On the move) ── */
+@media (max-width: 1024px) {
+  .title { font: var(--om-type-subtitle-l); }
+  .caption, .amount, .caughtNext, .setToggle { font: var(--om-type-body-m); }
+  .caughtTitle { font: var(--om-type-subtitle-l); }
+  .row.row[data-two] { min-height: 64px; padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-2); }
+  .row.row [data-row-actions] { min-width: 0; }
+  .row.row [data-row-actions] button { min-height: 44px; }
+  .paneBy, .paneBody, .fact { font: var(--om-type-body-l); }
+}
+@media (max-width: 1024px) and (hover: none) {
+  .tabs.tabs > [role='radio'] { min-height: 44px; }
+  .link { min-height: 44px; display: inline-flex; align-items: center; }
+  .setToggle { min-height: 44px; align-items: center; }
+}
+@media (max-width: 767px) {
+  /* (the calm UI build 2026-10-27 — the audit's 1-28, T-15) a phone: the title and its caption, the verb at the row's right as at a desk — a
+     third line for the verb doubled the scroll; the words keep the width that is left, the title taking two lines when it needs them */
+  .row.row[data-two] > a, .row.row[data-two] > button { flex: 1 1 0; min-width: 0; }
+  .row.row[data-two] { row-gap: var(--om-spacing-1); flex-wrap: nowrap; }
+  .fact { grid-template-columns: 112px minmax(0, 1fr); }
+}
+/* the whole list in its drawer: the tabs, then the rows with the card's own inset */
+.allBody { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-5); }

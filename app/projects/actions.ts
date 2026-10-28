@@ -93,7 +93,7 @@ export async function openLeadProject(leadId: string): Promise<{ id: string } | 
   if (l.stage !== 'Won') return { error: 'Win the lead first — Won creates its project' }
   /* (Projects round 7, Q-26) a deleted project is not opened as if it were there: the lead page offers Make the project again */
   const [gone] = await db.select({ number: projects.number }).from(projects).where(and(eq(projects.leadId, leadId), isNotNull(projects.deletedAt))).limit(1)
-  if (gone) return { error: `Its project ${gone.number} is in Deleted Projects — restore it, or make the project again` }
+  if (gone) return { error: `Its project ${gone.number} is in Deleted projects — restore it, or make the project again` }
   /* (S42F) a project needs a member — a lead won before projects existed and held by nobody gets one first (the lead page's Assign) */
   const [someone] = await db.select({ id: leadAssignees.id }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId)).limit(1)
   if (!someone && !(await db.select({ id: projects.id }).from(projects).where(eq(projects.leadId, leadId)).limit(1)).length) return { error: TEAM_NEEDED }

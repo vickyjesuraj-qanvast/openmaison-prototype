@@ -108,7 +108,7 @@ export function ScheduleSettings({ rules, typeDefaults, templates, studioTemplat
         <span className={s.settingTitle}>Schedule</span>
         <span className={s.settingHelp}>{approvals ? 'Who approves a schedule’s changes, how far ahead the team hears of what is due, and where each kind of job’s schedule starts.' : 'How far ahead the team hears of what is due, and where each kind of job’s schedule starts.'}</span>
       </div>
-      {!approvals ? <span className={s.settingHelp} data-testid="schedule-approvals-pointer">Whether a milestone’s Done and schedule changes wait for an Owner or an Admin is switched under What waits for an Owner or an Admin, above.</span> : (
+      {!approvals ? <span className={s.settingHelp} data-testid="schedule-approvals-pointer">Switched under Approvals, above.</span>   /* (the calm UI build 2026-10-27, 5-33 · W-645 — B5's request) the card above is "Approvals"; whether Done and schedule changes wait is a row of it */ : (
       <div className={`${s.eventTable} ${u.table}`} role="table" aria-label="Schedule approvals" data-card-table="">
         <div className={s.eventHead} role="row">
           <span role="columnheader">Rule</span><span role="columnheader">Who approves</span><span role="columnheader" className={s.eventCol}>On</span>
@@ -127,7 +127,7 @@ export function ScheduleSettings({ rules, typeDefaults, templates, studioTemplat
       {/* (one-home N-11) One place for "where does a schedule start?": the studio default, then each project type. */}
       <div className={s.settingHead} id="schedule-start">
         <span className={s.reasonLabel}>Where a schedule starts, by project type</span>
-        <span className={s.settingHelp}>Where Set up the schedule starts on a project: the studio default, unless the project’s type picks its own. Every milestone can be changed afterwards. Templates live in <HelpLink href="/company/templates/schedules" testId="schedule-templates-link">Company › Templates › Schedules</HelpLink>, the ready-made ones (HDB BTO, HDB resale, Condo, Landed, Commercial fit-out) among them, to change like your own.</span>
+        <span className={s.settingHelp}>Where Set up the schedule starts on a project: the studio default, unless the project’s type picks its own. Every milestone can be changed afterwards. Templates live in <HelpLink href="/company/templates/schedules" testId="schedule-templates-link">Company › Templates › Project schedules</HelpLink>, the ready-made ones (HDB BTO, HDB resale, Condo, Landed, Commercial fit-out) among them, to change like your own.</span>
       </div>
       <div className={u.grid} data-testid="schedule-studio-default">
         <TextField label="Studio default" mode="select" value={studioLabel} options={[QUOTE, ...labels.map((t) => t.label)]} disabled={!canManage || busy}

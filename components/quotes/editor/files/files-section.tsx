@@ -127,7 +127,7 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   )
 
   return (
-    <SectionCard id="section-files" title={`Files (${files.length})`} open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
+    <SectionCard id="section-files" title={`Files · ${files.length}`} open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
       <div className={styles.body}>
         {files.length ? (
           <div className={styles.grid} role="list" aria-label="Attached files">
@@ -141,7 +141,7 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
       </div>
       <AttachFilesModal open={modal} chrome="quote" files={leadFiles} attached={files.map((f) => f.id)} onClose={() => setModal(false)}
                         onAttach={attachSet} onUploadPicked={(f) => upload(f)} />
-      <NameDialog open={!!renaming} title="Rename File" initial={renaming?.name ?? ''} onSave={(name) => { if (renaming) rename(renaming, name) }} onClose={() => setRenaming(null)} />
+      <NameDialog open={!!renaming} title="Rename file" initial={renaming?.name ?? ''} onSave={(name) => { if (renaming) rename(renaming, name) }} onClose={() => setRenaming(null)} />
     </SectionCard>
   )
 }

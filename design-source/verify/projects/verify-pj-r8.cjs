@@ -71,6 +71,8 @@ const newId = () => sql(`select id from project_selections where project_id='${B
     return { bar, more, all: [...bar.filter((k) => k !== 'more'), ...more] }
   }
   const card = (p, title) => p.locator('[data-testid="choice-card"]', { has: p.locator('h3', { hasText: title }) })
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-27) Choose with {client} left the card's band for its ⋮ */
+  const chooseWith = async (p, title) => { await card(p, title).locator('[data-testid="choice-kebab"]').click(); await p.waitForTimeout(250); await p.locator('[data-testid="choice-choose"] [role="menuitem"]').click() }
   const dialog = (p) => p.locator('[role="dialog"]').last()
   const signIn = async (p) => {
     await go(p, '/my/demo-studio/login')
@@ -108,14 +110,17 @@ const newId = () => sql(`select id from project_selections where project_id='${B
     ok(/Carpentry fabrication has started — the pick stays/.test(await top.locator('[data-testid="choice-locked"]').innerText()), 'carpentry has started: the pick stays (no Change the pick)')
     await shot(s, 'tab-1440')
     await s.getByRole('button', { name: 'More options', exact: true }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: /Invite to Portal/ }).click(); await settle(s, 1500)   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1500) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
     const accessRow = s.locator('[data-testid="access-section"][data-key="choices"]')
     ok(/1 waiting · 1 chosen/.test(await accessRow.innerText()) && (await accessRow.getAttribute('href')) === `/projects/${BEN_P}/choices`, 'Client access: "Choices — 1 waiting · 1 chosen", into the tab')
     await s.keyboard.press('Escape'); await settle(s, 500)
-    await s.locator('[data-testid="choices-group"] [role="radio"]', { hasText: 'By milestone' }).click(); await settle(s, 400)
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-08) the grouping is the list's scope pill */
+    await s.locator('[data-testid="choices-group"] button').click(); await settle(s, 250)
+    await s.getByRole('menuitemradio', { name: 'By milestone' }).click(); await settle(s, 400)
     const msHeads = (await s.locator('[data-testid="choices-group-section"] > h3').allInnerTexts()).map((t) => t.replace(/\s*·\s*\d+$/, '').trim())
     ok(msHeads.join('|') === 'Carpentry fabrication|Painting', `By milestone: the schedule’s order (${msHeads.join(' | ')})`)
-    await s.locator('[data-testid="choices-group"] [role="radio"]', { hasText: 'By room' }).click(); await settle(s, 300)
+    await s.locator('[data-testid="choices-group"] button').click(); await settle(s, 250)
+    await s.getByRole('menuitemradio', { name: 'By room' }).click(); await settle(s, 300)
 
     // ── A new choice with an option from each source ───────────────────────────────────────────────────────────────────────
     console.log('Add a choice and its options')
@@ -293,7 +298,7 @@ const newId = () => sql(`select id from project_selections where project_id='${B
     // ── Choose with the client, change a pick ──────────────────────────────────────────────────────────────────────────────
     console.log('Choose with the client · change a pick')
     await go(s, `/projects/${BEN_P}/choices`)
-    await card(s, NEW).locator('[data-testid="choice-choose"]').click(); await settle(s, 500)
+    await chooseWith(s, NEW); await settle(s, 500)
     ok(await dialog(s).locator('input').last().inputValue() === 'Chosen with the client on a call', 'the note reads "Chosen with the client on a call"')
     await s.locator('[data-testid="choose-option"]', { hasText: 'Walnut vinyl plank' }).click(); await settle(s, 200)
     ok((await s.locator('[data-testid="choose-contract"]').innerText()).includes(contractLine(35_000)), 'the dialog says what the pick does to the contract')
@@ -316,9 +321,27 @@ const newId = () => sql(`select id from project_selections where project_id='${B
     await shot(sp, 'tab-390')
     await sp.locator('[data-testid="choice-card"]').first().locator('[data-testid="choice-kebab"]').click(); await settle(sp, 600)
     await shot(sp, 'menu-sheet-390', false)
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-36) at a desk the bar is the phone's five: Home · Schedule · Updates · Payments and More ▾,
+     the rest in its menu — a section is "in the bar" when it is either */
+  const deskSections = async (pg) => {
+    const bar = await pg.locator('[data-testid="portal-nav"]').innerText()
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return bar
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const rows = await pg.locator('[data-testid="portal-nav-more-row"]').allInnerTexts()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return `${bar}\n${rows.join('\n')}`
+  }
+  const deskHas = async (pg, key) => {
+    if (await pg.locator(`[data-testid="portal-nav"] a[data-key="${key}"]`).isVisible()) return true
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return false
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const there = await pg.locator(`[data-testid="portal-nav-more-row"][data-key="${key}"] [role="menuitem"]`).isVisible()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return there
+  }
     const CD = await desk(); const cd = await CD.newPage(); watch(cd, 'client-desk')
     await signIn(cd); await go(cd, '/my/demo-studio/choices')
-    ok(await cd.locator('[data-testid="portal-nav"] a[data-key="choices"]').isVisible() && await noOverflow(cd), 'at a desk Choices sits in the portal’s bar')
+    ok(/Choices/.test(await cd.locator('[data-testid="portal-nav-more"]').innerText()) && await deskHas(cd, 'choices') && await noOverflow(cd), 'at a desk Choices sits in the portal’s bar — its More ▾ names it while he is on it (the calm UI build 2026-10-27, a deliberate change)')
     await shot(cd, 'portal-choices-1440')
     await go(s, `/projects/${AISHA_P}/choices`)
     ok(/Draft/.test(await s.locator('[data-testid="choice-band"]').first().innerText()) && await s.locator('[data-testid="choice-card"]').count() === 1, 'Aisha Rahman’s project: one Draft')

@@ -178,9 +178,11 @@ const holdReveal = (c) => c.addInitScript(() => { const o = performance.getEntri
       await p.evaluate(() => document.documentElement.setAttribute('data-hw-keyboard', ''))
       await settle(p, 100)
       ok(await p.evaluate(() => [...document.querySelectorAll('[class*="global-search-module__"][class*="__foot"]')].some((e) => e.getBoundingClientRect().height > 0)), '…and comes back once a real keyboard has pressed a key')
-      await p.evaluate(() => document.documentElement.removeAttribute('data-hw-keyboard'))
+      /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-37) a touch screen lists Keyboard shortcuts only once a real keyboard
+         has pressed a key (as the list's key foot) — it has here, so the row is tapped before the mark is taken away */
       const row = p.getByRole('option', { name: /Keyboard shortcuts/ }).first()
       await tapAt(p, row); await settle(p, 900)
+      await p.evaluate(() => document.documentElement.removeAttribute('data-hw-keyboard'))
       const keys = await p.evaluate(() => [...document.querySelectorAll('[role="dialog"] kbd')].filter((e) => e.getBoundingClientRect().width > 0).length)
       ok(keys > 5, `the ? panel’s rows keep their keys on a touch screen (${keys} keys drawn)`)
       await p.screenshot({ path: path.join(dir, '06-shortcuts-768.png') })

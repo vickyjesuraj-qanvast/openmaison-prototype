@@ -1,0 +1,824 @@
+<title>The Front Door</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..40,300..500,0..1,0&display=swap">
+<style>
+/* Layout: a review document — a narrow reading column for the argument, wide bands for the drawn screens (scaled app frames), then the marks. */
+:root {
+  --bg: #f6f5f9; --paper: #ffffff; --ink: #1c1a23; --ink-2: #55516a; --ink-3: #8a8699; --rule: #e4e1ec;
+  --accent: #5a33e0; --accent-soft: #ede8fd; --good: #1f8a55; --warn: #b86e00; --bad: #c9302c;
+  --pick-build: #1f8a55; --pick-later: #b86e00; --pick-skip: #8a8699;
+  --display: "Instrument Sans", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15131b; --paper: #1d1a25; --ink: #f1eff7; --ink-2: #bdb8cc; --ink-3: #8f8aa3; --rule: #332f3f;
+  --accent: #a68cff; --accent-soft: #2b2342; --good: #4cc489; --warn: #e7a33c; --bad: #ff7a6e; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #15131b; --paper: #1d1a25; --ink: #f1eff7; --ink-2: #bdb8cc; --ink-3: #8f8aa3; --rule: #332f3f;
+  --accent: #a68cff; --accent-soft: #2b2342; --good: #4cc489; --warn: #e7a33c; --bad: #ff7a6e; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px }
+.wrap { max-width: 1180px; margin: 0 auto }
+.read { max-width: 760px }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0 }
+h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.02em }
+h2 { font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; margin-top: 8px }
+h3 { font-size: 18px; line-height: 1.3 }
+p { margin: 0 }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent) }
+section { padding-block: 56px 0; display: grid; gap: 20px }
+.lede { font-size: 18px; color: var(--ink-2); max-width: 68ch }
+.muted { color: var(--ink-2) }
+.small { font-size: 13px; color: var(--ink-3) }
+.mono { font-family: var(--mono); font-size: 12.5px }
+header.top { padding-block: 48px 8px; display: grid; gap: 18px }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--ink-3) }
+.nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px }
+.num { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 4px; min-width: 0 }
+.num b { font: 700 30px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.num span { font-size: 13.5px; color: var(--ink-2) }
+.qs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; counter-reset: q }
+.q3 { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 6px }
+.q3 h3 { font-size: 17px }
+.band { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0 }
+.band-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between }
+.band-head p { font-size: 14px; color: var(--ink-2); max-width: 70ch }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start }
+@media (max-width: 900px) { .pair, .trio { grid-template-columns: 1fr } }
+table.t { width: 100%; border-collapse: collapse; font-size: 14px }
+table.t th { text-align: left; font: 600 12px/1.3 var(--body); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; border-bottom: 1px solid var(--rule) }
+table.t td { padding: 10px; border-bottom: 1px solid var(--rule); vertical-align: top }
+table.t td:first-child { font-weight: 600 }
+.scroll { overflow-x: auto }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 24px; font-size: 14px }
+.legend div { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start }
+.dot { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font: 700 11px/1 var(--body) }
+ul.l { margin: 0; padding-left: 18px; display: grid; gap: 6px }
+.cols3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+.tag { display: inline-block; font: 600 11px/1.6 var(--body); letter-spacing: .04em; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent) }
+.tag.g { background: color-mix(in oklab, var(--good) 15%, transparent); color: var(--good) }
+.tag.w { background: color-mix(in oklab, var(--warn) 16%, transparent); color: var(--warn) }
+.tag.b { background: color-mix(in oklab, var(--bad) 14%, transparent); color: var(--bad) }
+
+/* ── the marks ── */
+.items { display: grid; gap: 12px }
+.item { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0 }
+.item[data-picked] { border-color: color-mix(in oklab, var(--accent) 40%, var(--rule)) }
+.item-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap }
+.item-id { font: 600 12px/1 var(--mono); color: var(--accent) }
+.item h3 { font-size: 16.5px }
+.item p { font-size: 14px; color: var(--ink-2) }
+.choices { display: flex; flex-wrap: wrap; gap: 8px }
+.choice { font: 500 13.5px/1.2 var(--body); padding: 9px 14px; border-radius: 8px; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; text-align: left; min-height: 40px }
+.choice:hover { border-color: var(--ink-3) }
+.choice:focus-visible, .note:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.choice[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.choice[data-k="build"][aria-pressed="true"] { background: var(--pick-build); border-color: var(--pick-build) }
+.choice[data-k="later"][aria-pressed="true"] { background: var(--pick-later); border-color: var(--pick-later) }
+.choice[data-k="skip"][aria-pressed="true"] { background: var(--pick-skip); border-color: var(--pick-skip) }
+.choice .rec { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: .75; margin-left: 6px }
+.note { width: 100%; font: 14px/1.5 var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 40px }
+.saved { font-size: 12px; color: var(--ink-3); min-height: 16px }
+.status { position: sticky; bottom: max(12px, env(safe-area-inset-bottom, 0px)); margin-top: 24px; z-index: 5; display: flex; justify-content: center }
+.status span { background: var(--ink); color: var(--paper); font-size: 13px; padding: 8px 14px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.18) }
+
+/* ── the drawn screens: an app frame, drawn at its own width and scaled to the band ── */
+.frame { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--rule); background: #eceaf2 }
+.frame .screen { position: absolute; top: 0; left: 0; transform-origin: 0 0 }
+.cap { font-size: 13px; color: var(--ink-3); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.device { justify-self: center; width: 100% }
+
+/* app tokens (the OpenMaison look, light — the app has one theme) */
+.app { --m-bg: #f3f2f7; --m-surface: #ffffff; --m-line: #e6e4ec; --m-ink: #1d1b22; --m-ink2: #5d596a; --m-ink3: #8b8797;
+  --m-primary: #5b33e0; --m-primary-soft: #efeafe; --m-red: #d23a35; --m-amber: #b76e00; --m-amber-soft: #fff3df; --m-green: #1f8a55; --m-green-soft: #e3f4ea;
+  font: 14px/20px "Inter", system-ui, sans-serif; color: var(--m-ink); background: var(--m-bg); }
+.app * { box-sizing: border-box }
+.i { font-family: "Material Symbols Rounded"; font-weight: 300; font-size: 20px; line-height: 1; font-variation-settings: "opsz" 20; display: inline-block; vertical-align: middle; -webkit-font-smoothing: antialiased; font-style: normal; letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr; user-select: none }
+.i.f { font-variation-settings: "FILL" 1, "opsz" 20 }
+.app .rail { position: absolute; left: 8px; top: 8px; bottom: 8px; width: 52px; background: var(--m-surface); border-radius: 12px; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 10px; color: var(--m-ink2) }
+.app .rail .on { background: var(--m-primary-soft); color: var(--m-primary); border-radius: 8px; padding: 6px }
+.app .rail .r { padding: 6px; position: relative }
+.app .rail .bdg { position: absolute; top: 0; right: 0; min-width: 14px; height: 14px; border-radius: 7px; background: var(--m-red); color: #fff; font: 600 9px/14px Inter; text-align: center; padding: 0 3px }
+.app .rail .logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(140deg, #7d5bff, #5b33e0); margin-bottom: 4px }
+.app .rail .sp { flex: 1 }
+.app .main { position: absolute; left: 68px; right: 8px; top: 8px; bottom: 8px; background: var(--m-surface); border-radius: 12px; overflow: hidden }
+.app .pad { padding: 24px 28px 120px }
+.hello { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px }
+.hello h4 { margin: 0; font: 600 26px/32px "Inter"; letter-spacing: -0.01em }
+.hello .sub { color: var(--m-ink2); font-size: 14px; margin-top: 2px }
+.seg { display: inline-flex; border: 1px solid var(--m-line); border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500 }
+.seg span { padding: 6px 12px; color: var(--m-ink2) }
+.seg .on { background: var(--m-primary-soft); color: var(--m-primary) }
+.since { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap }
+.chipx { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--m-line); background: var(--m-surface); font-size: 13px; color: var(--m-ink); white-space: nowrap }
+.chipx .i { font-size: 18px; color: var(--m-ink2) }
+.chipx b { font-weight: 600 }
+.chipx.new { border-color: #d9cffd; background: #f7f4ff }
+.pulse { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--m-line); border-radius: 10px; margin-top: 18px }
+.tile { padding: 14px 16px; border-left: 1px solid var(--m-line); display: grid; gap: 4px; position: relative; min-width: 0 }
+.tile:first-child { border-left: 0 }
+.tile .k { font: 600 11px/14px Inter; letter-spacing: .06em; text-transform: uppercase; color: var(--m-ink3); display: flex; justify-content: space-between }
+.tile .v { font: 600 22px/28px Inter; font-variant-numeric: tabular-nums; letter-spacing: -0.01em }
+.tile .d { font-size: 12.5px; color: var(--m-ink2); display: flex; gap: 4px; align-items: center }
+.up { color: var(--m-green) } .down { color: var(--m-red) } .flat { color: var(--m-ink3) }
+.spark { height: 26px; display: flex; align-items: flex-end; gap: 3px; margin-top: 2px }
+.spark i { flex: 1; background: #d7cdfb; border-radius: 2px 2px 0 0; display: block }
+.spark i:last-child { background: var(--m-primary) }
+.aging { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; gap: 2px }
+.aging i { display: block }
+.gtag { font: 600 10.5px/16px Inter; letter-spacing: .03em; padding: 0 6px; border-radius: 4px; background: var(--m-amber-soft); color: var(--m-amber); text-transform: none }
+.gtag.g { background: var(--m-green-soft); color: var(--m-green) }
+.gtag.n { background: #f0eff4; color: var(--m-ink2) }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; margin-top: 18px; align-items: start }
+.col { display: grid; gap: 18px; min-width: 0 }
+.card { border: 1px solid var(--m-line); border-radius: 10px; background: var(--m-surface); min-width: 0 }
+.ch { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px }
+.ch h5 { margin: 0; font: 600 12px/16px Inter; letter-spacing: .06em; text-transform: uppercase; color: var(--m-ink2) }
+.ch .sp { flex: 1 }
+.ask { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--m-primary); font-weight: 500 }
+.ask .i { font-size: 16px; color: #e8643b }
+.ring { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(var(--m-primary) 0 var(--p), #e9e5f7 var(--p) 100%); display: grid; place-items: center }
+.ring::after { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #fff }
+.ringl { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--m-ink2) }
+.filters { display: flex; gap: 6px; padding: 0 16px 8px; flex-wrap: wrap }
+.fc { height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--m-line); font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; color: var(--m-ink2) }
+.fc.on { background: var(--m-primary-soft); border-color: #d9cffd; color: var(--m-primary); font-weight: 600 }
+.row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #f0eef4 }
+.row .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: #f4f2fa; color: var(--m-ink2) }
+.row .ic .i { font-size: 18px }
+.row .ic.cl { background: #fff2ec; color: #c65a2e }
+.row .ic.mo { background: #eaf6f0; color: var(--m-green) }
+.row .ic.ap { background: var(--m-primary-soft); color: var(--m-primary) }
+.row .ic.ld { background: #e9f1ff; color: #2d6cdf }
+.row .ic.late { background: #fdecec; color: var(--m-red) }
+.row .t1 { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .t2 { font-size: 12.5px; color: var(--m-ink2); display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden }
+.row .t2 .late { color: var(--m-red); font-weight: 500 }
+.acts { display: flex; gap: 6px; align-items: center }
+.btn { height: 30px; padding: 0 12px; border-radius: 6px; font: 500 13px/30px Inter; border: 1px solid var(--m-line); color: var(--m-ink); background: #fff; white-space: nowrap; display: inline-flex; gap: 4px; align-items: center }
+.btn.p { background: var(--m-primary); color: #fff; border-color: var(--m-primary) }
+.btn.t { border-color: transparent; color: var(--m-primary); padding: 0 6px }
+.btn .i { font-size: 16px }
+.more { color: var(--m-ink3); padding: 0 4px }
+.thumbs { display: inline-flex; gap: 3px; margin-left: 4px }
+.thumbs i { width: 18px; height: 14px; border-radius: 3px; display: block }
+.foot { padding: 10px 16px; border-top: 1px solid #f0eef4; font-size: 13px; color: var(--m-primary); font-weight: 500; display: flex; gap: 6px; align-items: center }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 16px 10px }
+.day { border: 1px solid var(--m-line); border-radius: 8px; padding: 6px 0; text-align: center; font-size: 12px; color: var(--m-ink2) }
+.day b { display: block; font: 600 15px/20px Inter; color: var(--m-ink) }
+.day.on { background: var(--m-primary); border-color: var(--m-primary); color: #ddd3ff }
+.day.on b { color: #fff }
+.dots { display: flex; gap: 3px; justify-content: center; margin-top: 3px; height: 5px }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: #c9bcf7; display: block }
+.day.on .dots i { background: #fff }
+.agenda .row { grid-template-columns: 54px minmax(0, 1fr) auto }
+.tm { font: 600 13px/18px Inter; font-variant-numeric: tabular-nums; color: var(--m-ink) }
+.tm small { display: block; font-weight: 400; color: var(--m-ink3); font-size: 11.5px }
+.tick { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #b9b3c9; display: inline-block }
+.funnel { padding: 2px 16px 12px; display: grid; gap: 7px }
+.fr { display: grid; grid-template-columns: 82px minmax(0, 1fr) 26px; gap: 8px; align-items: center; font-size: 12.5px; color: var(--m-ink2) }
+.fr .bar { height: 18px; border-radius: 4px; background: #e4dcfd; position: relative }
+.fr .bar i { position: absolute; right: 4px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--m-amber); display: block }
+.fr b { font-variant-numeric: tabular-nums; color: var(--m-ink); text-align: right }
+.prj { display: grid; grid-template-columns: minmax(0, 1fr) 70px; gap: 6px 10px; padding: 10px 16px; border-top: 1px solid #f0eef4; align-items: center }
+.prj .n { font-weight: 500; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 6px; align-items: center }
+.hd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none }
+.prj .m { font-size: 12px; color: var(--m-ink2); grid-column: 1 / -1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.pbar { height: 6px; border-radius: 3px; background: #eceaf3; overflow: hidden }
+.pbar i { display: block; height: 100%; background: var(--m-primary); border-radius: 3px }
+.team { padding: 2px 16px 14px; display: grid; gap: 9px }
+.tr { display: grid; grid-template-columns: 24px 64px minmax(0, 1fr) 34px; gap: 8px; align-items: center; font-size: 12.5px }
+.av { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 600 10.5px/1 Inter }
+.tbar { height: 8px; border-radius: 4px; background: #eceaf3; position: relative }
+.tbar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; display: block }
+.tbar::after { content: ""; position: absolute; left: 80%; top: -3px; bottom: -3px; width: 2px; background: #b7b1c6; border-radius: 1px }
+.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 16px 14px }
+.photos i { aspect-ratio: 4 / 3; border-radius: 6px; display: block; max-width: 100% }
+.composer-dock { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 28px 18px; background: linear-gradient(to top, #fff 62%, rgba(255,255,255,0)); display: grid; justify-items: center; gap: 8px }
+.cchips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center }
+.cchip { height: 30px; padding: 0 12px; border-radius: 15px; background: #fff; border: 1px solid var(--m-line); font-size: 12.5px; color: var(--m-ink); display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(25,15,60,.05) }
+.cchip .i { font-size: 15px; color: var(--m-ink2) }
+.composer { width: min(760px, 100%); border: 1px solid #dcd6ef; border-radius: 16px; background: #fff; box-shadow: 0 8px 28px rgba(55,30,140,.12), 0 1px 3px rgba(25,15,60,.06); padding: 12px 14px 10px; display: grid; gap: 8px }
+.composer .ph { color: var(--m-ink3); font-size: 15px; display: flex; align-items: center; gap: 8px }
+.composer .ph .spk { color: #e8643b; font-size: 20px }
+.composer .bar2 { display: flex; align-items: center; gap: 8px; color: var(--m-ink2) }
+.composer .bar2 .sp { flex: 1 }
+.ctx { height: 24px; padding: 0 8px; border-radius: 6px; background: var(--m-primary-soft); color: var(--m-primary); font: 500 12px/24px Inter; display: inline-flex; align-items: center; gap: 4px }
+.kbd { font: 500 11px/18px Inter; border: 1px solid var(--m-line); border-radius: 4px; padding: 0 5px; color: var(--m-ink3) }
+.send { width: 32px; height: 32px; border-radius: 50%; background: var(--m-primary); color: #fff; display: grid; place-items: center }
+.send .i { font-size: 18px }
+.pin { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #e8643b; color: #fff; font: 700 12px/24px Inter; text-align: center; box-shadow: 0 0 0 3px #fff, 0 2px 6px rgba(0,0,0,.25); z-index: 3 }
+.rel { position: relative }
+/* answers */
+.thread { width: min(760px, 100%); display: grid; gap: 10px }
+.bub { justify-self: end; background: #f1edff; color: var(--m-ink); border-radius: 14px 14px 4px 14px; padding: 8px 12px; font-size: 14px }
+.ans { border: 1px solid var(--m-line); border-radius: 12px; background: #fff; padding: 14px; display: grid; gap: 10px; box-shadow: 0 6px 22px rgba(55,30,140,.08) }
+.ans .lead { font-size: 15px; line-height: 22px }
+.score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.score div { background: #f7f6fb; border-radius: 8px; padding: 10px }
+.score b { display: block; font: 600 18px/24px Inter; font-variant-numeric: tabular-nums }
+.score span { font-size: 12px; color: var(--m-ink2) }
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 70px; padding: 4px 2px 0; border-bottom: 1px solid var(--m-line) }
+.bars div { flex: 1; display: grid; justify-items: center; gap: 4px; font-size: 11px; color: var(--m-ink3) }
+.bars i { width: 100%; background: #cfc2fb; border-radius: 4px 4px 0 0; display: block }
+.doors { display: flex; gap: 8px; flex-wrap: wrap }
+.rcpt { display: flex; align-items: center; gap: 10px; border: 1px solid #cfe9da; background: #f2fbf6; border-radius: 10px; padding: 10px 12px; font-size: 13.5px }
+.rcpt .i { color: var(--m-green) }
+.rcpt .sp { flex: 1 }
+.pane { position: absolute; right: 0; top: 0; bottom: 0; width: 400px; border-left: 1px solid var(--m-line); background: #fff; box-shadow: -10px 0 30px rgba(30,20,70,.08); display: grid; grid-template-rows: auto 1fr; z-index: 4 }
+.pane .ph2 { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--m-line); font-weight: 600 }
+.pane .body2 { padding: 16px 18px; display: grid; gap: 12px; align-content: start; overflow: hidden }
+.fact { display: grid; grid-template-columns: 110px 1fr; gap: 6px; font-size: 13px }
+.fact span { color: var(--m-ink3) }
+.photo-lg { height: 150px; border-radius: 8px; background: linear-gradient(135deg, #c9b8a3, #8f7a66 60%, #5d4e43) }
+/* phone */
+.phone { width: 390px; height: 844px; position: relative; background: var(--m-bg); overflow: hidden }
+.ptop { height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px; background: #fff; border-bottom: 1px solid var(--m-line) }
+.ptop .sp { flex: 1 }
+.pbody { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 16px 16px 180px; display: grid; gap: 14px; align-content: start }
+.pdock { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: #fff; border-top: 1px solid var(--m-line); display: grid; grid-template-columns: repeat(5, 1fr); font-size: 10px; color: var(--m-ink2); text-align: center; padding-top: 8px }
+.pdock .on { color: var(--m-primary); font-weight: 600 }
+.pdock .i { display: block; margin: 0 auto 2px }
+.accessory { position: absolute; left: 12px; right: 12px; bottom: 74px; height: 48px; border-radius: 24px; background: #fff; border: 1px solid #dcd6ef; box-shadow: 0 8px 24px rgba(55,30,140,.14); display: flex; align-items: center; gap: 8px; padding: 0 6px 0 16px; color: var(--m-ink3); font-size: 15px }
+.accessory .spk { color: #e8643b }
+.accessory .sp { flex: 1 }
+.p2x2 { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--m-line); border-radius: 10px; overflow: hidden; background: #fff }
+.p2x2 .tile { border-left: 0; border-top: 1px solid var(--m-line); padding: 12px 14px }
+.p2x2 .tile:nth-child(-n+2) { border-top: 0 }
+.p2x2 .tile:nth-child(even) { border-left: 1px solid var(--m-line) }
+.hscroll { display: flex; gap: 8px; overflow: hidden; margin-right: -16px }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 120px; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 40px rgba(20,10,50,.18); display: grid; grid-template-rows: auto 1fr auto; z-index: 5 }
+.scrim { position: absolute; inset: 0; background: rgba(20,14,40,.32); z-index: 4 }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: #d6d2e0; margin: 8px auto 4px }
+.kb { height: 0 }
+/* tablet */
+.tab { position: relative; background: var(--m-bg); overflow: hidden }
+@media (prefers-reduced-motion: no-preference) { .choice { transition: background-color .12s, border-color .12s } }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">OpenMaison 2.0 · the Dashboard, redesigned · for Vicky</span>
+  <h1>The front door, made to be used every morning</h1>
+  <p class="lede">The studio opens this page first, every day. Today it reads like a report. This proposal turns it into the place the day is run from: what needs you, how the studio is doing, what's coming, with Maison AI docked under it like a chat input. Mark each proposal and question; nothing is built until you do.</p>
+  <div class="meta"><span>Drawn with the demo studio's records, Mon 26 Oct; figures as the demo shows them</span><span>Studies: the page today · every module's signals · 17 home screens and 9 assistant inputs · 1.0's chat and its components</span></div>
+</header>
+
+<section>
+  <span class="eyebrow">What's wrong today, measured</span>
+  <h2>A page of sentences, and almost nothing happens on it</h2>
+  <div class="nums">
+    <div class="num"><b>410 : 87</b><span>words to figures on the Owner's page. 92% of the first screen's text is 12–14px, 59% of it grey.</span></div>
+    <div class="num"><b>37 of 45</b><span>presses leave the page. Only ticking a task acts where you are.</span></div>
+    <div class="num"><b>850px</b><span>from the Ask box to where its answer opens, in a 320px corner popover. On a touch tablet, mid-page, there's no way to ask.</span></div>
+    <div class="num"><b>3 vs 2</b><span>overdue follow-ups, in two cards on one page. New leads read 4 and 5; lead totals 31, 30 and 21.</span></div>
+    <div class="num"><b>8 times</b><span>the register logs the floating Maison AI button covering a control.</span></div>
+    <div class="num"><b>1 of 6</b><span>signals from Quotes, Contracts and the portal reach the page: quote approvals. A client opening a quote three times never does.</span></div>
+  </div>
+  <p class="muted read">What works and stays: the ranked list of what needs you, one home per thing with <span class="mono">?from=</span> and Back, every figure taken from its module's own count, role scoping, links that open the step itself, tick with Undo, and Maison AI's answers from the records.</p>
+</section>
+
+<section>
+  <span class="eyebrow">The idea</span>
+  <h2>Three questions, in the order an owner asks them</h2>
+  <div class="qs">
+    <div class="q3"><span class="tag">first</span><h3>What needs me now?</h3><p class="muted">One ranked list across every module, each row with its verb on it. Act in place, see what it did, Undo. The day can be finished.</p></div>
+    <div class="q3"><span class="tag">at a glance</span><h3>How is the studio doing?</h3><p class="muted">Six figures in one strip, each with its comparison and a small trend. Graded where a grade exists. A press opens its report.</p></div>
+    <div class="q3"><span class="tag">around it</span><h3>What changed, what's coming?</h3><p class="muted">A "since you were last here" line, your day and the week, the pipeline, the projects, the team, the site. Each card answers one question.</p></div>
+  </div>
+  <p class="muted read">Maison AI stops being a card you scroll past. It's a field docked at the foot of the page, the way a chat input sits under a conversation, with three suggestions drawn from today's records. Its answers come back as small interactive cards, the best of what 1.0's chat returned, each ending in a door.</p>
+</section>
+
+<!-- ═════════════════════════ THE DESK ═════════════════════════ -->
+<section>
+  <span class="eyebrow">Desk · 1440</span>
+  <h2>The page at rest</h2>
+  <div class="band">
+    <div class="frame" data-w="1440"><div class="screen app" style="width:1440px;height:1250px">
+      <div class="rail">
+        <div class="logo"></div><span class="r"><span class="i">search</span></span><span class="on"><span class="i f">space_dashboard</span></span>
+        <span class="r"><span class="i">task_alt</span><span class="bdg">1</span></span><span class="r"><span class="i">confirmation_number</span></span><span class="r"><span class="i">construction</span></span>
+        <span class="r"><span class="i">work</span><span class="bdg">3</span></span><span class="r"><span class="i">group</span><span class="bdg">2</span></span><span class="r"><span class="i">storefront</span></span><span class="r"><span class="i">apartment</span><span class="bdg">5</span></span>
+        <span class="sp"></span><span class="r"><span class="i">chat</span><span class="bdg">1</span></span><span class="r"><span class="i">notifications</span><span class="bdg">16</span></span><span class="r"><span class="i">settings</span></span>
+      </div>
+      <div class="main">
+        <div class="pad">
+          <div class="hello rel">
+            <span class="pin" style="left:-14px;top:-10px">1</span>
+            <div><h4>Good morning, Dane</h4><div class="sub">Monday 26 October · 15 things need you, 3 of them since Friday</div></div>
+            <span class="seg"><span class="on">Studio</span><span>Mine</span></span>
+          </div>
+          <div class="since rel">
+            <span class="pin" style="left:-14px;top:-6px">2</span>
+            <span class="chipx new"><span class="i">person_add</span><b>4 new leads</b> · 2 from Instagram</span>
+            <span class="chipx new"><span class="i">verified</span>Aisha confirmed <b>OM-10007</b></span>
+            <span class="chipx new"><span class="i">payments</span>Ryan says he paid <b>S$&nbsp;12,000</b></span>
+            <span class="chipx"><span class="i">photo_camera</span>6 site photos · Benjamin Han</span>
+            <span class="chipx"><span class="i">forum</span>2 client messages</span>
+          </div>
+          <div class="pulse rel">
+            <span class="pin" style="left:-12px;top:-10px">3</span>
+            <div class="tile"><div class="k">Leads this week <span class="i" style="font-size:14px">north_east</span></div><div class="v">9</div><div class="d"><span class="up">▲ 3</span> vs last week</div><div class="spark"><i style="height:30%"></i><i style="height:45%"></i><i style="height:38%"></i><i style="height:52%"></i><i style="height:40%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:85%"></i></div></div>
+            <div class="tile"><div class="k">Won · 90 days</div><div class="v">S$&nbsp;121k</div><div class="d">2 of 30 leads · <span class="up">▲ 1</span></div><div class="spark"><i style="height:20%"></i><i style="height:20%"></i><i style="height:55%"></i><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i style="height:70%"></i></div></div>
+            <div class="tile"><div class="k">First response <span class="gtag">Slow</span></div><div class="v">26h</div><div class="d"><span class="down">▼ 6h worse</span> · median, 90 days</div><div class="spark"><i style="height:40%"></i><i style="height:35%"></i><i style="height:50%"></i><i style="height:45%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:70%"></i><i style="height:78%"></i></div></div>
+            <div class="tile"><div class="k">Owed to you</div><div class="v">S$&nbsp;34.8k</div><div class="d">S$&nbsp;34.2k past due · 3 invoices</div><div class="aging"><i style="flex:1;background:#d7cdfb"></i><i style="flex:5;background:#b6a3f7"></i><i style="flex:3;background:#7f63ef"></i></div><div class="d" style="font-size:11px;color:var(--m-ink3)">≤30 · 31–60 · 60+ days</div></div>
+            <div class="tile"><div class="k">Coming in · 30 days</div><div class="v">S$&nbsp;58.4k</div><div class="d">5 stages due · 2 this week</div><div class="spark"><i style="height:70%"></i><i style="height:35%"></i><i style="height:20%"></i><i style="height:55%"></i></div></div>
+            <div class="tile"><div class="k">Profit this month <span class="gtag n">Early</span></div><div class="v">S$&nbsp;47.5k</div><div class="d">on S$&nbsp;50.8k invoiced</div><div class="d" style="font-size:11.5px;color:var(--m-ink3)">Costs not in yet on 2 projects</div></div>
+          </div>
+          <div class="grid2">
+            <div class="col">
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">4</span>
+                <div class="ch"><h5>Needs you</h5><span class="ringl"><span class="ring" style="--p:20%"></span>3 of 15 cleared today</span><span class="sp"></span><span class="ask"><span class="i f">auto_awesome</span>Ask</span></div>
+                <div class="filters"><span class="fc on">All 15</span><span class="fc">Your OK 5</span><span class="fc">Clients waiting 4</span><span class="fc">Late 3</span><span class="fc">Money 3</span></div>
+                <div class="row"><span class="ic ap"><span class="i">rate_review</span></span><div style="min-width:0"><div class="t1">Germaine's site update · “Feature wall panels have arrived”</div><div class="t2">Benjamin Han · HDB 5-Room · waiting 1 day <span class="thumbs"><i style="background:#c7b49c"></i><i style="background:#9d8a77"></i></span></div></div><div class="acts"><span class="btn">Review</span><span class="btn p">Publish</span><span class="more i">more_vert</span></div></div>
+                <div class="row"><span class="ic ap"><span class="i">schedule</span></span><div style="min-width:0"><div class="t1">Ryan asks for 5 more days on Carpentry fabrication</div><div class="t2">Executive Condo · Ryan D'Souza · ends Fri → Wed</div></div><div class="acts"><span class="btn">Review</span><span class="btn p">Agree</span><span class="more i">more_vert</span></div></div>
+                <div class="row"><span class="ic cl"><span class="i">visibility</span></span><div style="min-width:0"><div class="t1">Aisha opened OM-10009 three times and hasn't confirmed</div><div class="t2">Aisha Rahman · S$&nbsp;68,176 · sent 4 days ago</div></div><div class="acts"><span class="btn p"><span class="i">chat</span>Remind</span><span class="more i">more_vert</span></div></div>
+                <div class="row"><span class="ic mo"><span class="i">payments</span></span><div style="min-width:0"><div class="t1">Ryan says he paid the 30% deposit · S$&nbsp;12,000</div><div class="t2">INV-2026-014 · check your bank, then confirm</div></div><div class="acts"><span class="btn p">Confirm</span><span class="more i">more_vert</span></div></div>
+                <div class="row"><span class="ic ld"><span class="i">call</span></span><div style="min-width:0"><div class="t1">Kelvin Goh · new lead, not called within the hour</div><div class="t2">Instagram · HDB 4-Room · S$&nbsp;70,500 · came in 9:12 AM</div></div><div class="acts"><span class="btn"><span class="i">chat</span>WhatsApp</span><span class="btn p"><span class="i">call</span>Call</span><span class="more i">more_vert</span></div></div>
+                <div class="row"><span class="ic late"><span class="i">task_alt</span></span><div style="min-width:0"><div class="t1">Order the kitchen cabinets</div><div class="t2"><span class="late">5 days overdue</span> · Benjamin Han · HDB 5-Room</div></div><div class="acts"><span class="btn"><span class="i">check</span>Done</span><span class="more i">more_vert</span></div></div>
+                <div class="foot"><span class="i" style="font-size:18px">expand_more</span>Show 9 more</div>
+              </div>
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">5</span>
+                <div class="ch"><h5>Your day</h5><span class="ringl"><span class="ring" style="--p:40%"></span>2 of 5 done</span><span class="sp"></span><span class="ask"><span class="i f">auto_awesome</span>Ask</span></div>
+                <div class="week">
+                  <div class="day on">Mon<b>26</b><div class="dots"><i></i><i></i><i></i></div></div><div class="day">Tue<b>27</b><div class="dots"><i></i></div></div><div class="day">Wed<b>28</b><div class="dots"><i></i><i></i></div></div><div class="day">Thu<b>29</b><div class="dots"><i></i><i></i><i></i></div></div><div class="day">Fri<b>30</b><div class="dots"><i></i></div></div><div class="day">Sat<b>31</b><div class="dots"></div></div><div class="day">Sun<b>1</b><div class="dots"></div></div>
+                </div>
+                <div class="agenda">
+                  <div class="row"><span class="tm">10:00<small>45 min</small></span><div style="min-width:0"><div class="t1">Site visit · Benjamin Han</div><div class="t2">Blk 412 Tampines St 41 · with Sarah</div></div><div class="acts"><span class="btn"><span class="i">directions</span>Directions</span></div></div>
+                  <div class="row"><span class="tm">14:00<small>1 h</small></span><div style="min-width:0"><div class="t1">First consultation · Kelvin Goh</div><div class="t2">Showroom · the brief is ready</div></div><div class="acts"><span class="btn"><span class="i f" style="color:#e8643b">auto_awesome</span>Prepare me</span></div></div>
+                  <div class="row"><span class="tm">Call<small>4 d late</small></span><div style="min-width:0"><div class="t1">Call Farah Ahmad back</div><div class="t2">She asked for a callback · last spoke Thu</div></div><div class="acts"><span class="btn"><span class="i">chat</span>WhatsApp</span><span class="btn p"><span class="i">call</span>Call</span></div></div>
+                  <div class="row"><span class="tm"><span class="tick"></span></span><div style="min-width:0"><div class="t1">Send Olivia the revised layout</div><div class="t2">Olivia Martinez · due today 5:00 PM</div></div><div class="acts"><span class="more i">more_vert</span></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">6</span>
+                <div class="ch"><h5>Pipeline</h5><span class="sp"></span><span class="ask"><span class="i f">auto_awesome</span>Ask</span></div>
+                <div class="funnel">
+                  <div class="fr">New<div class="bar" style="width:100%"><i title="stuck"></i></div><b>12</b></div>
+                  <div class="fr">Contacted<div class="bar" style="width:66%"></div><b>8</b></div>
+                  <div class="fr">Met<div class="bar" style="width:42%"><i></i></div><b>5</b></div>
+                  <div class="fr">Quote sent<div class="bar" style="width:34%"></div><b>4</b></div>
+                  <div class="fr">Won<div class="bar" style="width:17%;background:#b6e3c9"></div><b>2</b></div>
+                  <div class="t2" style="font-size:12px;color:var(--m-ink2);display:flex;gap:6px;align-items:center"><span class="hd" style="background:var(--m-amber)"></span>3 stuck over 14 days · 2 going quiet</div>
+                </div>
+              </div>
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">7</span>
+                <div class="ch"><h5>Projects · 4 running</h5><span class="sp"></span><span class="ask"><span class="i f">auto_awesome</span>Ask</span></div>
+                <div class="prj"><div class="n"><span class="hd" style="background:var(--m-green)"></span>Benjamin Han · HDB 5-Room</div><div class="pbar"><i style="width:62%"></i></div><div class="m">Carpentry · install Thu · on track</div></div>
+                <div class="prj"><div class="n"><span class="hd" style="background:var(--m-amber)"></span>Ryan D'Souza · Executive Condo</div><div class="pbar"><i style="width:38%"></i></div><div class="m">Asks 5 more days · deposit to confirm</div></div>
+                <div class="prj"><div class="n"><span class="hd" style="background:var(--m-red)"></span>Marcus Teo · Condo 3-bedder</div><div class="pbar"><i style="width:8%"></i></div><div class="m">Not started · hacking was due Fri</div></div>
+                <div class="prj"><div class="n"><span class="hd" style="background:var(--m-green)"></span>Aisha Rahman · Landed</div><div class="pbar"><i style="width:15%"></i></div><div class="m">Setting up · contract signed Sat</div></div>
+              </div>
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">8</span>
+                <div class="ch"><h5>Team</h5><span class="sp"></span><span class="small" style="font-size:12px;color:var(--m-ink3)">— capacity</span></div>
+                <div class="team">
+                  <div class="tr"><span class="av" style="background:#7d5bff">D</span>Dane<div class="tbar"><i style="width:72%;background:#9b82f6"></i></div><span style="color:var(--m-ink2)">3 · 4</span></div>
+                  <div class="tr"><span class="av" style="background:#2d9c74">S</span>Sarah<div class="tbar"><i style="width:96%;background:var(--m-amber)"></i></div><span style="color:var(--m-amber)">5 · 4</span></div>
+                  <div class="tr"><span class="av" style="background:#d96c3b">G</span>Germaine<div class="tbar"><i style="width:48%;background:#9b82f6"></i></div><span style="color:var(--m-ink2)">2 · 4</span></div>
+                  <div class="tr"><span class="av" style="background:#3c7bd9">H</span>Hui Min<div class="tbar"><i style="width:24%;background:#9b82f6"></i></div><span style="color:var(--m-ink2)">1 · 4</span></div>
+                </div>
+              </div>
+              <div class="card rel">
+                <span class="pin" style="left:-12px;top:-10px">9</span>
+                <div class="ch"><h5>On site this week</h5><span class="sp"></span><span class="small" style="font-size:12px;color:var(--m-primary);font-weight:500">6 photos</span></div>
+                <div class="photos"><i style="background:linear-gradient(135deg,#d9c8b2,#a48f78)"></i><i style="background:linear-gradient(135deg,#b9c3c6,#7c8a8f)"></i><i style="background:linear-gradient(135deg,#e2d6c4,#b69b7d)"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="composer-dock">
+          <span class="pin" style="left:calc(50% - 400px);top:14px">10</span>
+          <div class="cchips"><span class="cchip"><span class="i">event</span>Prepare me for 2 PM with Kelvin</span><span class="cchip"><span class="i">chat</span>Remind Aisha about OM-10009</span><span class="cchip"><span class="i">payments</span>How is cash this month?</span></div>
+          <div class="composer"><div class="ph"><span class="i f spk">auto_awesome</span>Ask Maison AI about your studio…</div><div class="bar2"><span class="i">add</span><span class="sp"></span><span class="kbd">⌘ J</span><span class="send"><span class="i">arrow_upward</span></span></div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap"><span>The page at the top of its scroll. The field stays at the screen's foot while the cards scroll under it; On site (9) is under it here.</span></div>
+    <div class="legend">
+      <div><span class="dot">1</span><span><b>Good morning, Dane.</b> The greeting is the page's title, by Singapore time, with how many things need you and how many are new since your last visit. Studio / Mine switches an Owner between the studio and their own work.</span></div>
+      <div><span class="dot">2</span><span><b>Since you were last here.</b> What clients and the team did since your last visit, as chips. Each opens exactly that (the new leads, the confirmed quote, the payment). New ones are tinted; it empties as you open them.</span></div>
+      <div><span class="dot">3</span><span><b>Pulse.</b> Six figures in one strip, each with a comparison, a direction and an 8-week trend. Response time carries its grade. Profit says "Early" until costs are in. A press opens its report; hover shows the breakdown.</span></div>
+      <div><span class="dot">4</span><span><b>Needs you.</b> Every module's waiting work in one ranked list: approvals, clients waiting, late and ours, money to move, new leads. The verb sits on the row, it acts in place with Undo, and the ring fills as you clear the day.</span></div>
+      <div><span class="dot">5</span><span><b>Your day.</b> The week as seven days with dots; today's meetings, calls and tasks. "Prepare me" asks Maison AI for the brief; Call and WhatsApp work from the row.</span></div>
+      <div><span class="dot">6</span><span><b>Pipeline.</b> Leads by stage, with an amber mark where leads are stuck. A stage opens the listing filtered to it.</span></div>
+      <div><span class="dot">7</span><span><b>Projects.</b> One line per running project: health (on track, at risk, late), progress, and the one fact that matters next.</span></div>
+      <div><span class="dot">8</span><span><b>Team.</b> Each member's load against their capacity line, so the owner sees who has room before assigning.</span></div>
+      <div><span class="dot">9</span><span><b>On site.</b> The week's site photos. A photo opens its update.</span></div>
+      <div><span class="dot">10</span><span><b>Maison AI, docked.</b> A field at the foot of the page, always in reach, with three suggestions drawn from today's records (they change as you act). ⌘J focuses it; every card's Ask puts that card in its context.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Desk · acting without leaving</span>
+  <h2>Ask, act, and Review in place</h2>
+  <div class="pair">
+    <div class="band">
+      <div class="frame" data-w="900"><div class="screen app" style="width:900px;height:760px;background:#fff">
+        <div style="position:absolute;inset:0;padding:22px 28px;opacity:.35"><div class="hello"><div><h4>Good morning, Dane</h4><div class="sub">Monday 26 October</div></div></div><div class="pulse" style="grid-template-columns:repeat(4,1fr)"><div class="tile"><div class="k">Leads</div><div class="v">9</div></div><div class="tile"><div class="k">Won</div><div class="v">S$&nbsp;121k</div></div><div class="tile"><div class="k">Owed</div><div class="v">S$&nbsp;34.8k</div></div><div class="tile"><div class="k">Coming in</div><div class="v">S$&nbsp;58.4k</div></div></div></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;top:120px;background:linear-gradient(to top,#fff 82%,rgba(255,255,255,.4));padding:20px 28px;display:grid;justify-items:center;align-content:end;gap:10px">
+          <div class="thread">
+            <div class="bub">How is cash this month?</div>
+            <div class="ans">
+              <div class="lead"><b>S$&nbsp;58,400</b> is due to come in over the next 30 days, <span style="color:var(--m-green);font-weight:600">S$&nbsp;9,100 more</span> than this time last month. S$&nbsp;12,000 of it is Ryan's deposit, which he says he's paid.</div>
+              <div class="score"><div><b>S$&nbsp;58.4k</b><span>coming in · 30 days</span></div><div><b>S$&nbsp;34.2k</b><span>past due · 3 invoices</span></div><div><b>S$&nbsp;21.6k</b><span>you owe · 4 bills</span></div></div>
+              <div class="bars"><div><i style="height:52px"></i>This wk</div><div><i style="height:26px"></i>Next</div><div><i style="height:14px"></i>Wk 3</div><div><i style="height:40px"></i>Wk 4</div></div>
+              <div class="doors"><span class="btn p">Confirm Ryan's payment</span><span class="btn">Remind 2 clients</span><span class="btn t">Open Money in ›</span></div>
+            </div>
+            <div class="rcpt"><span class="i f">check_circle</span><span><b>Reminder drafted to Aisha</b> · WhatsApp · OM-10009</span><span class="sp"></span><span class="btn t">Undo</span></div>
+          </div>
+          <div class="composer"><div class="ph"><span class="ctx"><span class="i" style="font-size:14px">payments</span>Money<span class="i" style="font-size:14px">close</span></span><span>Ask a follow-up…</span></div><div class="bar2"><span class="i">add</span><span class="sp"></span><span class="send"><span class="i">arrow_upward</span></span></div></div>
+        </div>
+      </div></div>
+      <div class="cap"><span>A short answer grows above the field, at its width; the page stays where it was. Answers are cards: figures, a small chart, doors. A change ends in a receipt with Undo.</span></div>
+    </div>
+    <div class="band">
+      <div class="frame" data-w="900"><div class="screen app" style="width:900px;height:760px;background:#fff">
+        <div style="position:absolute;inset:0;padding:22px 28px;right:400px">
+          <div class="card"><div class="ch"><h5>Needs you</h5></div>
+            <div class="row" style="background:#f7f4ff"><span class="ic ap"><span class="i">rate_review</span></span><div style="min-width:0"><div class="t1">Germaine's site update</div><div class="t2">Benjamin Han · 1 day</div></div><div class="acts"><span class="btn">Review</span></div></div>
+            <div class="row"><span class="ic ap"><span class="i">schedule</span></span><div style="min-width:0"><div class="t1">Ryan asks for 5 more days</div><div class="t2">Executive Condo</div></div><div class="acts"><span class="btn">Review</span></div></div>
+            <div class="row"><span class="ic cl"><span class="i">visibility</span></span><div style="min-width:0"><div class="t1">Aisha opened OM-10009 3×</div><div class="t2">sent 4 days ago</div></div><div class="acts"><span class="btn p">Remind</span></div></div>
+          </div>
+        </div>
+        <div class="pane"><div class="ph2"><span class="i">rate_review</span>Site update · Benjamin Han<span style="flex:1"></span><span class="i">open_in_new</span><span class="i">close</span></div>
+          <div class="body2">
+            <div class="photo-lg"></div>
+            <div style="display:grid;gap:4px"><b>Feature wall panels have arrived</b><span style="font-size:13px;color:var(--m-ink2)">Germaine · yesterday 4:12 PM · 2 photos</span></div>
+            <p style="font-size:13.5px;line-height:20px">The oak veneer panels for the living-room feature wall arrived this morning. Install starts Thursday as planned.</p>
+            <div class="fact"><span>Project</span>HDB 5-Room · Carpentry</div>
+            <div class="fact"><span>Client sees</span>After you publish</div>
+            <div style="display:flex;gap:8px;margin-top:6px"><span class="btn">Send back</span><span class="btn p">Publish to Benjamin</span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><span>Review opens the record in a pane beside the list (a sheet on a phone) and approves there. The list keeps its place; the next row is one press away.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ TABLETS ═════════════════════════ -->
+<section>
+  <span class="eyebrow">Tablet · 1024 sideways and 768 upright, touch</span>
+  <h2>Two columns when there's room, one when there isn't</h2>
+  <div class="pair">
+    <div class="band">
+      <div class="frame" data-w="1024"><div class="screen app tab" style="width:1024px;height:768px">
+        <div class="rail"><div class="logo"></div><span class="on"><span class="i f">space_dashboard</span></span><span class="r"><span class="i">task_alt</span></span><span class="r"><span class="i">work</span></span><span class="r"><span class="i">group</span></span><span class="sp"></span><span class="r"><span class="i">notifications</span></span></div>
+        <div class="main"><div class="pad" style="padding:20px 22px 120px">
+          <div class="hello"><div><h4 style="font-size:22px">Good morning, Dane</h4><div class="sub">15 things need you · 3 since Friday</div></div><span class="seg"><span class="on">Studio</span><span>Mine</span></span></div>
+          <div class="since" style="flex-wrap:nowrap;overflow:hidden"><span class="chipx new"><span class="i">person_add</span><b>4 new leads</b></span><span class="chipx new"><span class="i">verified</span>Aisha confirmed</span><span class="chipx new"><span class="i">payments</span>Ryan says he paid</span><span class="chipx"><span class="i">photo_camera</span>6 photos</span></div>
+          <div class="pulse" style="grid-template-columns:repeat(4,1fr)"><div class="tile"><div class="k">Leads this week</div><div class="v">9</div><div class="d"><span class="up">▲ 3</span></div></div><div class="tile"><div class="k">Won · 90 d</div><div class="v">S$&nbsp;121k</div><div class="d">2 of 30</div></div><div class="tile"><div class="k">Owed to you</div><div class="v">S$&nbsp;34.8k</div><div class="d">S$&nbsp;34.2k past due</div></div><div class="tile"><div class="k">Coming in</div><div class="v">S$&nbsp;58.4k</div><div class="d">30 days</div></div></div>
+          <div class="grid2" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+            <div class="card"><div class="ch"><h5>Needs you</h5><span class="ringl"><span class="ring" style="--p:20%"></span>3 of 15</span></div>
+              <div class="row"><span class="ic ap"><span class="i">rate_review</span></span><div style="min-width:0"><div class="t1">Germaine's site update</div><div class="t2">Benjamin Han · 1 day</div></div><div class="acts"><span class="btn p">Review</span></div></div>
+              <div class="row"><span class="ic cl"><span class="i">visibility</span></span><div style="min-width:0"><div class="t1">Aisha opened OM-10009 3×</div><div class="t2">sent 4 days ago</div></div><div class="acts"><span class="btn p">Remind</span></div></div>
+              <div class="row"><span class="ic mo"><span class="i">payments</span></span><div style="min-width:0"><div class="t1">Ryan says he paid S$&nbsp;12,000</div><div class="t2">INV-2026-014</div></div><div class="acts"><span class="btn p">Confirm</span></div></div>
+              <div class="row"><span class="ic ld"><span class="i">call</span></span><div style="min-width:0"><div class="t1">Kelvin Goh · new lead</div><div class="t2">not called in the hour</div></div><div class="acts"><span class="btn p">Call</span></div></div>
+            </div>
+            <div class="col">
+              <div class="card"><div class="ch"><h5>Your day</h5></div><div class="week" style="grid-template-columns:repeat(5,1fr)"><div class="day on">Mon<b>26</b></div><div class="day">Tue<b>27</b></div><div class="day">Wed<b>28</b></div><div class="day">Thu<b>29</b></div><div class="day">Fri<b>30</b></div></div></div>
+              <div class="card"><div class="ch"><h5>Projects</h5></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-green)"></span>Benjamin Han</div><div class="pbar"><i style="width:62%"></i></div></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-amber)"></span>Ryan D'Souza</div><div class="pbar"><i style="width:38%"></i></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="composer-dock" style="padding:14px 22px"><div class="cchips"><span class="cchip">Prepare me for 2 PM</span><span class="cchip">Remind Aisha</span></div><div class="composer" style="width:640px"><div class="ph"><span class="i f spk">auto_awesome</span>Ask Maison AI…</div></div></div>
+        </div>
+      </div></div>
+      <div class="cap"><span>1024 sideways: the desk's two columns, four figures in the strip (the rest a swipe away), the field docked under them. Answers open in a pane.</span></div>
+    </div>
+    <div class="band">
+      <div class="frame" data-w="768" style="max-width:420px;justify-self:center;width:100%"><div class="screen app tab" style="width:768px;height:1024px">
+        <div class="main" style="left:8px"><div class="pad" style="padding:22px 22px 150px">
+          <div class="hello"><div><h4>Good morning, Dane</h4><div class="sub">15 things need you · 3 since Friday</div></div></div>
+          <div class="since" style="flex-wrap:nowrap;overflow:hidden"><span class="chipx new"><span class="i">person_add</span><b>4 new leads</b></span><span class="chipx new"><span class="i">verified</span>Aisha confirmed OM-10007</span><span class="chipx new"><span class="i">payments</span>Ryan says he paid</span></div>
+          <div class="pulse" style="grid-template-columns:repeat(3,1fr)"><div class="tile"><div class="k">Leads this week</div><div class="v">9</div><div class="d"><span class="up">▲ 3</span> vs last week</div></div><div class="tile"><div class="k">Owed to you</div><div class="v">S$&nbsp;34.8k</div><div class="d">S$&nbsp;34.2k past due</div></div><div class="tile"><div class="k">Coming in</div><div class="v">S$&nbsp;58.4k</div><div class="d">30 days</div></div></div>
+          <div class="card" style="margin-top:18px"><div class="ch"><h5>Needs you</h5><span class="ringl"><span class="ring" style="--p:20%"></span>3 of 15 cleared</span></div><div class="filters"><span class="fc on">All 15</span><span class="fc">Your OK 5</span><span class="fc">Clients 4</span><span class="fc">Late 3</span></div>
+            <div class="row"><span class="ic ap"><span class="i">rate_review</span></span><div style="min-width:0"><div class="t1">Germaine's site update · Feature wall panels</div><div class="t2">Benjamin Han · HDB 5-Room · 1 day</div></div><div class="acts"><span class="btn p">Review</span></div></div>
+            <div class="row"><span class="ic ap"><span class="i">schedule</span></span><div style="min-width:0"><div class="t1">Ryan asks for 5 more days on Carpentry</div><div class="t2">Executive Condo</div></div><div class="acts"><span class="btn p">Review</span></div></div>
+            <div class="row"><span class="ic cl"><span class="i">visibility</span></span><div style="min-width:0"><div class="t1">Aisha opened OM-10009 three times</div><div class="t2">S$&nbsp;68,176 · sent 4 days ago</div></div><div class="acts"><span class="btn p">Remind</span></div></div>
+            <div class="row"><span class="ic mo"><span class="i">payments</span></span><div style="min-width:0"><div class="t1">Ryan says he paid S$&nbsp;12,000</div><div class="t2">INV-2026-014</div></div><div class="acts"><span class="btn p">Confirm</span></div></div>
+          </div>
+          <div class="card" style="margin-top:18px"><div class="ch"><h5>Your day</h5></div><div class="agenda"><div class="row"><span class="tm">10:00</span><div><div class="t1">Site visit · Benjamin Han</div></div><div class="acts"><span class="btn">Directions</span></div></div><div class="row"><span class="tm">14:00</span><div><div class="t1">Kelvin Goh · first consultation</div></div><div class="acts"><span class="btn">Prepare me</span></div></div></div></div>
+          <div class="card" style="margin-top:18px"><div class="ch"><h5>Projects · 4 running</h5></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-green)"></span>Benjamin Han · HDB 5-Room</div><div class="pbar"><i style="width:62%"></i></div><div class="m">Carpentry · install Thu · on track</div></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-amber)"></span>Ryan D'Souza · Executive Condo</div><div class="pbar"><i style="width:38%"></i></div><div class="m">Asks 5 more days · deposit to confirm</div></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-red)"></span>Marcus Teo · Condo 3-bedder</div><div class="pbar"><i style="width:8%"></i></div><div class="m">Not started · hacking was due Fri</div></div></div>
+        </div>
+        <div class="composer-dock" style="padding:16px 22px"><div class="cchips"><span class="cchip">Prepare me for 2 PM with Kelvin</span><span class="cchip">How is cash?</span></div><div class="composer" style="width:100%"><div class="ph"><span class="i f spk">auto_awesome</span>Ask Maison AI about your studio…</div></div></div>
+        </div>
+      </div></div>
+      <div class="cap"><span>768 upright: one column in reading order, three figures across, the field docked at the foot at 16px. Answers open in a sheet.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ PHONE ═════════════════════════ -->
+<section>
+  <span class="eyebrow">Phone · 390, touch</span>
+  <h2>The same answers, in one hand</h2>
+  <div class="trio">
+    <div class="band">
+      <div class="frame" data-w="390" style="max-width:330px;justify-self:center;width:100%"><div class="screen app phone">
+        <div class="ptop"><div class="logo" style="width:26px;height:26px;border-radius:7px;background:linear-gradient(140deg,#7d5bff,#5b33e0)"></div><span class="sp"></span><span class="i">search</span><span class="i">notifications</span><span class="av" style="background:#7d5bff">D</span></div>
+        <div class="pbody">
+          <div><h4 style="margin:0;font:600 24px/30px Inter">Good morning, Dane</h4><div style="font-size:14px;color:var(--m-ink2)">15 things need you · 3 since Friday</div></div>
+          <div class="hscroll"><span class="chipx new"><span class="i">person_add</span><b>4 new leads</b></span><span class="chipx new"><span class="i">verified</span>Aisha confirmed</span><span class="chipx new"><span class="i">payments</span>Ryan paid</span></div>
+          <div class="card"><div class="ch"><h5>Needs you</h5><span class="sp"></span><span class="ringl"><span class="ring" style="--p:20%"></span>3 of 15</span></div>
+            <div class="row" style="grid-template-columns:32px minmax(0,1fr) auto"><span class="ic ap"><span class="i">rate_review</span></span><div style="min-width:0"><div class="t1" style="white-space:normal">Germaine's site update</div><div class="t2">Benjamin Han · 1 day</div></div><span class="btn p" style="height:36px">Review</span></div>
+            <div class="row" style="grid-template-columns:32px minmax(0,1fr) auto"><span class="ic cl"><span class="i">visibility</span></span><div style="min-width:0"><div class="t1" style="white-space:normal">Aisha opened OM-10009 3×</div><div class="t2">sent 4 days ago</div></div><span class="btn p" style="height:36px">Remind</span></div>
+            <div class="row" style="grid-template-columns:32px minmax(0,1fr) auto"><span class="ic mo"><span class="i">payments</span></span><div style="min-width:0"><div class="t1" style="white-space:normal">Ryan says he paid S$&nbsp;12,000</div><div class="t2">INV-2026-014</div></div><span class="btn p" style="height:36px">Confirm</span></div>
+            <div class="row" style="grid-template-columns:32px minmax(0,1fr) auto"><span class="ic ld"><span class="i">call</span></span><div style="min-width:0"><div class="t1" style="white-space:normal">Kelvin Goh · new lead</div><div class="t2">not called in the hour</div></div><span class="btn p" style="height:36px">Call</span></div>
+            <div class="foot">Show 11 more</div>
+          </div>
+          <div class="p2x2"><div class="tile"><div class="k">Leads · week</div><div class="v">9</div><div class="d"><span class="up">▲ 3</span></div></div><div class="tile"><div class="k">Won · 90 d</div><div class="v">S$&nbsp;121k</div><div class="d">2 of 30</div></div><div class="tile"><div class="k">Owed</div><div class="v">S$&nbsp;34.8k</div><div class="d">past due S$&nbsp;34.2k</div></div><div class="tile"><div class="k">Coming in</div><div class="v">S$&nbsp;58.4k</div><div class="d">30 days</div></div></div>
+        </div>
+        <div class="accessory"><span class="i f spk">auto_awesome</span>Ask Maison AI…<span class="sp"></span><span class="send"><span class="i">arrow_upward</span></span></div>
+        <div class="pdock"><span class="on"><span class="i f">space_dashboard</span>Dashboard</span><span><span class="i">group</span>Leads</span><span><span class="i">construction</span>Tools</span><span><span class="i">work</span>Projects</span><span><span class="i">menu</span>More</span></div>
+      </div></div>
+      <div class="cap"><span>At rest: the greeting, what's new as a row of chips, Needs you with four rows, the figures 2×2. The field sits just above the dock and shrinks into it while you scroll down.</span></div>
+    </div>
+    <div class="band">
+      <div class="frame" data-w="390" style="max-width:330px;justify-self:center;width:100%"><div class="screen app phone">
+        <div class="ptop"><span class="sp"></span></div>
+        <div class="scrim"></div>
+        <div class="sheet"><div><div class="grab"></div><div style="display:flex;align-items:center;gap:8px;padding:4px 16px 10px;font-weight:600"><span class="i f" style="color:#e8643b">auto_awesome</span>Maison AI<span style="flex:1"></span><span class="i">close</span></div></div>
+          <div style="padding:6px 16px;display:grid;gap:10px;align-content:start;overflow:hidden">
+            <div class="bub">Prepare me for 2 PM with Kelvin</div>
+            <div class="ans" style="padding:12px">
+              <div style="display:flex;gap:10px;align-items:center"><span class="av" style="background:#2d6cdf;width:36px;height:36px;font-size:13px">KG</span><div><b>Kelvin Goh</b><div style="font-size:12.5px;color:var(--m-ink2)">HDB 4-Room · S$&nbsp;70,500 · Instagram</div></div></div>
+              <ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:20px;display:grid;gap:4px"><li>Keys collected; wants a Scandinavian look</li><li>Kitchen and living room first</li><li>Not called yet — he came in at 9:12 AM</li></ul>
+              <div class="doors"><span class="btn p" style="height:36px"><span class="i">call</span>Call now</span><span class="btn" style="height:36px">Open lead ›</span></div>
+            </div>
+          </div>
+          <div style="padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--m-line);display:grid;gap:8px">
+            <div class="hscroll" style="margin-right:-12px"><span class="cchip">Draft a WhatsApp to Kelvin</span><span class="cchip">His budget vs similar</span></div>
+            <div style="height:44px;border:1px solid #dcd6ef;border-radius:22px;display:flex;align-items:center;padding:0 6px 0 16px;color:var(--m-ink3);font-size:16px">Ask a follow-up…<span style="flex:1"></span><span class="send"><span class="i">arrow_upward</span></span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><span>A tap opens the house sheet: the answer on top, suggestions, and the field at the foot, where the keyboard lifts it.</span></div>
+    </div>
+    <div class="band">
+      <div class="frame" data-w="390" style="max-width:330px;justify-self:center;width:100%"><div class="screen app phone">
+        <div class="ptop"><span class="sp"></span><span class="i">notifications</span></div>
+        <div class="pbody" style="padding-top:14px">
+          <div class="card"><div class="ch"><h5>Your day · Mon 26</h5><span class="sp"></span><span class="ringl"><span class="ring" style="--p:40%"></span>2 of 5</span></div>
+            <div class="week" style="grid-template-columns:repeat(5,1fr)"><div class="day on">Mon<b>26</b></div><div class="day">Tue<b>27</b></div><div class="day">Wed<b>28</b></div><div class="day">Thu<b>29</b></div><div class="day">Fri<b>30</b></div></div>
+            <div class="agenda">
+              <div class="row"><span class="tm">10:00</span><div style="min-width:0"><div class="t1">Site visit · Benjamin</div><div class="t2">Tampines St 41</div></div><span class="btn" style="height:36px"><span class="i">directions</span></span></div>
+              <div class="row"><span class="tm">14:00</span><div style="min-width:0"><div class="t1">Kelvin Goh</div><div class="t2">first consultation</div></div><span class="btn" style="height:36px"><span class="i f" style="color:#e8643b">auto_awesome</span></span></div>
+              <div class="row"><span class="tm">Call</span><div style="min-width:0"><div class="t1">Farah Ahmad</div><div class="t2"><span class="late" style="color:var(--m-red)">4 days late</span></div></div><span class="btn p" style="height:36px"><span class="i">call</span></span></div>
+            </div>
+          </div>
+          <div class="card"><div class="ch"><h5>Projects</h5></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-green)"></span>Benjamin Han</div><div class="pbar"><i style="width:62%"></i></div><div class="m">install Thu · on track</div></div><div class="prj"><div class="n"><span class="hd" style="background:var(--m-red)"></span>Marcus Teo</div><div class="pbar"><i style="width:8%"></i></div><div class="m">hacking was due Fri</div></div></div>
+        </div>
+        <div class="pdock" style="grid-template-columns:repeat(5,1fr) 64px"><span class="on"><span class="i f">space_dashboard</span>Dashboard</span><span><span class="i">group</span>Leads</span><span><span class="i">construction</span>Tools</span><span><span class="i">work</span>Projects</span><span><span class="i">menu</span>More</span><span style="display:grid;place-items:start center"><span style="width:44px;height:44px;border-radius:22px;border:1px solid #dcd6ef;box-shadow:0 4px 14px rgba(55,30,140,.14);display:grid;place-items:center;margin-top:-2px"><span class="i f" style="color:#e8643b;margin:0">auto_awesome</span></span></span></div>
+      </div></div>
+      <div class="cap"><span>Scrolled: the field has shrunk into a ✦ at the dock's end; one tap opens it. Scrolling back up brings the field back. Rows keep 44-tall presses.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ CARDS AND REASONS ═════════════════════════ -->
+<section>
+  <span class="eyebrow">Every card has a reason</span>
+  <h2>One question each, one home each</h2>
+  <div class="band scroll">
+    <table class="t">
+      <thead><tr><th>Card</th><th>The question it answers</th><th>From</th><th>A press does</th><th>Who sees it</th></tr></thead>
+      <tbody>
+        <tr><td>Greeting</td><td>Where do I start today?</td><td>Needs you's count, the last-visit mark</td><td>Studio / Mine switches the scope</td><td>Everyone</td></tr>
+        <tr><td>Since you were last here</td><td>What happened while I was away?</td><td>The bell's stored events, quote / contract views, payments, captures, site updates</td><td>Opens exactly what changed</td><td>Everyone, scoped to what they see</td></tr>
+        <tr><td>Pulse</td><td>Are we OK?</td><td>Each module's own figure: Sales, Insights, Money in, Reports › Finance</td><td>Opens the report; hover breaks it down</td><td>Owner, Admin; Manager without money; Accounting money-only</td></tr>
+        <tr><td>Needs you</td><td>What waits on me?</td><td>Approvals across modules, every project's Needs-you rows, quote / contract follow-ups, new leads, money To do</td><td>Acts in place (Publish, Agree, Remind, Confirm, Call, Done) with Undo; Review opens the pane</td><td>Everyone; rows by role</td></tr>
+        <tr><td>Your day</td><td>What do I do today?</td><td>Meetings, follow-ups, my tasks, milestones starting</td><td>Prepare me · Call · WhatsApp · Directions · tick</td><td>Everyone</td></tr>
+        <tr><td>Pipeline</td><td>Where are the leads, and which are stuck?</td><td>Leads by stage, days in stage, going quiet</td><td>A stage opens the listing filtered</td><td>Owner, Admin, Manager, Marketing</td></tr>
+        <tr><td>Projects</td><td>Which project needs attention?</td><td>Stage, progress, schedule, money health</td><td>Opens the project</td><td>Owner, Admin, Manager; a Designer's own</td></tr>
+        <tr><td>Team</td><td>Who has room?</td><td>Workload against capacity, open to new leads</td><td>Opens Workload</td><td>Owner, Admin, Manager</td></tr>
+        <tr><td>On site</td><td>What happened on site?</td><td>Site updates published this week</td><td>Opens the update</td><td>Owner, Admin, a project's members</td></tr>
+        <tr><td>Maison AI</td><td>Anything else</td><td>The records, as the asker may see them</td><td>Answers in place or in the pane; proposes, you approve</td><td>Everyone</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Leaving the page: Market Insights (a door stays in Tools, and a new article can appear in "Since you were last here"). Merged: My tasks and Coming up into Your day; the nine tiles into one strip of six.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Maison AI, docked</span>
+  <h2>A field you type into, and answers you can use</h2>
+  <div class="pair">
+    <div class="band">
+      <h3>How it behaves</h3>
+      <div class="scroll"><table class="t">
+        <thead><tr><th>State</th><th>Desk</th><th>Tablet</th><th>Phone</th></tr></thead>
+        <tbody>
+          <tr><td>Rest</td><td>Field at the column's foot, 3 chips above</td><td>Same, 16px, 44 targets</td><td>A field above the dock</td></tr>
+          <tr><td>Scrolling</td><td>Stays</td><td>Stays</td><td>Shrinks into a ✦ at the dock's end</td></tr>
+          <tr><td>Ask about a card</td><td>The card joins as a context chip; its questions replace the chips</td><td>Same</td><td>The sheet opens with the chip</td></tr>
+          <tr><td>Short answer</td><td>Grows above the field</td><td>Sheet (upright) / above the field (sideways)</td><td>Sheet</td></tr>
+          <tr><td>Long answer or a change</td><td>Pane beside the cards</td><td>Sheet / pane</td><td>Sheet</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">The floating button steps aside on this page only. Every other page keeps it. ⌘K stays search.</p>
+    </div>
+    <div class="band">
+      <h3>What answers are made of</h3>
+      <p class="muted" style="font-size:14px">The best of 1.0's chat answers, rebuilt on the house pieces, each ending in a door to the record.</p>
+      <ul class="l" style="font-size:14px">
+        <li><b>Figures</b>: two to four tiles with their comparison</li>
+        <li><b>A record</b>: a lead or project card with its facts and Open</li>
+        <li><b>A list you can act on</b>: rows with their verb, the same as Needs you</li>
+        <li><b>A small chart</b>: bars or a line, with values on hover or tap</li>
+        <li><b>A timeline</b>: what happened on a record, by day, with type icons</li>
+        <li><b>A comparison</b>: this vs that, side by side</li>
+        <li><b>A receipt</b>: what Maison AI did, with Undo</li>
+        <li><b>Doors</b>: one press to the place; repeats fold into "Open … · 4"</li>
+      </ul>
+      <p class="small">Not brought from 1.0: the endless chip marquee, the page swapping into a chat, three chat surfaces that disagreed, writes without confirmation, invented market figures.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Interactions</span>
+  <h2>What a press, a hover and a key do</h2>
+  <div class="cols3">
+    <div class="band"><h3>Acting in place</h3><ul class="l" style="font-size:14px"><li>The verb on a row acts at once and shows a receipt with Undo (5 s), then the row leaves and the ring fills.</li><li>Review opens a pane (desk) or a sheet (phone) with the record and its approve / send back.</li><li>⋯ on a row: Open, Not today (back tomorrow), Ask about this.</li><li>Call and WhatsApp open straight from the row; the call is remembered so "Log the call" is offered on return.</li></ul></div>
+    <div class="band"><h3>Glancing</h3><ul class="l" style="font-size:14px"><li>Hover on a Pulse figure shows its breakdown (by source, by age, by project) and Ask.</li><li>A day in the week strip shows that day's agenda in place.</li><li>Chips in "Since you were last here" open the thing and tick off.</li><li>Red only for what's ours and late; a client's lateness stays neutral.</li></ul></div>
+    <div class="band"><h3>Keys and motion</h3><ul class="l" style="font-size:14px"><li>J / K move through Needs you, Enter acts, R reviews, ⌘J focuses Maison AI.</li><li>Rows ease out when cleared; the ring fills; nothing else moves on its own.</li><li>When all is clear: "You're all caught up", the ring full, and what's coming next.</li><li>The page refreshes when you come back to it, never under your cursor.</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Roles</span>
+  <h2>One page shape, each role's defaults</h2>
+  <div class="band scroll">
+    <table class="t">
+      <thead><tr><th>Role</th><th>Needs you leads with</th><th>Pulse</th><th>Cards</th></tr></thead>
+      <tbody>
+        <tr><td>Owner</td><td>Approvals, clients waiting, late and ours, money to move</td><td>All six</td><td>Your day, Pipeline, Projects, Team, On site · Studio / Mine</td></tr>
+        <tr><td>Admin</td><td>The same (no plan buying)</td><td>All six</td><td>The same</td></tr>
+        <tr><td>Manager</td><td>Their team's late rows, approvals they hold</td><td>Leads, response, won (no money)</td><td>Your day, Pipeline, Projects, Team (their team)</td></tr>
+        <tr><td>Designer</td><td>Their calls, clients waiting on them, quotes sent back</td><td>Their leads, their projects, commission owed to them</td><td>Your day, their Projects, On site</td></tr>
+        <tr><td>Accounting</td><td>Finance To do by group: approve, pay, collect, stuck</td><td>Owed, coming in, you owe, GST this quarter</td><td>Cash in and out this week, overdue by age, Xero health</td></tr>
+        <tr><td>Marketing</td><td>Unseen and unassigned leads, not called in the hour</td><td>Leads by source, response time</td><td>Pipeline, capture health, the Review queue</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Stitched together</span>
+  <h2>One fact, one number, everywhere</h2>
+  <div class="pair">
+    <div class="band"><h3>What the page needs fixed underneath</h3><ul class="l" style="font-size:14px">
+      <li><b>One clock for "overdue"</b>: the bell counts from midnight, My tasks from the hour. One rule, used by both.</li>
+      <li><b>One "Owed to you"</b>: today it means three different amounts on three pages.</li>
+      <li><b>One tickets count</b>: counted five ways and named three.</li>
+      <li><b>One "not contacted"</b>: four rules today. And "Needs attention" means four things.</li>
+      <li><b>Two profits named apart</b>: the studio's month and a project's margin.</li>
+      <li><b>Money on cards</b> as "S$&nbsp;77,900"; dates one way; "5 days overdue", never "(5d)".</li>
+      <li><b>Every door carries <span class="mono">?from=/dashboard</span></b>; five don't today.</li>
+      <li><b>The page shows a module's own figure</b>, never its own count of it.</li>
+    </ul></div>
+    <div class="band"><h3>Found on the way, to fix</h3><ul class="l" style="font-size:14px">
+      <li>A quote's follow-up task never closes when the quote is confirmed or signed.</li>
+      <li>Coming up cuts each project to six rows before merging, so a busy project hides the rest.</li>
+      <li>The bell rings for supplier bills still waiting for approval.</li>
+      <li>The greeting uses the server's clock; on a UTC server it says "Good morning" at 3 PM. Pin it to the studio's time.</li>
+      <li>The page reads every project in full and starts answering in 0.29 s (Leads: 0.08 s). Read only what it shows.</li>
+      <li>At 1024 with a mouse, the floating button covers the Finance row's Open.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Across the modules</span>
+  <h2>What's good, what's missing, what isn't built</h2>
+  <div class="cols3">
+    <div class="band"><h3><span class="tag g">good</span> Keep and reuse</h3><ul class="l" style="font-size:14px"><li>One home per figure, with doors elsewhere</li><li>The Needs-you row: one row, one button, approvals first</li><li>Red only for late and ours</li><li>Links that open the step itself (<span class="mono">?run=</span> · <span class="mono">?todo=</span> · <span class="mono">?open=</span>)</li><li>Review before any approve</li><li>Page shape by role rule, not a setting</li><li>Maison AI answering from the records, proposing</li><li>Plain, honest empty states</li></ul></div>
+    <div class="band"><h3><span class="tag w">missing here</span> Exists, never reaches the page</h3><ul class="l" style="font-size:14px"><li>Quotes opened but not confirmed, waiting 3+ days, expiring, changes asked</li><li>Contracts out for signature, not opened</li><li>X-Ray readings, the portal's activity</li><li>Unseen leads; the team's overdue tasks</li><li>Every project's rows beyond its first</li><li>AI credits running low; Qanvast lead credits</li><li>GST due, Xero health, invitations pending</li><li>Accounting sees no project money at all</li></ul></div>
+    <div class="band"><h3><span class="tag b">not built</span> Needed for this page</h3><ul class="l" style="font-size:14px"><li>A last-visit mark per member ("since you were last here")</li><li>A studio-wide feed of what changed</li><li>Weekly history for the trend lines (from the records' own dates)</li><li>Project health by rule (on track, at risk, late) and slipping milestones</li><li>Cash in this week; a GST-due signal</li><li>"Not today" on a row</li><li>The answer cards (figures, record, chart, receipt)</li></ul><p class="small">Still held on your word: dark mode, languages, themes and tours, countries beyond Singapore.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ THE MARKS ═════════════════════════ -->
+<section id="marks">
+  <span class="eyebrow">Your marks</span>
+  <h2>Proposals</h2>
+  <p class="muted read" style="font-size:14px">Build, Later or Skip each one; add a note where you want it different. Your marks save as you press them.</p>
+  <div class="items" id="proposals"></div>
+  <h2 style="margin-top:28px">Questions</h2>
+  <p class="muted read" style="font-size:14px">My recommendation is marked. Pick another where you disagree.</p>
+  <div class="items" id="questions"></div>
+  <div class="status" aria-live="polite"><span id="status" hidden></span></div>
+</section>
+</div>
+
+<script>
+const PROPOSALS = [
+  ['P-01', 'Maison AI docked like a chat input', 'The field lives at the foot of the page with three suggestions from today’s records; short answers grow above it, long ones open in a pane (a sheet on a phone). The brief card and the floating button step aside on the Dashboard.'],
+  ['P-02', 'Good morning, and since you were last here', 'The greeting becomes the title, by the studio’s time. A row of chips says what clients and the team did since your last visit; each opens exactly that.'],
+  ['P-03', 'Pulse: six figures in one strip', 'Leads this week, won, first response (graded), owed to you by age, coming in over 30 days, profit this month (Early until costs are in). Each with a comparison, a direction and an 8-week trend; a press opens its report.'],
+  ['P-04', 'Needs you as one ranked inbox', 'Every module’s waiting work in one list with filter chips (Your OK, Clients waiting, Late, Money, New leads), the verb on the row, acting in place with Undo, a ring for what’s cleared today, and every project’s rows rather than only the first.'],
+  ['P-05', 'Review in a pane, without leaving', 'Review opens the record beside the list (a sheet on a phone) with Publish, Agree, Send back. The list keeps its place.'],
+  ['P-06', 'Your day', 'My tasks and Coming up merge: the week as seven days with dots, today’s meetings (Prepare me), calls (Call, WhatsApp), tasks (tick) and milestones.'],
+  ['P-07', 'Pipeline at a glance', 'Leads by stage with marks where they’re stuck or going quiet; a stage opens the listing filtered to it.'],
+  ['P-08', 'Projects at a glance', 'One line per running project: health (on track, at risk, late) by rule, progress, and the next fact that matters.'],
+  ['P-09', 'Team and On site', 'Workload bars against each member’s capacity, and the week’s site photos as a strip.'],
+  ['P-10', 'Answers as cards you can use', 'Figures, a record, a list with its verbs, a small chart, a timeline, a comparison, a receipt with Undo, and doors — 1.0’s best answer components on the house pieces.'],
+  ['P-11', 'Each role’s defaults', 'One page shape; Owner, Admin, Manager, Designer, Accounting and Marketing each get the rows, figures and cards in the Roles table.'],
+  ['P-12', 'Tablet and phone layouts as drawn', 'Two columns at 1024 sideways, one column at 768 upright, the phone with the field above the dock, shrinking into a ✦ at the dock\u2019s end on scroll, answers in the house sheet.'],
+  ['P-13', 'One fact, one number', 'One overdue clock, one Owed to you, one tickets count, one date and money format, ?\u2060from=/dashboard on every door, the module’s own figure only.'],
+  ['P-14', 'The bugs found on the way', 'The quote follow-up that never closes, Coming up’s six-row cut, the bell ringing for unapproved bills, the greeting’s clock, the slow first answer, the floating button over Finance’s Open at 1024.'],
+  ['P-15', 'Market Insights leaves the home page', 'It stays in Tools; a new article can appear in Since you were last here.'],
+];
+const QUESTIONS = [
+  ['Q-01', 'Where do Maison AI’s answers open?', [['a', 'Short ones above the field, long ones in a pane beside the cards', true], ['b', 'Always in the pane'], ['c', 'Always above the field']]],
+  ['Q-02', 'The floating Maison AI button on the Dashboard', [['a', 'Steps aside; the docked field is the one way in', true], ['b', 'Keep both']]],
+  ['Q-03', 'The suggestions above the field', [['a', 'Three, written by rule from today’s records and the role', true], ['b', 'A fixed set per role']]],
+  ['Q-04', 'Trend lines on the figures', [['a', 'Weekly history from the records’ own dates, no new table', true], ['b', 'A nightly snapshot table'], ['c', 'Words only (“▲ 3 vs last week”)']]],
+  ['Q-05', '“Not today” on a Needs-you row', [['a', 'Yes: it comes back tomorrow', true], ['b', 'No']]],
+  ['Q-06', 'Can a member change the page?', [['a', 'Role defaults, plus hide a card for themselves', true], ['b', 'Also drag cards to reorder'], ['c', 'No changes']]],
+  ['Q-07', 'An Owner’s scope', [['a', 'A Studio / Mine switch', true], ['b', 'Studio only']]],
+  ['Q-08', 'Accounting’s front door', [['a', 'The Dashboard, in its money layout', true], ['b', 'Keep Finance › To do']]],
+  ['Q-09', 'A key to focus Maison AI', [['a', '⌘J / Ctrl J', true], ['b', 'No key']]],
+  ['Q-10', 'Project health', [['a', 'On track, at risk or late, by rule from the schedule and the money', true], ['b', 'Stage and progress only']]],
+  ['Q-11', 'When everything is cleared', [['a', 'A calm “You’re all caught up” with the ring full and what’s next', true], ['b', 'A small celebration'], ['c', 'Nothing']]],
+  ['Q-12', 'A voice button in the field', [['a', 'Later, when a model is plugged in', true], ['b', 'Now, as a stand-in']]],
+];
+
+const state = {}; let db = null;
+const statusEl = document.getElementById('status');
+function say(t) { statusEl.textContent = t; statusEl.hidden = false; clearTimeout(say.t); say.t = setTimeout(() => { statusEl.hidden = true }, 2200) }
+
+function renderItem(host, id, title, body, options) {
+  const el = document.createElement('div'); el.className = 'item'; el.id = id
+  const head = document.createElement('div'); head.className = 'item-head'
+  const idEl = document.createElement('span'); idEl.className = 'item-id'; idEl.textContent = id
+  const h = document.createElement('h3'); h.textContent = title
+  head.append(idEl, h); el.append(head)
+  if (body) { const p = document.createElement('p'); p.textContent = body; el.append(p) }
+  const ch = document.createElement('div'); ch.className = 'choices'; ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', id + ' choice')
+  for (const [k, label, rec] of options) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.dataset.k = k; b.setAttribute('aria-pressed', 'false')
+    b.textContent = label
+    if (rec) { const r = document.createElement('span'); r.className = 'rec'; r.textContent = 'recommended'; b.append(r) }
+    b.addEventListener('click', () => pick(id, k))
+    ch.append(b)
+  }
+  el.append(ch)
+  const note = document.createElement('textarea'); note.className = 'note'; note.id = 'note-' + id; note.rows = 1; note.placeholder = 'A note (optional)'
+  note.addEventListener('change', () => saveNote(id, note.value))
+  const saved = document.createElement('div'); saved.className = 'saved'; saved.id = 'saved-' + id
+  el.append(note, saved)
+  host.append(el)
+}
+for (const [id, t, b] of PROPOSALS) renderItem(document.getElementById('proposals'), id, t, b, [['build', 'Build', true], ['later', 'Later'], ['skip', 'Skip']])
+for (const [id, t, opts] of QUESTIONS) renderItem(document.getElementById('questions'), id, t, '', opts)
+
+function paint(id) {
+  const s = state[id] || {}; const el = document.getElementById(id); if (!el) return
+  el.querySelectorAll('.choice').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === s.choice)))
+  if (s.choice) el.setAttribute('data-picked', ''); else el.removeAttribute('data-picked')
+  const n = document.getElementById('note-' + id); if (n && document.activeElement !== n && typeof s.note === 'string') n.value = s.note
+  const sv = document.getElementById('saved-' + id); if (sv) sv.textContent = s.choice ? 'Saved' : ''
+}
+async function write(id, patch) {
+  state[id] = { ...(state[id] || {}), ...patch }; paint(id)
+  if (!db) { say('Marks need the page opened on claude.ai to save'); return }
+  try { await db.collection('picks').doc(id).set({ ...state[id], at: new Date().toISOString() }); say('Saved ' + id) }
+  catch (e) { say('Couldn’t save ' + id + ' — try again') }
+}
+function pick(id, k) { write(id, { choice: state[id]?.choice === k ? null : k }) }
+function saveNote(id, v) { write(id, { note: v }) }
+
+;(async () => {
+  try {
+    db = await (window.claude?.use ? window.claude.use('db') : null)
+    if (!db) return
+    db.collection('picks').onSnapshot((snap) => {
+      for (const d of snap.docs) { const v = d.data() || {}; state[d.id] = { choice: v.choice ?? null, note: v.note ?? '' }; paint(d.id) }
+    }, () => say('Your marks couldn’t load just now'))
+  } catch (e) { db = null }
+})()
+
+/* the drawn screens: each is drawn at its own width and scaled to its band */
+function fit() {
+  document.querySelectorAll('.frame').forEach((f) => {
+    const s = f.querySelector('.screen'); if (!s) return
+    const w = +f.dataset.w || s.offsetWidth; const scale = f.clientWidth / w
+    s.style.transform = 'scale(' + scale + ')'
+    f.style.height = Math.ceil(s.offsetHeight * scale) + 'px'
+  })
+}
+fit(); addEventListener('resize', fit); document.fonts && document.fonts.ready.then(fit)
+</script>

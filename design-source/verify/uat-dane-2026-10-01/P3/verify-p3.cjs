@@ -40,7 +40,15 @@ async function drag(page, from, to) {
 const center = (loc) => loc.evaluate((el) => el.scrollIntoView({ block: 'center' })).then(() => new Promise((r) => setTimeout(r, 300)))
 async function openEditor(page) { await page.goto(EDITOR); await page.getByTestId('quote-editor').waitFor(); await ready(page) }
 async function viewBy(page, label) {
-  await page.locator('#section-items').getByRole('button', { name: /^View by:/ }).click()
+  /* (the calm UI build 2026-10-27, a deliberate change) 4-03: View by is the Items ⋮'s row — an open Find / Jump to closes first, and the menu is
+     waited for before its row is pressed (the toolbar's own View by button needed neither) */
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200)
+  /* (the calm UI build 2026-10-27, a deliberate change) the ⋮'s menu is a PortalMenu, which closes on any scroll 250 ms after it opens (REG-416):
+     a Jump to pick's smooth centring still running would shut it before its View by row is pressed — the page is let come to rest first */
+  for (let i = 0, last = -1; i < 40; i++) { const y = await page.evaluate(() => Math.round(document.querySelector('#section-items')?.getBoundingClientRect().top ?? window.scrollY)); if (y === last) break; last = y; await page.waitForTimeout(150) }
+  await page.locator('#section-items').getByRole('button', { name: 'More options for Items' }).click()
+  await page.getByRole('menuitem', { name: /^View by:/ }).waitFor({ state: 'visible' }); await page.waitForTimeout(400)
+  await page.getByRole('menuitem', { name: /^View by:/ }).click(); await page.waitForTimeout(200)
   await page.getByRole('menuitemradio', { name: label }).click(); await page.waitForTimeout(600)
 }
 
@@ -54,11 +62,11 @@ async function viewBy(page, label) {
   await step('g-sections-trade note', async () => {
     await openEditor(page)
     const note = page.getByTestId('print-note')
-    ok('g-sections-trade the Items card says the template prints by trade and the sections don’t print',
-      (await note.innerText()).includes('Default Quote PDF prints lines by trade, so these sections don’t show on the printed quote.'), await note.innerText())
+    ok('g-sections-trade the Template card says the template prints by trade and the sections don’t print',   // (the calm UI build 2026-10-27, a deliberate change) said once, in the Template card (4-02 · W-167)
+      (await note.innerText()).includes('Prints by trade — your sections are for you.'), await note.innerText())
     await note.scrollIntoViewIfNeeded()
     await shot(page, 'g-sections-trade-note', { x: 0, y: Math.max(0, (await note.boundingBox()).y - 140), width: 1440, height: 420 })
-    await note.getByRole('button', { name: 'Change template' }).click()
+    await page.getByTestId('template-card').getByRole('button', { name: 'Change' }).click()   // (the calm UI build 2026-10-27, a deliberate change) the card's one button
     ok('g-sections-trade Change template opens the template picker', await page.getByRole('dialog', { name: 'Choose a template' }).isVisible())
     await page.getByRole('dialog', { name: 'Choose a template' }).getByRole('button', { name: 'Cancel' }).click(); await page.waitForTimeout(400)
   })
@@ -135,7 +143,7 @@ async function viewBy(page, label) {
     await shot(page, 'g-expanded-below-cost-red', { x: 0, y: Math.max(0, b.y - 80), width: 1440, height: 260 })
   })
   await step('g-expanded preview round trip', async () => {
-    await page.locator('#section-items').getByRole('button', { name: 'Expand', exact: true }).click(); await page.waitForTimeout(500)
+    await page.locator('#section-items').getByRole('button', { name: 'More options for Items' }).click(); await page.waitForTimeout(300); await page.getByTestId('items-full-screen').click(); await page.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-03: full screen is the Items ⋮'s row
     const layer = page.locator('[data-items-expanded]')
     const preview = layer.getByRole('button', { name: 'Preview', exact: true })
     ok('g-expanded the expanded view carries Preview', await preview.isVisible())
@@ -179,7 +187,7 @@ async function viewBy(page, label) {
   /* ── g-categories: View by › Category — + on a bucket, a line dropped on another bucket (+ Undo), a bucket dragged ── */
   await step('g-categories', async () => {
     await page.goto(EDITOR); await page.getByTestId('quote-editor').waitFor(); await ready(page)
-    await viewBy(page, 'Category')
+    await viewBy(page, 'Trade')   // (the calm UI build 2026-10-27, a deliberate change) 4-01: Trade, not Category
     const flooring = page.locator('[data-bucket="Flooring"]')
     await center(flooring)
     ok('g-categories every category bucket carries a + (Add item to …)', await flooring.getByRole('button', { name: 'Add item to Flooring' }).isVisible())
@@ -205,7 +213,7 @@ async function viewBy(page, label) {
     /* a bucket by its handle: Painting above Hacking */
     await page.waitForTimeout(800)
     const order0 = await page.evaluate(() => [...document.querySelectorAll('[data-bucket]')].map((b) => b.getAttribute('data-bucket')))
-    await page.locator('#section-items').getByRole('button', { name: 'Collapse All', exact: true }).click(); await page.waitForTimeout(400)   // every bucket folded: the titles fit on one screen
+    await page.locator('#section-items').getByRole('button', { name: 'More options for Items' }).click(); await page.waitForTimeout(300); await page.getByTestId('toolbar-fold').click(); await page.waitForTimeout(400)   // every bucket folded: the titles fit on one screen   // (the calm UI build 2026-10-27, a deliberate change) 4-03
     const hacking = page.locator('[data-bucket="Hacking"]')
     await center(hacking)
     const painting = page.locator('[data-bucket="Painting"]')
@@ -216,7 +224,7 @@ async function viewBy(page, label) {
     ok('g-categories …and the quote keeps the order', await until(() => { const j = sql(`select items_labels from quotes where id = '${Q}'`); try { const o = JSON.parse(j).categoryOrder || []; return o.indexOf('Painting') >= 0 && o.indexOf('Painting') < o.indexOf('Hacking') } catch { return false } }))
     await page.reload(); await page.getByTestId('quote-editor').waitFor(); await ready(page)
     const order2 = await page.evaluate(() => [...document.querySelectorAll('[data-bucket]')].map((b) => b.getAttribute('data-bucket')))
-    ok('g-categories …after a reload too; Uncategorized stays last', order2.indexOf('Painting') < order2.indexOf('Hacking') && order2[order2.length - 1] === 'Uncategorized', order2.join(' · '))
+    ok('g-categories …after a reload too; Uncategorized stays last', order2.indexOf('Painting') < order2.indexOf('Hacking') && order2[order2.length - 1] === 'No trade', order2.join(' · '))   // (the calm UI build 2026-10-27, a deliberate change) W-416
     /* Jump to lists the categories in this view */
     await page.locator('#section-items').getByRole('button', { name: 'Find items' }).click(); await page.waitForTimeout(400)
     ok('g-jumpto in View by › Category the list is the categories', /Painting/.test(await page.getByTestId('jump-to').innerText()) && /Masonry/.test(await page.getByTestId('jump-to').innerText()))
@@ -253,8 +261,8 @@ async function viewBy(page, label) {
   /* ── g-merge-fields: My Templates' merge-field menu reads "Insert a field" ── */
   await step('g-merge-fields', async () => {
     await page.getByRole('tab', { name: 'Terms and Conditions' }).click(); await page.waitForTimeout(800)
-    await page.locator('#section-terms').getByRole('button', { name: 'My Templates' }).first().click()
-    await page.getByRole('button', { name: 'Create New' }).click(); await page.waitForTimeout(400)
+    await page.locator('#section-terms').getByRole('button', { name: 'Templates', exact: true }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) W-270 · W-399
+    await page.getByRole('button', { name: 'New template' }).click(); await page.waitForTimeout(400)
     const trig = page.getByRole('button', { name: 'Insert a field' })
     ok('g-merge-fields the menu is “Insert a field”', await trig.isVisible())
     await trig.click(); await page.waitForTimeout(300)
@@ -273,7 +281,7 @@ async function viewBy(page, label) {
     const png = await sigPage.locator('#s').screenshot({ type: 'png' })
     await sigPage.close()
     await page.goto(`${BASE}/company/members`); await ready(page)
-    ok('g-signature Members says “Signature: not set” while it isn’t', /Signature: not set/.test(await page.locator('body').innerText()))
+    ok('g-signature Members says “Signature: not set” while it isn’t', await page.getByTestId('member-signature').filter({ hasText: 'Add your signature' }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change) 5-01: your row's second line is the way to add it, "Add your signature" (the drawer says "Your signature isn’t set yet")
     await page.goto(`${EDITOR}/preview`); await ready(page)
     ok('g-signature Preview’s readiness asks for it (the template prints your signature)', /Your signature isn’t set up/.test(await page.locator('body').innerText()))
     await openEditor(page)
@@ -316,13 +324,13 @@ async function viewBy(page, label) {
     const snap = execSync(`npx tsx -e "import { studioSignatureFor } from './lib/contracts/snapshot'; const s = studioSignatureFor('dane', [{ id: 'dane', name: 'Dane', signatureKind: 'image', signatureName: 'Dane', signatureData: 'data:image/png;base64,iVBORw0KGgo=', signatureConsent: 'yes' }], 'dane'); console.log(s ? s.kind : 'none')"`, { cwd: path.resolve(__dirname, '../../../..') }).toString().trim()
     ok('g-signature the signed copy keeps an uploaded signature (snapshot)', snap === 'image', snap)   // (pending modules S03, a deliberate change of this rule) the member said yes to it on their documents
     await page.goto(`${BASE}/company/members`); await ready(page)
-    ok('g-signature Members no longer says “not set” for you', !(await page.locator('[data-testid="member-signature"]').filter({ hasText: 'Set it up' }).count()))
+    ok('g-signature Members no longer says “not set” for you', !(await page.locator('[data-testid="member-signature"]').filter({ hasText: 'Add your signature' }).count()))   // (the calm UI build 2026-10-27, a deliberate change) 5-01: the row's "Add your signature" (was Set it up)
   })
 
   /* ── g-createclient: Tools › Quotes › Create Quote — the Client field first, searchable; Upload refused before a client, no charge ── */
   await step('g-createclient', async () => {
     await page.goto(`${BASE}/quotes`); await ready(page)
-    await page.getByRole('button', { name: 'Create Quote' }).first().click()
+    await page.getByRole('button', { name: 'New quote' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) W-011 · 1-11: the page header's New quote
     const modal = page.getByTestId('create-quote'); await modal.waitFor(); await page.waitForTimeout(600)
     const focused = await page.evaluate(() => { const a = document.activeElement; return a?.getAttribute('role') === 'combobox' && (document.getElementById(a.getAttribute('aria-labelledby') || '')?.textContent || '').startsWith('Client') })
     ok('g-createclient the Client field has the focus as Create Quote opens', focused)
@@ -391,7 +399,7 @@ async function viewBy(page, label) {
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     /* Create Quote on a phone: the Client list searches the same way */
     await p.goto(`${BASE}/quotes`); await ready(p)
-    await p.getByRole('button', { name: 'Create Quote' }).first().click()
+    await p.getByRole('button', { name: 'New quote' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change)
     await p.getByTestId('create-quote').waitFor(); await p.waitForTimeout(700)
     /* (quotes on the move, a deliberate change of this rule) on a phone Create Quote starts with "Who is this quote for?" — a list of leads
        with a search box (K4, P-10) in place of the Client combobox; the search narrows the rows the same way */

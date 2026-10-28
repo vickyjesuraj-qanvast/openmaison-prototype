@@ -28,7 +28,7 @@ export const DEFAULT_PAGE: PageSettings = { paper: 'A4', margins: { top: 18, rig
 /* ── brand ── */
 export const COLOR_KEYS = ['ink', 'grey', 'accent', 'light', 'band', 'red'] as const
 export type ColorKey = (typeof COLOR_KEYS)[number]
-export const COLOR_LABEL: Record<ColorKey, string> = { ink: 'Brand ink', grey: 'Brand grey', accent: 'Accent', light: 'Brand light', band: 'Band', red: 'Highlight' }
+export const COLOR_LABEL: Record<ColorKey, string> = { ink: 'Brand ink', grey: 'Brand grey', accent: 'Accent', light: 'Brand light', band: 'Table band', red: 'Highlight' }   // (the calm UI build 2026-10-27, W-488) "Band" alone was unclear
 export const FONT_ROLES = ['heading', 'body', 'table', 'small'] as const
 export type FontRole = (typeof FONT_ROLES)[number]
 export const FONT_ROLE_LABEL: Record<FontRole, string> = { heading: 'Heading', body: 'Body', table: 'Table', small: 'Small print' }

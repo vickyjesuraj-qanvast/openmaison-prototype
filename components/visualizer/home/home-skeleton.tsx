@@ -11,14 +11,14 @@ import { useFirstRunShape } from '@/lib/ghost-shape'
 import { libraryShape } from '@/components/company/templates/library-ghost-for'
 
 /**
- * Tools › AI Visualizer's ghost (REG-673; verify round 1, F166): the L1 header, the intro card while it shows (the page's own card, its words
- * as bones), then the house gallery's ghost — its toolbar with the Kind pill, the Folders row and the cards, on the gallery's own classes.
- * `loading.tsx` can't read the studio's data, so it draws the usual page — a studio that has designs and a folder — and the intro as the
- * member left it (read in the browser). (REG-708) The page's PageReveal draws this same one, so the loader never hands over to a
+ * Tools › AI Visualizer's ghost (REG-673; verify round 1, F166): the L1 header, the intro line (the page's own line, its words as bones —
+ * the calm UI build 2026-10-27, 6-10: one line, never dismissed), then the house gallery's ghost — its toolbar with the Kind pill, the
+ * Folders row and the cards, on the gallery's own classes. `loading.tsx` can't read the studio's data, so it draws the usual page — a
+ * studio that has designs and a folder. (REG-708) The page's PageReveal draws this same one, so the loader never hands over to a
  * differently counted ghost.
  */
-export function VisualizerHomeGhost({ intro = 'auto', hasDesigns = true, folders = 1, cards = 4 }: {
-  /** 'auto' (the route's loading.tsx): the member's own Dismiss, read in the browser; the page's reveal passes what it knows. */
+export function VisualizerHomeGhost({ intro = 'auto', folders = 1, cards = 4 }: {
+  /** 'auto' (the route's loading.tsx) and true draw the line; false leaves it out. */
   intro?: boolean | 'auto'; hasDesigns?: boolean; folders?: number; cards?: number
 } = {}) {
   /* (UX audit build) a studio with no design opens on the welcome (REG-736) — its ghost, on the welcome's own classes */
@@ -29,7 +29,7 @@ export function VisualizerHomeGhost({ intro = 'auto', hasDesigns = true, folders
     <GhostSheet label="Loading designs" l1>
       <div className={styles.gHead}><Bone w={150} h={28} /></div>
       <div className={pageStyles.content} aria-hidden>
-        {intro === 'auto' ? <VisualizerIntroGhost hasDesigns={hasDesigns} /> : intro ? <VisualizerIntro ghost hasDesigns={hasDesigns} /> : null}
+        {intro === 'auto' ? <VisualizerIntroGhost /> : intro ? <VisualizerIntro ghost /> : null}
         <LibraryGalleryGhost pill folders={folders} cards={cards} />
       </div>
     </GhostSheet>

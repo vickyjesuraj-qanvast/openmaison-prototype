@@ -117,7 +117,8 @@ export function PortalIssuesView({ data, homes, categories, meId }: { data: Port
                       primary={visitor.preview ? null : { label: 'Report an issue', icon: 'add', onPress: () => setReporting(true) }} />
         ) : (
           <>
-            <Chips label="Show" options={[{ value: 'open', label: `Open (${live})` }, { value: 'done', label: `Resolved and closed (${all.length - live})` }]} value={scope} onChange={(v) => setScope(v === 'done' ? 'done' : 'open')} testId="portal-issue-scope" />
+            {/* (the calm UI build 2026-10-27, 3-39 · T-07) one count style, "Label · n", none on an empty chip */}
+            <Chips label="Show" options={[{ value: 'open', label: live ? `Open · ${live}` : 'Open' }, { value: 'done', label: all.length - live ? `Closed · ${all.length - live}` : 'Closed' }]} value={scope} onChange={(v) => setScope(v === 'done' ? 'done' : 'open')} testId="portal-issue-scope" />
             {list.length ? (
               <div className={t.list} data-testid="portal-issue-list">
                 {list.map((x) => {

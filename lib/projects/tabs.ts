@@ -18,19 +18,19 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   { slug: 'tasks', label: 'Tasks', lead: 'tasks' },   // (parity P-06) second, as the lead's
   { slug: 'schedule', label: 'Schedule' },   // (Projects round 2) the list that is also the timeline
   { slug: 'updates', label: 'Updates' },   // (REG-951, round 3) after Schedule (round 2) when it lands
-  { slug: 'money', label: 'Money' },   // (Projects round 5, F-01) where money lives — the project's team, Owners and Admins see it (F-17)
+  { slug: 'money', label: 'Payments' },   // (the calm UI build 2026-10-27, 3-02 · T-01) on screen “Payments” — the slug stays `money`. (Projects round 5, F-01) where money lives — the project's team, Owners and Admins see it (F-17)
   { slug: 'choices', label: 'Choices' },   // (Projects round 8) the client's choices — after Money (round 5) when it lands
   { slug: 'floor-plan', label: 'Floor plan' },   // (gaps build G, G-Q1) the plan marked up with the client — after Choices
   { slug: 'designs', label: 'Designs' },   // (simplify S-03, the Design group's third view) the renders and 3D layouts the client sees
   { slug: 'messages', label: 'Messages' },   // (gaps build H, H-Q11) the one conversation with the client's side
-  { slug: 'tickets', label: 'Tickets' },   // (gaps build H, H-Q2) the problems the client reports — and the studio raises for them
+  { slug: 'tickets', label: 'Issues' },   // (the calm UI build 2026-10-27, 3-37 · T-01) “Issues” on screen, as the client says — the slug stays `tickets`. (gaps build H, H-Q2) the problems the client reports — and the studio raises for them
   /* (pending modules S23) the lead's own Meetings carried on — a site meeting with the client, the co-pilot and its brief; the Client group's view */
   { slug: 'meetings', label: 'Meetings', lead: 'meetings' },
   { slug: 'compliance', label: 'Compliance' },   // (gaps build I, I-Q9) Singapore's checklist for the kind of home — after Floor plan
   { slug: 'files', label: 'Files', lead: 'files' },
   /* (gaps build, package A — M-02) the lead's own Notes & Logs and Questionnaire carried on, as Tasks and Files are: a Won project's are its
      lead's records; a direct project, whose client has no lead page, gets them here at last */
-  { slug: 'notes', label: 'Notes & Logs', lead: 'notes' },
+  { slug: 'notes', label: 'Notes & logs', lead: 'notes' },   // (the calm UI build 2026-10-27, T-13 — B2's request) the lead's tab says it so
   { slug: 'questionnaire', label: 'Questionnaire', lead: 'questionnaire' },
   { slug: 'activity', label: 'Activity', lead: 'activity' },
 ]
@@ -50,12 +50,13 @@ export const PROJECT_TAB_GROUPS: readonly ProjectTabGroup[] = [
   { key: 'tasks', label: 'Tasks', views: [{ slug: 'tasks', label: 'All tasks' }, { slug: 'compliance', label: 'Compliance' }] },
   { key: 'schedule', label: 'Schedule', views: [{ slug: 'schedule', label: 'Schedule' }] },
   /* (Q-01) everything said with the client: what we tell them, what they ask, what they report, what we asked them */
-  { key: 'client', label: 'Client', views: [{ slug: 'updates', label: 'Updates' }, { slug: 'messages', label: 'Messages' }, { slug: 'tickets', label: 'Tickets' }, { slug: 'meetings', label: 'Meetings' }, { slug: 'questionnaire', label: 'Questionnaire' }] },   // (pending modules S23) Meetings — said with the client, face to face
+  { key: 'client', label: 'Client', views: [{ slug: 'updates', label: 'Updates' }, { slug: 'messages', label: 'Messages' }, { slug: 'tickets', label: 'Issues' }, { slug: 'meetings', label: 'Meetings' }, { slug: 'questionnaire', label: 'Questionnaire' }] },   // (pending modules S23) Meetings — said with the client, face to face
   /* what gets built, decided with the client — Designs is a view on records that already exist (lib/projects/designs.ts) */
   { key: 'design', label: 'Design', views: [{ slug: 'choices', label: 'Choices' }, { slug: 'floor-plan', label: 'Floor plan' }, { slug: 'designs', label: 'Designs' }] },
-  { key: 'money', label: 'Money', views: [{ slug: 'money', label: 'Money' }] },
+  /* (the calm UI build 2026-10-27, 3-02) the tab reads Payments — Client payments · Costs · Variation orders inside; the key and slug stay `money` */
+  { key: 'money', label: 'Payments', views: [{ slug: 'money', label: 'Payments' }] },
   /* (Q-02) the record: Files · Notes & Logs · Activity */
-  { key: 'files', label: 'Files & notes', views: [{ slug: 'files', label: 'Files' }, { slug: 'notes', label: 'Notes & Logs' }, { slug: 'activity', label: 'Activity' }] },
+  { key: 'files', label: 'Files & notes', views: [{ slug: 'files', label: 'Files' }, { slug: 'notes', label: 'Notes & logs' }, { slug: 'activity', label: 'Activity' }] },
 ]
 /** The group a slug lives in ('' = the Overview); an unknown slug answers the Overview's. */
 export function groupOf(slug: string): ProjectTabGroup {
@@ -82,12 +83,13 @@ export function projectTabHref(projectId: string, leadTab: string): string | nul
 /** (fix-A, A-16 · C-20) The project's Activity chips: its schedule, updates, money and choices beside the tasks and files it carries on, and the
     stage lines (lib/leads/activity.ts gives each line its group). Money is shown only to whoever sees money (F-17). */
 export const PROJECT_ACTIVITY_CHIPS: readonly { value: string; label: string }[] = [
-  { value: 'all', label: 'All' }, { value: 'schedule', label: 'Schedule' }, { value: 'updates', label: 'Updates' }, { value: 'money', label: 'Money' },
+  { value: 'all', label: 'All' }, { value: 'schedule', label: 'Schedule' }, { value: 'updates', label: 'Updates' }, { value: 'money', label: 'Payments' },
   { value: 'choices', label: 'Choices' }, { value: 'tasks', label: 'Tasks' }, { value: 'files', label: 'Files' },
   { value: 'notes', label: 'Notes' },   // (gaps build, package A — M-02) the notes and logs the project now carries
+  { value: 'quotes', label: 'Quotes' },   // (the calm UI build 2026-10-27, 2-50 — B2's request) the quotes', contracts' and Quote X-Ray's lines, as the lead's chip
   { value: 'floorplan', label: 'Floor plan' },   // (gaps build G) plans added, marks resolved, tasks and orders raised, the client's confirmation
   { value: 'layouts', label: '3D layouts' },   // (gaps build J) layouts started, shared, opened by the client
-  { value: 'tickets', label: 'Tickets' }, { value: 'messages', label: 'Messages' },   // (gaps build H, H-Q24)
+  { value: 'tickets', label: 'Issues' }, { value: 'messages', label: 'Messages' },   // (gaps build H, H-Q24)
   { value: 'compliance', label: 'Compliance' },   // (gaps build I) checklist items answered, the starter tasks
   { value: 'stage', label: 'Stage' },
 ]

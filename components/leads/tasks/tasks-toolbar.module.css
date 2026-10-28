@@ -50,8 +50,6 @@
   .todos { order: 3; flex: 1 0 100%; flex-wrap: wrap; margin-left: 0; }
   .bar:has([data-om-search-open]) .todos { display: none; }
 }
-/* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk, its count-only width below 1025. */
-@media (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */
-
-/* (gaps build, package C — 16) the Leads · Projects switch beside the scope pill */
-.source { display: inline-flex; flex: none; }
+/* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk and on a phone (the calm UI build 2026-10-27,
+   1-27: a phone's chips keep their words), its count-only width on a tablet, where a full row folds them to their counts. */
+@media (min-width: 768px) and (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */

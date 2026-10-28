@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ScrollPagers } from '@/components/om/scroll-pagers'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { signOut } from '@/app/portal/actions'
 import { MoreSheet } from '@/components/shell/mobile-nav'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -48,6 +50,12 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
   const [moreOpen, setMoreOpen] = useState(false)
   const mobile = useMediaQuery(MOBILE)
   if (moreOpen && !mobile) setMoreOpen(false)   // the sheet only exists on a phone, as the studio's More (render-phase adjust)
+  /* (the calm UI build 2026-10-27, 3-36 · T-16) at a desk the bar draws the phone's five — Home · Schedule · Updates · Payments and More ▾ — the
+     rest (Choices · Designs · Floor plan · Messages · Issues · About · Files) one press away in the house menu, each with what waits on the
+     client there, as the phone's More sheet; More reads as the place you are when one of them is */
+  const [deskMore, setDeskMore] = useState(false)
+  if (deskMore && mobile) setDeskMore(false)
+  const deskMoreRef = useRef<HTMLButtonElement>(null)
   /* (responsive audit 2026-10-23, W3-12) at 768–1024 the sections scroll in their own row (fix-F, F-02) — the one the client is on is brought
      to its middle, instead of sitting past the edge ("Mess…" on a phone held sideways, About and Files out of sight upright); again when the
      row's width settles. A row with room (a desk) never moves. */
@@ -100,9 +108,15 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
             a row with room (a desk) shows none */}
         <span className={styles.navWrap}>
           <nav ref={navRef} className={styles.nav} aria-label="Sections" data-testid="portal-nav">
-            {tabs.map((t) => (
+            {bar.map((t) => (
               <Link key={t.key} href={portalTabHref(slug, t)} className={styles.navLink} data-key={t.key} aria-current={t.key === tab ? 'page' : undefined}>{t.label}</Link>
             ))}
+            {more.length ? (
+              <button ref={deskMoreRef} type="button" className={`${styles.navLink} ${styles.navMore}`} data-key="more" data-testid="portal-nav-more" data-active={inMore || undefined}
+                      aria-haspopup="menu" aria-expanded={deskMore} aria-label={moreWaiting ? `More (${moreWaiting} waiting on you)` : 'More'} onClick={() => setDeskMore((o) => !o)}>
+                {inMore ? more.find((t) => t.key === tab)?.label ?? 'More' : 'More'}<Icon name="expand_more" size={20} />
+              </button>
+            ) : null}
           </nav>
           <ScrollPagers scrollRef={navRef} />
         </span>
@@ -132,6 +146,18 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
           </button>
         ) : null}
       </nav> : null}
+      <PortalMenu open={deskMore && !mobile} anchor={deskMoreRef} onClose={() => setDeskMore(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="More">
+        <div className={styles.menuRow} data-testid="portal-nav-more-menu">
+          {more.map((t) => {
+            const n = waiting(t.key)
+            return (
+              <span key={t.key} className={styles.menuRow} data-key={t.key} data-testid="portal-nav-more-row">
+                <DropdownItem onSelect={() => { setDeskMore(false); router.push(portalTabHref(slug, t)) }} meta={n || undefined}>{t.label}</DropdownItem>
+              </span>
+            )
+          })}
+        </div>
+      </PortalMenu>
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)}>
         <div className={styles.moreGroup} data-testid="portal-more-sheet">
           {more.map((t) => {

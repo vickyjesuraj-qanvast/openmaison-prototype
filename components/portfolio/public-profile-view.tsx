@@ -96,7 +96,7 @@ export function PublicProfileView({ data, from }: { data: PublicProfileData; fro
   return (
     <CompanyShell title={title} from={back} crumb="" origin={companySectionOf(back) ?? fromLabel(back) ?? 'Back'} skeleton={<PublicProfileGhost />} actions={data.mayEdit ? <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
-      <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="card-save">{busy ? 'Saving…' : 'Save changes'}</Button>
+      <Button onPress={() => { void save() }} isDisabled={!dirty || busy} data-testid="card-save">{busy ? 'Saving…' : 'Save'}</Button>   {/* (the calm UI build 2026-10-27 — 5-18) the one Save */}
     </> : undefined}>
       <LeaveGuard dirty={dirty} what={`${whose} card`} onSave={save} onDiscard={discard} />
       <div className={profile.layout} data-testid="public-profile" data-member={m.id}>
@@ -104,29 +104,31 @@ export function PublicProfileView({ data, from }: { data: PublicProfileData; fro
           <section className={profile.card} aria-labelledby="pp-card">
             <div className={profile.cardHead}>
               <h2 id="pp-card" className={profile.cardTitle}>{own ? 'Your card' : 'Their card'}</h2>
-              <p className={profile.cardHelp}>Clients read it on their portal’s About page and on your studio’s Hangout pages.</p>
+              <p className={profile.cardHelp}>Clients read it on your client portal and your studio’s public pages.</p>   {/* (5-51) the owner's words, not the places' insider names */}
             </div>
             {data.mayEdit ? <MemberPhotoField member={{ name: m.name, color: m.color, portalPhotoId: m.photoId }} draft={d.photo} onChange={(p) => setD({ ...d, photo: p })} testId="card-photo" locked={data.photoLocked} /> : null}
             <div className={styles.fields}>
               <TextField label="Job title" value={d.title} maxLength={TITLE_MAX} disabled={!data.mayEdit} onChange={(v) => setD({ ...d, title: v.slice(0, TITLE_MAX) })} helper={`Blank shows ${own ? 'your' : 'their'} role — ${m.role}`} />
               <TextField label="Years in interior design" value={d.years} numeric="digits" maxLength={2} disabled={!data.mayEdit} onChange={(v) => setD({ ...d, years: v })} error={yearsBad ? `From 0 to ${YEARS_MAX}` : undefined} />
               <div className={styles.wide}>
-                <TextArea label="A line or two" value={d.bio} isDisabled={!data.mayEdit} onChange={(v: string) => setD({ ...d, bio: v.slice(0, BIO_MAX) })} description={`${d.bio.length} of ${BIO_MAX} characters`} />
+                <TextArea label="About them" value={d.bio} isDisabled={!data.mayEdit} onChange={(v: string) => setD({ ...d, bio: v.slice(0, BIO_MAX) })} description={`${d.bio.length} of ${BIO_MAX} characters`} />
               </div>
             </div>
             <p className={styles.line} data-testid="card-known">
               <span className={styles.muted}>Known for: </span>{knownFor(m.specialty).join(' · ') || 'nothing yet'}
-              <span className={styles.muted}>{` — ${own ? 'your' : 'their'} specialty, set with ${own ? 'your' : 'their'} lead preferences on `}</span>
+              <span className={styles.muted}>{' — set in '}</span>
               {/* (pending modules S40) the door opens the preferences themselves (`?prefs=`), for whoever may set them — Owners and Admins for
-                  anyone, the member for themself (REG-612's rule); it was a link for Owners and Admins only, to the list */}
-              {data.mayEdit && onLeads(m.role) ? <Link className={styles.link} href={withFrom(`/company/members?prefs=${encodeURIComponent(m.id)}`, here)} data-testid="card-known-edit">Company › Members</Link> : 'Company › Members'}
+                  anyone, the member for themself (REG-612's rule); it was a link for Owners and Admins only, to the list. (5-51) "Set in Lead
+                  preferences" — the place by its own name */}
+              {data.mayEdit && onLeads(m.role) ? <Link className={styles.link} href={withFrom(`/company/members?prefs=${encodeURIComponent(m.id)}`, here)} data-testid="card-known-edit">Lead preferences</Link> : 'Lead preferences'}
             </p>
             {data.mayShow ? (
               <label className={styles.switchRow} data-testid="card-shown">
-                <span className={styles.switchText}><span className={styles.switchLabel}>Show on the About page</span><span className={profile.cardHelp}>The client portal’s About › Our team.</span></span>
-                <Switch size="sm" isSelected={d.shown} onChange={(v: boolean) => setD({ ...d, shown: v })} aria-label={`Show ${m.name} on the About page`} />
+                {/* (5-51 · W-371) where clients see it, in the owner's words */}
+                <span className={styles.switchText}><span className={styles.switchLabel}>Show on your client portal</span><span className={profile.cardHelp}>Clients see it under Our team.</span></span>
+                <Switch size="sm" isSelected={d.shown} onChange={(v: boolean) => setD({ ...d, shown: v })} aria-label={`Show ${m.name} on your client portal`} />
               </label>
-            ) : <p className={profile.cardHelp}>{m.portalShown ? 'On the client portal’s About page.' : 'Not on the client portal’s About page — an Owner or an Admin chooses who is.'}</p>}
+            ) : <p className={profile.cardHelp}>{m.portalShown ? 'Shown on your client portal, under Our team.' : 'Not on your client portal — an Owner or an Admin chooses who is.'}</p>}
           </section>
 
           <section className={profile.card} aria-labelledby="pp-work" data-testid="card-work">
@@ -148,10 +150,11 @@ export function PublicProfileView({ data, from }: { data: PublicProfileData; fro
               <p className={profile.cardHelp}>{dirty ? 'With your changes — save them to show them.' : 'As it shows now.'}</p>
             </div>
             <div className={styles.preview}><DesignerCard card={preview} testId="card-preview-card" /></div>
-            <ul className={styles.where} data-testid="card-where">
-              <li>{data.shownOn.about ? 'The client portal’s About › Our team' : 'Not on the client portal’s About page'}</li>
-              {data.shownOn.hangouts.map((h) => <li key={h.id}><Link className={styles.link} href={withFrom(hangoutHref(h.id, 'plan'), here)}>{h.name}</Link>’s booking page</li>)}
-              <li>The meeting room’s Past projects</li>
+            {/* (5-51 · W-401) "Shown on:" — your client portal · each Qanvast Hangout's booking page · meetings */}
+            <ul className={styles.where} data-testid="card-where" aria-label="Shown on">
+              <li>{data.shownOn.about ? 'Shown on: your client portal' : 'Not on your client portal'}</li>
+              {data.shownOn.hangouts.map((h) => <li key={h.id}>Your Qanvast Hangout booking page — <Link className={styles.link} href={withFrom(hangoutHref(h.id, 'plan'), here)}>{h.name}</Link></li>)}
+              <li>Meetings — the past projects you show a client</li>
             </ul>
           </section>
         </div>

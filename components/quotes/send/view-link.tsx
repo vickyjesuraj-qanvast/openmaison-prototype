@@ -73,7 +73,7 @@ export function useViewLink(o: {
   const link = token ? viewLink(token) : ''
   const dialog = token ? (
     <SendContractDialog open={open} onClose={close} link={link} defaults={{ name: o.lead.name, phone: o.lead.phone }}
-                        title="Share a view-only link" subtitle="Your client sees the quote in their browser as you work on it. There’s nothing for them to confirm or sign there."
+                        title="Share a view-only link" subtitle="Your client sees the quote on a link, up to date. Nothing to confirm or sign there."
                         copyDone="View-only link copied" phoneLabel="Client phone (WhatsApp)"
                         draft={(name) => viewMessage({ clientFirst: firstName(name), studio: o.studioName, number: o.quote.number, link })}
                         extra={<p className={styles.viewStop} data-testid="view-link-stop-line"><span>Anyone with this link can see the quote until you stop it.</span>

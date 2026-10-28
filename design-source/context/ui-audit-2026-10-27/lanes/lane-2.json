@@ -1,0 +1,1127 @@
+[
+ {
+  "id": "2-01",
+  "area": "Lead › Overview › Maison AI brief",
+  "route": "/leads/[id]",
+  "kind": "noise",
+  "severity": "high",
+  "title": "AI brief: made-up “n× more often” figures and advice blind to the lead’s age",
+  "now": "Every stage has a canned brief: “Call or WhatsApp within 24h: leads contacted same-day reach Met 3.1× more often” on Olivia (50 days in New, tag “FRESH LEAD · RESPOND FAST”); Vivien (55 days in Quote Sent) reads “Quote sent. Check in on day 3 …” with tag “FOLLOW UP · DAY 3”; Gerald (56 days in Met) “Send the quote within 5 days … win 1.8× more often”, tag “QUOTE WINDOW · 5 DAYS”; Muthu (Lost 47 days ago, reason already logged as “No response from lead”) “Log the reason while it is fresh”. Show more stacks two more full cards, each again headed “MAISON AI BRIEF” with its own orange CAPS tag (“BUDGET FIT · STRONG MATCH”, “PREPARE THE FIRST CALL”) and two more outlined buttons — 6 purple buttons. Tags elsewhere: “PARKED · SET A NUDGE”, “LEARN FROM THE LOSS”, “THE PROJECT”.",
+  "why": "The ratios are not the studio’s numbers (lib/leads/briefs.ts says the copy is invented and scripted per stage), so the card states things the record does not back (Principle 11 · Honest data) and is visibly wrong on most demo leads — a studio owner stops trusting the one card that sits first on every lead. Six purple buttons above the cards are the loudest thing on the page.",
+  "proposal": "Keep ONE brief card, written from the record: its age and what is missing (“Olivia has been waiting 50 days — no one owns her yet”). Delete every “n× more often” clause unless it is computed from the studio’s own Reports figures. Tag: drop it, or sentence-case grey text, never uppercase orange. One outlined action (the one that matches the header’s next step); the second moves to the FAB sheet. Remove Show more / the stacked briefs. The eyebrow reads “Maison AI” once.",
+  "effort": "M",
+  "shots": [
+   "2-lead-overview.png",
+   "2-lead-brief-more.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-met.png",
+   "2-lead-lost-full.png",
+   "2-lead-onhold.png",
+   "2-lead-won-full.png"
+  ],
+  "code": [
+   "lib/leads/briefs.ts:1-12",
+   "lib/leads/briefs.ts:79",
+   "lib/leads/briefs.ts:83",
+   "lib/leads/briefs.ts:146",
+   "lib/leads/briefs.ts:176",
+   "lib/leads/briefs.ts:235",
+   "lib/leads/briefs.ts:256",
+   "components/leads/detail/ai-brief.tsx:43",
+   "components/leads/detail/ai-brief.tsx:153"
+  ]
+ },
+ {
+  "id": "2-02",
+  "area": "Lead › Overview",
+  "route": "/leads/[id] (every tab’s header)",
+  "kind": "noise",
+  "severity": "high",
+  "title": "The same facts are printed three or four times on one lead page",
+  "now": "Header: name + four CAPS meta chips “9123 4567 · S$ 70.5K · HDB 4-ROOM · INSTAGRAM”. Info column: the name again in 28px, “9123 4567”, then Lead info “Stage New · Source Instagram · Budget (S$) 70,500” and Property info “Type HDB 4-Room”. AI brief: “New inquiry from Instagram — HDB 4-Room, S$70.5K budget, keys collected.” Stage is shown three times (“Stage: New ▾”, Lead info › Stage “New”, LEAD STAGES “New · current · 50 days”). Budget in three formats: “S$ 70.5K”, “70,500”, “S$70.5K”. The header chips repeat on all 9 tabs.",
+  "why": "A studio owner reads the same phone, budget, type and source three times before reaching anything new; the page reads as dense even though most of it is repetition. Three budget formats look like three different numbers.",
+  "proposal": "Drop the four meta chips from the lead header (keep only real status chips such as Return processing) — the info column is the one home of contact and property facts. Remove the “Stage” row from Lead info (the Stage ▾ pill and LEAD STAGES say it). The brief stops restating source/type/budget. One money format on the record: “S$ 70,500” (lib/format moneyCard).",
+  "effort": "S",
+  "shots": [
+   "2-lead-overview.png",
+   "2-lead-overview-full.png",
+   "2-lead-tasks.png"
+  ],
+  "code": [
+   "app/leads/[id]/overview.tsx:588-601",
+   "components/leads/detail/info-column.tsx:327-330",
+   "lib/leads/briefs.ts:79-85"
+  ]
+ },
+ {
+  "id": "2-03",
+  "area": "Lead › Overview › info column",
+  "route": "/leads/[id]",
+  "kind": "noise",
+  "severity": "high",
+  "title": "A column of “--” placeholders on every lead",
+  "now": "Olivia’s column: “Owner --”, “NRIC / FIN --”, “Customer ID --”, “Portal --”, “District --”, “Area size (sq ft) --”, “Remarks --” — seven empty rows; every other demo lead shows the same five to seven. LEAD STAGES adds “--” on each future stage (Contacted · Met · Quote Sent · Won) and Next follow-up “None set --” (Mei Ling).",
+  "why": "Empty rows are reading work with no answer; the identity details a studio actually uses (owner, address, budget) are lost among dashes. NRIC / FIN and Customer ID sit high in Lead info though most leads never have them.",
+  "proposal": "Show only filled rows. Under each section one text link “Add district, area size…” (or “Add details · 6 empty”) that opens Edit details on the first empty field (the form already opens on a row, REG-224). Move NRIC / FIN and Customer ID into Other info. LEAD STAGES: future stages carry no “--” (an empty circle says “not yet”).",
+  "effort": "M",
+  "shots": [
+   "2-lead-overview-full.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-onhold.png"
+  ],
+  "code": [
+   "components/leads/detail/info-column.tsx:297-381",
+   "components/leads/detail/info-column.tsx:334",
+   "components/leads/detail/info-column.tsx:342",
+   "components/leads/detail/info-column.tsx:348",
+   "components/leads/detail/stages-card.tsx:96"
+  ]
+ },
+ {
+  "id": "2-04",
+  "area": "Lead › Overview (cards’ empty states) · Meetings tab",
+  "route": "/leads/[id], /leads/[id]/meetings",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "Two filled buttons on most lead pages (header + an empty card)",
+  "now": "Header primary is filled (“Move to Quote Sent”, “Resume at Contacted”, “Convert to Project”) and the Overview’s empty cards each carry their own filled button: QUOTES “From Scratch” + filled “From Template”; MY TASKS filled “+ Create New Task” (On Hold); FILES “Create Folder” + filled “Upload Files” (Quote Sent). Meetings tab: header “Move to Contacted” + filled “Plan a meeting” + outlined “Start a meeting now” + link “Write one up from notes”. Measured: Met 2 filled, Lost 2, On Hold 2, Meetings 2, phone Notes 2.",
+  "why": "Breaks the house rule “One filled button on the screen” (page-checklist › Empty states ②): two equal calls to action make the studio owner choose between the stage move and a card. The quote card’s choice “From Scratch / From Template” is also a decision the Create Quote window already asks.",
+  "proposal": "Inside a record page the cards’ empty states take no filled button: one outlined button per card (“Create a quote”, “Add a task”, “Upload files”) that opens the existing window (Create Quote already offers Blank / template / upload). The Meetings first-run keeps Plan a meeting outlined and drops the third way (it lives in New Meeting ▾).",
+  "effort": "S",
+  "shots": [
+   "2-lead-met.png",
+   "2-lead-lost-full.png",
+   "2-lead-onhold.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-meetings.png"
+  ],
+  "code": [
+   "components/leads/detail/quote-card.tsx:121-122",
+   "components/leads/detail/my-work-card.tsx:79-80",
+   "components/leads/detail/files-card.tsx:88",
+   "components/leads/tasks/tasks-empty.tsx:25",
+   "components/meetings/lead-meetings.tsx:233-237"
+  ]
+ },
+ {
+  "id": "2-05",
+  "area": "Lead › header actions",
+  "route": "/leads/[id] (New lead with no owner), phone stage sheet",
+  "kind": "noise",
+  "severity": "high",
+  "title": "The filled button offers a move the page knows it will refuse",
+  "now": "Olivia (New, no owner): filled “Move to Contacted” → snackbar “Assign a member first · Assign”. Beside it the outlined “🔒 Convert to Project” → the same snackbar. On a phone the LEAD STAGES rows read “Assign a member first” four times (Contacted, Met, Quote Sent, Won); the listing’s phone stage sheet repeats “Complete Contacted first” three times under a filled “Move to Contacted”. Every pre-Won lead carries the locked Convert to Project button (New, Contacted, Met, On Hold, Lost).",
+  "why": "The page’s loudest control leads to a refusal, and the real next step (assign someone) is a small purple link in the column. A locked button that can’t act is noise (page-checklist ③ “Nothing that can’t act”); the same refusal printed four times is repetition.",
+  "proposal": "When the lead has no owner, the header’s filled button is “Assign a member” (opens the Assign popover; the move follows once saved, as the phone already chains Assign-then-move). Drop the locked Convert to Project from the header; Won stays reachable in Stage ▾, where its row carries the reason (“Complete Quote Sent first”). Phone LEAD STAGES: one line under the card (“Assign a member to move Olivia on”), not one per stage.",
+  "effort": "S",
+  "shots": [
+   "2-lead-move-refusedX.png",
+   "2-lead-convert-locked.png",
+   "2-lead-overview-390-full.png",
+   "2-leads-stage-sheet-390.png"
+  ],
+  "code": [
+   "app/leads/[id]/overview.tsx:305-321",
+   "app/leads/[id]/overview.tsx:616-632",
+   "lib/leads/stage-policy.ts:48",
+   "lib/leads/stage-policy.ts:113"
+  ]
+ },
+ {
+  "id": "2-06",
+  "area": "Leads › listing (table + kanban)",
+  "route": "/leads, /leads?view=kanban",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Every row repeats purple actions; hover tools cover the row’s own cells",
+  "now": "Measured 24 purple text/icons in the first screen (39 on the kanban). Rows with no task show purple “+ Add task”; every row has an outlined-purple “assign” icon button after the avatars; Olivia’s row shows “👤+ Assign” as text instead. On hover the row floats an outlined “Edit” and a purple-outlined ⋮ over the Property type / Created cells (“Others” → “Other”, “BTO 4…”). The ⋮ (row and kanban card) holds a single item, “Delete”, for most leads.",
+  "why": "The listing is the most-used screen; a column of identical purple controls is what the eye lands on instead of names and stages. The hover band hides data. A menu with one destructive item is a click to reach Delete and nothing else.",
+  "proposal": "Assign icon and “+ Add task” appear on row hover / focus only (grey “No task” at rest); one style for an unowned lead (the same icon, not a text link). Drop the hover “Edit” (a row press opens the lead; Edit lives in the lead’s ⋮ and the row ⋮). The row ⋮ is the grey house IconButton, not primary, and sits in its own last column so nothing is covered. Keep ⋮ only when it holds more than Delete, else Delete moves into the bulk bar.",
+  "effort": "M",
+  "shots": [
+   "2-leads.png",
+   "2-leads-row-hover.png",
+   "2-leads-kanban.png",
+   "2-kanban-menu.png",
+   "2-leads-row-menu.png"
+  ],
+  "code": [
+   "components/leads/table.tsx:113",
+   "components/leads/table.tsx:118-123",
+   "components/leads/table.tsx:389",
+   "components/leads/table.tsx:409",
+   "components/leads/table.tsx:522",
+   "components/leads/kanban/board.tsx:328"
+  ]
+ },
+ {
+  "id": "2-07",
+  "area": "Qanvast Ops",
+  "route": "/qanvast-ops/*",
+  "kind": "copy",
+  "severity": "high",
+  "title": "“Qanvast Ops” mixes the studio’s Qanvast account with an operator console",
+  "now": "Rail item and every page title read “Qanvast Ops”. Tabs: Leads · Studios · Lead credits · Reviews · Hangouts. Studios is OpenMaison’s operator view of the studio itself: “DEMO STUDIO · /my/demo-studio”, head “OPENMAISON’S SWITCHES · ON”, two live switches “Client portal — Open — clients sign in at /my/demo-studio” and “Messages — Sending — the studio’s emails and WhatsApp messages leave as they happen”; Maison AI asks “Which studios’ clients use the portal most?”. Dane (the studio’s Owner) can flip them.",
+  "why": "“Ops” is an insider word; a studio owner reads this place as “my Qanvast leads, credits and reviews”. The Studios tab is a platform admin page — a studio owner can switch off their own client portal and messages from a page that says it is OpenMaison’s, and “Studios” (plural) means nothing to one studio.",
+  "proposal": "Rail and title: “Qanvast” (the mock’s word; REG-77 renamed it — ask Vicky). Hide the Studios tab from studio roles (it belongs to an OpenMaison operator role); if a studio needs to see the two states, show them read-only on Company › Client portal as “Paused by OpenMaison”.",
+  "effort": "S",
+  "shots": [
+   "2-qops-studios.png",
+   "2-qops-leads.png"
+  ],
+  "code": [
+   "components/shell/app-rail.tsx:43",
+   "components/qanvast/qanvast-studios.tsx:25-36",
+   "components/qanvast/qanvast-studios.tsx:108-119",
+   "components/qanvast/qanvast-tabs.ts:5",
+   "design-source/REGISTER.md REG-77"
+  ]
+ },
+ {
+  "id": "2-08",
+  "area": "Lead › logging a contact",
+  "route": "/leads/[id]/notes (desk) vs the phone log sheet",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "One contact log, two vocabularies (desk form vs phone sheet)",
+  "now": "Desk (Notes › New › Contact Log): “Contacted via* WhatsApp · Email · SMS · Call · In person · Others”, “Date & Time*”, “Outcome*” as a select, “Attach screenshots of your call attempts”, “Save”. Phone log sheet: “How did the call with Farah go?”, “How: Call · WhatsApp · Site visit · Note · More…”, “When: Now · 4:46 PM · Change”, “How it went: Connected · Callback requested · Meeting scheduled · No response · Not interested” as chips, “Save log”. The Move stage window’s read-only Contacted log adds “Preferred mode”, “Schedule a call/meeting (optional) — If you wish to be reminded, a task will be created.”",
+  "why": "The same record is asked for in two orders with two names for the channel (“In person” vs “Site visit”) and the outcome; a member who logs on both devices meets two forms. The phone’s wording is plainer.",
+  "proposal": "One vocabulary, the phone’s: “How” (Call · WhatsApp · Visit · Email · SMS · Other), “When”, “How it went” as chips at every width, button “Save log”. Rename “Preferred mode” → “Call back by”; helper → “We’ll add a task to remind you.”",
+  "effort": "M",
+  "shots": [
+   "2-notes-contactlog.png",
+   "2-log-sheet-390.png",
+   "2-move-contacted-ro.png"
+  ],
+  "code": [
+   "components/leads/notes/contact-editor.tsx:56",
+   "components/leads/notes/contact-editor.tsx:76",
+   "components/leads/move-stage/panels.tsx:195",
+   "components/leads/move-stage/panels.tsx:218",
+   "lib/leads/enums.ts:65",
+   "components/leads/log/log-sheet.tsx"
+  ]
+ },
+ {
+  "id": "2-09",
+  "area": "Qanvast Ops · Meetings · Hangouts",
+  "route": "/qanvast-ops/*, /meetings/[id], /qanvast-ops/hangouts",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Prototype and demo talk printed to studios",
+  "now": "Every Qanvast account page ends with “Simulated on this prototype — the credits follow your Qanvast leads and returns here, the reviews follow your finished projects and published work; the contract, rank, page views and Singapore’s averages are samples, and a reply is kept here, not posted to Qanvast.” Hangouts: “Sample Hangouts written for the demo — Qanvast’s own events come through its feed.” + “Sample” on every card + a “SAMPLE” chip on the event header. Planned meeting: “Listening isn’t connected in this prototype — type what’s said, or paste a transcript.” Qanvast leads: four sort heads and “Request Leads” answer “Coming soon”.",
+  "why": "Studios in a live demo read “prototype”, “samples” and “not posted” as “this doesn’t work”. A 40-word disclaimer under every page is the longest paragraph on it.",
+  "proposal": "Remove these lines from the pages; if the demo must say it, one shell-level “Demo data” chip in the page header (one place, one word). Sort heads that don’t sort lose their arrows; Request Leads hides until it works (or opens the Qanvast account manager’s WhatsApp).",
+  "effort": "S",
+  "shots": [
+   "2-qops-credits.png",
+   "2-qops-hangouts.png",
+   "2-qops-hangout.png",
+   "2-meeting-planned-full.png",
+   "2-qops-leads.png"
+  ],
+  "code": [
+   "lib/services/registry.ts:274-277",
+   "components/qanvast/account/account-frame.tsx:83",
+   "components/hangouts/hangouts-home.tsx:110",
+   "components/hangouts/hangouts-home.tsx:125",
+   "lib/meetings/model.ts:113",
+   "components/qanvast/qanvast-table.tsx:60-64",
+   "components/qanvast/qanvast-leads.tsx:248"
+  ]
+ },
+ {
+  "id": "2-10",
+  "area": "Qanvast Ops › Lead credits · Reviews · Hangout page",
+  "route": "/qanvast-ops/credits, /qanvast-ops/reviews, /qanvast-ops/hangouts/[id]",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Sub-views are chips on two tabs, Tabs on the next; Reviews has two chip rows",
+  "now": "Lead credits: chips “Overview · Transactions · Contracts”. Reviews: chips “Reviews · Ranking · Feedback”, then a second chip row “All · Waiting for a reply · 2 · Replied” plus “All ratings ▾” and “Newest first ▾”. A Hangout page uses the house Tabs “Plan · Chats 3 · How it went” for the same job, then chips “All · 3 / Waiting · 3 / On now · 0 / Done · 0”. Projects puts views as Chips in the body’s title line.",
+  "why": "The same kind of switch (which view of this section) looks like a filter on one page and like a tab on the next; two stacked chip rows are the Marketplace noise the owner called out.",
+  "proposal": "One rule: a section’s views are second-level house Tabs (the hangout page’s), chips are only filters. Reviews then keeps one chip row (All · Waiting for a reply · Replied) and folds the rating and sort into one “Sort” menu.",
+  "effort": "M",
+  "shots": [
+   "2-qops-credits.png",
+   "2-qops-reviews.png",
+   "2-qops-ranking.png",
+   "2-qops-hangout-plan.png"
+  ],
+  "code": [
+   "components/qanvast/account/account-frame.tsx:75",
+   "components/hangouts/hangouts-home.tsx:96",
+   "components/hangouts/hangout-page.tsx:115"
+  ]
+ },
+ {
+  "id": "2-11",
+  "area": "Counts across Leads, Meetings, Qanvast Ops",
+  "route": "/leads, /meetings, /qanvast-ops/*, /leads/[id]",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Five count formats for “how many” in one module",
+  "now": "Parentheses: “All Leads (31)”, “Review imported leads (14)”, “Google Ads (2)”, “Approve All Clean (13)”, “Briefs to save (3)”, “Notes to write up (2)”, “Show only duplicates (1)”. Middle dot: “All · 3”, “Waiting for a reply · 2”, “FILES · 13”, “Upcoming · 3”, “Overdue · 1”. Bare: kanban “New 7”, scope menu “Mine 14”. Red badge: tabs “Tasks 3”, “Questionnaire 4”, hangout “Chats 3”. Plus “+2” chips in task cells.",
+  "why": "Each format suggests a different kind of number (a total, a filter, an alert); the red badge reads as “something is wrong” for routine open tasks.",
+  "proposal": "Chips, pills and card heads: “Label · n” (house middle dot) everywhere — the scope pill “All leads · 31”. Red badge only for things overdue or waiting on you; open-task counts on tabs in the neutral count style.",
+  "effort": "S",
+  "shots": [
+   "2-leads.png",
+   "2-leads-kanban.png",
+   "2-review-imports.png",
+   "2-meetings.png",
+   "2-qops-hangouts.png",
+   "2-lead-tasks.png"
+  ],
+  "code": [
+   "app/leads/workspace.tsx:551",
+   "components/leads/review-banner.tsx:45",
+   "components/leads/review-sheet.tsx:162-165",
+   "components/meetings/meetings-toolbar.tsx:42-43",
+   "lib/leads/stage-policy.ts:221-226"
+  ]
+ },
+ {
+  "id": "2-12",
+  "area": "Leads module labels",
+  "route": "/leads, /leads/[id]/*, dialogs",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Title Case and sentence case mixed in buttons, menus and column names",
+  "now": "Title Case: “Add Lead”, “Create New Lead”, “Import from File”, “Lead Import History”, “Deleted Leads”, “Leads Settings”, “Copy Link”, “Invite to Portal”, “Return Lead”, “Ask Client”, “View Client Info”, “Assign Member”, “Add Task”, “Create New Task”, “Use Template”, “Save all as Template”, “Manage Templates”, “Create Quote”, “New Contract”, “New File”, “From Local Files”, “Clear All”, “Approve All Clean”, “View & Merge”, “Reject New”, “Keep Both”, “Merge into Existing”, “Empty Trash”, “Delete Forever”, “Save & Move”, “Download Skipped Records”, “Auto Fill”, “Add Log”, “Contact Log”. Sentence case beside them: “Add task”, “Plan a meeting”, “Start a meeting now”, “From the studio agreement”, “Export all as…”, “Request reviews”, “Ask homeowners for a review”. Column names: “Lead Name”, “Property Type” next to “In stage”, “Last contact”, “Next follow-up”.",
+  "why": "Reads unfinished, and the same control appears in two spellings (“Add task” / “Add Task”, “Contact log” / “Contact Log”).",
+  "proposal": "Sentence case for every button, menu row, tab-toolbar action, chip and column name (“Add lead”, “Create new lead”, “Lead name”, “Property type”, “Contact log”…); proper nouns keep capitals (Qanvast, WhatsApp, Maison AI).",
+  "effort": "S",
+  "shots": [
+   "2-leads-add-menu.png",
+   "2-leads-kebab.png",
+   "2-leads-columns.png",
+   "2-review-dup.png",
+   "2-deleted-leads.png"
+  ],
+  "code": [
+   "app/leads/workspace.tsx:473-486",
+   "components/leads/table.tsx:27-39",
+   "app/leads/[id]/overview.tsx:654-666",
+   "components/leads/review-sheet.tsx:165",
+   "components/leads/review-sheet.tsx:300",
+   "app/leads/imports/imports-view.tsx:169"
+  ]
+ },
+ {
+  "id": "2-13",
+  "area": "Create verbs on the lead’s tabs",
+  "route": "/leads/[id]/tasks · quotes · contracts · files · notes · meetings",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Every tab names “create” differently",
+  "now": "Tasks: toolbar “Add Task ▾” (rows “Create New Task” · “Use Template”) and a table foot “+ Add Task”; listing cell “+ Add task”; empty state “Create New Task”; phone quick add “Add a task…”. Quotes: “Create Quote” (no menu). Contracts: “New Contract ▾”. Files: folder icon + “New File ▾” (“From Local Files · From Google Drive”). Notes: “New ▾” (“Note · Contact Log”). Meetings: “New Meeting ▾” and empty “Plan a meeting”. Leads: header “Add Lead ▾” opens a dialog titled “Create New Lead” whose button is “Create”.",
+  "why": "A studio member looks for a different word on every tab; “Add / Create / New” for the same act makes the toolbars feel unrelated.",
+  "proposal": "One verb, “New”: “New task ▾”, “New quote”, “New contract ▾”, “New file ▾”, “New note ▾”, “New meeting ▾”, header “New lead ▾”; the dialog title “New lead”, its button “Add lead”. Drop the Tasks table’s second “+ Add Task” foot row on desk (the toolbar holds it).",
+  "effort": "S",
+  "shots": [
+   "2-lead-tasks.png",
+   "2-lead-quotes.png",
+   "2-lead-contracts.png",
+   "2-lead-files.png",
+   "2-lead-notes.png",
+   "2-lead-form.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-empty.tsx:25",
+   "components/leads/table.tsx:389",
+   "components/leads/lead-cards.tsx:128",
+   "app/leads/workspace.tsx:472-479"
+  ]
+ },
+ {
+  "id": "2-14",
+  "area": "Lead › info column › Collaborators",
+  "route": "/leads/[id], /projects/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Owner and Members show the same person twice, under a third heading",
+  "now": "Section “Collaborators”: “Owner You” then “Members D Dane” (Dane is you) — the same person named two ways; Vivien: “Owner Sarah / Members S Sarah”; Olivia: “Owner --” and a link “Assign Member ›”. The listing column, Settings and REG-290 say “Members”; the Assign popover is titled “Assign Member” though it ticks several; Hangout report says “By designer · Designer”; Meetings column says “People”. Same in the project’s info column.",
+  "why": "Three names (Collaborators / Members / People / Designer) for the studio people on a record; “You” and “Dane” read as two people.",
+  "proposal": "Section title “Members”. One list: “Dane (you) · Owner” on the first row, the others below; no separate Owner row. Link “Assign members”, popover “Assign members”. Meetings column “Members”; Hangout table “Member”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-won-full.png",
+   "2-lead-quotesent-full.png",
+   "2-leads-assign.png",
+   "2-meetings.png",
+   "2-qops-hangout.png"
+  ],
+  "code": [
+   "components/leads/detail/info-column.tsx:66",
+   "components/leads/detail/info-column.tsx:295-315",
+   "components/leads/assign-popover.tsx:120",
+   "components/meetings/meetings-table.tsx:39"
+  ]
+ },
+ {
+  "id": "2-15",
+  "area": "Leads › “New” means three things",
+  "route": "/leads (390), /leads scope menu, /leads/[id] info column, rail",
+  "kind": "copy",
+  "severity": "med",
+  "title": "“New” is a stage, a not-opened mark and a property condition",
+  "now": "Phone card: a blue “NEW” tag beside the name AND the stage pill “New” under it. Scope menu: “Unseen 2”. Rail/dock badge counts unseen as “2 new”. Dashboard: “new lead, no contact yet”. Property info: “Condition New”. Desk: the not-opened mark is the left purple band with no word.",
+  "why": "On a phone the user sees “NEW” twice and can’t tell the stage from “not opened yet”; “Unseen” is software talk.",
+  "proposal": "Not-opened = “Not opened” (phone tag removed — the band carries it, as on the desk), scope row “Not opened yet”; stage stays “New”; condition value “New (never lived in)” or “BTO / new launch”.",
+  "effort": "S",
+  "shots": [
+   "2-leads-390.png",
+   "2-leads-scope-menu.png",
+   "2-lead-overview-full.png"
+  ],
+  "code": [
+   "components/leads/lead-cards.tsx:83",
+   "lib/leads/filters.ts:20",
+   "components/shell/app-rail.tsx:60"
+  ]
+ },
+ {
+  "id": "2-16",
+  "area": "Leads › Review imported leads",
+  "route": "/leads (banner) → review sheet",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Import review: a permanent banner, green buttons and the same tag on every card",
+  "now": "A docked bar “Review imported leads (14) · 1 DUPLICATE” sits at the foot of the listing on every visit (14 rows waiting since 9 Sep). Inside: off-palette green filled “Approve All Clean (13)”, red “Reject” + green “Approve” text on every card, a “PENDING” tag on 13 of 14 cards, source chips “Google Ads (2) · Instagram (2) …”, dates “22d ago” on one card and “9 Sep ’26” on the rest, detail rows “—”, two address fields “Address” and “Lead address”.",
+  "why": "A bar that never leaves trains people to ignore it; repeated coloured verbs on every card and a tag that every card shares carry no information; green filled is not the house primary.",
+  "proposal": "Move the queue into the scope pill’s TO DO group (“To review · 14”) and drop the docked bar; the Leads rail badge can include it. In the sheet: no tag when the state is the default (only “Duplicate” shows), no verbs on the cards — Reject / Approve live once in the detail pane foot; the bulk button is the house primary “Approve 13 (no duplicates)”. One date format; one address field.",
+  "effort": "M",
+  "shots": [
+   "2-leads.png",
+   "2-review-imports.png",
+   "2-review-dup.png"
+  ],
+  "code": [
+   "components/leads/review-banner.tsx:43-47",
+   "components/leads/review-sheet.tsx:161-165",
+   "components/leads/review-sheet.tsx:191-203",
+   "components/leads/review-sheet.tsx:36"
+  ]
+ },
+ {
+  "id": "2-17",
+  "area": "Lead › Overview › LEAD STAGES card",
+  "route": "/leads/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Key facts truncated; Response time reads like the lead is Won",
+  "now": "Rows cut with “…”: “Next follow-up Call home …”, “Response time Assigned — 50 days running · First c…”, “Last contact WhatsApp · Meeting schedul…”. Olivia’s full Response time is “Assigned — 50 days running · First contact in 28h · Won — 49 days running” on a New lead; others read “Assigned in 2h · First contact in 24.8h”.",
+  "why": "The house rule says a read-in-full surface never truncates (page-checklist, REG-212). “Won — 49 days running” on a New lead is misread as a Won lead; “24.8h” is a stopwatch, not a studio word.",
+  "proposal": "Let these rows wrap to two lines. Response time in words: “Not assigned for 50 days · first reply in about a day”; drop the Won leg until the lead reaches Quote Sent; round hours (“about a day”, “2 hours”).",
+  "effort": "S",
+  "shots": [
+   "2-lead-overview.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-lost-full.png"
+  ],
+  "code": [
+   "components/leads/detail/stages-card.module.css:38",
+   "components/leads/detail/card.module.css:20",
+   "lib/leads/tat.ts:102-117"
+  ]
+ },
+ {
+  "id": "2-18",
+  "area": "Lead › Questionnaire tab + Overview card",
+  "route": "/leads/[id]/questionnaire",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Questionnaire: “Q:/A:” prefixes, a purple “Answer” per row, raw answers",
+  "now": "Every row “Q: Do you have pets? … Answer” (purple, ×4), answered rows “Q: … By Studio” tag + grey band “A: 81234567 · 10 Sep ’26 ✎”, “A: 28/11/2026”, “A: Yes”. Summary card “QUESTIONNAIRE SUMMARY · Total questions answered 7 / 11 · Client answered: 0 · Studio answered: 7” — the Overview card repeats it word for word. Toolbar “Ask Client”.",
+  "why": "Prefixes and per-row purple links add reading without meaning; the phone answer isn’t grouped (the house phone format is “8123 4567”) and the date isn’t the house date.",
+  "proposal": "Question as the row title, the answer under it in body text (no Q:/A:). Unanswered rows: grey “Not answered” + the row opens the answer box (no repeated purple link). Tag “By studio” → small grey “Answered by the studio”. Format answers by type (phone, date). Summary: one line “7 of 11 answered · none by Olivia yet”. Button “Ask Olivia”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-questionnaire.png",
+   "2-lead-overview.png"
+  ],
+  "code": [
+   "components/leads/questionnaire/question-card.tsx:67-71",
+   "components/leads/questionnaire/summary-card.tsx:23-30",
+   "components/leads/detail/questionnaire-card.tsx:28-44",
+   "components/leads/questionnaire/lead-questionnaire.tsx:114"
+  ]
+ },
+ {
+  "id": "2-19",
+  "area": "Lead › Tasks tab",
+  "route": "/leads/[id]/tasks",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Task titles cut short while tags and statuses shout in capitals",
+  "now": "Titles ellipsised at ~25 characters (“Book the showroom visit…”, “Send the revised …”) in a table with room to spare; Tags “GENERIC · FOCUS · +2” in capitals on three rows; Status “COMPLETED” beside a green tick that already says done, “OPEN” on the rest; every due date underlined like a link; purple “Assign” and “+ Add Tags” per row; a calendar icon button for “no due date”; two adds (“Add Task ▾” and “+ Add Task”). Measured 17 purple, 24 uppercase, 5 truncated.",
+  "why": "The task’s name is the one thing to read; the row gives it the least room. Tags are the studio’s own words and shouldn’t be capitalised for them.",
+  "proposal": "Title column takes the spare width by default (the column settings model allows it); tags in the case typed; Status column off by default (the tick says it) or plain grey words; due dates not underlined; Assign / Add tags appear on hover; drop the foot “+ Add Task” on desk.",
+  "effort": "S",
+  "shots": [
+   "2-lead-tasks.png",
+   "2-task-panel.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-table.tsx:474",
+   "components/leads/tasks/lead-tasks.tsx"
+  ]
+ },
+ {
+  "id": "2-20",
+  "area": "Meetings (Meeting Copilot) list",
+  "route": "/meetings, /leads/[id]/meetings",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Meeting statuses and scores in insider words",
+  "now": "Status column: “To write up — Its planned time has passed” (cut), “Held — Brief to save”, “Upcoming”. Meeting column: “Meeting — Logged at Met”, “First consultation — Written up from notes”. Column “Deal score”: “57 · Cool”, “53 · Cool”, “--” on 9 of 12 rows; “People” column “--” on 7 rows. Toolbar: outlined chips “Briefs to save (3)” and “Notes to write up (2)”, filled “New Meeting ▾”, “Insights”. Phone: the chips shrink to bare “📄 3” and “≡ 2”, and the card ⋮ is purple.",
+  "why": "“Brief”, “write up”, “logged at Met”, “Cool” are the tool’s own words; a studio owner wants “which meetings still need notes”. A column that is mostly “--” is noise.",
+  "proposal": "Status words: “Upcoming”, “Needs notes” (time passed, nothing written), “Held”, “Summary not saved”. Meeting caption: “From the Met step” / “From notes”. Deal score off by default (keep in Column settings), shown as “Likely · 57” with Hot/Warm/Cool renamed “Likely / Maybe / Unlikely”. Chips “Summaries to save · 3” / “Needs notes · 2”; on a phone keep the words. ⋮ grey.",
+  "effort": "S",
+  "shots": [
+   "2-meetings.png",
+   "2-meetings-390.png"
+  ],
+  "code": [
+   "components/meetings/meetings-table.tsx:39-59",
+   "components/meetings/meetings-toolbar.tsx:42-43",
+   "lib/meetings/model.ts:89-94"
+  ]
+ },
+ {
+  "id": "2-21",
+  "area": "Meeting page (held)",
+  "route": "/meetings/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "A held meeting is ten cards and says the concerns three times",
+  "now": "Cards: SUMMARY · NEXT STEPS · MESSAGE TO SEND · WHAT WE HEARD · CONCERNS THEY RAISED · 3 · THE NOTES | ON THE LEAD · DEAL SCORE · ROUGH ESTIMATE · THE MEETING. Concerns: “Concerns Timeline, Price, Competition” row + tags (“Budget concern · Likes modern · Landed owner · Timeline urgent · Comparing IDs · Wants kitchen · Wants bedroom · Wants bathroom · Premium client”) + the Concerns card. Summary foot “Made from the notes, by rule.” Answers headed “Demo Studio Pte Ltd’s answer · “6–10 weeks is too long””. Header filled “Save to the lead” and the ON THE LEAD card’s own “Save”. The FAB covers the add-ons’ prices (“+S$ 2,80…”). Header chips “HELD · WED, 26 AUG ’26 · 12:00 PM · IN PERSON” in capitals.",
+  "why": "After a meeting the studio wants: what they want, what to do next, the message to send. Everything else competes; “by rule” and “Pte Ltd’s answer” are system words.",
+  "proposal": "Left column: Summary · Next steps · Message to send; “What we heard” folds its tags under a “Show details”; Concerns card keeps the answers, the duplicate row goes. Cut “Made from the notes, by rule.” → nothing (or “From your notes”). “Our answer”. Drop the card’s Save (the header’s is the one). Header chips sentence case.",
+  "effort": "M",
+  "shots": [
+   "2-meeting-held-full.png"
+  ],
+  "code": [
+   "components/meetings/room/meeting-room.tsx:345-346",
+   "components/meetings/room/meeting-room.tsx:516-541",
+   "components/meetings/room/room-parts.tsx:49",
+   "components/meetings/room/room-parts.tsx:229",
+   "lib/meetings/engine.ts:286"
+  ]
+ },
+ {
+  "id": "2-22",
+  "area": "Lead tab strip + rail",
+  "route": "/leads/[id] (and /projects/[id]), the rail",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Red alert badges for routine counts",
+  "now": "Lead tabs “Tasks 3”, “Questionnaire 4” in red filled badges (open tasks, unanswered questions); the project strip has five red badges (Tasks 2 · Schedule 1 · Client 3 · Design 1 · Money 6); the rail shows six red badges at once (Tasks 1, Projects 3, Leads 2, Company 6, Messages 1, Notifications 16).",
+  "why": "When everything is red nothing is urgent; a studio owner can’t tell an overdue payment from three normal open tasks.",
+  "proposal": "Tab counts in the neutral count style (grey) and red only when something is overdue; the rail keeps red for Notifications and Messages only, the rest as a small neutral dot or number (REG-1182 set the count rule — ask Vicky about the colour).",
+  "effort": "S",
+  "shots": [
+   "2-lead-overview.png",
+   "2-cmp-project.png",
+   "2-leads.png"
+  ],
+  "code": [
+   "lib/leads/stage-policy.ts:221-226",
+   "components/om/tabs.tsx",
+   "components/shell/app-rail.tsx"
+  ]
+ },
+ {
+  "id": "2-23",
+  "area": "Empty states on the lead",
+  "route": "/leads/[id] Overview cards + tabs",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Empty-state sentences that are ungrammatical, vague or dead ends",
+  "now": "Quotes: “Create your first quote · Create quotes and share it with your clients” (also Contracts: “Create contracts and share it with your clients”). Files: “Add your first files · Create folders and upload files from your local.” Tasks: “Add your first task · Stay organised — track, prioritise, and complete everything from one place.” Questionnaire: “No questions yet · Questions are set up by your studio’s admins and will appear here.” (no link to where). Meetings: “Meet with the co-pilot beside you · Plan the meeting, and in it the co-pilot keeps the checklist, the tips and the rough estimate — then makes the brief: what they want, the next steps and the message to send.”",
+  "why": "“share it” / “from your local” read as typos; marketing lines (“Stay organised…”) tell nothing; the questionnaire one leaves the user stuck; the Meetings paragraph is three lines of feature list.",
+  "proposal": "Quotes: “No quote yet — make one from a template or upload your own.” Contracts: “No contract yet.” Files: “No files yet — upload photos, plans or documents.” Tasks: “No tasks yet.” Questionnaire: “No questions yet — set them up in Company › Questionnaire” (a link, for Owners/Admins). Meetings: “Plan a meeting and Maison AI keeps notes for you.”",
+  "effort": "S",
+  "shots": [
+   "2-lead-met.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-onhold.png",
+   "2-lead-lost-full.png",
+   "2-lead-meetings.png"
+  ],
+  "code": [
+   "components/leads/quotes/quotes-empty.tsx:22-23",
+   "components/leads/contracts/contracts-empty.tsx:27",
+   "components/leads/files/files-empty.tsx:47",
+   "components/leads/detail/files-card.tsx:88",
+   "components/leads/tasks/tasks-empty.tsx:20-21",
+   "components/leads/detail/questionnaire-card.tsx:57",
+   "components/meetings/lead-meetings.tsx:233"
+  ]
+ },
+ {
+  "id": "2-24",
+  "area": "Dates and times across Leads",
+  "route": "/leads, /leads/[id]/*, /qanvast-ops/hangouts",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "At least eight date / time formats in one module",
+  "now": "“10 Sep ’26, 4:30PM” (Lead returned card — no space), “Thu, 10 Sep ’26 · 6:00 PM” (tasks), “Monday, 7 Sep ’26” (Files day group), “6 Oct ’26・4:42 PM” (Notes list, a different dot), “4/9/2026, 1:45 PM” (Move stage read-only log), “A: 28/11/2026” (Questionnaire), “22d ago” / “2d ago” / “Updated 11 Sep ’26” (review sheet, phone card, kanban), “TUE 27 OCT” / “FRI 20 – SAT 21 NOV” uppercase (Hangouts), “Thu, 29 Oct ’26 at 3:00 PM” vs “THU, 29 OCT ’26 · 3:00 PM” on one meeting page.",
+  "why": "“4/9/2026” is 4 September in Singapore but 9 April to anyone used to US dates; mixed formats make the same day look different.",
+  "proposal": "Everything through lib/format: date “Thu, 10 Sep ’26”, time “· 4:30 PM”, relative only for the last 7 days (“2 days ago”, never “2d”); no all-caps dates; the read-only log uses the DateTimeField’s display.",
+  "effort": "M",
+  "shots": [
+   "2-lead-lost-full.png",
+   "2-lead-files.png",
+   "2-lead-notes.png",
+   "2-move-contacted-ro.png",
+   "2-lead-questionnaire.png",
+   "2-qops-hangouts.png",
+   "2-meeting-planned-full.png"
+  ],
+  "code": [
+   "components/leads/detail/returned-card.tsx",
+   "components/leads/move-stage/panels.tsx",
+   "components/hangouts/hangouts-home.tsx:125"
+  ]
+ },
+ {
+  "id": "2-25",
+  "area": "Lead › Overview › QUOTES card",
+  "route": "/leads/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Quote card prints six status words and “Private / Shared” on every lead",
+  "now": "Under the total: “OM-10001 · Private” and a six-step track labelled “Draft · Sent for Approval · Approved · Sent to Client · Confirmed · Signed” plus a CAPS chip “DRAFT” / “APPROVED” / “SIGNED”. Vivien’s lead is in Quote Sent while its quote reads “APPROVED” (not sent to the client).",
+  "why": "Six labels to say one state; “Private” is unclear (private from whom?). A Quote Sent lead whose quote was never sent is a contradiction the card should surface.",
+  "proposal": "Show the status once as a plain line: “Approved — not sent to Vivien yet” with the track unlabelled (or only the current step’s word). “Private” → “Only your studio can see it”, “Shared” → “Vivien can see it”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-overview.png",
+   "2-lead-quotesent-full.png",
+   "2-lead-won-full.png"
+  ],
+  "code": [
+   "components/leads/detail/quote-card.tsx:18-81",
+   "components/leads/quotes/quotes-table.tsx:291"
+  ]
+ },
+ {
+  "id": "2-26",
+  "area": "Hangouts",
+  "route": "/qanvast-ops/hangouts, /qanvast-ops/hangouts/[id]",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Hangouts: a filled button on every card and a CAPS line on every chat",
+  "now": "List: filled “Open today’s chats” and filled “Apply” on two cards, outlined “See how it went” on the third, “Sample” on each, uppercase “TUE 27 OCT · HOURS · VENUE · YOUR COST”. Chats tab: three filled “Start” buttons, “BOOKED ON YOUR PAGE” uppercase above every card, a “WAITING” tag on every card while the chip above already filters “Waiting · 3”, “Fits you 80%”.",
+  "why": "Three filled buttons on one screen; the repeated caps line and tag add nothing the filter doesn’t say.",
+  "proposal": "One filled button per screen: the next chat’s “Start” is filled, the rest outlined; drop “BOOKED ON YOUR PAGE” (show only the exception, “Walk-in”); no status tag when the filter shows it; “Fits you 80%” → “Good match”. Date eyebrows in sentence case.",
+  "effort": "S",
+  "shots": [
+   "2-qops-hangouts.png",
+   "2-qops-hangout-plan.png"
+  ],
+  "code": [
+   "components/hangouts/event-words.ts:35",
+   "components/hangouts/chat-words.ts:24-27",
+   "components/hangouts/hangouts-home.tsx:125-147"
+  ]
+ },
+ {
+  "id": "2-27",
+  "area": "Qanvast Ops › Leads",
+  "route": "/qanvast-ops",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Qanvast leads table repeats the same value down every row",
+  "now": "“Return window: Expired (30 days)” on all 7 rows, “Credits 200” on all 7; status tags in capitals (“CONTACTED”, “RETURN PROCESSING”, “RETURN APPROVED · REFUND PROCESSING”); the head “CREAT…” is cut; the page repeats the Leads header (filled “Add Lead”, “Insights”, ⋮ with one row “Export all as…”) plus “Request Leads”.",
+  "why": "A column with one value is not information; a second copy of the Leads header makes two places to add a lead.",
+  "proposal": "Return window shows only while open (“12 days left”), blank once expired (the Status says the rest); Credits only when it differs from the usual (or as a total in the pill). Remove Add Lead / Insights from this tab (they belong to Leads). Status chips in the house MetaChip case.",
+  "effort": "S",
+  "shots": [
+   "2-qops-leads.png"
+  ],
+  "code": [
+   "components/qanvast/qanvast-table.tsx:26",
+   "lib/leads/return-model.ts:46",
+   "components/qanvast/qanvast-leads.tsx:167",
+   "components/qanvast/qanvast-leads.tsx:248"
+  ]
+ },
+ {
+  "id": "2-28",
+  "area": "Lead › Overview › MY TASKS card",
+  "route": "/leads/[id]",
+  "kind": "copy",
+  "severity": "med",
+  "title": "“MY TASKS” lists everyone’s tasks on the lead",
+  "now": "The card is titled “MY TASKS · Tue, 27 Oct” and counts “Upcoming · 3” on Olivia, whose open tasks are unassigned or James’s — not Dane’s. The tab badge says Tasks 3 too.",
+  "why": "The title promises the viewer’s own work; a member trusts it to be empty when nothing is theirs.",
+  "proposal": "Title “Open tasks”. If “mine” matters, a second line “1 is yours”. Drop the date from the head (it is today’s date, not the tasks’).",
+  "effort": "S",
+  "shots": [
+   "2-lead-overview.png"
+  ],
+  "code": [
+   "components/leads/detail/my-work-card.tsx:14",
+   "components/leads/detail/my-work-card.tsx:61"
+  ]
+ },
+ {
+  "id": "2-29",
+  "area": "Lead › stage dialogs",
+  "route": "/leads/[id] Stage ▾ › On Hold / Lost",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "On Hold and Lost dialogs are twins with different titles",
+  "now": "On Hold: title “Put on hold”, subtitle “Moving to On Hold”, chips “1 month · 3 months · 6 months · Custom”, helper “Next follow up date will be 26 Nov ’26”, button “Save & Move”. Lost: title “Move stage”, subtitle “Moving to Lost”, “Reason*”, “Save & Move”.",
+  "why": "Two parallel decisions should read as a pair; the subtitle repeats the title.",
+  "proposal": "Titles “Put on hold” / “Mark as lost”, no subtitle; button “Put on hold” / “Mark as lost”; helper “We’ll remind you on 26 Nov ’26.”",
+  "effort": "S",
+  "shots": [
+   "2-onhold-dialog.png",
+   "2-lost-dialog.png"
+  ],
+  "code": [
+   "components/leads/move-stage/dialogs.tsx:228-244",
+   "components/leads/move-stage/dialogs.tsx:363",
+   "components/leads/move-stage/dialogs.tsx:381"
+  ]
+ },
+ {
+  "id": "2-30",
+  "area": "Lead › Move stage window",
+  "route": "/leads/[id] → Move to Met",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Move stage window helper lines name places that don’t exist on screen",
+  "now": "“This log is saved under Lead Details › Notes & Logs › Contact Log.” (no screen is called Lead Details); “Schedule a call/meeting (optional) · If you wish to be reminded, a task will be created.”; “Preferred mode”; panel title “Moving to Met” vs “Contacted details”; each log card “Log 1”.",
+  "why": "Breadcrumb-style helper text is reading work; “Preferred mode” is system talk.",
+  "proposal": "“Saved to Notes & Logs.” (or drop); “Call back (optional) — we’ll add a task to remind you”; “Preferred mode” → “Call back by”; “Log 1” only when there are two or more.",
+  "effort": "S",
+  "shots": [
+   "2-move-met.png",
+   "2-move-contacted-ro.png"
+  ],
+  "code": [
+   "components/leads/move-stage/panels.tsx:195",
+   "components/leads/move-stage/panels.tsx:218",
+   "components/leads/move-stage/wizard.tsx:447",
+   "lib/leads/enums.ts:65"
+  ]
+ },
+ {
+  "id": "2-31",
+  "area": "Leads › Deleted Leads",
+  "route": "/leads ⋮ › Deleted Leads",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Deleted Leads explains itself twice and calls itself Trash",
+  "now": "Head “Deleted Leads” + “Empty Trash”; an orange band “Deleted leads are permanently removed after 30 days.” and a foot “Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.”; “Restore” purple on every row; demo rows “Others · 0 · Others”.",
+  "why": "Two notes for one rule; “Trash” and “board” are words the rest of the app doesn’t use.",
+  "proposal": "One line under the title: “Deleted leads are removed for good after 30 days.” Drop the foot note. “Empty Trash” → “Delete all forever”. Budget 0 shows as blank.",
+  "effort": "S",
+  "shots": [
+   "2-deleted-leads.png"
+  ],
+  "code": [
+   "components/leads/deleted-sheet.tsx:203",
+   "components/leads/deleted-sheet.tsx:298"
+  ]
+ },
+ {
+  "id": "2-32",
+  "area": "Leads › Import",
+  "route": "/leads Add Lead ▾ › Import from File, /leads/imports",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Import: the same link twice, “local file”, and three names for one act",
+  "now": "Wizard: “Tips on Importing · Easily import your leads into OpenMaison using this template” + “Download Leads Import Template” (same file twice) + “Lead Import History” (also in the listing ⋮); “Important Reminders · Every lead must have a lead Name”; “Upload local file”; “Supports: CSV, XLSX, PDF (a Homematch lead sheet)”. History page: header “Download Template” + filled “Upload”; heads “TOTAL RO…”, “ROWS IMPORT…” cut; “1 error detected across 1 skipped lead”; “Download Skipped Records” per row. Names: Import from File / Import Leads / Upload / Lead Import History.",
+  "why": "Extra reading and a doubled link; truncated heads hide what the numbers are.",
+  "proposal": "Left panel: three bullets + one “Download the template” link; drop the history link from the wizard. “Upload local file” → “Your file”. “(a Homematch lead sheet)” → “PDF lead sheets”. History: heads “Rows” · “Added”; “1 lead skipped”; “Download skipped”; header button “Import leads”.",
+  "effort": "S",
+  "shots": [
+   "2-import-wizard.png",
+   "2-imports.png"
+  ],
+  "code": [
+   "components/leads/import-wizard.tsx:347-371",
+   "components/leads/import-wizard.tsx:405",
+   "app/leads/imports/imports-view.tsx:169"
+  ]
+ },
+ {
+  "id": "2-33",
+  "area": "Leads › Add Lead menu",
+  "route": "/leads Add Lead ▾",
+  "kind": "copy",
+  "severity": "low",
+  "title": "The create menu mixes adding a lead with setting up integrations",
+  "now": "Add Lead ▾: “Create New Lead (C) · Import from File · — · Link to Email · Link to Zapier · Connect to Ads”.",
+  "why": "“Zapier” and “Ads” are set-up jargon in a menu used many times a day; three of five rows leave the page for Company › Integrations.",
+  "proposal": "Add lead ▾: “Type in a lead” · “Import a file” · divider · “Get leads automatically…” (one row → Company › Integrations).",
+  "effort": "S",
+  "shots": [
+   "2-leads-add-menu.png"
+  ],
+  "code": [
+   "app/leads/workspace.tsx:472-479"
+  ]
+ },
+ {
+  "id": "2-34",
+  "area": "Leads snackbars",
+  "route": "/leads, /leads/[id], /qanvast-ops",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Snackbars that say nothing specific",
+  "now": "“Successfully Created” (new lead, also Qanvast Ops), “Successfully Updated” (edit), “Lead returned successfully”, “Members updated”.",
+  "why": "Title Case and no subject; the house snackbars elsewhere name the thing (“Moved to Met”).",
+  "proposal": "“Olivia Martinez added · Open”, “Changes saved”, “Returned to Qanvast · Undo”, “Members saved”.",
+  "effort": "S",
+  "shots": [],
+  "code": [
+   "app/leads/workspace.tsx:890",
+   "app/leads/workspace.tsx:899",
+   "components/qanvast/qanvast-leads.tsx:298",
+   "app/leads/workspace.tsx:779",
+   "app/leads/[id]/overview.tsx:1022"
+  ]
+ },
+ {
+  "id": "2-35",
+  "area": "Leads › kanban card + phone card",
+  "route": "/leads?view=kanban, /leads (390)",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "The card’s time means “updated” on the kanban and “created” on a phone",
+  "now": "Kanban: “Updated 2d ago” / “Updated 11 Sep ’26” (UX audit L3 added “Updated” because a bare “2d ago” was read as the lead’s age). Phone card: a bare “2d ago” that IS the lead’s age (createdAt). Kanban meta line packs “9232 3113 · -- · Others · 46 days in Contacted” with “--” inside the sentence.",
+  "why": "The exact ambiguity fixed on one view is still on the other; a “--” inside a sentence reads as a glitch.",
+  "proposal": "Phone card: “Added 2 days ago” (or move to the Last/Next lines); kanban: skip empty parts of the meta line.",
+  "effort": "S",
+  "shots": [
+   "2-leads-kanban.png",
+   "2-leads-390.png"
+  ],
+  "code": [
+   "components/leads/kanban/board.tsx:280-281",
+   "components/leads/lead-cards.tsx:86-87"
+  ]
+ },
+ {
+  "id": "2-36",
+  "area": "Leads › phone listing + lead page",
+  "route": "/leads (390 touch), /leads/[id] (390 touch)",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Phone: two search glyphs, the name twice, a FAB over the stage rows",
+  "now": "Listing: the top bar’s search (⌘K, all of OpenMaison) and the toolbar’s search (this list) sit 60px apart with the same glyph. Lead page: the name in the top bar and again 28px in the identity block; “View Client Info” button (the page calls her a lead); at rest the Maison AI FAB covers the LEAD STAGES card’s right edge (Contacted row’s value and chevron).",
+  "why": "Two identical glyphs that search different things; the FAB hides a value at rest.",
+  "proposal": "Toolbar search glyph only (the top bar keeps notifications/messages; global search stays in More or a long-press). Hide the identity block’s name on a phone (the bar holds it). “View details”. Lift the FAB above the first card or start it hidden until scroll.",
+  "effort": "S",
+  "shots": [
+   "2-leads-390.png",
+   "2-lead-overview-390-full.png"
+  ],
+  "code": [
+   "components/leads/toolbar.tsx:85-96",
+   "components/leads/detail/info-column.tsx:392"
+  ]
+ },
+ {
+  "id": "2-37",
+  "area": "Lead › info column links",
+  "route": "/leads/[id]",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Two chat links in one column, named differently",
+  "now": "“Team chat · Only the team reads it · Messages” and (Won lead) “Portal · Opened 18 Oct ’26 · Client messages”.",
+  "why": "Two links to Messages with different words; “Only the team reads it” explains a word the row already names.",
+  "proposal": "“Team chat · Open” and “Client chat · Open” (or both as one Messages row with two links).",
+  "effort": "S",
+  "shots": [
+   "2-lead-won-full.png",
+   "2-lead-quotesent-full.png"
+  ],
+  "code": [
+   "components/leads/detail/info-column.tsx:122-123",
+   "components/leads/detail/info-column.tsx:348-351"
+  ]
+ },
+ {
+  "id": "2-38",
+  "area": "Lead › Lost (Qanvast) and Return Lead",
+  "route": "/leads/[id] (Lost, Qanvast), Return Lead dialog",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Return state said twice; the return policy offered twice",
+  "now": "Muthu Vinay: header chip “RETURN PROCESSING” and the LEAD RETURNED card’s “Return status RETURN PROCESSING”; the brief asks to “Log loss reason” though the card shows “Reason No response from lead”. Return Lead dialog: an (i) icon button in the head and a link “Qanvast’s return policy” in the body — the same policy.",
+  "why": "Repetition, and an AI nudge that contradicts the record beside it.",
+  "proposal": "Keep the status in the card (drop the header chip while the card shows on Overview). Drop the dialog’s (i) icon — the link is enough.",
+  "effort": "S",
+  "shots": [
+   "2-lead-lost-full.png",
+   "2-return-lead.png"
+  ],
+  "code": [
+   "app/leads/[id]/overview.tsx:601",
+   "components/leads/return/return-lead-wizard.tsx"
+  ]
+ },
+ {
+  "id": "2-39",
+  "area": "Lead › Won",
+  "route": "/leads/[id] (Won)",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Won lead: “Open project” twice and a stage clock still running",
+  "now": "Filled header “Open project” and the brief’s outlined “Open project” (tag “THE PROJECT”); LEAD STAGES “Won · current · 67 days” and “80 days in pipeline” on a lead that is finished.",
+  "why": "Two identical buttons; a ticking clock on a closed sale.",
+  "proposal": "Brief drops “Open project” (keep “Summarise the project” or remove the brief on Won). Won row: “Won on 21 Aug ’26”; head “Took 13 days to win”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-won-full.png"
+  ],
+  "code": [
+   "lib/leads/briefs.ts:206",
+   "components/leads/detail/stages-card.tsx:96"
+  ]
+ },
+ {
+  "id": "2-40",
+  "area": "Invite to Portal",
+  "route": "/leads/[id] ⋮ › Invite to Portal",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Invite drawer says “not invited” twice in one row",
+  "now": "Row “Olivia Martinez · 9123 4567 · Not invited yet” with a tag “NOT INVITED” beside it.",
+  "why": "Same fact twice.",
+  "proposal": "Keep the caption, drop the tag (or the reverse).",
+  "effort": "S",
+  "shots": [
+   "2-invite-portal.png"
+  ],
+  "code": [
+   "components/portal/client-access-panel.tsx"
+  ]
+ },
+ {
+  "id": "2-41",
+  "area": "Assign popover",
+  "route": "/leads, /leads/[id]",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Assign suggestion reads like a rule engine",
+  "now": "“Suggested · Sarah — Prefers HDB 4-Room (must match) leads. Assign to Sarah” above the list; foot “Clear All · Assign”; title “Assign Member”.",
+  "why": "“(must match)” is the scoring engine’s word.",
+  "proposal": "“Suggested: Sarah — she takes HDB 4-Room leads.” Button “Assign Sarah”; title “Assign members”; foot “Clear”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-assign.png",
+   "2-leads-assign.png"
+  ],
+  "code": [
+   "lib/leads/suggest.ts:5",
+   "components/leads/assign-popover.tsx:120"
+  ]
+ },
+ {
+  "id": "2-42",
+  "area": "Qanvast Ops › Lead credits · Ranking",
+  "route": "/qanvast-ops/credits, /qanvast-ops/reviews/ranking",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Credit and rank pages use clever or insider labels",
+  "now": "Tiles: “On the way back · 200 · Farah Isa — Qanvast approved the return and credits it once processed”; table column “Closures”; Ranking tiles “REVIEWS 5 · Written by homeowners · in 2026: 4*^”, “BOARD PINS 214”, footnotes “* SuperTrust 2027 will be based on these numbers. Find out more” and “^ This year’s reviews are counted …”; links “See every review on Qanvast”, “Ask homeowners for a review” while the header says “Request reviews”. Grey stat tiles here; the Dashboard’s are white cards.",
+  "why": "“On the way back” and “Closures” need decoding; footnote symbols are spreadsheet talk; two names for asking for reviews; “homeowners” vs the app’s “clients”.",
+  "proposal": "“Credits to come back · 200”, “Won”, drop the */^ footnotes into one help tooltip; one verb “Ask for reviews” (header) and drop the side link; “clients” (or “homeowners” everywhere in Qanvast and “clients” in OpenMaison — decide once).",
+  "effort": "S",
+  "shots": [
+   "2-qops-credits.png",
+   "2-qops-ranking.png",
+   "2-qops-reviews.png"
+  ],
+  "code": [
+   "components/qanvast/account/words.ts:24-46",
+   "components/qanvast/account/lead-credits.tsx:82"
+  ]
+ },
+ {
+  "id": "2-43",
+  "area": "Leads › Column settings · Filters",
+  "route": "/leads Column settings, Filters",
+  "kind": "noise",
+  "severity": "low",
+  "title": "Column settings repeats a pin on every row; Filters repeats the head sort",
+  "now": "Column settings: paragraph “Toggle columns you want to see. Drag columns up or down to reorder them.”, “PINNED (3 COLUMNS MAX)”, and a pin glyph on all 13 rows next to the switch. Filters modal’s first tab is “Sort · Newest at the top / Oldest at the top” while the table heads Lead Name · Stage · Budget · Created also sort.",
+  "why": "Thirteen identical glyphs; two places to sort the same list.",
+  "proposal": "Pin glyph on hover / focus of a row; helper as a tooltip on the drawer title; “Pinned · up to 3”. Remove Sort from Filters (the heads sort; the kanban keeps newest-first).",
+  "effort": "S",
+  "shots": [
+   "2-leads-columns.png",
+   "2-leads-filters.png"
+  ],
+  "code": [
+   "components/om/column-settings.tsx",
+   "components/leads/filters-modal.tsx"
+  ]
+ },
+ {
+  "id": "2-44",
+  "area": "Lead page keyboard",
+  "route": "/leads/[id]",
+  "kind": "defect",
+  "severity": "low",
+  "title": "Esc pressed to dismiss a snackbar takes you off the lead",
+  "now": "On Olivia’s page press “Move to Contacted” (the refusal snackbar shows), then Esc: the browser goes to /leads. Esc is the registered page “Back” key (lib/keys/registry.ts:78), and with only a snackbar up nothing else claims it.",
+  "why": "Esc is the habit for “close this message”; losing the page (and its scroll) is a surprise.",
+  "proposal": "While a snackbar shows, the first Esc dismisses it; Back needs a second Esc. Or Back moves to ⌘[ / Alt ←.",
+  "effort": "S",
+  "shots": [
+   "2-lead-move-refusedX.png"
+  ],
+  "code": [
+   "lib/keys/registry.ts:78",
+   "components/shell/shortcuts/shortcuts-layer.tsx"
+  ]
+ },
+ {
+  "id": "2-45",
+  "area": "Demo data — Olivia Martinez",
+  "route": "/leads/2bc08444-…, /leads/[id]/files",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The showcase lead’s files are 12 images all named “Q-101”",
+  "now": "Files grid: eight identical floor plans named “Q-101” (12 in all, one folder “Kitchen”); the Overview’s FILES tiles and the contact log’s attachment show “Q-101” too. Olivia is also New with no owner but has a Last contact, a drafted quote, studio-answered questions and James’s completed tasks.",
+  "why": "The lead mocked as the page’s reference looks like test data in a demo (REG-343 asks for consistent demo records).",
+  "proposal": "Rename the seeded files (“Floor plan.jpg”, “Kitchen — existing.jpg”…) and give the lead an owner or remove the contact/quote trail.",
+  "effort": "S",
+  "shots": [
+   "2-lead-files.png",
+   "2-lead-overview.png"
+  ],
+  "code": [
+   "scripts/seed-files.ts",
+   "scripts/repair-demo-data.ts"
+  ]
+ },
+ {
+  "id": "2-46",
+  "area": "Notes & Logs list",
+  "route": "/leads/[id]/notes",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Every log in the list is titled “Contact log”",
+  "now": "List rows: “Contact log / Callback requested / 6 Oct ’26・4:42 PM”, “Contact log / Callback requested / 8 Sep ’26・3:01 PM”; the filter chip is “Contact Log”; the detail pane’s title “Contact log”. Opening New › Contact Log immediately adds a draft row “Contact log · No notes yet”. Phone: the note composer is docked at the bottom on the list (Title / Write a note… / tools / Save) and takes a quarter of the screen.",
+  "why": "The kind is shown as the title, so every row starts with the same two words; the outcome and the channel are what tell logs apart.",
+  "proposal": "Row title = channel + outcome (“Call — callback requested”), the kind as the icon only; one spelling “Contact log”. Phone composer opens from “+” instead of sitting docked.",
+  "effort": "S",
+  "shots": [
+   "2-lead-notes.png",
+   "2-notes-contactlog.png",
+   "2-lead-notes-390.png"
+  ],
+  "code": [
+   "components/leads/notes/lead-notes.tsx",
+   "components/leads/notes/contact-editor.tsx"
+  ]
+ },
+ {
+  "id": "2-47",
+  "area": "Insights button",
+  "route": "/leads, /meetings, /qanvast-ops header",
+  "kind": "copy",
+  "severity": "low",
+  "title": "“Insights” opens a page called Reports",
+  "now": "Leads, Meetings and Qanvast Ops headers carry “📊 Insights” (and the phone icon); each opens Company › Reports › Leads / Meetings. The listing ⋮ has “Leads Settings” which opens Settings › Lead management.",
+  "why": "Two names for one place; the user who opens Reports from Company never meets the word “Insights”.",
+  "proposal": "“Reports”; “Lead settings”.",
+  "effort": "S",
+  "shots": [
+   "2-leads.png",
+   "2-meetings.png"
+  ],
+  "code": [
+   "app/leads/workspace.tsx:511-533",
+   "app/leads/workspace.tsx:486"
+  ]
+ },
+ {
+  "id": "2-48",
+  "area": "Planned meeting",
+  "route": "/meetings/[id] (planned)",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Planned meeting: consent block, credit maths and “co-pilot” spelled two ways",
+  "now": "“Tell Jonathan before you start” + a quoted 55-word script + “I’ve told Jonathan about the co-pilot” + “The co-pilot uses 25 AI credits for each 10 minutes, and asks before each next 10.” + the prototype line. The tool is “Meeting Copilot” in Tools and “co-pilot” here. Checklist items are grey before the meeting starts and read as disabled.",
+  "why": "A lot to read before pressing Start; two spellings of the tool’s name.",
+  "proposal": "Fold the script behind “What to tell Jonathan” ; credits line → “25 credits per 10 minutes”; one spelling “Copilot”; checklist in normal text.",
+  "effort": "S",
+  "shots": [
+   "2-meeting-planned-full.png"
+  ],
+  "code": [
+   "components/meetings/room/meeting-room.tsx:179-192",
+   "components/meetings/room/meeting-room.tsx:447",
+   "lib/meetings/model.ts:110"
+  ]
+ },
+ {
+  "id": "2-49",
+  "area": "Lead form",
+  "route": "/leads Add Lead ▾ › Create New Lead",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Lead form repeats “Lead” in every label and explains the address twice",
+  "now": "Title “Create New Lead”; fields “Lead name*”, “Lead phone number*”, “Lead source”, “Property address” with helper “Client project address.”, “Assign member”; duplicate dialog title wraps to two lines (“A lead with this phone already exists”).",
+  "why": "The dialog already says it is a lead; the helper adds a third name (client project) for the same address.",
+  "proposal": "Title “New lead”; “Name”, “Mobile number”, “Source”, “Property address” (no helper), “Members”; duplicate title “Already in your leads”.",
+  "effort": "S",
+  "shots": [
+   "2-lead-form.png",
+   "2-lead-form-submit.png"
+  ],
+  "code": [
+   "components/leads/lead-form.tsx",
+   "components/leads/lead-form.tsx:519"
+  ]
+ },
+ {
+  "id": "2-50",
+  "area": "Activity tab",
+  "route": "/leads/[id]/activity",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Activity lines in system notation",
+  "now": "“You set the payment schedule of the quote “OM-10001” to 10/30/30/30.”; “You compared OM-10001 · Whole-home renovation with Flo Design’s quote in Quote X-Ray.”; filter chips “All · Tasks · Files · Notes · Stage” while lines about quotes, X-Ray and questions have no chip.",
+  "why": "“10/30/30/30” is the schedule’s internal shorthand; the chip set doesn’t cover what the feed shows.",
+  "proposal": "“You set OM-10001’s payments: 10% deposit, then 30 / 30 / 30.”; add a “Quotes” chip (or drop chips to All · Mine).",
+  "effort": "S",
+  "shots": [
+   "2-lead-activity.png"
+  ],
+  "code": [
+   "lib/leads/activity.ts",
+   "components/leads/activity/lead-activity.tsx:56-79"
+  ]
+ },
+ {
+  "id": "2-51",
+  "area": "Create Quote window (from a lead)",
+  "route": "/leads/[id]/quotes › Create Quote",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Create Quote: caps eyebrows and software words",
+  "now": "“FROM A TEMPLATE · 3 SAVED”, “Blank Quote · The default template’s settings, an empty t…”, tag “XLSX · CSV · PDF · 5 AI CREDITS”, “Draft with Maison AI · Describe the scope — we draft a categorized quote from your 10-item price book” (US “categorized”).",
+  "why": "A first-time studio user doesn’t know what “the default template’s settings” means; caps tags shout.",
+  "proposal": "“Templates · 3”, “Blank quote — start with an empty list”, tag “Spreadsheet or PDF · 5 credits”, “…we draft a quote by category from your price book”.",
+  "effort": "S",
+  "shots": [
+   "2-create-quote.png"
+  ],
+  "code": [
+   "components/quotes/create-quote-modal.tsx:405"
+  ]
+ }
+]

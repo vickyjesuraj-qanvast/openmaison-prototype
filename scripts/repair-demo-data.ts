@@ -583,7 +583,8 @@ async function main() {
   const open = rows<{ id: string; due_at: number; created_at: number }>(await client.execute(
     /* (R68) a project's tasks keep the dates their rule gave them — their order must not move every other task's day */
     /* (pending modules S23, R140) a meeting's reminder is due on the meeting's own hour — that date belongs to the meeting, not to the calendar */
-    'SELECT id, due_at, created_at FROM lead_tasks WHERE done = 0 AND due_at IS NOT NULL AND meeting_id IS NULL AND (lead_id IS NULL OR lead_id NOT IN (SELECT lead_id FROM projects)) ORDER BY created_at, id'))
+    /* (the Dashboard redesigned — lane D3, R179) Dane's call today is due on its own hour of the run day, as R179 writes it */
+    `SELECT id, due_at, created_at FROM lead_tasks WHERE done = 0 AND due_at IS NOT NULL AND meeting_id IS NULL AND (lead_id IS NULL OR lead_id NOT IN (SELECT lead_id FROM projects)) AND id <> '${sid('9b9eb718-4be6-4cf2-9ab6-017bba61f57a', 'r179:task:callback')}' ORDER BY created_at, id`))
   const OFFSETS = [-2, -1, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7]
   // A return's task is due 18:00 on the day it was returned — that date belongs to the return, not to the calendar.
   open.filter((t) => !returnTaskIds.has(t.id)).forEach((t, i) => {
@@ -6926,12 +6927,138 @@ async function main() {
     console.log(`  ${stale.length ? `${stale.length} deleted lead(s) brought inside the 30 days` : 'every deleted lead inside the 30 days'}`)
   }
 
+  /* ── R178 · The client opened their variation order (the Dashboard redesigned, 2026-10-26 — his P-04, lane D2) ─────────────────────────
+     Needs you now says the strongest follow-up cue a studio has (B §3): a quote or a variation order the client opened and hasn't answered. The
+     demo's quotes with their clients carried no opening at all, so the row could never be seen. Aisha Rahman's VO-1 (with her since 11 days on
+     its link) is opened the way her confirmation page stamps it (app/quotes/seen-actions.ts `stampQuoteSeen` — the first and the last opening
+     and their count; never by a studio visit): first the evening after it went, last yesterday evening, three times. Nothing else changes —
+     the quote keeps its status and its validity; a restore moves both moments with the demo day. Idempotent: only an unopened VO-1 is stamped. */
+  console.log('\nR178 Aisha opened VO-1 three times')
+  {
+    const DAY_S = 86_400, nowS = Math.floor(Date.now() / 1000)
+    const vo = rows<{ id: string; sent: number }>(await client.execute(`SELECT q.id, q.client_sent_at AS sent FROM quotes q JOIN leads l ON l.id = q.lead_id
+      WHERE q.kind = 'variation' AND q.number = 'VO-1' AND l.name = 'Aisha Rahman' AND q.status = 'Sent to Client' AND q.client_sent_at IS NOT NULL AND q.client_view_count = 0 AND q.deleted_at IS NULL`))
+    for (const q of vo) {
+      const SGT = 8 * 3600, dayStart = (t: number) => Math.floor((t + SGT) / DAY_S) * DAY_S - SGT   // the studio's day (Singapore)
+      const first = Math.min(dayStart(Number(q.sent)) + DAY_S + 20 * 3600, dayStart(nowS) - 2 * DAY_S)   // 8 PM the day after it went
+      const last = Math.max(first + 3600, dayStart(nowS) - 3 * 3600)                                     // 9 PM yesterday
+      await client.execute({ sql: `UPDATE quotes SET client_viewed_at = ?, client_last_viewed_at = ?, client_view_count = 3 WHERE id = ?`, args: [first, last, q.id] })
+    }
+    console.log(`  ${vo.length ? 'VO-1 opened three times, last yesterday evening' : 'already opened'}`)
+  }
+
+  /* ── R177 · Dane was last on the Dashboard on the demo's Friday evening (the Dashboard redesigned, 2026-10-26 — his mark P-02, lane D1) ──
+     *Since you were last here* counts from a member's own mark (`members.dashboard_seen_at` · `dashboard_since_at`, lib/dashboard/since.ts):
+     the demo opens on a Monday morning, so Dane's last sitting was the Friday before at 6 PM by the studio's clock (Asia/Singapore) — the
+     chips then say what clients and the team did over the weekend, as the drawn page does. Every other member has no mark (a first visit: what
+     is new this week). Both columns are timestamps the schema types, so a restore moves them with the demo day (lib/db/time-columns.ts reads
+     them off the schema). Idempotent: the same day gives the same moment, and a mark already there is left alone unless it is not that Friday. */
+  console.log('\nR177 Dane’s Dashboard mark on the demo’s Friday evening')
+  {
+    const sgt = (t: number) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' }).formatToParts(new Date(t * 1000)).map((x) => [x.type, x.value])); return { y: Number(p.year), m: Number(p.month), d: Number(p.day), w: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday ?? '') } }
+    const today = sgt(NOW)
+    const back = ((today.w - 5 + 7) % 7) || 7   // the Friday before the demo day (a Friday's own is the one a week back)
+    /* Friday 18:00 in Singapore (UTC+8, no summer time) as seconds */
+    const fri = Math.floor(Date.UTC(today.y, today.m - 1, today.d - back, 18 - 8, 0, 0) / 1000)
+    const dane = rows<{ seen: number | null; since: number | null }>(await client.execute({ sql: `SELECT dashboard_seen_at AS seen, dashboard_since_at AS since FROM members WHERE id = 'dane'` }))[0]
+    if (!dane) console.log('  no Dane in this studio — nothing to mark')
+    else if (dane.seen === fri && dane.since === fri) console.log('  already on Friday 6 PM — in step')
+    else {
+      await client.execute({ sql: `UPDATE members SET dashboard_seen_at = ?, dashboard_since_at = ? WHERE id = 'dane'`, args: [fri, fri] })
+      console.log(`  Dane’s last sitting: ${new Date(fri * 1000).toISOString()} (Friday 6 PM in Singapore)`)
+    }
+  }
+
+  /* ── R179 · Dane's day on the demo's today (the Dashboard redesigned, 2026-10-26 — his marks P-06 · P-14, lane D3) ──────────────────────────
+     The Dashboard's Your day is the member's meetings, calls and tasks today. Dane's today had a late task and a Hangout and nothing he would
+     prepare for, drive to or ring — so the card's own presses (Prepare me · Directions · Call · WhatsApp) had nothing to stand on. Each record is
+     what the app itself writes for the moment, on a lead where the story already has it:
+       · Benjamin Han (Won — HDB 5-Room, in progress, Dane and Germaine on it): a site visit Germaine planned the day before, today 10:00–10:45 at the
+         home (the lead's address — planMeeting's own place for In person), on the project, with its reminder for both ("Meet Benjamin — site visit");
+       · Priya Nair (Contacted, Dane's): Dane rang her three days ago (a Notes contact log, Call · Meeting scheduled — her last contact moves with it)
+         and planned a first consultation at the showroom today 2:00–3:00 PM, with its reminder;
+       · Cheryl Lim (Contacted, Dane's — she asked for a callback): a Call task Dane set three days ago for today at 4:30 PM.
+     Times are the run day's (local), so a restore moves them to the demo's day (lib/db/demo-day.ts). Written only while each lead is where its
+     story has it, its members active, and the studio has no meeting of its own there; fixed ids (`sid`), so a second run finds them. */
+  console.log('\nR179 Dane’s day on the demo’s today')
+  {
+    const say: string[] = []
+    type L = { id: string; name: string; stage: string; property_address: string | null; deleted_at: number | null }
+    const leadOf = async (id: string) => rows<L>(await client.execute({ sql: `SELECT id, name, stage, property_address, deleted_at FROM leads WHERE id = ?`, args: [id] }))[0]
+    const onLead = async (leadId: string, member: string) => Number(rows<{ n: number }>(await client.execute({ sql: `SELECT count(*) AS n FROM lead_assignees WHERE lead_id = ? AND member_id = ?`, args: [leadId, member] }))[0]?.n ?? 0) > 0
+    const active = new Set(rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE is_active = 1`)).map((m) => m.id))
+    const exists = async (table: string, id: string) => Number(rows<{ n: number }>(await client.execute({ sql: `SELECT count(*) AS n FROM ${table} WHERE id = ?`, args: [id] }))[0]?.n ?? 0) > 0
+    /* a planned meeting and its reminder (app/meetings/actions.ts planMeeting): the meeting, then a Follow-up due on its hour for its people */
+    const plan = async (o: { leadId: string; projectId: string | null; aim: string; where: string; place: string | null; startsSec: number; minutes: number; members: string[]; by: string; plannedSec: number; name: string }) => {
+      const id = sid(o.leadId, `r179:meeting:${o.aim}`)
+      if (await exists('meetings', id)) return false
+      const own = Number(rows<{ n: number }>(await client.execute({ sql: `SELECT count(*) AS n FROM meetings WHERE lead_id = ? AND deleted_at IS NULL AND status = 'planned' AND id != ?`, args: [o.leadId, id] }))[0]?.n ?? 0)
+      if (own) return false
+      const taskId = sid(id, 'task:reminder')
+      const title = `Meet ${meetingFirstOf(titleCaseName(o.name))} — ${meetingAimLabel(o.aim).toLowerCase()}`
+      await client.batch([
+        { sql: `INSERT INTO meetings (id, lead_id, project_id, aim, where_kind, place, starts_at, ends_at, status, member_ids, notes, file_ids, state_json, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'planned', ?, '', '[]', '{}', ?, ?, ?)`,
+          args: [id, o.leadId, o.projectId, o.aim, o.where, o.place, o.startsSec * 1000, (o.startsSec + o.minutes * 60) * 1000, JSON.stringify(o.members), o.by, o.plannedSec * 1000, o.plannedSec * 1000] },
+        { sql: `INSERT OR IGNORE INTO lead_tasks (id, lead_id, title, kind, due_at, done, created_at, creator_id, updated_at, meeting_id) VALUES (?, ?, ?, 'Follow-up', ?, 0, ?, ?, ?, ?)`, args: [taskId, o.leadId, title, o.startsSec, o.plannedSec, o.by, o.plannedSec, id] },
+        ...o.members.map((m) => ({ sql: `INSERT INTO task_assignees (task_id, member_id) SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM task_assignees WHERE task_id = ? AND member_id = ?)`, args: [taskId, m, taskId, m] })),
+      ], 'write')
+      return true
+    }
+
+    /* Benjamin Han's site visit */
+    const BEN = '2b6d6bfc-5d25-48c8-904a-6f7a7c85cec3'
+    const ben = await leadOf(BEN)
+    const benProject = rows<{ id: string }>(await client.execute({ sql: `SELECT id FROM projects WHERE lead_id = ? AND deleted_at IS NULL AND stage = 'in_progress' AND on_hold_at IS NULL`, args: [BEN] }))[0]
+    if (ben && !ben.deleted_at && ben.stage === 'Won' && benProject && active.has('dane') && active.has('germaine') && await onLead(BEN, 'dane') && await onLead(BEN, 'germaine')) {
+      if (await plan({ leadId: BEN, projectId: benProject.id, aim: 'site_visit_debrief', where: 'In person', place: ben.property_address, startsSec: D0 + 10 * H, minutes: 45, members: ['dane', 'germaine'], by: 'germaine', plannedSec: D0 - D + 16 * H, name: ben.name }))
+        say.push(`a site visit at Benjamin Han’s for ${fmt(D0 + 10 * H)}`)
+    }
+
+    /* Priya Nair: the call that booked it, then the first consultation at the showroom */
+    const PRIYA = 'a7fa05e9-6c32-478f-9db9-c9a3e7deb47c'
+    const priya = await leadOf(PRIYA)
+    if (priya && !priya.deleted_at && priya.stage === 'Contacted' && active.has('dane') && await onLead(PRIYA, 'dane')) {
+      const calledSec = D0 - 3 * D + 16 * H + 15 * 60
+      const noteId = sid(PRIYA, 'r179:note:booked')
+      if (!(await exists('lead_notes', noteId)) && await plan({ leadId: PRIYA, projectId: null, aim: 'first_consultation', where: 'Showroom', place: null, startsSec: D0 + 14 * H, minutes: 60, members: ['dane'], by: 'dane', plannedSec: calledSec + 5 * 60, name: priya.name })) {
+        await client.execute({ sql: `INSERT INTO lead_notes (id, lead_id, kind, title, body, channel, contacted_at, outcome, next_step_at, next_step_mode, author_id, created_at, updated_at) VALUES (?, ?, 'contact', '', ?, 'Call', ?, 'Meeting scheduled', NULL, NULL, 'dane', ?, ?)`,
+          args: [noteId, PRIYA, 'Wants to see the kitchen displays at the showroom before deciding on the layout.', calledSec, calledSec + 2 * 60, calledSec + 2 * 60] })
+        say.push(`Priya Nair rang (Meeting scheduled) and a first consultation for ${fmt(D0 + 14 * H)}`)
+      }
+    }
+
+    /* Cheryl Lim's callback */
+    const CHERYL = '9b9eb718-4be6-4cf2-9ab6-017bba61f57a'
+    const cheryl = await leadOf(CHERYL)
+    const callId = sid(CHERYL, 'r179:task:callback')   // (R15 leaves it out of its calendar: its hour is today's, as written here)
+    const callDue = D0 + 16 * H + 30 * 60
+    if (await exists('lead_tasks', callId)) {
+      const kept = await client.execute({ sql: `UPDATE lead_tasks SET due_at = ? WHERE id = ? AND done = 0 AND due_at <> ?`, args: [callDue, callId, callDue] })
+      if (kept.rowsAffected) say.push('Cheryl Lim’s call put back on today’s 4:30 PM')
+    } else if (cheryl && !cheryl.deleted_at && cheryl.stage === 'Contacted' && active.has('dane') && await onLead(CHERYL, 'dane')) {
+      const setSec = D0 - 3 * D + 11 * H
+      await client.batch([
+        { sql: `INSERT INTO lead_tasks (id, lead_id, title, kind, due_at, done, created_at, creator_id, updated_at) VALUES (?, ?, 'Call Cheryl back about her budget', 'Call', ?, 0, ?, 'dane', ?)`, args: [callId, CHERYL, callDue, setSec, setSec] },
+        { sql: `INSERT INTO task_assignees (task_id, member_id) SELECT ?, 'dane' WHERE NOT EXISTS (SELECT 1 FROM task_assignees WHERE task_id = ? AND member_id = 'dane')`, args: [callId, callId] },
+      ], 'write')
+      say.push(`a call to Cheryl Lim for ${fmt(callDue)}`)
+    }
+    console.log(`  ${say.length ? say.join(' · ') : 'already in step'}`)
+  }
+
   /* (pending modules S43C, R162) the labels each sample room has now — a version on it lists only those */
   const SAMPLE_LABEL_CHECK = SAMPLE_ROOMS.map((r) => `SELECT j.id FROM render_jobs j JOIN project_rooms pr ON pr.id = j.room_id, json_each(j.variants_json) v, json_each(json_extract(v.value, '$.applied.surfaces')) s WHERE pr.sample_key = '${r.key}' AND json_extract(s.value, '$.id') LIKE '${r.key}-s%' AND json_extract(s.value, '$.label') NOT IN (${r.surfaces.map((x) => `'${x.label.replace(/'/g, "''")}'`).join(', ')})`).join(' UNION ALL ')
 
   /* (S44O — C3, R163) a quote this run seeded with its client since R163 ran keeps the GST its amount was worked out by */
   { const late = await stampSentGst(); if (late.line + late.rate) note(`R163 again: ${late.line + late.rate} quote(s) seeded since stamped`) }
   const checks: [string, string][] = [
+    /* (the Dashboard redesigned, R178) a client's openings stay in order: never before it went to them, the last never before the first */
+    ['quote opened before it went to the client, or its last opening before its first (Dashboard D2, R178)', `SELECT number FROM quotes WHERE client_view_count > 0 AND (client_viewed_at IS NULL OR client_last_viewed_at < client_viewed_at OR (client_sent_at IS NOT NULL AND client_viewed_at < client_sent_at))`],
+    /* (the Dashboard redesigned, 2026-10-26 — R177) a member's Dashboard mark: never ahead of the demo day, a sitting's mark never after its
+       latest view, and their own page a record the app can read */
+    ['Dashboard visit mark ahead of the demo day, or a sitting’s mark after its latest view (Dashboard redesign, R177)', `SELECT id FROM members WHERE dashboard_seen_at > strftime('%s','now') + 60 OR dashboard_since_at > dashboard_seen_at OR (dashboard_since_at IS NOT NULL AND dashboard_seen_at IS NULL)`],
+    ['Dane has no Dashboard mark — the demo’s Since you were last here counts from his Friday evening (R177)', `SELECT 'dane' WHERE EXISTS (SELECT 1 FROM members WHERE id = 'dane') AND (SELECT dashboard_seen_at FROM members WHERE id = 'dane') IS NULL`],
+    ['member’s Dashboard page that is not a record the app reads (Dashboard redesign, Q-06 · Q-07)', `SELECT id FROM members WHERE dashboard_prefs IS NOT NULL AND (json_valid(dashboard_prefs) = 0 OR json_type(dashboard_prefs, '$.hidden') NOT IN ('array') OR EXISTS (SELECT 1 FROM json_each(dashboard_prefs, '$.hidden') j WHERE j.value NOT IN ('pulse', 'day', 'pipeline', 'projects', 'team', 'site')) OR coalesce(json_extract(dashboard_prefs, '$.scope'), 'studio') NOT IN ('studio', 'mine'))`],
     /* (pending modules S46C · R1, R176) Deleted Leads keeps its 30 days — nothing it lists is past them, unless a project keeps it */
     ['deleted lead past Deleted Leads’ 30 days that no project keeps (S46C, R176)', `SELECT name FROM leads WHERE deleted_at IS NOT NULL AND direct = 0 AND deleted_at < strftime('%s','now') - 30 * 86400 AND id NOT IN (SELECT lead_id FROM projects)`],
     ['deleted lead deleted before it was made (S46C, R176)', `SELECT name FROM leads WHERE deleted_at IS NOT NULL AND deleted_at < created_at`],
@@ -7587,6 +7714,10 @@ async function main() {
     ['view-only link on a variation order, or with no time it was made (S02, R104)', `SELECT number FROM quotes WHERE view_token IS NOT NULL AND (kind = 'variation' OR view_token_at IS NULL)`],
     ['render link from Files live while its file is not shown, or on another lead (S02, R104)', `SELECT s.id FROM render_share_links s WHERE s.file_id IS NOT NULL AND s.revoked_at IS NULL AND NOT EXISTS (SELECT 1 FROM lead_files f WHERE f.id = s.file_id AND f.lead_id = s.lead_id AND f.shown_to_client_at IS NOT NULL AND f.deleted_at IS NULL)`],
     ['two members with one name, email or phone (S01, R103)', `SELECT lower(name) FROM members GROUP BY lower(name) HAVING count(*) > 1 UNION ALL SELECT lower(email) FROM members WHERE coalesce(email, '') <> '' GROUP BY lower(email) HAVING count(*) > 1 UNION ALL SELECT phone FROM members WHERE coalesce(phone, '') <> '' GROUP BY phone HAVING count(*) > 1`],
+    /* (the Dashboard redesigned — lane D3, R179) Dane's day: each planned meeting R179 wrote keeps its reminder for its people on its hour, on a
+       lead it belongs to (a project's meeting on that project's lead), and a meeting is never before it was planned */
+    ['R179 meeting without its open reminder on its hour for each of its people (Dashboard D3, R179)', `SELECT m.id FROM meetings m WHERE m.id IN ('${sid('2b6d6bfc-5d25-48c8-904a-6f7a7c85cec3', 'r179:meeting:site_visit_debrief')}', '${sid('a7fa05e9-6c32-478f-9db9-c9a3e7deb47c', 'r179:meeting:first_consultation')}') AND m.status = 'planned' AND m.deleted_at IS NULL AND (SELECT count(*) FROM json_each(m.member_ids) j WHERE NOT EXISTS (SELECT 1 FROM lead_tasks t JOIN task_assignees a ON a.task_id = t.id WHERE t.meeting_id = m.id AND t.done = 0 AND t.due_at = m.starts_at / 1000 AND a.member_id = j.value)) > 0`],
+    ['meeting on a project that is not its lead’s, or planned after it starts (Dashboard D3, R179)', `SELECT m.id FROM meetings m JOIN projects p ON p.id = m.project_id WHERE p.lead_id <> m.lead_id UNION ALL SELECT id FROM meetings WHERE created_at > starts_at AND status = 'planned' AND id IN ('${sid('2b6d6bfc-5d25-48c8-904a-6f7a7c85cec3', 'r179:meeting:site_visit_debrief')}', '${sid('a7fa05e9-6c32-478f-9db9-c9a3e7deb47c', 'r179:meeting:first_consultation')}')`],
   ]
   let failed = 0
   for (const [label, sql] of checks) {

@@ -17,11 +17,11 @@
  * and no figure beyond their own records (Q-20).
  */
 import { money2 } from '@/lib/quotes/math'
-import { calendarDaysBetween, dayWords, displayDate } from '@/lib/format'
+import { calendarDaysBetween, dayWords, displayDate, moneyCard } from '@/lib/format'
 import type { InvoiceState } from '@/lib/projects/money'
 import { binds, termsLabel, type VendorRecord } from './model'
 import { costEntities, payable, type CostSummary } from './costs'
-import { ruleWords, type CommissionAsk, type CommissionLine } from './commission'
+import { pctWords, type CommissionAsk, type CommissionLine } from './commission'
 import { billWaitWords, type CostRules } from './rules'
 import type { XeroKind } from './xero'
 import type { FinanceData } from './queries'
@@ -127,11 +127,13 @@ export const todoGroupsFor = (v: Pick<TodoInput['viewer'], 'runs' | 'approvesPo'
 export const WAITING_WHY = { po: 'An Owner or an Admin approves purchase orders', expense: 'An Owner or an Admin approves expenses', invoice: 'An Owner or an Admin approves invoices', ask: 'An Owner or an Admin answers commission asks',
   /* (S44R — UAT row 361, call C8) invented copy */ bill: 'An Owner or an Admin approves this bill before it is paid' } as const
 /** Each group's words (invented copy, simplify Q-12): its title, its chip and what its head says with nothing in it. */
+/* (the calm UI build 2026-10-27, T-01 — 1-02 · 5-28 · W-387) the app's one vocabulary: To approve → **Approvals**, Stuck → **Waiting on others** (a
+   word that read as an error). The group keys stay. */
 export const TODO_GROUP: Record<TodoGroupKey, { title: string; chip: string; empty: string }> = {
-  approve: { title: 'To approve', chip: 'To approve', empty: 'Nothing to approve' },
+  approve: { title: 'Approvals', chip: 'Approvals', empty: 'Nothing to approve' },
   pay: { title: 'To pay', chip: 'To pay', empty: 'Nothing to pay' },
   collect: { title: 'To collect', chip: 'To collect', empty: 'Nothing to collect' },
-  stuck: { title: 'Stuck', chip: 'Stuck', empty: 'Nothing is stuck' },
+  stuck: { title: 'Waiting on others', chip: 'Waiting on others', empty: 'Nothing is waiting on others' },
   drafts: { title: 'Your drafts', chip: 'Your drafts', empty: 'No drafts' },
   sent_back: { title: 'Sent back to you', chip: 'Sent back', empty: 'Nothing sent back' },
   answered: { title: 'Vendors who answered', chip: 'Vendors answered', empty: 'No vendor is waiting on a change' },
@@ -146,6 +148,18 @@ export function dueWordsOf(due: number, now: number): { words: string; late: boo
   if (days >= 1) return { words: `${short(due)} · ${dayWords(days)} late`, late: true }
   if (days === 0) return { words: 'Today', late: false }
   return { words: -days <= 7 ? `${short(due)} · in ${dayWords(-days)}` : short(due), late: false }
+}
+
+/** (the calm UI build 2026-10-27, T-11 · 5-49) A list's day as the house writes it — "18 Oct" this year, "18 Oct ’25" otherwise. */
+export const listDay = (ms: number, now: number): string => (new Date(ms).getFullYear() === new Date(now).getFullYear() ? short(ms) : displayDate(new Date(ms)))
+/** (the calm UI build 2026-10-27, 5-49 · W-460) When a recent record happened, in words — "Today" · "Yesterday" · "3 days ago" (never "1d ago"), then
+    its day. Calendar days, as every other count. */
+export function recentWhen(at: number, now: number): string {
+  const days = calendarDaysBetween(at, now)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  return listDay(at, now)
 }
 
 export function todoRows(i: TodoInput): TodoRow[] {
@@ -203,7 +217,7 @@ export function todoRows(i: TodoInput): TodoRow[] {
       if (!b.waits) continue
       const po = b.poId ? s.pos.find((x) => x.id === b.poId) ?? null : null
       const know = billWaitWords(b.approvalWhy ?? 'limit', { limitMinor: i.rules.poLimitMinor, po: po ? { number: po.number, totalMinor: po.totalMinor, billedMinor: po.billedMinor } : null }, money2)
-      push(waitingRow('bill', { key: `billok-${b.id}`, group: 'approve', kind: 'bill', ref: b.id, title: `${vname(b.vendorId)}’s bill ${b.reference}`, sub: po ? `On ${po.number}` : null,
+      push(waitingRow('bill', { key: `billok-${b.id}`, group: 'approve', kind: 'bill', ref: b.id, title: `Bill ${b.reference} from ${vname(b.vendorId)}`, sub: po ? `On ${po.number}` : null,   /* (the calm UI build 2026-10-27, B3's ask) the project's rows' words */
         projectId: b.projectId, project: pname(b.projectId), asker: first(b.createdBy), askedAt: b.createdAt, amountMinor: b.totalMinor, know }))
     }
     for (const m of i.money) for (const v of m.invoices) {
@@ -212,10 +226,14 @@ export function todoRows(i: TodoInput): TodoRow[] {
         projectId: m.projectId, project: m.name, asker: v.submittedBy ? first(v.submittedBy) : null, askedAt: v.submittedAt, amountMinor: v.amountMinor }
       push(approves.invoice ? { ...row, know: 'Waiting for your approval before it goes to the client' } : waitingRow('invoice', row))
     }
+    /* (the calm UI build 2026-10-27 — B1's request, W-260) what a member asks for, said as commission — "Michelle asks for 5% commission" (it read
+       "5% of what the client pays", as if the client's money were asked for); the project is the row's caption, so the title doesn't say it again (T-04) */
+    const askWords = (a: CommissionAsk) => (a.basis === 'payments' ? `${pctWords(a.rateBp)} commission` : a.basis === 'profit' ? `${pctWords(a.rateBp)} commission on the profit`
+      : a.basis === 'fixed' ? `${money2(a.fixedMinor)} commission` : 'no commission')
     for (const a of i.commission?.asks ?? []) {
       if (a.status !== 'open') continue
       const line = i.commission?.lines.find((l) => l.projectId === a.projectId && l.memberId === a.memberId)
-      push(waitingRow('ask', { key: `ask-${a.id}`, group: 'approve', kind: 'ask', ref: a.id, title: `${first(a.memberId)} asks for ${ruleWords(a)}`, sub: `“${a.reason}”`, projectId: a.projectId, project: pname(a.projectId),
+      push(waitingRow('ask', { key: `ask-${a.id}`, group: 'approve', kind: 'ask', ref: a.id, title: `${first(a.memberId)} asks for ${askWords(a)}`, sub: `“${a.reason}”`, projectId: a.projectId, project: pname(a.projectId),
         asker: first(a.memberId), askedAt: a.createdAt, amountMinor: null, know: line ? `Today: ${line.words}` : null }))
     }
 
@@ -336,25 +354,27 @@ export function todoRows(i: TodoInput): TodoRow[] {
   return out
 }
 
-/** A group's head line — its sum, said once (the title carries the money, F1 §6.3). */
+/** A group's head line — its sum, said once (the title carries the money, F1 §6.3). (the calm UI build 2026-10-27, T-11 · T-17) the sums as the rows
+    and the Dashboard write money on a row — "S$ 11,672" (`moneyCard`); the records keep their cents. */
 export function groupLine(key: TodoGroupKey, rows: TodoRow[]): string {
   const n = rows.length
   if (!n) return TODO_GROUP[key].empty
   const total = rows.reduce((x, r) => x + (r.amountMinor ?? 0), 0)
-  if (key === 'approve') return `${n} waiting for you${total ? ` · ${money2(total)}` : ''}`
-  if (key === 'waiting') return `${n} for an Owner or an Admin${total ? ` · ${money2(total)}` : ''}`   // (parity map, MO-098) invented copy
-  if (key === 'pay') { const late = rows.filter((r) => r.late).reduce((x, r) => x + (r.amountMinor ?? 0), 0); return `${money2(total)} to pay${late ? ` · ${money2(late)} overdue` : ''}` }
+  if (key === 'approve') return `${n} waiting for your approval${total ? ` · ${moneyCard(total)}` : ''}`
+  if (key === 'waiting') return `${n} for an Owner or an Admin${total ? ` · ${moneyCard(total)}` : ''}`   // (parity map, MO-098) invented copy
+  if (key === 'pay') { const late = rows.filter((r) => r.late).reduce((x, r) => x + (r.amountMinor ?? 0), 0); return `${moneyCard(total)} to pay${late ? ` · ${moneyCard(late)} overdue` : ''}` }
   if (key === 'collect') {
     const invoices = new Set(rows.map((r) => r.invoiceId ?? r.ref)).size
     const past = rows.filter((r) => r.pastDue).reduce((x, r) => x + (r.amountMinor ?? 0), 0)
-    return `${money2(total)} owed on ${invoices} invoice${invoices === 1 ? '' : 's'}${past ? ` · ${money2(past)} overdue` : ''}`
+    /* (the calm UI build 2026-10-27, W-603 · 5-06) "to collect", the section's own word — never "owed" */
+    return `${moneyCard(total)} to collect on ${invoices} invoice${invoices === 1 ? '' : 's'}${past ? ` · ${moneyCard(past)} overdue` : ''}`
   }
   if (key === 'stuck') return `${n} waiting on someone else`
-  if (key === 'claims') return `${n} · ${money2(total)}`
+  if (key === 'claims') return `${n} · ${moneyCard(total)}`
   return `${n} to change${key === 'drafts' ? ' or send' : ''}`
 }
 
-/** (S-16) What waits for an Owner's or an Admin's OK — the rail's money badge and the Company panel's "n to approve". */
+/** (S-16) What waits for an Owner's or an Admin's OK — the rail's money badge and the Company panel's count of approvals. */
 export const toApproveCount = (rows: TodoRow[]) => rows.filter((r) => r.group === 'approve').length
 
 /* ── (parity map, MO-084 · FB-009) Recently — the studio's newest money records, 1.0's Operations › Overview › Recent activity ─────────────────
@@ -363,7 +383,8 @@ export const toApproveCount = (rows: TodoRow[]) => rows.filter((r) => r.group ==
    sees their projects' only) — chipped by kind, each opening its record. No number of its own: each row says its record's own amount. */
 
 export type RecentKind = 'invoice' | 'payment' | 'vo' | 'credit' | 'po' | 'bill' | 'expense' | 'paid'
-export const RECENT_KIND: Record<RecentKind, string> = { invoice: 'Invoice', payment: 'Payment', vo: 'VO', credit: 'Credit note', po: 'PO', bill: 'Bill', expense: 'Expense', paid: 'Paid out' }
+/** (the calm UI build 2026-10-27, 5-24 · W-531) the kind as words on the row's second line, sentence case — never a CAPS tag (a tag is a status) */
+export const RECENT_KIND: Record<RecentKind, string> = { invoice: 'Invoice', payment: 'Client payment', vo: 'Variation order', credit: 'Credit note', po: 'Purchase order', bill: 'Supplier bill', expense: 'Expense', paid: 'Payment made' }
 export type RecentRow = {
   key: string; kind: RecentKind
   /** the record a press opens — a PO, a bill, an expense (its panel), an invoice, a payment, a VO, a credit note (the project's Money) */ ref: string
@@ -388,7 +409,7 @@ export function recentRows(d: TodoData): RecentRow[] {
     const title = p.external ? `${p.number} recorded — made elsewhere, to ${vname(p.vendorId)}` : p.sentAt ? `${p.number} sent to ${vname(p.vendorId)}` : `${p.number} drafted for ${vname(p.vendorId)}`
     out.push({ key: `po-${p.id}`, kind: 'po', ref: p.id, title, projectId: p.projectId, project: pname(p.projectId), at, amountMinor: p.totalMinor, entity: ent.po(p) })
   }
-  for (const b of s.bills) out.push({ key: `bill-${b.id}`, kind: 'bill', ref: b.id, title: `${vname(b.vendorId)}’s bill ${b.reference} recorded`, projectId: b.projectId, project: pname(b.projectId), at: b.createdAt, amountMinor: b.totalMinor, entity: ent.bill(b) })
+  for (const b of s.bills) out.push({ key: `bill-${b.id}`, kind: 'bill', ref: b.id, title: `Bill ${b.reference} from ${vname(b.vendorId)} recorded`, projectId: b.projectId, project: pname(b.projectId), at: b.createdAt, amountMinor: b.totalMinor, entity: ent.bill(b) })
   for (const e of s.expenses) out.push({ key: `exp-${e.id}`, kind: 'expense', ref: e.id, title: `“${e.description}” logged by ${first(e.createdBy)}`, projectId: e.projectId, project: pname(e.projectId), at: e.createdAt, amountMinor: e.amountMinor, entity: ent.expense(e) })
   for (const p of s.payouts) {
     if (p.reversedAt) continue

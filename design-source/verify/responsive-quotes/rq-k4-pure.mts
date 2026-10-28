@@ -20,7 +20,7 @@ const words = (o: Record<string, unknown>) => sinceWords(q(o), now).map((w) => w
 
 console.log('pure · the chip')
 ok(cardChip(q({ status: 'Draft' }), now).label === 'Draft' && cardChip(q({ status: 'Draft' }), now).color === 'default', 'a Draft wears a plain chip')
-ok(cardChip(q({ status: 'Sent to Client', clientSentAt: d(-3) }), now).color === 'blue', 'Sent to client wears the "went out" blue')
+ok(cardChip(q({ status: 'Sent to Client', clientSentAt: d(-3) }), now).color === 'blue' && cardChip(q({ status: 'Sent to Client', clientSentAt: d(-3) }), now).label === 'With client', 'With client wears the "went out" blue')   // (the calm UI build 2026-10-27, a deliberate change) the status set on screen
 ok(cardChip(q({ status: 'Signed' }), now).color === 'green' && cardChip(q({ status: 'Confirmed' }), now).color === 'green', 'Confirmed and Signed wear green')
 const expired = cardChip(q({ status: 'Sent to Client', clientSentAt: d(-30), validUntil: d(-2) }), now)
 ok(expired.expired && expired.color === 'yellow' && /^Expired /.test(expired.label), 'out with the client past its Valid until → "Expired {date}" in yellow')
@@ -29,7 +29,7 @@ ok(!cardChip(q({ status: 'Confirmed', clientSentAt: d(-30), validUntil: d(-2) })
 console.log('pure · the since')
 ok(words({ status: 'Draft', updatedAt: d(0) }) === 'edited today' && words({ status: 'Draft', updatedAt: d(-1) }) === 'edited yesterday', 'a Draft says when it was edited (today · yesterday)')
 ok(/^edited \d+ \w+ ’\d\d$/.test(words({ status: 'Draft', updatedAt: d(-9) })), '…and the date further back')
-ok(/^for approval since /.test(words({ status: 'Sent for Approval', submittedAt: d(-2) })), 'Sent for Approval says since when')
+ok(/^since /.test(words({ status: 'Sent for Approval', submittedAt: d(-2) })), 'Sent for Approval says since when')   // (the calm UI build 2026-10-27, a deliberate change) the chip says “Waiting for approval”; the line says since when
 ok(words({ status: 'Approved', approvedAt: d(-4) }).includes('not sent'), 'Approved and never sent says "not sent"')
 ok(/^sent .* · not opened/.test(words({ status: 'Sent to Client', clientSentAt: d(-3) })), 'sent, not yet opened: "sent {date} · not opened"')
 ok(/^opened /.test(words({ status: 'Sent to Client', clientSentAt: d(-3), clientLastViewedAt: d(-1) })), 'opened since the send: "opened {date}" leads')
@@ -39,7 +39,7 @@ ok(/valid until /.test(words({ status: 'Sent to Client', clientSentAt: d(-3), va
 ok(!/expires|valid until/.test(words({ status: 'Sent to Client', clientSentAt: d(-30), validUntil: d(-2) })), 'past its Valid until the chip says Expired — the line does not repeat it')
 ok(words({ status: 'Sent to Client', clientSentAt: d(-3), dueAt: d(-1) }).includes('due ') && sinceWords(q({ status: 'Sent to Client', clientSentAt: d(-3), dueAt: d(-1) }), now).some((w) => w.tone === 'red'), 'a late follow-up reads red')
 ok(!words({ status: 'Sent to Client', clientSentAt: d(-3), validUntil: d(4), dueAt: d(2) }).includes('due '), 'a follow-up not yet due stays off a line that already names the next date')
-ok(words({ status: 'Confirmed', confirmedAt: d(-2) }).startsWith('confirmed ') && words({ status: 'Signed', signedAt: d(-2) }).startsWith('signed '), 'Confirmed / Signed say their day')
+ok(/^\d+ \w+ ’\d\d$/.test(words({ status: 'Confirmed', confirmedAt: d(-2) })) && /^\d+ \w+ ’\d\d$/.test(words({ status: 'Signed', signedAt: d(-2) })), 'Confirmed / Signed say their day')   // (the calm UI build 2026-10-27, a deliberate change) the chip says the word, the line the day — once (W-376)
 ok(sinceWords(q({ status: 'Sent to Client', clientSentAt: d(-3), validUntil: d(4), dueAt: d(-1) }), now).length <= 3, 'never more than three pieces')
 ok(whenWord(d(0), now) === 'today', 'whenWord: today')
 

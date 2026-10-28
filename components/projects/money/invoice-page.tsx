@@ -102,7 +102,7 @@ export function InvoicePage({ d, from, print }: { d: InvoiceDocData; from?: stri
       <div className={styles.page} data-print={print || undefined} data-testid="invoice-page">
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
-            <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Money', href: tabHref }]} />
+            <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Payments', href: tabHref }]} />
             <div className={`${styles.titleRow} ${paper.headWrap}`}>
               <h1 className={styles.title}><span className={paper.nowrap}>{i.label ?? `${i.stageName} invoice`}</span></h1>
               <span className={styles.chips}>
@@ -112,7 +112,7 @@ export function InvoicePage({ d, from, print }: { d: InvoiceDocData; from?: stri
             </div>
           </div>
           <div className={styles.actions}>
-            <Button variant="secondary" appearance="outlined" onPress={() => router.push(back)}>{paperBackLabel(from, 'Money')}</Button>
+            <Button variant="secondary" appearance="outlined" onPress={() => router.push(back)}>{paperBackLabel(from, 'Payments')}</Button>
             {link && i.status !== 'draft' && i.kind !== 'external' ? <Tooltip label="Copy the invoice link"><IconButton icon="link" label="Copy the invoice link" onClick={copyLink} data-testid="invoice-copy-link" /></Tooltip> : null}
             <Tooltip label="Download PDF"><IconButton icon="download" label="Download PDF" onClick={() => printPaper()} /></Tooltip>
             {next ? <Button variant="primary" onPress={next.run} isDisabled={busy} data-testid="invoice-page-next">{next.label}</Button> : null}
@@ -135,7 +135,7 @@ export function InvoicePage({ d, from, print }: { d: InvoiceDocData; from?: stri
         {sending ? (
           <SendContractDialog open={sending} onClose={() => setSending(false)} title={`Send the ${i.stageName} invoice`}
                               subtitle={`${money2(i.amountMinor)}, ${onReceipt ? 'due on receipt' : `due ${displayDate(due)}`}. It’s numbered${d.nextInvoiceNumber ? ` ${d.nextInvoiceNumber}` : ''} and recorded as sent, and WhatsApp opens with the message.`}
-                              link={d.portalAccess ? `${origin}${d.portalUrl}` : undefined} phoneLabel="Client phone" copyDone="Portal link copied" sendLabel="Send via WhatsApp"
+                              link={d.portalAccess ? `${origin}${d.portalUrl}` : undefined} phoneLabel="Client phone" copyDone="Portal link copied" sendLabel="Send on WhatsApp"
                               defaults={{ name: d.client.name, phone: d.client.phone }}
                               draft={(name) => invoiceMessage({ client: name, studio: d.studioName, stage: i.stageName, amount: money2(i.amountMinor), due: onReceipt ? null : displayDate(due), url: d.portalAccess ? `${origin}${d.portalUrl}` : null, number: d.nextInvoiceNumber ?? null, payTo: d.payTo ?? null, link: d.portalAccess ? null : link, oneOff: i.outside || i.kind === 'variation' })}
                               notes={notes.length ? notes : undefined} busy={busy} onSend={send} />

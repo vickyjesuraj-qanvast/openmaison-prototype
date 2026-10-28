@@ -60,7 +60,7 @@ export const GETTING_STARTED: SetupItem[] = [
 /* (gaps build, package A — 1.0's set-up card had "Contract uploaded", B-220) The signed agreement: a Won project has it from the Won step; a
    direct project links the client's signed contract or uploads the signed copy to Files › Contract. After Contract value, where 1.0 put it. */
 GETTING_STARTED.splice(GETTING_STARTED.findIndex((i) => i.key === 'value') + 1, 0, {
-  key: 'contract', label: 'Contract', help: 'The signed agreement — link it, or upload the signed copy',
+  key: 'contract', label: 'The signed contract', help: 'Link it, or upload the signed copy',   // (the calm UI build 2026-10-27, W-155) said as a thing to add
   done: (f) => f.contract !== false, action: () => ({ label: 'Add', run: 'contract' }),
 })
 

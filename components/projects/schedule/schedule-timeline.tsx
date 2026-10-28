@@ -6,7 +6,6 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { MetaChip } from '@/components/om/meta-chip'   // (REG-1060) the payment and the move, as the house chip
 import { PortalMenu } from '@/components/om/portal-menu'
 import { SideScrollbar } from '@/components/om/side-scrollbar'
 import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
@@ -384,6 +383,7 @@ export function ScheduleTimeline({ list, zoom, today, was, payments, decider, wa
             const w = was.get(m0.id) ?? null
             const late = isLate(m, today)
             const line = rowLine(m, today, { was: w, waitingWho: waitingWho(m), client: client?.(m), moreTo: moreTo?.(m0) ?? null, crew: crewLine?.(m0.id) ?? null })
+            const asked = m.status !== 'done' && (!!m.doneAsked || (moreTo?.(m0) ?? null) !== null)   // (the calm UI build 2026-10-27, 3-01)
             const col = colorOf(m.color)   // (gaps build, package C — 12)
             const lifting = lift?.id === m0.id
             const pay = m.paymentRef ? payBy.get(m.paymentRef) : undefined
@@ -409,9 +409,14 @@ export function ScheduleTimeline({ list, zoom, today, was, payments, decider, wa
                   <button type="button" className={styles.nameBtn} onClick={() => onOpen(m0)} data-kb-open data-testid="milestone-name">
                     {/* (B-34) a cut name or line says itself in full on hover (REG-820's whenCut) */}
                     <Tooltip label={m.title} whenCut><span className={styles.name}>{m.title}</span></Tooltip>
-                    <Tooltip label={line.text} whenCut><span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}</span></Tooltip>
+                    {/* (the calm UI build 2026-10-27, 3-01) a row whose milestone waits on an answer (a Done to approve, more time asked) is where the ask
+                        is said — the band above the list is gone, its handle rides on this line */}
+                    {asked
+                      ? <span className={styles.askLine} data-testid="schedule-asks"><Tooltip label={line.text} whenCut><span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}</span></Tooltip></span>
+                      : <Tooltip label={line.text} whenCut><span className={styles.line} data-alert={line.alert || undefined} data-warn={line.warn || undefined}>{line.text}</span></Tooltip>}
                   </button>
-                  {shift ? <MetaChip color="blue">{shift > 0 ? '+' : '−'}{spanWord(shift)}</MetaChip> : pay ? <MetaChip color="yellow">{payShareWord(pay)} · {dayMonth(paymentDay(m))}</MetaChip> : null}
+                  {/* (the calm UI build 2026-10-27, 3-23 · W-464) "30% · 21 Aug" and "+3 days" in sentence case — capitals are for a status */}
+                  {shift ? <span className={styles.shiftWord} data-testid="milestone-shift">{shift > 0 ? '+' : '−'}{spanWord(shift)}</span> : pay ? <span className={styles.payWord} data-testid="milestone-pay">{payShareWord(pay)} · {dayMonth(paymentDay(m))}</span> : null}
                 </div>
                 <div className={styles.track} role="cell" data-track="" data-zoom={zoom}>
                   <span className={styles.today} style={{ left: todayLeft }} aria-hidden />
@@ -437,7 +442,7 @@ export function ScheduleTimeline({ list, zoom, today, was, payments, decider, wa
                 </div>
                 <div className={styles.actCell} role="cell">
                   {mayChange && (m.status === 'in_progress' || m.status === 'blocked') ? <Button variant="primary" appearance="outlined" onPress={() => onAction(m0, { kind: 'status', status: 'done' })} data-testid="mark-done">Mark done</Button> : null}
-                  <RowMenu m={m0} first={list[0]?.id === m0.id} last={list[list.length - 1]?.id === m0.id} mayChange={mayChange} onAction={(a) => onAction(m0, a)} />
+                  <RowMenu m={m0} first={list[0]?.id === m0.id} last={list[list.length - 1]?.id === m0.id} mayChange={mayChange} asked={asked} onAction={(a) => onAction(m0, a)} />
                 </div>
               </div>
             )
@@ -450,9 +455,11 @@ export function ScheduleTimeline({ list, zoom, today, was, payments, decider, wa
 }
 
 /** A row's ⋮: Open · Rename · the four statuses · Move up / down · Add a milestone after · Delete. */
-function MilestoneMenuItems({ m, first, last, mayChange, pick }: { m: Milestone; first: boolean; last: boolean; mayChange: boolean; pick: (a: RowAction) => () => void }) {
+function MilestoneMenuItems({ m, first, last, mayChange, asked, pick }: { m: Milestone; first: boolean; last: boolean; mayChange: boolean; asked?: boolean; pick: (a: RowAction) => () => void }) {
   return (
     <>
+      {/* (the calm UI build 2026-10-27, 3-01) the band's "Open it" — the milestone's panel, its ask and its answers on top */}
+      {asked ? <span className={styles.menuRow} data-testid="asks-open"><DropdownItem onSelect={pick({ kind: 'open' })} help="Its panel answers it">Open the ask</DropdownItem></span> : null}
       <DropdownItem onSelect={pick({ kind: 'open' })}>Open</DropdownItem>
       {mayChange ? (
         <>
@@ -472,7 +479,7 @@ function MilestoneMenuItems({ m, first, last, mayChange, pick }: { m: Milestone;
   )
 }
 
-function RowMenu({ m, first, last, mayChange, onAction }: { m: Milestone; first: boolean; last: boolean; mayChange: boolean; onAction: (a: RowAction) => void }) {
+function RowMenu({ m, first, last, mayChange, asked, onAction }: { m: Milestone; first: boolean; last: boolean; mayChange: boolean; asked?: boolean; onAction: (a: RowAction) => void }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const pick = (a: RowAction) => () => { setOpen(false); onAction(a) }
@@ -482,7 +489,7 @@ function RowMenu({ m, first, last, mayChange, onAction }: { m: Milestone; first:
         <IconButton icon="more_vert" label={`More for ${m.title}`} variant="bare" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="milestone-kebab" />
       </Tooltip>
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={m.title}>
-        <MilestoneMenuItems m={m} first={first} last={last} mayChange={mayChange} pick={pick} />
+        <MilestoneMenuItems m={m} first={first} last={last} mayChange={mayChange} asked={asked} pick={pick} />
       </PortalMenu>
     </span>
   )

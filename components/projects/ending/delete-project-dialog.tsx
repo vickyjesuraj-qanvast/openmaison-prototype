@@ -35,7 +35,7 @@ export function DeleteProjectDialog({ projectId, open, onClose, onDelete, onOpen
   const stage = (d as (DeleteRead & { stage?: string | null }) | null)?.stage ?? null
   const message = failed ?? (!d ? 'Checking the project…'
     : d.block ? `${d.name} can’t be deleted. ${d.block}`
-    : `${d.name} moves to Deleted Projects, where an Owner or an Admin can restore it. ${d.direct ? `${d.client}’s details go with it.` : `${d.client}’s lead stays Won — its page offers Make the project again.`}`)
+    : `${d.name} moves to Deleted projects, where an Owner or an Admin can restore it. ${d.direct ? `${d.client}’s details go with it.` : `${d.client}’s lead stays Won — its page offers Make the project again.`}`)
   return (
     /* (fix-E, E-27) a refusal is not a question: the title says what the body says */
     <Dialog open={open} onClose={onClose} title={d?.block ? 'This project can’t be deleted' : 'Delete this project?'} width={400} alert

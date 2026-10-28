@@ -25,7 +25,7 @@ async function kebab(page, number) { const r = rowOf(page, number); await r.scro
 
   await step('the row kebab: Copy Link is the quote’s own address; Preview and Share opens the preview', async () => {
     await page.goto(`${BASE}/leads/${leadOf('OM-10004')}/quotes`); await ready(page)
-    ok('a signed quote reads Shared', /OM-10004\s*·\s*Shared/.test(await rowOf(page, 'OM-10004').innerText()))
+    ok('a signed quote reads Shared', await rowOf(page, 'OM-10004').getByTestId('quote-private').count() === 0)   // (the calm UI build 2026-10-27, a deliberate change) 4-15: no Shared / Private word — a private quote alone wears its lock
     /* A one-quote lead's row menu opens under the tab strip (sweep backlog U-01) — the rows are exercised on Tools › Quotes. */
     await page.goto(`${BASE}/quotes`); await ready(page)
     await kebab(page, 'OM-10004'); await page.getByRole('menuitem', { name: 'Copy Link' }).click(); await snack(page, 'Link copied')
@@ -37,7 +37,7 @@ async function kebab(page, number) { const r = rowOf(page, number); await r.scro
   await step('the toolbar kebab: Quotes Settings opens Settings › Quotes', async () => {
     await page.goto(`${BASE}/leads/${leadOf('OM-10004')}/quotes`); await ready(page)
     await page.getByRole('button', { name: 'More options' }).last().click()
-    await page.getByRole('menuitem', { name: 'Quotes Settings' }).click()
+    await page.getByRole('menuitem', { name: 'Quote settings' }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-250
     await page.waitForURL(/\/settings\?section=quotes/); ok('Settings › Quotes', true)
   })
 
@@ -106,7 +106,7 @@ async function kebab(page, number) { const r = rowOf(page, number); await r.scro
     await shot('04-validity-row')
     await page.goto(`${BASE}/quotes/${OM6}`); await page.getByTestId('quote-editor').waitFor(); await ready(page)
     const b = page.getByTestId('sent-banner')
-    ok('the banner says it and how to fix it', /Its validity ended on/.test(await b.innerText()) && /extend Quote Valid Until/.test(await b.innerText()))
+    ok('the banner says it and how to fix it', /The price was valid until/.test(await b.innerText()) && /Change Valid until/.test(await b.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) W-222
     await shot('05-validity-banner')
   })
 

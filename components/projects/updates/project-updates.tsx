@@ -222,9 +222,10 @@ export function ProjectUpdates({ data, views }: { data: ProjectUpdatesData; /** 
   }
 
   const post = viewer.mayPost ? (phone ? (
-    <Tooltip label="Post an update" shortcut="create"><IconButton icon="add" label="Post an update" variant="primary" onClick={() => setComposing('new')} data-kb="create" data-kb-label="Post an update" data-testid="updates-post" /></Tooltip>
+    /* (the calm UI build 2026-10-27, 3-12 · W-590) one create grammar on every tab: "New update" */
+    <Tooltip label="New update" shortcut="create"><IconButton icon="add" label="New update" variant="primary" onClick={() => setComposing('new')} data-kb="create" data-kb-label="New update" data-testid="updates-post" /></Tooltip>
   ) : (
-    <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setComposing('new')} data-kb="create" data-kb-label="Post an update" data-testid="updates-post">Post an update</Button>
+    <Button variant="primary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setComposing('new')} data-kb="create" data-kb-label="New update" data-testid="updates-post">New update</Button>
   )) : null
 
   return (
@@ -241,7 +242,7 @@ export function ProjectUpdates({ data, views }: { data: ProjectUpdatesData; /** 
       {first ? (
         <EmptyState icon="photo_camera" title="No updates yet" testId="updates-empty"
                     help={`Tell ${client.firstName} what happened on site — a line, a few words and the photos. ${!reach.reaches ? reach.line : atOnce ? `${client.firstName} sees each update once it’s posted.` : `An Owner or an Admin checks each one before ${client.firstName} sees it.`}`}
-                    primary={viewer.mayPost ? { label: 'Post an update', icon: 'add', onPress: () => setComposing('new') } : null}
+                    primary={viewer.mayPost ? { label: 'New update', icon: 'add', onPress: () => setComposing('new') } : null}
                     secondary={!client.invited && viewer.mayPost ? { label: `Invite ${client.firstName}`, icon: 'person_add', onPress: () => setInviting(true), testId: 'updates-invite' } : null} />
       ) : (
         <>

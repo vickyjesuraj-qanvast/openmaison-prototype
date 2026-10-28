@@ -43,7 +43,7 @@
 .itemMeta { margin-left: auto; padding-left: var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 /* (REG-728) Groups: a 1px rule with 4px above and below (780:86452) and a title of 10/500 uppercase on 12 — the stage menu's recipe. */
 .divider { height: 1px; margin: var(--om-spacing-1) 0; background: var(--om-color-surface-variant); }
-.label { display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-3); font: var(--om-type-caption-xs); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.label { display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-3); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }   /* (the calm UI build 2026-10-27 — T-06 · W-101 · 3-24) a group's title is a topic: sentence case at the house caption, not 10px capitals */
 .label[data-tone='green'] { color: var(--om-color-tertiary-green-default); }
 .label[data-tone='orange'] { color: var(--om-color-tertiary-yellow-default); }
 .label[data-tone='blue'] { color: var(--om-color-tertiary-blue-default); }

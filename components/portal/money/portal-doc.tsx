@@ -31,7 +31,7 @@ export function PortalDoc({ look, slug, visitor, paused, invoice, receipt, credi
       <PortalFrame look={look} slug={slug} tab="money" visitor={visitor} paused={paused} needs={needs}>
         {/* (fix-F, F-12) the studio page's Download PDF — the browser's print of the paper alone (the portal's bars stay off the page) */}
         <div className={styles.docBar}>
-          <Link className={styles.docBack} href={portalPath(slug, 'money')} prefetch={false} data-testid="portal-doc-back"><Icon name="arrow_back" size={20} />Back to Money</Link>
+          <Link className={styles.docBack} href={portalPath(slug, 'money')} prefetch={false} data-testid="portal-doc-back"><Icon name="arrow_back" size={20} />Back to Payments</Link>
           <Tooltip label="Download PDF"><IconButton icon="download" label="Download PDF" onClick={() => printPaper()} data-testid="portal-doc-download" /></Tooltip>
         </div>
         <div className={styles.docStage}>{invoice ? <InvoicePaper d={invoice} /> : receipt ? <ReceiptPaper d={receipt} /> : credit ? <CreditNotePaper d={credit} /> : null}</div>

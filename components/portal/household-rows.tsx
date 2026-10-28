@@ -11,7 +11,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { addHouseholdMember, inviteHouseholdMember, removeHouseholdMember, undoHouseholdRemove, undoHouseholdWithdraw, withdrawHouseholdMember } from '@/app/portal/household-actions'
 import { phoneLocal } from '@/lib/format'
-import { firstName, inviteMessage, portalPath, shortDay, waLink } from '@/lib/portal/model'
+import { accessWhen, firstName, inviteMessage, portalPath, shortDay, waLink } from '@/lib/portal/model'
 import type { ClientAccessData } from '@/lib/portal/access'
 import { HouseholdDialog } from './household-dialog'
 import { pendingWindow } from './wa-window'
@@ -21,20 +21,20 @@ import styles from './household.module.css'
 type Person = ClientAccessData['household'][number]
 const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('')
 
-/** "Wife · 9876 5432 · Invited 8 Aug by Germaine · sent again 6 Oct" — the person's line, with who they are to the client (fix-G, G-08: the
+/** "Wife · 9876 5432 · Sent 8 Aug by Germaine · sent again 6 Oct · opened yesterday" — the person's line, with who they are to the client (fix-G, G-08: the
     first invite stays; a later send is its own words). */
-function personLine(p: Person): string {
+function personLine(p: Person, now: number): string {
   const s = p.stamps
   const bits = [p.relationship, phoneLocal(p.phone)].filter((x): x is string => !!x)
-  if (p.chip.state === 'withdrawn' && s.withdrawnAt) bits.push(`Withdrawn ${shortDay(s.withdrawnAt)}${p.withdrawnBy ? ` by ${p.withdrawnBy}` : ''}`)
-  else if (s.invitedAt) bits.push(`Invited ${shortDay(s.invitedAt)}${p.invitedBy ? ` by ${p.invitedBy}` : ''}${p.resent ? ` · sent again ${shortDay(p.resent.at)}` : ''}`)
-  else bits.push('Not invited yet')
+  /* (the calm UI build 2026-10-27, 2-40 · 5-42 · T-04) the chip says the state; the line says when and by whom — the client's row's rule */
+  if (p.chip.state === 'withdrawn' && s.withdrawnAt) bits.push(`${shortDay(s.withdrawnAt)}${p.withdrawnBy ? ` by ${p.withdrawnBy}` : ''}`)
+  else if (s.invitedAt) bits.push(`Sent ${shortDay(s.invitedAt)}${p.invitedBy ? ` by ${p.invitedBy}` : ''}${p.resent ? ` · sent again ${shortDay(p.resent.at)}` : ''}${p.chip.state === 'opened' ? ` · ${accessWhen(s, now)}` : ''}`)
   return bits.join(' · ')
 }
 
 /**
  * (Projects round 9 — Q-42; board 8) The household under the client in Client access's "Who can open this project": each person with their
- * own chip (Not invited · Invited, not opened · Opened {when} · Withdrawn) and a menu — Send the link on WhatsApp (wa.me opens on the press)
+ * own chip (Not invited · Invited · Opened · Withdrawn — the calm UI build 2026-10-27, 5-42) and a menu — Send the link on WhatsApp (wa.me opens on the press)
  * · See it as them · Withdraw access (Undo) · Remove (Undo, for one never invited or withdrawn) — then board 8's "Add someone else from the
  * household". The rows sit inside the panel's own bordered list, on its row and initials. `ask` puts a send through the panel's paused
  * question first (fix-G, G-34).
@@ -107,7 +107,7 @@ export function HouseholdRows({ d, url, busy, onChanged, ask }: { d: ClientAcces
             <span className={panel.initials} aria-hidden>{initialsOf(p.name)}</span>
             <span className={panel.text}>
               <span className={panel.name}>{p.name}</span>
-              <span className={panel.meta}>{personLine(p)}</span>
+              <span className={panel.meta}>{personLine(p, d.now)}</span>
             </span>
             <span className={panel.chip} data-testid="household-chip"><MetaChip color={p.chip.tone}>{p.chip.label}</MetaChip></span>
             {d.mayAct ? (

@@ -160,7 +160,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(br.x >= 0 && br.r <= 390, 'the bar fits the screen — nothing runs off it (C-04)')
     await bar.getByRole('button', { name: 'More…' }).tap(); await settle(p, 700)
     const more = p.locator('[data-testid="tasks-bulk-more"]')
-    ok((await more.innerText()).replace(/\s+/g, ' ').includes('Save as Template') && (await more.innerText()).includes('Duplicate') && (await more.innerText()).includes('Delete'), 'More… holds Save as Template · Duplicate · Delete')
+    ok((await more.innerText()).replace(/\s+/g, ' ').includes('Save as a template') && (await more.innerText()).includes('Duplicate') && (await more.innerText()).includes('Delete'), 'More… holds Save as a template · Duplicate · Delete')   // (the calm UI build 2026-10-27, a deliberate change)
     await shot(p, 'm390-02-bulk-more')
     await p.keyboard.press('Escape'); await settle(p, 400)
     await bar.getByRole('button', { name: 'Clear selection' }).tap(); await settle(p, 600)
@@ -194,8 +194,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await p.keyboard.press('Escape'); await settle(p, 500)
     if (await p.getByRole('dialog').count()) { await p.getByRole('button', { name: /^(Close|Done)$/ }).last().tap().catch(() => {}); await settle(p, 500) }
     // the quick add: + › Create New Task → the caret in the row → a title and a preset → Add
-    await p.getByRole('button', { name: 'Add Task' }).first().tap(); await settle(p, 500)
-    await p.getByRole('menuitem', { name: 'Create New Task' }).tap(); await settle(p, 900)
+    await p.getByRole('button', { name: 'New task' }).first().tap(); await settle(p, 500)   // (the calm UI build 2026-10-27, a deliberate change) — New task ▾ › Blank task
+    await p.getByRole('menuitem', { name: 'Blank task' }).tap(); await settle(p, 900)
     const quick = p.locator('[data-testid="task-quick-input"]')
     ok(await quick.evaluate((el) => document.activeElement === el), 'Create New Task lands the caret in the quick add')
     ok(await fontPx(quick) === 16, 'the quick add types at 16')
@@ -230,7 +230,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await go(p, `/leads/${OLIVIA}/tasks`)
     await shot(p, `t${w}-01-tasks`)
     const heads = (await p.locator('[data-cols="lead-tasks"] [role="columnheader"] [class*="hLabel"]').allInnerTexts()).map((t) => t.trim().toUpperCase()).filter(Boolean)
-    ok(heads.join(' · ') === 'TITLE · MEMBERS · DUE DATE · STATUS', `${w}: Title · Members · Due date · Status — Creator and Tags in Column settings (${heads.join(' · ')})`)
+    ok(heads.join(' · ') === 'TITLE · MEMBERS · DUE DATE', `${w}: Title · Members · Due date — Creator, Tags and Status in Column settings (${heads.join(' · ')})`)   // (the calm UI build 2026-10-27, a deliberate change) — 1-07: an open list's Status rests in Column settings
     const frame = await rect(p.locator('[data-cols="lead-tasks"]'))
     const kebab = p.getByRole('button', { name: /^More actions for / }).first()
     const kr = await rect(kebab)
@@ -251,7 +251,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await shot(p, 'm390-05-rail-tasks')
     ok(await p.locator('[data-testid="task-card"]').count() > 0 && await p.locator('[data-testid="task-card-for"]').count() > 0, 'the rail’s cards name whose task it is')
     await p.locator('[data-testid="task-quick-input"]').tap(); await settle(p, 500)
-    ok(/Studio/.test(await p.locator('[data-testid="task-add-lead"]').innerText()), 'the quick add carries the Lead pill (Studio until picked)')
+    ok(/General/.test(await p.locator('[data-testid="task-add-lead"]').innerText()), 'the quick add carries the Lead pill (General until picked)')   // (the calm UI build 2026-10-27, a deliberate change) — 1-16: "General" for a task on no record (was Studio)
     await go(p, `/projects/${RYAN_PROJECT}/tasks`)
     ok(await p.locator('[data-testid="task-card"]').count() > 0, 'a project’s Tasks are the same cards')
     await ctx.close()
@@ -287,7 +287,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await shot(p, 'm390-08-photo-saved')
     await p.locator('[data-testid="files-phone-more"]').tap(); await settle(p, 600)
     const menu = await p.getByRole('menu').last().innerText()
-    ok(/Choose files/.test(menu) && /New folder/.test(menu) && /Filters/.test(menu) && /Deleted Files/.test(menu) && /Rename folder/.test(menu), 'the ⋮ holds Choose files · New folder · Filters · Deleted Files and the folder’s own rows')
+    ok(/Choose files/.test(menu) && /New folder/.test(menu) && /Filters/.test(menu) && /Deleted files/i.test(menu) && /Rename folder/.test(menu), 'the ⋮ holds Choose files · New folder · Filters · Deleted Files and the folder’s own rows')
     await p.keyboard.press('Escape'); await settle(p, 400)
     await ctx.close()
     putBack()
@@ -382,15 +382,17 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await go(p, `/leads/${OLIVIA}/notes`)
     const pane = await p.evaluate(() => { const panes = [...document.querySelectorAll('[class*="lead-notes-module"][class*="pane"]')]; return panes.some((el) => el.offsetParent !== null) })
     ok(!pane, '768 upright: Notes is the phone’s list — no 268 pane beside a 280 list (C-14)')
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-46) the composer is closed at rest; New note › Note (here `?new=note`) opens it */
+    await go(p, `/leads/${OLIVIA}/notes?new=note`)
     const composerBody = p.locator('[data-testid="note-editor"] [role="textbox"]').first()
-    ok(await composerBody.isVisible() && await fontPx(composerBody) === 16, '768 upright: the docked composer, its body typing at 16 (C-22)')
+    ok(await composerBody.isVisible() && await fontPx(composerBody) === 16, '768 upright: the composer New note opens, its body typing at 16 (C-22)')
     await shot(p, 't768-12-notes')
     await ctx.close()
     const c390 = await touchCtx(390, 844); const q = await page(c390, 'm390-notes')
-    await go(q, `/leads/${OLIVIA}/notes`)
+    await go(q, `/leads/${OLIVIA}/notes?new=note`)   // (the calm UI build 2026-10-27, a deliberate change) — 2-46: New note opens the composer
     const cb = q.locator('[data-testid="note-editor"] [role="textbox"]').first()
     ok(await fontPx(cb) === 16, '390: the composer’s body types at 16 (C-22)')
-    const fab = q.getByRole('button', { name: 'Maison AI' })
+    const fab = q.locator('[data-maison-fab] button[aria-label="Maison AI"]')   // (the calm UI build 2026-10-27, a deliberate change) — New note opens the editor, whose tool row has its own Maison AI chip
     if (await fab.isVisible()) {
       const fr = await rect(fab), sr = await rect(q.getByRole('button', { name: 'Save', exact: true }).last())
       ok(sr.r <= fr.x + 1, '390: the Maison AI button rests in the composer’s corner, clear of Save (C-08)')
@@ -414,7 +416,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(await by.isVisible() && await fontPx(by) === 14, 'who answered is a 14 line in the answer — no 10px tag (C-25)')
     await shot(p, 'm390-13-questionnaire')
     await p.getByRole('radio', { name: /^To answer/ }).tap(); await settle(p, 400)
-    await p.getByRole('button', { name: 'Ask Client' }).tap(); await settle(p, 900)
+    await p.locator('[data-testid="ask-client"]').tap(); await settle(p, 900)   // (the calm UI build 2026-10-27, a deliberate change) — "Ask {client}" 
     const ticks = p.locator('[data-testid="ask-questions"] label')
     const lefts = await ticks.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)))
     const heights = await ticks.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)))
@@ -477,8 +479,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await p.addInitScript(() => { try { for (const k of Object.keys(localStorage)) if (k.startsWith('om.columns.')) localStorage.removeItem(k) } catch {} })
     await go(p, `/leads/${OLIVIA}/tasks`)
     const heads = (await p.locator('[data-cols="lead-tasks"] [role="columnheader"] [class*="hLabel"]').allInnerTexts()).map((t) => t.trim().toUpperCase()).filter(Boolean)
-    ok(heads.join(' · ') === 'TITLE · MEMBERS · CREATOR · DUE DATE · STATUS · TAGS', `1440: the Tasks table keeps its columns (${heads.join(' · ')})`)
-    ok(await p.locator('[data-testid="task-quick-add"]').count() === 0 && await p.getByRole('button', { name: 'Add Task' }).count() >= 1, '1440: no quick add — the Add Task bar and the inline row stay')
+    ok(heads.join(' · ') === 'TITLE · MEMBERS · CREATOR · DUE DATE · TAGS', `1440: the Tasks table keeps its columns — Status rests in Column settings (${heads.join(' · ')})`)   // (the calm UI build 2026-10-27, a deliberate change) — 1-07 · 2-19
+    ok(await p.locator('[data-testid="task-quick-add"]').count() === 0 && await p.getByRole('button', { name: 'New task' }).count() >= 1, '1440: no quick add — New task ▾ stays')   // (the calm UI build 2026-10-27, a deliberate change)
     await go(p, `/leads/${OLIVIA}/files`)
     ok(await p.getByRole('button', { name: 'New File' }).count() === 1 && await p.locator('[data-testid="files-take-photo"]').count() === 0, '1440: Files keeps New File ▾, no camera')
     await go(p, `/leads/${OLIVIA}/activity`)

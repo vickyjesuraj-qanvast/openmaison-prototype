@@ -9,6 +9,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDate } from '@/lib/format'
 import type { ArchivedContractRow } from '@/app/leads/contracts-actions'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import styles from '@/components/contracts/deleted-contracts-sheet.module.css'
 
 /**
@@ -49,7 +50,7 @@ export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, o
   const allOn = all.length > 0 && all.every((r) => selected.has(r.id))
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
-    <Dialog open={open} onClose={onClose} title="Archived Contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
+    <Dialog open={open} onClose={onClose} title="Archived contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
       <span className={`${styles.note} ${styles.noteMove}`}>Archived contracts leave the contract lists and keep everything they hold — a signed one keeps its signed copy. Unarchive puts one back on its lead.</span>
       <div className={styles.table} role="table" aria-label="Archived contracts" data-testid="archived-contracts" data-lead={showLead || undefined} data-select="" data-kind="archived" data-card="">
         <div className={styles.head} role="row">
@@ -68,7 +69,7 @@ export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, o
               <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="contract" size={20} weight={300} />{q.title}</span>
               {/* (Contracts on the move, C4 — A-14) on a phone the facts read as one labelled line under the title; the desk keeps its columns */}
               {showLead ? <span role="cell" className={styles.cell} data-fact="Lead">{q.leadName}</span> : null}
-              <span role="cell" className={styles.cell} data-fact="Status">{q.status}</span>
+              <span role="cell" className={styles.cell} data-fact="Status">{contractStatusLabel(q.status)}</span>
               <span role="cell" className={styles.cell} data-fact="Archived">{displayDate(new Date(q.archivedAt))}</span>
               <span role="cell" className={`${styles.cell} ${styles.actions}`}>
                 <Tooltip label={`Put it back on ${q.leadName}`}>

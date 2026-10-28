@@ -51,7 +51,7 @@ type Edit = { id: string; field: Field; draft: string }
 /** The table's key in the user's stored column widths (REG-427) and its mocked tracks (payments-section.module.css). */
 const PAY_TABLE = 'quote-payments'
 const PAY_TRACKS = [{ key: 'sel', track: '40px' }, { key: 'name', track: '319px' }, { key: 'desc', track: 'minmax(120px, 1fr)' }, { key: 'pct', track: '140px' }, { key: 'amount', track: '140px' }, { key: 'due', track: '188px' }]
-const PAY_HEADS: { key: string; label: string }[] = [{ key: 'name', label: 'Payment name' }, { key: 'desc', label: 'Description / Trigger' }, { key: 'pct', label: 'Percentage (%)' }, { key: 'amount', label: 'Amount (S$)' }, { key: 'due', label: 'Due' }]
+const PAY_HEADS: { key: string; label: string }[] = [{ key: 'name', label: 'Payment' }, { key: 'desc', label: 'When' }, { key: 'pct', label: 'Share' }, { key: 'amount', label: 'Amount' }, { key: 'due', label: 'Due' }]   // (the calm UI build 2026-10-27, W-307) shorter heads; the cells keep their full names for a screen reader
 const fmtPct = (p: number) => `${Number.isInteger(p) ? p : Number(p.toFixed(2))}%`
 /** Whole dollars ("S$10,000") — the over-balance message's figures (1271:38240). */
 const money0 = (minor: number) => money2(Math.round(minor / 100) * 100).replace(/\.00$/, '')
@@ -296,7 +296,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       <DropdownDivider />
       {/* (REG-538) The library behind the menu: save what this quote settled on, or manage the templates. */}
       {custom ? <DropdownItem disabled={fee > 0} help={fee > 0 ? 'A template holds shares only — the fixed fee stays on this quote' : undefined} onSelect={() => { setMenu(null); setMoreSub(null); setSaveSplit('') }}><span className={styles.menuIcon}><Icon name="library_add" size={20} /></span>Save this split as a template</DropdownItem> : null}
-      <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); router.push(withFrom('/company/templates/payments', pathname)) }}><span className={styles.menuIcon}><Icon name="style" size={20} /></span>Manage payment templates</DropdownItem>
+      <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); router.push(withFrom('/company/templates/payments', pathname)) }}><span className={styles.menuIcon}><Icon name="style" size={20} /></span>Manage payment schedules</DropdownItem>
     </>
   )
   const toolbar = locked ? (
@@ -319,7 +319,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
               <>
                 <DropdownItem submenu onSelect={() => setMoreSub('preset')}>Preset: {presetLabel(preset, splits).replace('Default: ', '')}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
                 <DropdownDivider />
-                <DropdownItem onSelect={() => { setMenu(null); addRow() }}><span className={styles.menuIcon}><Icon name="add" size={20} /></span>Add a Payment</DropdownItem>
+                <DropdownItem onSelect={() => { setMenu(null); addRow() }}><span className={styles.menuIcon}><Icon name="add" size={20} /></span>Add a payment</DropdownItem>
               </>
             )}
           </div>
@@ -351,7 +351,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
 
   const dueRow = dueFor ? rows.find((r) => r.id === dueFor) ?? null : null
   return (
-    <SectionCard id="section-payment" title="Payment Schedule" open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
+    <SectionCard id="section-payment" title="Payment schedule" open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
       {/* (REG-538) Save this split as a template. */}
       <Dialog open={saveSplit !== null} onClose={() => setSaveSplit(null)} title="Save split as a template" size="form" width={400} portal
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setSaveSplit(null)}>Cancel</Button><Button onPress={doSaveSplit} isDisabled={!(saveSplit ?? '').trim()}>Save template</Button></>}>
@@ -446,7 +446,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
         ) : null}
         {locked ? null : (
         <div className={styles.foot}>
-          <Button variant="primary" appearance="outlined" onPress={addRow}>Add a Payment</Button>
+          <Button variant="primary" appearance="outlined" onPress={addRow}>Add a payment</Button>
         </div>
         )}
       </div>
@@ -547,7 +547,7 @@ function PaymentSheet({ open, row, fee, amountMinor, shareBase, totalMinor, feeO
           </div>
         )}
         {fee ? null : <p className={styles.sheetHint}>{shareBase > 0 ? (feeOnQuote ? `Of ${money2(shareBase)} — what the fixed fee leaves` : `Of the quote total, ${money2(totalMinor)}`) : 'Amounts follow the quote total — add items first'}</p>}
-        <Chips label="Due" testId="payment-due-chips" value={draft.due} onChange={(v) => set({ due: v === 'date' ? 'date' : 'approval' })} options={[{ value: 'approval', label: 'On approval' }, { value: 'date', label: 'On a date' }]} />
+        <Chips label="Due" testId="payment-due-chips" value={draft.due} onChange={(v) => set({ due: v === 'date' ? 'date' : 'approval' })} options={[{ value: 'approval', label: 'On signing' }, { value: 'date', label: 'On a date' }]} />
         {draft.due === 'date' ? (
           <DateField label="Due date" required value={draft.dueAt} onChange={(v) => set({ dueAt: v, dueTouched: true })} today={today} error={touched && !dateOk ? MSG.date : undefined}
                      helper={row?.dueKind === 'estimate' && !draft.dueTouched ? 'An estimate from the start date — pick a day to fix it' : undefined} />

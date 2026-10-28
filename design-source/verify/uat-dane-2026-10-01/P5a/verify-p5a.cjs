@@ -12,7 +12,7 @@ const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toStr
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(1000) }
 const lead = (name) => sql(`select id from leads where name = '${name}'`)
-const MEI = lead('Mei Ling Tan'), GERALD = lead('Gerald Tan'), FARAH = lead('Farah Ahmad'), JONATHAN = lead('Jonathan Teo'), OLIVIA = lead('Olivia Martinez'), BEN = lead('Benjamin Han')
+const MEI = lead('Mei Ling Tan'), MUTHU = lead('Muthu Vinay'), GERALD = lead('Gerald Tan'), FARAH = lead('Farah Ahmad'), JONATHAN = lead('Jonathan Teo'), OLIVIA = lead('Olivia Martinez'), BEN = lead('Benjamin Han')
 const BEN_C = sql(`select id from contracts where lead_id = '${BEN}' and status = 'Signed' and deleted_at is null limit 1`)
 const shot = (page, n, clip) => page.screenshot({ path: path.join(OUT, `${n}.png`), ...(clip ? { clip } : {}) })
 const snackBar = (page) => page.locator('[role="status"][aria-live="polite"] > div').last()
@@ -24,10 +24,15 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
   const page = await ctx.newPage()
   page.setDefaultTimeout(12000)
 
-  /* ── b-resume (UAT 7.13): the locked Convert's refusal names the stage; its action is only the verb ── */
+  /* ── b-resume (UAT 7.13): the locked Convert's refusal names the stage; its action is only the verb ──
+     (the calm UI build 2026-10-27, a deliberate change — audit 2-05) the locked Convert to Project left the header: Won is the Stage ▾ menu's
+     row, which carries Convert's handle (`convert-locked`) and its refusal while Won is out of reach. A lead On Hold resumes at any stage (Won
+     too, through "Resume at Won?" — blockedReason), so Mei's Won row is open; a parked lead whose Won is locked is a Lost one (Muthu Vinay, lost
+     from Contacted): the same refusal, "Resume at Contacted first", its action "Resume". */
   await step('b-resume', async () => {
-    await page.goto(`${BASE}/leads/${MEI}`); await ready(page)
-    await page.locator('[data-testid="convert-locked"] button').click()
+    await page.goto(`${BASE}/leads/${MUTHU}`); await ready(page)
+    await page.getByRole('button', { name: /^Stage: / }).click(); await page.waitForTimeout(400)
+    await page.locator('[role="menu"] [data-testid="convert-locked"]').click({ force: true })
     const t = await snack(page, /first/)
     const action = (await snackBar(page).locator('button').first().innerText()).trim()
     ok('b-resume the refusal names the stage', /^Resume at \w[\w ]* first/.test(t), t.split('\n')[0])
@@ -36,6 +41,7 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     await snackBar(page).locator('button').first().click(); await page.waitForTimeout(500)
     ok('b-resume the action opens the "Resume at X?" confirm', await page.getByRole('dialog').getByText(/^Resume at .+\?$/).isVisible())
     await page.getByRole('button', { name: 'Cancel' }).click(); await page.waitForTimeout(400)
+    await page.goto(`${BASE}/leads/${MEI}`); await ready(page)   // (the calm UI build 2026-10-27) g-resumerow reads the On Hold lead
   })
 
   /* ── g-resumerow (UAT 9.06): the parked row resumes through the confirm, as the header does; the head arrow still opens the window ── */
@@ -67,11 +73,15 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     ok('b-insights from the listing Back still reads "Back to Leads"', (await page.locator('a[data-kb="back"]').getAttribute('aria-label')) === 'Back to Leads')
   })
 
-  /* ── b-doublequote: From Scratch pressed twice makes one quote ── */
+  /* ── b-doublequote: From Scratch pressed twice makes one quote ──
+     (the calm UI build 2026-10-27, a deliberate change — audit 2-04) the empty QUOTES card's From Scratch / From Template are one outlined
+     "Create a quote", which opens the Create Quote window: its Blank quote is From Scratch's press, and pressed twice it still makes ONE quote */
   await step('b-doublequote', async () => {
     const before = Number(sql(`select count(*) from quotes where lead_id = '${GERALD}'`))
     await page.goto(`${BASE}/leads/${GERALD}`); await ready(page)
-    const btn = page.locator('[data-card="quotes"]').getByRole('button', { name: 'From Scratch' })
+    await page.locator('[data-card="quotes"]').getByRole('button', { name: 'Create a quote' }).click()
+    const modal = page.getByTestId('create-quote'); await modal.waitFor(); await page.waitForTimeout(400)
+    const btn = modal.getByRole('button', { name: /^Blank quote/ }).first()
     await btn.evaluate((b) => { b.click(); b.click() })
     await page.waitForURL(/\/quotes\/[0-9a-zA-Z-]+/, { timeout: 15000 }); await page.waitForTimeout(1500)
     const after = Number(sql(`select count(*) from quotes where lead_id = '${GERALD}'`))
@@ -89,7 +99,7 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     ok('g-taskback MY TASKS opens the task panel', await panel.isVisible())
     ok('g-taskback …over the Overview (the address stays on the lead)', new URL(page.url()).pathname === `/leads/${FARAH}`)
     ok('g-taskback the panel offers Open in Tasks', await panel.getByRole('button', { name: 'Open in Tasks' }).isVisible())
-    ok('g-taskback the panel is the tab’s own (Mark as Completed, Members, Tags, Attachments)', await panel.getByRole('button', { name: 'Mark as Completed' }).isVisible() && await panel.getByRole('region', { name: 'Members' }).isVisible().catch(() => true))
+    ok('g-taskback the panel is the tab’s own (Mark as Completed, Members, Tags, Attachments)', await panel.getByRole('button', { name: 'Mark as done' }).isVisible() /* (the calm UI build 2026-10-27, a deliberate change) 1-23 · W-044: "Mark as done" */ && await panel.getByRole('region', { name: 'Members' }).isVisible().catch(() => true))
     await shot(page, 'g-taskback-panel-over-overview')
     await panel.getByRole('button', { name: /^Close/ }).click(); await page.waitForTimeout(600)
     ok('g-taskback closing returns to the Overview', !(await panel.isVisible()) && new URL(page.url()).pathname === `/leads/${FARAH}` && await page.locator('[data-card="lead-stages"]').first().isVisible())
@@ -113,7 +123,8 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     await page.locator('[data-testid="header-primary"] button').click(); await page.waitForTimeout(700)
     const wiz = page.locator('[role="dialog"][aria-label="Move stage"]')
     await wiz.getByRole('combobox', { name: /Where/ }).click(); await page.getByRole('option', { name: 'In person' }).click()
-    await wiz.getByRole('button', { name: /Date & Time/ }).first().click().catch(async () => { await wiz.getByText('Date & Time', { exact: false }).first().click() })
+    /* (the calm UI build 2026-10-27, a deliberate change) 2-24 · W-165: the Met log's own moment is "When" (was "Date & Time") */
+    await wiz.getByRole('button', { name: /^When/ }).first().click().catch(async () => { await wiz.getByText('When', { exact: true }).first().click() })
     await page.getByRole('button', { name: 'Today' }).click(); await page.getByRole('button', { name: 'Done' }).click(); await page.waitForTimeout(300)
     await wiz.getByRole('button', { name: 'Save', exact: true }).click()
     const t = await snack(page, /Moved to Met/)
@@ -138,7 +149,7 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     const openLost = async () => {
       await page.getByRole('button', { name: /^Stage: / }).click()
       await page.locator('[role="menu"]').getByText('Lost', { exact: true }).click(); await page.waitForTimeout(500)
-      const dlg = page.getByRole('dialog').filter({ hasText: 'Moving to Lost' })
+      const dlg = page.getByRole('dialog').filter({ hasText: /Moving to Lost|Mark as lost/ })   // (the calm UI build 2026-10-27, a deliberate change) B2 2-29: the dialog says "Mark as lost"
       await dlg.getByRole('combobox', { name: /Reason/ }).click(); await page.getByRole('option', { name: 'Project postponed' }).click()
       await dlg.getByRole('button', { name: /Expected restart/ }).first().click().catch(async () => { await dlg.getByText('Expected restart (optional)').click() })
       for (let i = 0; i < 3; i++) { await page.getByRole('button', { name: 'Next month' }).click(); await page.waitForTimeout(80) }
@@ -151,20 +162,20 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     const colour = await nudge.evaluate((el) => getComputedStyle(el).color)
     const ink = await page.evaluate(() => { const d = document.createElement('i'); d.style.color = 'var(--om-color-on-tertiary-yellow-variant)'; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c })
     ok('g-holdhint …in the house warning tone, with its glyph', colour === ink && (await nudge.locator('.msr, .mso, [class*="icon"]').first().innerText().catch(() => '')).includes('warning'), `${colour} vs ${ink}`)
-    ok('g-holdhint …and Save & Move stays live', await dlg.getByRole('button', { name: 'Save & Move' }).isEnabled())
+    ok('g-holdhint …and Save & Move stays live', await dlg.getByRole('button', { name: /^(Save & Move|Mark as lost)$/ }).isEnabled())   // (the calm UI build 2026-10-27, a deliberate change) B2 2-29: its button is "Mark as lost"
     const restart = await dlg.getByRole('button', { name: /Expected restart/ }).first().innerText().catch(() => '')
     await shot(page, 'g-holdhint-nudge')
     await nudge.getByRole('button', { name: 'Put On Hold instead' }).click(); await page.waitForTimeout(600)
-    const hold = page.getByRole('dialog').filter({ hasText: 'Moving to On Hold' })
+    const hold = page.getByRole('dialog').filter({ hasText: /Moving to On Hold|Put on hold/ }).last()   // (the calm UI build 2026-10-27, a deliberate change) B2 2-29: "Put on hold"
     ok('g-holdhint Put On Hold instead switches to the On Hold dialog', await hold.isVisible() && !(await dlg.isVisible()))
     ok('g-holdhint …on its Custom date', (await hold.getByRole('radio', { name: 'Custom' }).getAttribute('aria-checked')) === 'true')
-    const follow = (await hold.getByText(/Next follow up date will be/).innerText()).replace('Next follow up date will be ', '').trim()
+    const follow = (await hold.getByText(/Next follow up date will be|We’ll remind you on/).innerText()).replace('Next follow up date will be ', '').replace('We’ll remind you on ', '').replace(/\.$/, '').trim()   // (the calm UI build 2026-10-27, a deliberate change) B2: "We’ll remind you on …"
     ok('g-holdhint …set to the expected restart (15th, three months on)', /^15 /.test(follow), `${follow} · restart field: ${restart.replace(/\s+/g, ' ')}`)
     await shot(page, 'g-holdhint-on-hold-custom')
     await hold.getByRole('button', { name: 'Cancel' }).click(); await page.waitForTimeout(400)
     /* Save & Move with the nudge on screen still moves the lead to Lost, unchanged */
     const dlg2 = await openLost()
-    await dlg2.getByRole('button', { name: 'Save & Move' }).click()
+    await dlg2.getByRole('button', { name: /^(Save & Move|Mark as lost)$/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) B2 2-29
     const t = await snack(page, /Moved to Lost/)
     ok('g-holdhint Save & Move still moves the lead to Lost', /Moved to Lost/.test(t) && sql(`select stage from leads where id = '${JONATHAN}'`) === 'Lost')
   })
@@ -176,7 +187,7 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     const before = await ids()
     const first = before[0]
     const card = page.locator(`[data-question-id="${first}"]`)
-    await card.getByText('Answer', { exact: true }).click(); await page.waitForTimeout(300)
+    await card.getByTestId('question-answer').click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) 2-18: the row's press opens the answer (the purple "Answer" link went)
     await card.locator('textarea').fill('Two cats')
     /* watch the card's transform while it moves */
     await page.evaluate((id) => { window.__moved = false; const t0 = performance.now(); const tick = () => { const el = document.querySelector(`[data-question-id="${id}"]`); if (el && getComputedStyle(el).transform !== 'none') window.__moved = true; if (performance.now() - t0 < 2500) requestAnimationFrame(tick) }; requestAnimationFrame(tick) }, first)
@@ -214,14 +225,14 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     ok('g-viewall hidden at All Leads', (await viewAll.count()) === 0)
     await page.getByRole('searchbox', { name: 'Search leads' }).fill('a').catch(async () => { await page.getByLabel('Search leads').fill('a') })
     await page.waitForTimeout(300)
-    await page.getByRole('button', { name: /^All Leads/ }).click()
+    await page.getByRole('button', { name: /^All leads/i /* (the calm UI build 2026-10-27, a deliberate change) B2 2-11 */ }).click()
     await page.getByRole('menuitemradio', { name: /^Contacted/ }).click(); await page.waitForTimeout(400)
-    const pill = page.getByRole('button', { name: /^Contacted \(/ })
+    const pill = page.getByRole('button', { name: /^Contacted · \d+/ })   // (the calm UI build 2026-10-27, a deliberate change) T-07: "Contacted · n" 
     ok('g-viewall scoped: View all shows beside the pill', await viewAll.isVisible() && await viewAll.evaluate((el) => !el.closest('[data-folded]')))
     ok('g-viewall …and the applied dot is still on the pill (REG-295)', (await pill.locator('[class*="dot"]').count()) > 0)
     await shot(page, 'g-viewall-scoped-1440', { x: 0, y: 0, width: 1440, height: 260 })
     await viewAll.click(); await page.waitForTimeout(400)
-    ok('g-viewall one press back to All Leads', await page.getByRole('button', { name: /^All Leads \(/ }).isVisible() && (await viewAll.count()) === 0)
+    ok('g-viewall one press back to All Leads', await page.getByRole('button', { name: /^All leads · / /* (the calm UI build 2026-10-27, a deliberate change) B2 2-11: "All leads · n" */ }).isVisible() && (await viewAll.count()) === 0)
     ok('g-viewall the search stays', (await page.getByLabel('Search leads').inputValue()) === 'a')
   })
 
@@ -252,8 +263,8 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
   /* ── b-import3 (UAT 4.07): step 3's table frame ends at its last row ── */
   await step('b-import3', async () => {
     await page.goto(`${BASE}/leads`); await ready(page)
-    await page.getByRole('button', { name: 'Add Lead' }).click()
-    await page.getByRole('menuitem', { name: 'Import from File' }).click(); await page.waitForTimeout(600)
+    await page.getByRole('button', { name: 'New lead' }).click()   // (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: New lead ▾ › Import a file
+    await page.getByRole('menuitem', { name: 'Import a file' }).click(); await page.waitForTimeout(600)
     await page.setInputFiles('input[type="file"][accept=".csv,.xlsx,.pdf"]', path.join(process.cwd(), 'public/uat-files/new-leads.xlsx'))
     await page.waitForTimeout(1500)
     await page.getByRole('button', { name: 'Next', exact: true }).click(); await page.waitForTimeout(800)
@@ -287,7 +298,7 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     await p.getByTestId('filters-done').click(); await p.waitForTimeout(400)
     await p.locator('[class*="left"] button[aria-haspopup="menu"]').first().click(); await p.waitForTimeout(600)
     const rows = await p.locator('[role="menu"]').last().locator('[role^="menuitem"]').allInnerTexts()
-    ok('b-quickfilters …the To do scopes are the pill\'s rows (Overdue follow-ups · Unassigned · Unseen)', ['Overdue follow-ups', 'Unassigned', 'Unseen'].every((k) => rows.some((r) => r.startsWith(k))), JSON.stringify(rows.slice(0, 7)))
+    ok('b-quickfilters …the To do scopes are the pill\'s rows (Overdue follow-ups · Unassigned · Unseen)', ['Overdue follow-ups', 'Unassigned', 'Not opened yet'].every((k) => rows.some((r) => r.startsWith(k))) /* (the calm UI build 2026-10-27, a deliberate change) W-418: "Not opened yet" */, JSON.stringify(rows.slice(0, 7)))
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
   })
   await step('g-taskback 390', async () => {
@@ -304,23 +315,23 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
   })
   await step('g-viewall 390', async () => {
     await p.goto(`${BASE}/leads`); await ready(p)
-    const bar = async () => p.evaluate(() => { const pill = [...document.querySelectorAll('button[aria-haspopup="menu"]')].find((b) => /\(\d+\)/.test(b.textContent || '')); const filt = document.querySelector('button[aria-label^="Filters"]'); const va = document.querySelector('[data-testid="view-all-leads"]'); const r = (e) => e?.getBoundingClientRect(); return { pill: r(pill)?.top, pillBottom: r(pill)?.bottom, filter: r(filt)?.top, va: va ? { top: r(va).top, folded: !!va.closest('[data-folded]'), right: r(va).right } : null, w: innerWidth, sw: document.documentElement.scrollWidth } })
-    await p.getByRole('button', { name: /^All Leads/ }).click(); await p.waitForTimeout(500)
+    const bar = async () => p.evaluate(() => { const pill = [...document.querySelectorAll('button[aria-haspopup="menu"]')].find((b) => / · \d+/.test(b.textContent || '') /* (the calm UI build 2026-10-27, a deliberate change) T-07: "Won · n" */); const filt = document.querySelector('button[aria-label^="Filters"]'); const va = document.querySelector('[data-testid="view-all-leads"]'); const r = (e) => e?.getBoundingClientRect(); return { pill: r(pill)?.top, pillBottom: r(pill)?.bottom, filter: r(filt)?.top, va: va ? { top: r(va).top, folded: !!va.closest('[data-folded]'), right: r(va).right } : null, w: innerWidth, sw: document.documentElement.scrollWidth } })
+    await p.getByRole('button', { name: /^All leads/i /* (the calm UI build 2026-10-27, a deliberate change) B2 2-11 */ }).click(); await p.waitForTimeout(500)
     await p.getByRole('menuitemradio', { name: /^Won/ }).click(); await p.waitForTimeout(500)
     const a = await bar()
     ok('g-viewall 390 a short scope keeps View all on the pill’s row', !!a.va && !a.va.folded && Math.abs(a.va.top - a.pill) < 8 && a.va.right <= a.w, JSON.stringify(a))
     ok('g-viewall 390 the toolbar stays one row, nothing scrolls sideways', Math.abs(a.filter - a.pill) < 8 && a.sw <= a.w)
     await shot(p, 'g-viewall-390-short')
-    await p.getByRole('button', { name: /^Won \(/ }).click(); await p.waitForTimeout(500)
+    await p.getByRole('button', { name: /^Won · \d+/ /* (the calm UI build 2026-10-27, a deliberate change) T-07 */ }).click(); await p.waitForTimeout(500)
     await p.getByRole('menuitemradio', { name: /^Overdue follow-ups/ }).click(); await p.waitForTimeout(500)
     const b = await bar()
     ok('g-viewall 390 a long scope keeps one row — View all beside the pill where it fits, folded where it doesn’t', !!b.va && (b.va.folded || b.va.right <= b.w) && Math.abs(b.filter - b.pill) < 8 && b.sw <= b.w, JSON.stringify(b))
     await shot(p, 'g-viewall-390-long')
     await p.getByRole('button', { name: /^Overdue follow-ups/ }).click(); await p.waitForTimeout(500)
-    ok('g-viewall 390 folded, the pill’s sheet opens on All Leads — its first row', (await p.getByRole('menuitemradio').first().innerText()).startsWith('All Leads'))
+    ok('g-viewall 390 folded, the pill’s sheet opens on All Leads — its first row', (await p.getByRole('menuitemradio').first().innerText()).startsWith('All leads') /* (the calm UI build 2026-10-27, a deliberate change) 2-11 · T-13 */)
     await p.getByRole('menuitemradio').first().click(); await p.waitForTimeout(300)
     /* at 320 (the overflow gate) the long scope leaves no room: View all folds away, the row stays one row */
-    await p.getByRole('button', { name: /^All Leads/ }).click(); await p.waitForTimeout(500)
+    await p.getByRole('button', { name: /^All leads/i /* (the calm UI build 2026-10-27, a deliberate change) B2 2-11 */ }).click(); await p.waitForTimeout(500)
     await p.getByRole('menuitemradio', { name: /^Overdue follow-ups/ }).click(); await p.waitForTimeout(400)
     await p.setViewportSize({ width: 320, height: 700 }); await p.waitForTimeout(600)
     const c = await bar()

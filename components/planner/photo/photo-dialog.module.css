@@ -20,6 +20,8 @@
 
 /* the rooms */
 .chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+/* (the calm UI build 2026-10-27, 6-08) the rooms as one sentence — body text, not capital chips */
+.summary { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 /* the list itself: RoomList (room-list.tsx, REG-2800) */
 
 /* its size */

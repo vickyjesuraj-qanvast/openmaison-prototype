@@ -46,14 +46,14 @@ export function ItemsTouchFoot({ totals, gstLabel = 'GST 9%', shares, onPickCate
         <Button variant="primary" size="lg" iconStart={<Icon name="add" size={20} />} onPress={onAddItem} data-testid="touch-add-item">Add item</Button>
       </div>
       {/* the desktop's totals card and By category, each in a form (a bottom sheet on the phone, REG-353); Done closes — every change is live */}
-      <Dialog open={open === 'adjust'} onClose={() => setOpen(null)} title="Totals" subtitle="Entity, discounts, GST and rounding — every change lands at once" size="form" portal
+      <Dialog open={open === 'adjust'} onClose={() => setOpen(null)} title="Totals" subtitle="Issued by, discounts, GST and rounding — every change lands at once" size="form" portal
               footer={<Button onPress={() => setOpen(null)}>Done</Button>}>
         <div className={styles.adjustBody} data-testid="touch-adjust-body">
           <EntityField pricing={summary.pricing} studio={summary.studio} entities={summary.entities} billsProject={summary.billsProject ?? null} onPricing={summary.onPricing} />
           <TotalsCard totals={totals} pricing={summary.pricing} owner={summary.owner} gstLabel={gstLabel} onPricing={summary.onPricing} onRound={summary.onRound} touch />
         </div>
       </Dialog>
-      <Dialog open={open === 'breakdown'} onClose={() => setOpen(null)} title="By category" subtitle="How the subtotal splits by the lines’ categories — internal, never printed" size="form" portal
+      <Dialog open={open === 'breakdown'} onClose={() => setOpen(null)} title="By trade" subtitle="How the subtotal splits by trade — for you, never printed" size="form" portal
               footer={<Button onPress={() => setOpen(null)}>Done</Button>}>
         <div className={styles.breakdownBody} data-testid="touch-breakdown-body">
           <ItemsBreakdown shares={shares} owner={summary.owner} onPick={(name) => { setOpen(null); onPickCategory(name) }} />

@@ -22,9 +22,9 @@ import type { Hold } from './hold'
 import { holdSince, resumeLine, resumeDue } from './hold'
 import type { PrimaryAction, PrimaryRun } from './next-step'
 import type { SetupRow } from './getting-started'
-import { dayLabel, extensionWords, plural, shortTitle } from './schedule-model'
+import { dayLabel, dayOf, extensionWords, plural, shortTitle } from './schedule-model'
 import { UPDATE_GAP_DAYS } from './updates-model'
-import { displayDate, dayWords } from '@/lib/format'
+import { dayWords } from '@/lib/format'
 
 /* ── contract B (fixed) ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -35,10 +35,15 @@ export type NeedInline = 'approve-update' | 'approve-po' | 'approve-expense' | '
   | 'approve-bill'   // (S44R — UAT row 361, call C8) a supplier bill's OK, in the row (no Send back: whoever recorded it changes or removes it)
 export type NeedRow = { key: string; kind: string; group: NeedGroup; tab: string /* the view slug where it is fixed */; tone: NeedTone
   title: string; meta?: string; amountMinor?: number; ref?: string /* the record's id */; action: NeedAction; secondary?: NeedAction; inline?: NeedInline
+  /** (the calm UI build 2026-10-27, 3-01 · 3-07 — additive) a row that says two facts about one milestone carries the other row's step here (the
+      row's ⋮) — `needsOf` merges them, so one milestone is one row */
+  also?: NeedAction[]
   /** (simplify round 2 — additive to contract B) an approval answered in place: who asked, what it is about, and (more time) the day it ends
       now — the Send back / Decline dialogs' own words, as the tab says them */
   ask?: NeedAsk }
-export type NeedAsk = { who: string | null; title: string; end?: number; /** (simplify round 2) an update's held change: Change approved, as the tab says */ change?: boolean }
+export type NeedAsk = { who: string | null; title: string; end?: number; /** (simplify round 2) an update's held change: Change approved, as the tab says */ change?: boolean
+  /** (the calm UI build 2026-10-27, 3-30 — additive) more time: the day they ask to finish (a day number), for the brief's one line */
+  asked?: number; milestoneId?: string }
 
 /* ── the facts the producers read ───────────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -95,11 +100,11 @@ export type NeedFacts = {
 
 /** (Q-09) How long after the last published update the weekly update is offered — before the 14-day attention reason (`UPDATE_GAP_DAYS`). */
 export const WEEK_UPDATE_DAYS = 6
-/** How many rows the card shows before "Show n more". */
-export const NEEDS_SHOWN = 6
+/** How many rows the card shows before "Show n more" — (the calm UI build 2026-10-27, 3-07 · T-14) three, at every width. */
+export const NEEDS_SHOWN = 3
 /** (simplify round 2, P1 §6.4) …and on a phone, where Needs you sits under the brief and the rest of the page follows it (the Money tab shows
     two of its own). */
-export const NEEDS_SHOWN_PHONE = 4
+export const NEEDS_SHOWN_PHONE = 3
 /** (simplify round 2, P1 §6.4) Coming up's rows on a phone before its own "Show n more" — the Schedule (↗) has every date. */
 export const COMING_UP_SHOWN_PHONE = 3
 
@@ -155,10 +160,12 @@ export const NEED_PRODUCERS: NeedProducer[] = [
     ask: { who: m.by, title: m.title },
   })),
   (f) => f.moreTime.map((x): NeedRow => ({
-    key: `approve-more-time:${x.id}`, kind: 'approve-more-time', group: 'ok', tab: 'schedule', tone: 'approve', ref: x.id, title: `More time on ${x.title}`,
-    meta: `${x.by} asks to end it ${dayLabel(x.toEnd)}, ${extensionWords(x)}`,
+    key: `approve-more-time:${x.id}`, kind: 'approve-more-time', group: 'ok', tab: 'schedule', tone: 'approve', ref: x.id,
+    /* (the calm UI build 2026-10-27, 1-08 · W-048) the person and the ask first: "Michelle asks for 1 week more on Carpentry fabrication" */
+    title: x.toEnd >= x.fromEnd ? `${x.by} asks for ${extensionWords(x).replace(/ later$/, ' more')} on ${x.title}` : `${x.by} asks to finish ${x.title} ${extensionWords(x)}`,
+    meta: `To end it ${dayLabel(x.toEnd)}`,
     action: { label: 'Review', href: tab(f, 'schedule', `open=${enc(x.milestoneId)}`) }, secondary: { label: 'Decline', href: tab(f, 'schedule', `open=${enc(x.milestoneId)}`) }, inline: 'approve-more-time',
-    ask: { who: x.by, title: x.title, end: f.milestones.find((m) => m.id === x.milestoneId)?.end ?? x.fromEnd },   // the day it ends now
+    ask: { who: x.by, title: x.title, end: f.milestones.find((m) => m.id === x.milestoneId)?.end ?? x.fromEnd, asked: x.toEnd, milestoneId: x.milestoneId },   // the day it ends now
   })),
   (f) => (f.shareAsk
     ? [{ key: 'share-ask', kind: 'share-ask', group: 'ok', tab: 'schedule', tone: 'approve', title: `Share ${plural(f.shareAsk.n, 'schedule change')}`, meta: `${f.shareAsk.by} asked ${agoWords(f.shareAsk.at, f.now)} — ${f.client} sees them once you share`,
@@ -174,7 +181,8 @@ export const NEED_PRODUCERS: NeedProducer[] = [
   (f) => (f.mayChange ? f.tickets : []).filter((t) => t.studioTurn || t.escalated).sort((a, b) => Number(b.escalated) - Number(a.escalated) || b.waitingDays - a.waitingDays).map((t): NeedRow => ({
     key: `ticket:${t.id}`, kind: 'ticket', group: 'client', tab: 'tickets', ref: t.id,
     tone: t.escalated || (t.studioTurn && t.waitingDays > f.ticketWaitDays) ? 'late' : 'neutral',   // (S-05) a defect left waiting is ours, and late
-    title: `${t.number} · ${t.subject}`, meta: [t.escalated ? 'Escalated' : null, t.studioTurn ? (t.waitingDays > 0 ? `waiting on you for ${dayWords(t.waitingDays)}` : 'waiting on you') : null].filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase()),
+    /* (the calm UI build 2026-10-27, 3-37 · 1-10 · T-01) the issue card's own words: "Flagged to the Owner" · "Your turn for 3 days" */
+    title: `${t.number} · ${t.subject}`, meta: [t.escalated ? 'Flagged to the Owner' : null, t.studioTurn ? (t.waitingDays > 0 ? `your turn for ${dayWords(t.waitingDays)}` : 'your turn') : null].filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase()),
     action: { label: t.studioTurn ? 'Reply' : 'Open', href: tab(f, 'tickets', `open=${enc(t.id)}`) },
   })),
   (f) => (f.marks && f.marks.n > 0 && f.mayChange
@@ -224,7 +232,7 @@ export const NEED_PRODUCERS: NeedProducer[] = [
     if (f.stage !== 'in_progress' || !f.mayChange || !f.targetEnd || f.milestones.some((m) => m.status !== 'done' && m.end < f.today)) return []
     const past = Math.floor((startOfDay(f.now) - startOfDay(f.targetEnd)) / 86_400_000)
     if (past <= 0) return []
-    return [{ key: 'target', kind: 'target-passed', group: 'late', tab: 'schedule', tone: 'late', title: `${dayWords(past)} past the target end`, meta: `Target end ${displayDate(new Date(f.targetEnd))}`,
+    return [{ key: 'target', kind: 'target-passed', group: 'late', tab: 'schedule', tone: 'late', title: `${dayWords(past)} past the target end`, meta: `Target end ${dayLabel(dayOf(new Date(f.targetEnd)))}`,
       action: f.milestones.length ? { label: 'Open', href: tab(f, 'schedule') } : { label: 'Change', run: 'dates:end' } }]
   },
 
@@ -233,7 +241,7 @@ export const NEED_PRODUCERS: NeedProducer[] = [
     if (f.stage !== 'in_progress' || !f.mayChange || f.schedule.unshared <= 0 || (f.schedule.asked && !f.schedule.sharesAtOnce)) return []
     const n = f.schedule.unshared
     return [{ key: 'share', kind: 'share', group: 'tell', tab: 'schedule', tone: 'neutral',
-      title: f.schedule.shared ? `${plural(n, 'schedule change')} ${f.client} hasn’t seen` : `${f.client} hasn’t seen the schedule yet`,
+      title: f.schedule.shared ? `Share ${plural(n, 'schedule change')} with ${f.client}` : `${f.client} hasn’t seen the schedule yet`,   // (the calm UI build 2026-10-27, 1-08)
       meta: f.schedule.sharesAtOnce ? `${f.client} sees the dates on their page once you share` : 'An Owner or an Admin shares them',
       action: { label: f.schedule.sharesAtOnce ? 'Share' : 'Ask to share', href: tab(f, 'schedule', 'share=1') } }]
   },
@@ -245,10 +253,10 @@ export const NEED_PRODUCERS: NeedProducer[] = [
     const days = Math.floor((startOfDay(f.now) - startOfDay(since)) / 86_400_000)
     if (days < WEEK_UPDATE_DAYS) return []
     return [{ key: 'week-update', kind: 'week-update', group: 'tell', tab: 'updates', tone: days >= UPDATE_GAP_DAYS ? 'late' : 'neutral',
-      title: `Tell ${f.client} about this week`, meta: f.lastToldAt !== null ? `Last update ${dayWords(days)} ago` : `No update since work began ${dayWords(days)} ago`,
+      title: `Send ${f.client} this week’s update`, /* (the calm UI build 2026-10-27, W-398 · W-622) */ meta: f.lastToldAt !== null ? `Last update ${dayWords(days)} ago` : `No update since work began ${dayWords(days)} ago`,
       /* (simplify round 2) one door for every press — the row, the header, the brief, Maison AI: Updates drafts the week (Maison AI's weekly
          draft, no credits), saves it as a draft and opens it in the composer (`?draft=week`); nothing is sent without Post */
-      action: { label: 'Draft it', href: tab(f, 'updates', 'draft=week') } }]
+      action: { label: 'Write', href: tab(f, 'updates', 'draft=week') } }]
   },
 
   /* ── set-up leftovers — while Setting up, only what the Start step does not ask (S-17); after Start, every open item ── */
@@ -268,15 +276,15 @@ export const NEED_PRODUCERS: NeedProducer[] = [
      dialog picks the milestone (the running one first) and moves what follows, or Not now. Neutral: the client's change, our schedule to keep. */
   (f) => (f.stage === 'in_progress' && !f.hold && f.mayChange ? (f.voDays ?? []) : []).map((v): NeedRow => ({
     key: `vo-days:${v.id}`, kind: 'vo-days', group: 'late', tab: 'schedule', tone: 'neutral', ref: v.id,
-    title: `${v.number} adds ${dayWords(v.days)} — move what follows?`, meta: `${v.title} · approved by ${f.client}`,
-    action: { label: 'Move the schedule', href: tab(f, 'schedule', `vo=${enc(v.id)}`) },
+    title: `${v.number} adds ${dayWords(v.days)} — update the schedule?`,   // (the calm UI build 2026-10-27, W-426) meta: `${v.title} · approved by ${f.client}`,
+    action: { label: 'Update schedule', href: tab(f, 'schedule', `vo=${enc(v.id)}`) },   // (the calm UI build 2026-10-27, W-557)
   })),
   /* (S45B · H-UHD-2 — 1.0's "unstaffed workscopes starting ≤7 days", the number its spec says the studio will watch; invented copy) work starting
      this week with no contractor of its trade on it: neutral (not past its day), after the late work; Add a contractor opens the Schedule's
      dialog on that milestone and trade (`?assign=` · `&trade=`) */
   (f) => (f.stage === 'in_progress' && !f.hold && f.mayChange ? (f.crewGaps ?? []) : []).map((g): NeedRow => ({
     key: `crew:${g.milestoneId}:${g.trade.toLowerCase()}`, kind: 'crew-gap', group: 'late', tab: 'schedule', tone: 'neutral', ref: g.milestoneId,
-    title: `No ${g.trade} contractor on ${g.title}`, meta: g.when,
+    title: g.trade.toLowerCase() === g.title.toLowerCase() ? `No contractor booked for ${g.title}` : `No ${g.trade} contractor booked for ${g.title}`, meta: g.when,   // (the calm UI build 2026-10-27, W-278)
     action: { label: 'Add a contractor', href: tab(f, 'schedule', `assign=${enc(g.milestoneId)}&trade=${enc(g.trade)}`) },
   })),
 ]
@@ -310,7 +318,37 @@ export function needsOf(f: NeedFacts, money: NeedRow[]): NeedRow[] {
   const seen = new Set<string>()
   const rows = all.filter((r) => { if (seen.has(r.key)) return false; seen.add(r.key); return true })
     .filter((r) => f.stage !== 'completed' || r.group === 'ok' || r.group === 'money' || AFTER_HANDOVER.has(r.kind))
-  return rows.map((r, i) => ({ r, i })).sort((a, b) => rankOf(a.r) - rankOf(b.r) || a.i - b.i).map(({ r }) => r)
+  return oneRowAMilestone(rows, f).map((r, i) => ({ r, i })).sort((a, b) => rankOf(a.r) - rankOf(b.r) || a.i - b.i).map(({ r }) => r)
+}
+
+/**
+ * (the calm UI build 2026-10-27, 3-01 · 3-07 · T-04) One milestone, one row: an ask for more time on a milestone that is also late, or work with
+ * no contractor booked on a milestone that should have started, are said as one row — the ask's (or the gap's) verb, the other row's step in
+ * its ⋮ (`also`), its lateness in the caption. Nothing is dropped: the merged step is one press away, and the milestone's own panel has both.
+ */
+function oneRowAMilestone(rows: NeedRow[], f: NeedFacts): NeedRow[] {
+  const late = new Map(rows.filter((r) => (r.kind === 'milestone-done' || r.kind === 'milestone-start') && r.ref).map((r) => [r.ref!, r]))
+  const taken = new Set<string>()
+  const out = rows.map((r) => {
+    if (r.kind === 'approve-more-time' && r.ask?.milestoneId) {
+      const l = late.get(r.ask.milestoneId)
+      if (!l) return r
+      taken.add(l.key)
+      const m = f.milestones.find((x) => x.id === r.ask!.milestoneId)
+      const lateWords = m && m.end < f.today ? `${dayWords(f.today - m.end)} late — ` : ''
+      return { ...r, meta: `${lateWords}${r.meta ?? ''}`.replace(/— To end/, '— to end'), also: [...(r.also ?? []), l.action] }
+    }
+    if (r.kind === 'crew-gap' && r.ref) {
+      const l = late.get(r.ref)
+      if (!l || l.kind !== 'milestone-start') return r
+      taken.add(l.key)
+      const m = f.milestones.find((x) => x.id === r.ref)
+      return { ...r, title: m ? `${m.title} should have started ${dayLabel(m.start)}` : r.title, meta: `No contractor booked yet${l.tone === 'late' && l.meta ? ` · ${l.meta}` : ''}`,
+        tone: l.tone === 'late' ? 'late' : r.tone, also: [...(r.also ?? []), l.action] }
+    }
+    return r
+  })
+  return out.filter((r) => !taken.has(r.key))
 }
 
 /**
@@ -337,7 +375,7 @@ const HEADER: Record<string, (r: NeedRow, client: string) => string> = {
   'approve-more-time': () => 'Review the ask for more time',
   'share-ask': () => 'Review the share',
   message: (_r, client) => `Reply to ${client}`,
-  ticket: (r) => `${r.action.label} ${r.title.split(' · ')[0] ?? 'the ticket'}`,
+  ticket: (r) => `${r.action.label} ${r.title.split(' · ')[0] ?? 'the issue'}`,   // (the calm UI build 2026-10-27, 3-37)
   mark: () => 'Answer the floor plan',
   concern: (r) => `Open ${r.title.replace(/^.* not right with /, '')}`,
   'choice-declined': (r) => `Open ${r.title.replace(/^.* said no to /, '')}`,
@@ -346,20 +384,21 @@ const HEADER: Record<string, (r: NeedRow, client: string) => string> = {
   'milestone-waiting': (r) => `Open ${shortTitle(r.title.replace(/ waits on .*$/, ''))}`,
   'target-passed': (r) => (r.action.run ? 'Change the target end' : 'Open the schedule'),
   share: (r) => (r.action.label === 'Ask to share' ? 'Ask to share' : r.title.endsWith('the schedule yet') ? 'Share the schedule' : 'Share changes'),
-  'week-update': (_r, client) => `Tell ${client} about this week`,
+  'week-update': (_r, client) => `Send ${client} this week’s update`,   // (the calm UI build 2026-10-27, W-398)
   /* K-M's money rows (lib/projects/money-needs.ts `MONEY_NEED_KINDS`) — their own buttons are short too */
   'money-approve': (r) => `Approve ${lowerFirst(r.title)}`,
   'cost-po-approve': (r) => `Approve ${r.title.split(' ')[0] ?? 'the PO'}`,
   'cost-expense-approve': () => 'Approve the expense',
-  'cost-bill-approve': (r) => `Approve ${r.title.replace(/’s bill .*$/, '')}’s bill`,   // (S44R, C8; invented copy)
+  'cost-bill-approve': (r) => `Approve ${lowerFirst(r.title.replace(/ from .*$/, ''))}`,   // (S44R, C8; invented copy) · (the calm UI build 2026-10-27, 1-31) "Approve bill AF-7781"
   'cost-bill-overdue': () => 'Pay the overdue bill',
   'cost-po-overdue': (r) => `Pay ${r.title.split(' ')[0] ?? 'the PO'}`,
   'money-confirm': () => 'Confirm the payment',
   'money-due-today': (_r, client) => `Remind ${client} of today’s payment`,   // (simplify round 3; invented copy)
+  'money-to-refund': () => 'Record the refund',   // (the calm UI build 2026-10-27, W-602) the row's verb is "Record"; the header keeps its own words
   'money-ready': (r) => { const stage = /^The (.+?) invoice/.exec(r.title)?.[1]; return stage ? `${r.action.label === 'Send' ? 'Send' : 'Submit'} the ${stage} invoice` : r.action.label },
   'money-sent-back': (r) => (r.action.label === 'Send' ? 'Send the invoice' : 'Submit the invoice again'),
   /* region parity-map header words (parity map 2026-10-10) — P-A · P-B · P-E add their new kinds' words here, one line each */
-  'vo-days': (r) => `Move the schedule for ${r.title.split(' ')[0] ?? 'the order'}`,   // (P-E, SC-094)
+  'vo-days': (r) => `Update the schedule for ${r.title.split(' ')[0] ?? 'the order'}`,   // (P-E, SC-094) · (the calm UI build 2026-10-27, W-557)
   'cost-po-late': (r) => `Mark ${r.title.split(' ')[0] ?? 'the PO'} delivered`,   // (P-B, MO-094; invented copy)
   /* end parity-map header words */
 }

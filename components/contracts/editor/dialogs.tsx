@@ -22,14 +22,15 @@ import { htmlToText, textToHtml } from '@/lib/writing/html'
 import { digitsOnly, inputDate, isSgPhone, parseInputDate, phoneTyped } from '@/lib/format'
 import styles from './contract-editor.module.css'
 import { useSignCodeDemo } from '@/components/contracts/use-sign-code-demo'   // (S42 B-03)
-import { signCodeLine } from '@/lib/contracts/model'
+import { SIGN_SEND_LINE, signCodeLine } from '@/lib/contracts/model'
+import { Tooltip } from '@/components/om/tooltip'
 
-/* The contract editor's dialogs (REG-534): Send for digital signature (1.0's WhatsApp link, on our m 600 Dialog) · Mark as
+/* The contract editor's dialogs (REG-534): Send for signature (1.0's WhatsApp link, on our m 600 Dialog) · Mark as
    signed · Edit recipient · Save as template — and the Automation popover. */
 
 /** Send: the signing card's fields (client name · phone for the code) over the message the link travels in. Send via
  *  WhatsApp opens the chat with the message and marks the contract Sent to Client; Copy link copies the signing page. */
-export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, extra, busy = false, title = 'Send for digital signature', subtitle, subtitleShort, copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)', nameLabel, messageLabel, onMarkSigned, sendLabel = 'Send via WhatsApp' }: {
+export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, extra, busy = false, title = 'Send for signature', subtitle, subtitleShort, copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)', nameLabel, messageLabel, onMarkSigned, sendLabel = 'Send on WhatsApp' }: {
   open: boolean; onClose: () => void
   defaults: { name: string; phone: string }
   /** The address the message carries — Copy link and the link row show it. (REG-1076) Absent when there is none to give: a project's invoice
@@ -80,24 +81,34 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   const phoneOk = isSgPhone(digitsOnly(phone))   // (REG-547)
   const nameOk = name.trim().length > 0
   const err = touched && !phoneOk ? MSG.phone : undefined   // (sweep S2 #25) the house words
-  /* (B-17) the touch widths: one line in the head, the rest one tap further */
+  /* (B-17) the touch widths: one line in the head, the rest one tap further. (The calm UI build 2026-10-27, 4-20 · W-448 · T-05) At every width
+     now: the head says one line — the signing one by default, "Your client signs on their phone; a one-time code confirms it’s them." — and
+     the rest (the demo note, the link's window) waits under "How signing works": the fold on touch, the house Tooltip on the desk. A host
+     that passes only `subtitle` (the quote's Send for confirmation) keeps its one line in the head as before. */
   const touch = useMediaQuery(TABLET_DOWN)
   const [howOpen, setHowOpen] = useState(false)
+  const signing = subtitle === undefined
   const fullSubtitle = subtitle ?? `Your client reviews and signs in their browser. ${signCodeLine(codeDemo)}`
-  const folded = touch && subtitleShort !== undefined && subtitleShort !== fullSubtitle
+  const short = subtitleShort ?? (signing ? SIGN_SEND_LINE : undefined)
+  const folded = short !== undefined && short !== fullSubtitle
   return (
     <Dialog open={open} onClose={onClose} title={title} size="modal" width={600}
-            subtitle={folded ? subtitleShort : fullSubtitle}
+            subtitle={folded ? short : fullSubtitle}
             footer={<>
               {link ? <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={copyLink}>{copied || sharedAt ? 'Copied' : 'Copy link'}</Button> : null}
               <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk || busy} onPress={() => { if (busy) return; setTouched(true); if (!phoneOk || !nameOk) return; void onSend({ name: name.trim(), phone: digitsOnly(phone), message: text }) }}>{sendLabel}</Button>
             </>}>
       <div className={styles.sendFields}>
-        {folded ? (
+        {folded && touch ? (
           <div className={styles.howFold} data-open={howOpen || undefined} data-testid="send-how">
             <button type="button" className={styles.howHead} aria-expanded={howOpen} onClick={() => setHowOpen((o) => !o)}><span>How signing works</span><Icon name="expand_more" size={24} /></button>
             {howOpen ? <p className={styles.howBody}>{fullSubtitle}</p> : null}
           </div>
+        ) : folded ? (
+          /* (4-20) the desk: the same words, one hover or focus away — never a vanishing snackbar, never three lines in the 64 head */
+          <span className={styles.howTip} data-testid="send-how">
+            <Tooltip label={fullSubtitle}><Button appearance="text" iconStart={<Icon name="help" size={18} />}>How signing works</Button></Tooltip>
+          </span>
         ) : null}
         {notes?.length ? (
           <div className={styles.sendNotes} role="note" data-testid="send-notes">
@@ -109,7 +120,8 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
                          nameError={touched && !nameOk ? `Enter the ${nameLabel ? nameLabel.replace(/’s name$/, '').toLowerCase() : 'client'}’s name` : undefined} phoneError={err} />
         <MessageField value={text} onChange={setText} onReset={() => setText(draft(name))} canReset={text !== draft(name)} label={messageLabel} names={[name]} />
         {extra}
-        {link ? <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div> : null}
+        {/* (4-20 · T-04) the link row only when the message doesn't already carry the link — the foot's Copy link copies it either way */}
+        {link && !text.includes(link) ? <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div> : null}
         {/* (UX audit C9) the other way a contract comes back signed — the body's last line: the foot's Copy link and Send via WhatsApp leave
             no room for it at 600 without crowding them */}
         {/* (contracts on the move, B-17) …and not on a phone, where it is the ⋮'s row and sat under the pinned foot */}
@@ -131,10 +143,9 @@ export function RecipientFields({ name, phone, onName, onPhone, nameError, phone
   return (
     <>
       <TextField label={nameLabel} required value={name} onChange={onName} error={nameError} />
-      <div className={styles.phoneRow}>
-        <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
-        <span className={styles.phoneNum}><TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => onPhone(digitsOnly(v).slice(0, 8))} error={phoneError} maxLength={9} /></span>
-      </div>
+      {/* (the calm UI build 2026-10-27, 4-20) the country code as the number's own prefix — the disabled "Code" box it sat in offered no choice
+          (the house sign-up's +65, components/auth/studio-sign-up.tsx) */}
+      <TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => onPhone(digitsOnly(v).slice(0, 8))} error={phoneError} maxLength={9} leading={phone ? '+65' : undefined} />
     </>
   )
 }
@@ -181,7 +192,8 @@ export function MessageField({ value, onChange, onReset, canReset, label = 'Mess
           <WritingHelp label={label} kind="message" nested menuAlign="left" testId="message-writing" sources={{ names: names?.filter(Boolean) }}
                        read={() => ({ html: textToHtml(value) })} apply={(h) => onChange(htmlToText(h))} />
         </span>
-        {phone ? null : <span>{value.length} characters</span>}
+        {/* (the calm UI build 2026-10-27, 4-20) the count only once it matters — past 900 (WhatsApp's message runs long past there) */}
+        {phone || value.length <= 900 ? null : <span>{value.length} characters</span>}
       </div>
     </>
   )
@@ -261,9 +273,9 @@ export function AutomationPopover({ open, onClose, reminders, thankYou, onChange
   const ref = useRef<HTMLDivElement>(null)
   /* (REG-728) Rows with a description: 320. */
   return (
-    <Dropdown open={open} onClose={onClose} align="right" width={MENU_WIDTH.detail} sheetTitle="Automation">
+    <Dropdown open={open} onClose={onClose} align="right" width={MENU_WIDTH.detail} sheetTitle="Reminders">
       <div ref={ref} data-testid="automation">
-        <div className={styles.autoHead}>Automation</div>
+        <div className={styles.autoHead}>Reminders</div>
         <AutomationRows reminders={reminders} thankYou={thankYou} onChange={onChange} />
       </div>
     </Dropdown>
@@ -273,7 +285,7 @@ export function AutomationPopover({ open, onClose, reminders, thankYou, onChange
     inside the folded actions, so the kebab's Automation showed nothing. */
 export function AutomationDialog({ open, onClose, reminders, thankYou, onChange }: { open: boolean; onClose: () => void; reminders: boolean; thankYou: boolean; onChange: (patch: { reminders?: boolean; thankYou?: boolean }) => void }) {
   return (
-    <Dialog open={open} onClose={onClose} title="Automation" size="modal" width={400} footer={<Button onPress={onClose}>Done</Button>}>
+    <Dialog open={open} onClose={onClose} title="Reminders" size="modal" width={400} footer={<Button onPress={onClose}>Done</Button>}>
       <div data-testid="automation-dialog"><AutomationRows reminders={reminders} thankYou={thankYou} onChange={onChange} /></div>
     </Dialog>
   )

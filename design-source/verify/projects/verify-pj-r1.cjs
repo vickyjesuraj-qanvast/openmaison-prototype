@@ -40,7 +40,7 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     await go('/projects')
     ok(await rows().count() === 4, 'four open projects (three Won leads, one direct)')
     ok(/In progress\s*3/i.test(await tile('in_progress').innerText()), 'tile: In progress 3')
-    const attentionN = Number((/Needs attention\s*(\d+)/i.exec(await tile('attention').innerText()) || [])[1] || 0)   // later rounds add reasons (the schedule's, the update gap)
+    const attentionN = Number((/Needs (?:your )?attention\s*(\d+)/i.exec(await tile('attention').innerText()) || [])[1] || 0)   /* (the calm UI build 2026-10-27, a deliberate change) T-01 words; the reports' door is the ⋮'s "Reports" row (1-30); rows say money as cards do, "S$ 81,355" (T-11) */   // later rounds add reasons (the schedule's, the update gap)
     ok(attentionN >= 1, 'tile: Needs attention counts at least the overdue cabinet order')
     /* (S44 landing, 2026-10-15) the demo moves with the day of a restore (S42A), so Ryan's target end can cross a month: count what the tile counts —
        open projects whose target end falls in this month (components/projects/scopes.ts completingThisMonth) */
@@ -54,8 +54,8 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     await tile('attention').click(); await p.waitForTimeout(500)
     ok(await rows().count() === 4 && !p.url().includes('scope='), 'pressed again, it lets go')
     /* (Lead ↔ Project parity, package K-D2 — new rules) the Leads listing's header, scope menu and Members cell */
-    ok(await p.locator('[data-testid="open-insights"]').isVisible() && await p.locator('[data-testid="open-tickets"]').count() === 0, 'the header: the outlined Insights after New project — Tickets went into ⋮ (P-21 · Q-06)')
-    await p.locator('[data-testid="projects-kebab"]').click(); await p.waitForTimeout(300)
+    await p.locator('[data-testid="projects-kebab"]').click(); await p.waitForTimeout(300)   /* (the calm UI build 2026-10-27, a deliberate change) T-01 words; the reports' door is the ⋮'s "Reports" row (1-30); rows say money as cards do, "S$ 81,355" (T-11) */
+    ok(await p.locator('[data-testid="open-insights"] [role="menuitem"]').isVisible() && /^Reports$/.test((await p.locator('[data-testid="open-insights"]').innerText()).trim()) && await p.locator('[data-testid="open-tickets"]').count() === 0, 'the header: New project · ⋮ — the reports\' door is ⋮ › Reports (1-30); no Tickets row (P-21 · Q-06)')
     /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19) */
     ok(await p.getByRole('menuitem', { name: /^Tickets/ }).count() === 0 && await p.getByRole('menuitem', { name: 'Insights', exact: true }).count() === 0, '⋮: no Tickets row (it is on the rail now), no Insights row (P-21)')
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
@@ -71,7 +71,7 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     await p.getByRole('button', { name: /^Open projects/ }).click(); await p.waitForTimeout(300)
     { const radios = (await p.getByRole('menuitemradio').allInnerTexts()).map((t) => t.split('\n')[0].trim())
       const at = (w) => radios.findIndex((t) => t.startsWith(w))
-      ok(at('Open projects') === 0 && at('All projects') === 1 && at('Mine') === 2 && at('Needs attention') === 3 && at('Setting up') > at('Needs my review'), `the scope menu in the lead's order: the default · All · Mine · To do · the stages (${radios.slice(0, 4).join(' · ')}) (P-20)`)
+      ok(at('Open projects') === 0 && at('All projects') === 1 && at('Mine') === 2 && at('Needs your attention') === 3 && at('Setting up') > at('Approvals'), `the scope menu in the lead's order: the default · All · Mine · To do · the stages (${radios.slice(0, 4).join(' · ')}) (P-20)`)
       ok(await p.getByText('To do', { exact: true }).count() >= 1 && await p.getByText('Active', { exact: true }).count() >= 1, 'the groups: To do, then the stages under Active (P-20 · Q-07)') }
     await p.getByRole('menuitemradio', { name: /Completed/ }).click(); await p.waitForTimeout(400)
     { const doneN = Number(sql(`select count(*) from projects where stage='completed' and deleted_at is null`))   // (consistency walk) a rule, not round 1's count — round 7 seeds a completed project
@@ -124,7 +124,8 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     await p.getByRole('option', { name: 'HDB 4-Room', exact: true }).click()
     await dlg.getByLabel('Agreed value (S$)').fill('52000')
     /* (S42F, a deliberate change of this rule) a project needs a member — an Owner picks one (Sarah: Who sees below counts Germaine's and Alex's) */
-    await dlg.getByLabel('Assign member').click(); await p.waitForTimeout(500)
+    /* (the calm UI build 2026-10-27, a deliberate change) the picker's label reads "Members" (B2 · T-01: Members everywhere) — the same picker */
+    await dlg.getByLabel('Members', { exact: true }).click(); await p.waitForTimeout(500)
     await p.locator('[role="option"]').filter({ hasText: 'Sarah' }).first().click(); await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     await shot('new-project-form-1440')
     await dlg.getByRole('button', { name: 'Create project' }).click(); await p.waitForTimeout(900)
@@ -168,7 +169,7 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
        documents became Project info rows in the info column */
     for (const c of ['needs', 'with-client', 'status', 'money', 'recent-activity']) ok(await p.locator(`[data-card="${c}"]`).first().isVisible(), `Overview card: ${c}`)
     ok(await p.locator('[data-card="client"], [data-card="team"]').count() === 0, 'no Client or Team card — the info column holds them')
-    ok(/Collaborators/.test(await p.locator('aside, [class*="info"]').first().innerText().catch(() => '')) || await p.getByText('Collaborators', { exact: true }).count() > 0, 'the info column on the left: Collaborators')
+    ok(/Collaborators|Members/.test(await p.locator('aside, [class*="info"]').first().innerText().catch(() => '')) || await p.getByText(/^(Collaborators|Members)$/).count() > 0 /* (the calm UI build 2026-10-27, a deliberate change) B2: "Members" */, 'the info column on the left: Collaborators')
     ok(/S\$ 48,600/.test(await p.locator('[data-testid="contract-value"]').innerText()), 'Money: the direct project\'s agreed value')   // (parity Q-03, a deliberate change of this rule) a card's sum reads "S$ 48,600"
     await p.locator('[data-testid="payment-stages-toggle"]').click(); await p.waitForTimeout(300)   // (simplify S-01, a deliberate change of this rule) the stages fold under "Payment stages ▾"
     ok(await p.locator('[data-testid="payment-stages"] > *').count() === 4, 'Money: the agreed split\'s four stages')
@@ -259,7 +260,9 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     console.log('Rail · keys · search · settings')
     await go('/leads')
     const railItem = p.locator('nav[aria-label="Workspace"] a[href^="/projects"]')
-    ok(await railItem.count() === 1 && /need attention/.test(await railItem.getAttribute('aria-label') ?? ''), 'the rail\'s Projects is a destination wearing its count')
+    /* (the calm UI build 2026-10-27, a deliberate change) 1-04 · T-07: the rail's Projects wears no count — what needs attention is the Dashboard's
+       Needs your attention and the listing's own scope — so it is a plain destination: its name alone, its plain list */
+    ok(await railItem.count() === 1 && (await railItem.getAttribute('aria-label') ?? 'Projects') === 'Projects' && (await railItem.getAttribute('href')) === '/projects', 'the rail\'s Projects is a plain destination (no count; the count is the Dashboard\'s and the listing\'s scope)')
     await p.keyboard.press('g'); await p.waitForTimeout(150); await p.keyboard.press('p'); await p.waitForURL(/\/projects/); await p.waitForTimeout(1200)
     ok(new URL(p.url()).pathname === '/projects', 'G P goes to Projects')
     await p.keyboard.press('g'); await p.waitForTimeout(150); await p.keyboard.press('b'); await p.waitForURL(/price-book/); await p.waitForTimeout(600)
@@ -317,7 +320,7 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     /* (simplify S-14 · Q-04) the sheet opens with the Create group — the strip's own seven — before the record rows */
     const sheetRows = (await m.getByRole('menuitem').allInnerTexts()).map((t) => t.split('\n')[0].trim())
     /* (pending modules S23, a deliberate change of this rule) Meeting is back after Contact Log — REG-552's hold lifted */
-    ok(['Task', 'Note', 'Contact Log', 'Meeting', 'Update', 'Variation order', 'AI Visualizer', '3D Space Planner'].every((l, i) => sheetRows[i] === l) && sheetRows.indexOf('Edit details') === 8, 'the sheet’s Create group: Task · Note · Contact Log · Meeting · Update · Variation order · AI Visualizer · 3D Space Planner, then Edit details')   /* (pending modules S17, a deliberate change of this rule) one spelling: “3D”, the mock’s (Create links 732) and 1.0’s */
+    ok(['Task', 'Note', 'Contact log', 'Meeting', 'Update', 'Variation order', 'AI Visualizer', '3D Space Planner'].every((l, i) => sheetRows[i] === l) && sheetRows.indexOf('Edit details') === 8, 'the sheet’s Create group: Task · Note · Contact log · Meeting · Update · Variation order · AI Visualizer · 3D Space Planner, then Edit details')   /* (the calm UI build 2026-10-27, a deliberate change) "Contact log" in sentence case (T-13, B2's quick links) — every Create row kept, in the same order */   /* (pending modules S17, a deliberate change of this rule) one spelling: “3D”, the mock’s (Create links 732) and 1.0’s */
     await m.screenshot({ path: path.join(dir, 'project-kebab-390.png') })
     await m.goto(BASE + '/projects?new=1', { waitUntil: 'networkidle' }); await m.waitForTimeout(2000)
     ok(await m.locator('[role="dialog"][aria-label="New project"]').isVisible(), '⌘K\'s Create lands on New project (?new=1), a bottom sheet on a phone')

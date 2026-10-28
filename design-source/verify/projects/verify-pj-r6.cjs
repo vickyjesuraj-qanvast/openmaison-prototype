@@ -15,6 +15,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'r6')
@@ -115,7 +116,7 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     ok(/S\$20,784\.94/.test(await s.locator('[data-testid="tile-collect"]').innerText()) && /S\$20,784\.94 overdue/.test(await s.locator('[data-testid="tile-collect"]').innerText()), 'To collect S$20,784.94 — overdue')
     await allNeeds(s)
     const over = s.locator('[data-testid="invoice-overdue"]')
-    ok(await over.count() === 1 && /INV-2026-006 · Mid-Project/.test(await over.innerText()) && /S\$20,784\.94/.test(await over.innerText()) && reOf(`${MID_LATE <= 1 ? 'A day' : `${MID_LATE} days`} overdue · due ${dayMonthOf(MID_DUE)}`).test(await over.innerText()), `the overdue row (Needs you): the invoice, the stage, the amount, days and due day (${MID_LATE} days · ${dayMonthOf(MID_DUE)})`)
+    ok(await over.count() === 1 && /INV-2026-006 · Mid-Project/.test(await over.innerText()) && /S\$20,784\.94/.test(await over.innerText()) && reOf(`${MID_LATE <= 1 ? 'A day' : `${MID_LATE} days`} overdue · due ${dayLabelOf(MID_DUE)}`).test(await over.innerText()), `the overdue row (Needs you): the invoice, the stage, the amount, days and due day (${MID_LATE} days · ${dayLabelOf(MID_DUE)})`)   // (Dashboard redesign 2026-10-26, a deliberate change) the due day is the list's planning day, "Fri 2 Oct" (P-13, dates one way)
     const stages = await s.locator('[data-testid="money-stages"]').innerText()
     ok((stages.match(/PAID/gi) ?? []).length >= 2 && /OVERDUE/i.test(stages), 'Billing reads Paid · Paid · Overdue')
     const benCom = receiptOf(ben, 'Commencement', 'confirmed')
@@ -131,26 +132,29 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     ok(/Send back/.test(await dialog(s).innerText().catch(() => '')), '&do=sendback opens PO-2026-008’s Send back note (R2-A)')
     await s.keyboard.press('Escape'); await settle(s, 400)
     await go(s, `/projects/${ben}/money`)
-    await billingView(s, 'Payments')
+    await billingView(s, 'Collected')   // (the calm UI build 2026-10-27, a deliberate change) T-01: Client payments' view of the money in reads "Collected"
     ok(await pays(s).count() === 2 && !!benCom && new RegExp(esc(benCom)).test(await pays(s).first().innerText()) && /Germaine/.test(await pays(s).first().innerText()), `Payments (the admin’s view): two receipts, the newest Germaine’s PayNow (${benCom})`)
     await billingView(s, 'All')
     await allNeeds(s)   // (simplify round 2) the overdue row may rest under Needs you's "Show n more" once the approvals lead it
     // Remind on WhatsApp — opened on the press, recorded
     await s.evaluate(() => { window.__opened = [] })
-    await over.locator('[data-testid="invoice-remind"]').click(); await settle(s, 1500)
+    await over.locator('[data-testid="invoice-overdue-more"]').click(); await settle(s, 300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    await s.locator('[data-testid="invoice-remind"] [role="menuitem"]').click(); await settle(s, 1500)
     const wa = await s.evaluate(() => window.__opened[0] ?? '')
     ok(/wa\.me\/6597731968/.test(wa) && /INV-2026-006/.test(decodeURIComponent(wa)) && /S\$20,784\.94/.test(decodeURIComponent(wa)) && /\/my\/demo-studio/.test(decodeURIComponent(wa)), 'Remind on WhatsApp opens on the press: his number, the invoice, the amount, his portal')
     ok(/[Rr]eminder drafted/.test(await snack(s).innerText())   /* (parity map, a deliberate change of this rule) MI-068: the third reads "Third reminder drafted…" */ && sql(`select count(*) from lead_events where kind='project_invoice_reminded' and at >= ${T0}`) === '1', 'the reminder is recorded (a line in Activity)')
     // the bell: a derived overdue row for the team
     await s.getByRole('button', { name: /^Notifications/ }).first().click(); await settle(s, 1200)
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-20) what is due rests under the bell's last line, "Due · n · Show": opened first */
+    { const fold = s.getByTestId('notifications-due-fold'); if (await fold.count() && (await fold.getAttribute('aria-expanded')) !== 'true') { await fold.click(); await settle(s, 400) } }
     ok(/Overdue: INV-2026-006 · S\$20,784\.94/.test(await s.locator('[data-testid="notifications-panel"]').innerText()), 'the bell: "Overdue: INV-2026-006 · S$20,784.94" for the team (derived from the date)')
     await s.keyboard.press('Escape'); await settle(s, 400)
     // Ryan: a proof waiting for Michelle; Aisha: the reversed cheque
     await go(s, `/projects/${ryan}/money`)
     const wait = s.locator('[data-testid="payment-to-confirm"]')
-    ok(await wait.count() === 1 && /Ryan says they paid for/.test(await wait.innerText()) && /S\$13,370\.04/.test(await wait.innerText()) /* (fix-D, D-44) one form of the name: the story's */ && await wait.locator('[data-testid="payment-proof-link"]').count() === 1, 'Ryan: his proof waits — "says they paid S$13,370.04", the bank’s confirmation one press away')
+    ok(await wait.count() === 1 && /Ryan says they paid( for)? /.test(await wait.innerText()) && /S\$ ?13,370/.test(await wait.innerText()) /* (fix-D, D-44) one form of the name: the story's */ && await wait.locator('[data-testid="payment-to-confirm-more"]').count() === 1   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */, 'Ryan: his proof waits — "says they paid S$13,370.04", the bank’s confirmation one press away')
     ok(/PAYMENT TO CONFIRM/i.test(await s.locator('[data-testid="money-stages"] [data-invoice]').nth(1).innerText()), 'his Commencement reads Payment to confirm (never Overdue while it waits)')
-    await go(s, `/projects/${aisha}/money`); await billingView(s, 'Payments')
+    await go(s, `/projects/${aisha}/money`); await billingView(s, 'Collected')   // (the calm UI build 2026-10-27, a deliberate change) T-01: Client payments' view of the money in reads "Collected"
     const rev = s.locator('[data-payment][data-status="reversed"]')
     ok(await rev.count() === 1 && /The cheque was returned unpaid by the bank/.test(await rev.innerText()), 'Aisha: the reversed cheque, with its reason')
     const aishaRev = receiptOf(aisha, 'Deposit', 'reversed')
@@ -220,14 +224,16 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     ok((await s.locator('[data-kb-row]').allInnerTexts()).some((t) => /Benjamin/.test(t)), '“Needs my review” holds Benjamin’s project for its confirmer')
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
     const ask = s.locator('[data-testid="payment-to-confirm"]')
-    ok(/Benjamin says they paid for INV-2026-006/.test(await ask.innerText()) /* (fix-D, D-44) */ && /S\$20,784\.94/.test(await ask.innerText()) && /FT2610051133/.test(await ask.innerText()), 'the Needs you row: who, how much, the reference')
+    ok(/Benjamin says they paid( for)? INV-2026-006/.test(await ask.innerText()) /* (fix-D, D-44) */ && /S\$ ?20,78[45]/.test(await ask.innerText()) && /FT2610051133/.test(await ask.innerText()), 'the Needs you row: who, how much, the reference')
     ok(!/overdue/i.test(await s.locator('[data-testid="money-stages"]').innerText()) && /PAYMENT TO CONFIRM/i.test(await s.locator('[data-testid="money-stages"]').innerText()), 'the invoice reads Payment to confirm, no longer Overdue')
     await shot(s, 'to-confirm-1440')
     /* (simplify S-07, a deliberate change of this rule) the proof is the Needs you row's own button — it opens the file in the project's Files */
-    await ask.locator('[data-testid="payment-proof-link"]').click(); await s.waitForURL(/\/projects\/[^/]+\/files\//, { timeout: 15000 }).catch(() => {})
+    await ask.locator('[data-testid="payment-to-confirm-more"]').click(); await settle(s, 300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    await s.locator('[data-testid="payment-proof-link"] [role="menuitem"]').click(); await s.waitForURL(/\/projects\/[^/]+\/files\//, { timeout: 15000 }).catch(() => {})
     ok(/\/projects\/[^/]+\/files\//.test(s.url()), 'the bank’s confirmation opens in the project’s Files')
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
-    await ask.locator('[data-testid="payment-not-received"]').click(); await settle(s, 600)
+    await ask.locator('[data-testid="payment-to-confirm-more"]').click(); await settle(s, 300)   /* (the calm UI build 2026-10-27, a deliberate change) one verb a row — its other steps are the row's ⋮ (3-05 · 3-22); amounts as on every row, "S$ 13,370" (T-11) */
+    await s.locator('[data-testid="payment-not-received"] [role="menuitem"]').click(); await settle(s, 600)
     await dialog(s).getByLabel('Why — what didn’t match?').fill('Not in our account yet — please check the account number')
     await dialog(s).getByRole('button', { name: 'Mark not received' }).click(); await settle(s, 2000)
     ok(midState()[0].status === 'not_received' && /Marked not received/.test(await snack(s).innerText()), 'Not received, with the reason')
@@ -240,7 +246,8 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     ok(midState()[0].status === 'to_confirm', 'sent again')
     await go(s, `/projects/${ben}/money`); await allNeeds(s)
     const rct2 = nextReceiptNo()   // the Undo gave its number back: the confirmation takes the next one by the rule
-    await s.locator('[data-testid="payment-confirm"]').click(); await settle(s, 2000)
+    await s.locator('[data-testid="payment-confirm"]').click(); await settle(s, 600)   /* (the calm UI build 2026-10-27, a deliberate change) the approved confirm step: Confirm asks once more */
+    await s.getByRole('dialog').last().getByRole('button', { name: 'Confirm payment' }).click(); await settle(s, 2000)
     const conf = json(`select status, receipt_number, confirmed_by from project_payments where invoice_id='${mid}' and status='confirmed'`)[0]
     ok(conf && conf.receipt_number === rct2 && conf.confirmed_by === 'germaine' && new RegExp(`Confirmed — S\\$20,784\\.94 from Benjamin, receipt ${esc(rct2)}`).test(await snack(s).innerText()), `Confirm: ${rct2}, by Germaine`)
     await settle(s, 800)
@@ -263,7 +270,7 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     // ── Reverse (an Owner's), the receipt reads Reversed (F-18) ─────────────────────────────────────────────────────────────
     console.log('Reverse')
     as('dane')
-    await go(s, `/projects/${ben}/money`); await billingView(s, 'Payments')
+    await go(s, `/projects/${ben}/money`); await billingView(s, 'Collected')   // (the calm UI build 2026-10-27, a deliberate change) T-01: Client payments' view of the money in reads "Collected"
     await s.locator('[data-payment][data-status="confirmed"]').first().getByRole('button', { name: /More actions for the payment/ }).click(); await settle(s, 400)
     await s.getByRole('menuitem', { name: 'Reverse' }).click(); await settle(s, 500)
     await dialog(s).getByLabel('Why is it reversed?').fill('Recorded against the wrong invoice')
@@ -285,7 +292,7 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     await card.scrollIntoViewIfNeeded()
     const nextNo = nextReceiptNo()   // a reversed receipt keeps its number: the next is one past it
     /* (one-home N-14, a deliberate change of this rule) the card is "Client payments" now */
-    ok(/Client payments/.test(await card.innerText()) && /Who confirms a client’s payment/i.test(await card.innerText()) && /Trust the client’s proof/.test(await card.innerText()) && new RegExp(esc(nextNo)).test(await s.getByTestId('receipt-number-example').innerText()), `Settings › Finance › Client payments: who confirms, the trust switch; Document numbers: the receipt numbers (next ${nextNo})`)
+    ok(/Client payments/.test(await card.innerText()) && /Who confirms a client’s payment/i.test(await card.innerText()) && /Count a client’s proof of payment before you check it|Trust the client’s proof/.test(await card.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-414 */ && new RegExp(esc(nextNo)).test(await s.getByTestId('receipt-number-example').innerText()), `Settings › Finance › Client payments: who confirms, the trust switch; Document numbers: the receipt numbers (next ${nextNo})`)
     await card.locator('[data-testid="payment-trust-row"] label').first().click(); await settle(s, 1500)
     ok(JSON.parse(sql(`select value from settings where key='project_payments'`) || '{}').trust === true, 'Trust the client’s proof: on')
     await shot(s, 'settings-payments-1440', false)
@@ -337,6 +344,7 @@ const receiptOf = (projectId, stage, status) => sql(`select x.receipt_number fro
     await go(s, `/projects/${ryan}/files`)
     ok(/Payments/.test(await s.locator('main').innerText()), 'Files: the Payments folder')
     await go(s, '/settings?section=studio')
+    await openRoles(s)   // (the calm UI build 2026-10-27, a deliberate change)
     const rules = await s.locator('body').innerText()
     ok(/Record a client’s payment on a project/.test(rules) && /Confirm a payment a client says they made/.test(rules) && /Reverse a confirmed payment/.test(rules), 'Who may do what: record · confirm · reverse')
     await S.close()

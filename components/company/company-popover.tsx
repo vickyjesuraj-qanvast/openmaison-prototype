@@ -7,12 +7,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { anchoredSurface } from '@/lib/motion'
 import { COMPANY_GROUPS, type CompanyGroup, type CompanySection } from '@/lib/company/sections'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './company-popover.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
 import { leaveThen } from './leave-guard'
+
+/** (the calm UI build 2026-10-27 — §2: Approvals) what waits for an Owner's or an Admin's OK in a section, in one word */
+const approvals = (n: number) => `${n} ${n === 1 ? 'approval' : 'approvals'}`
 
 /**
  * Company (REG-484; owner 2026-09-17: "the navigation is in the sidebar only"): the rail's item opens the Tools panel's
@@ -36,18 +40,21 @@ export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, pr
         <div key={g.title} className={styles.group} role="group" aria-label={g.title}>
           <span className={styles.eyebrow} data-menu-label="" role="presentation">{g.title}</span>   {/* (REG-728) the house group title */}
           {g.items.map((s) => (
-            <button key={s.key} type="button" role="menuitem" className={styles.row} data-on={isOn(s) || undefined} aria-current={isOn(s) ? 'page' : undefined} onClick={() => pick(s)}>
+            /* (the calm UI build 2026-10-27 — 1-15 · 5-40) the row is its name: the section's one line, which was always cut under it, is the row's
+               tooltip (and ⌘K's sub line); (1-02 · W-073 · W-074 · W-078 · W-088) what waits there is one quiet word — "n approvals" */
+            <Tooltip key={s.key} label={s.help} side="right" disabled={sheet}>
+            <button type="button" role="menuitem" className={styles.row} data-on={isOn(s) || undefined} aria-current={isOn(s) ? 'page' : undefined} onClick={() => pick(s)}>
               <span className={styles.glyph}><Icon name={s.icon} size={20} weight={300} fill={isOn(s)} /></span>
               <span className={styles.text}>
                 <span className={styles.label}>{s.label}</span>
-                <span className={styles.help}>{s.help}</span>
               </span>
-              {s.key === 'templates' && awaiting > 0 ? <span className={styles.await}>{awaiting} awaiting</span> : null}
-              {s.key === 'price-book' && proposed > 0 ? <span className={styles.await}>{proposed} proposed</span> : null}
+              {s.key === 'templates' && awaiting > 0 ? <span className={styles.await}>{approvals(awaiting)}</span> : null}
+              {s.key === 'price-book' && proposed > 0 ? <span className={styles.await}>{approvals(proposed)}</span> : null}
               {s.key === 'plan' && asks > 0 ? <span className={styles.await}>{asks} {asks === 1 ? 'ask' : 'asks'}</span> : null}
-              {s.key === 'finance' && money > 0 ? <span className={styles.await} data-testid="company-finance-badge">{money} to approve</span> : null}
+              {s.key === 'finance' && money > 0 ? <span className={styles.await} data-testid="company-finance-badge">{approvals(money)}</span> : null}
               {s.href ? null : <span className={styles.soon}>Soon</span>}
             </button>
+            </Tooltip>
           ))}
         </div>
       ))}
@@ -66,7 +73,7 @@ export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, pr
       {open ? (
         <motion.div ref={place} className={`${menuStyles.menu} ${styles.popover}`} role="menu" aria-label="Company" data-om-menu
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', zIndex: 130 }}>
-          <span className={styles.title}>Company</span>
+          <span className={styles.title}>Company</span>   {/* (W-147) one heading, in sentence case — the groups below wear the house group title */}
           {list}
         </motion.div>
       ) : null}

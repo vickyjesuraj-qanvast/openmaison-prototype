@@ -18,7 +18,7 @@ import { MessageField, RecipientFields, SendFields } from '@/components/contract
  * (REG-640, parity Q-16) What went out is kept: Copy and the send stamp the reading with the text as it stood, the dialog opens on that
  * text next time (Reset message brings the screen's draft back), and the lead's Activity says so.
  * (UX audit 2026-09-30, C12) One WhatsApp dialog, one behaviour: the contract's Send dialog's recipient — the client's name over the +65
- * number, the lead's to start — so Send via WhatsApp opens that client's chat (a valid SG number, REG-547, as the contract's send needs);
+ * number, the lead's to start — so Send on WhatsApp (the calm UI build 2026-10-27, W-058: one verb for the WhatsApp send) opens that client's chat (a valid SG number, REG-547, as the contract's send needs);
  * the greeting follows the name while the message is the draft; the subtitle says what the button does; after the send the host's
  * snackbar offers "Add a follow-up".
  */
@@ -61,10 +61,10 @@ export function SendDialog({ open, onClose, comparisonId, draft, sent, defaults,
   return (
     <>
       <Dialog open={open} onClose={tryClose} title="Send to client" size="modal" width={600}
-              subtitle="Check who it goes to and edit the message so it sounds like you. Send via WhatsApp opens your chat with them, the message ready to send."
+              subtitle="Check who it goes to and edit the message so it sounds like you. Send on WhatsApp opens your chat with them, the message ready to send."
               footer={<>
                 <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={() => { void copy().then((ok) => { if (ok) keep('copy') }) }}>{copied ? 'Copied' : 'Copy message'}</Button>
-                <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk} onPress={send}>Send via WhatsApp</Button>
+                <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk} onPress={send}>Send on WhatsApp</Button>
               </>}>
         <SendFields>
           <RecipientFields name={name} phone={phone} phoneLabel="Client phone" onName={(v) => { setName(v); setText((t) => (t === draft(name) ? draft(v) : t)) }} onPhone={setPhone}

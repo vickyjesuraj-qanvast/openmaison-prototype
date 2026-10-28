@@ -5,6 +5,7 @@ import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
 import { MSG } from '@/lib/forms'
 import { digitsOnly, inputDate, isSgPhone, parseInputDate, phoneTyped } from '@/lib/format'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 import { money2 } from '@/lib/quotes/math'
 import styles from './section-screen.module.css'
 
@@ -12,7 +13,7 @@ export type DetailsQuote = { id: string; number: string; title: string; amountMi
 export type DetailsFocus = 'title' | 'recipient' | 'date' | 'quote' | null
 
 const NO_QUOTE = 'No quote'
-const labelOf = (q: DetailsQuote) => `${q.number} · ${money2(q.amountMinor)} · ${q.status}`
+const labelOf = (q: DetailsQuote) => `${q.number} · ${money2(q.amountMinor)} · ${quoteStatusLabel(q.status)}`   // (the calm UI build 2026-10-27, T-01) the quote's state in the one set of words
 
 /**
  * (Contracts on the move, P-02 — his "please check and built accordingly" 2026-10-22; absorbs B-01 B-02 B-11 B-16 C-22) **Details** is one form:

@@ -15,6 +15,7 @@ import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { Quote } from '@/lib/db/schema'
+import { QUOTE_TODO_LABEL } from '@/lib/quotes/status-words'
 import { EMPTY_QUOTE_FILTERS, QUOTE_TODOS, activeQuoteFilterCount, applyQuoteFilters, nextQuoteHeadSort, quickMatch, quoteTodoCounts, searchQuotes, sortQuotesByHead, type QuoteFilters, type QuoteHeadSort, type QuoteQuick, type QuoteSortKey, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { useQuoteStatus } from './use-quote-status'
 import { useContractFromQuote } from '@/components/quotes/send/contract-from-quote'
@@ -158,7 +159,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   return (
     <div className={styles.tab}>
       <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={quotes.length === 0}   /* (REG-735) the empty card carries Create */
-        todos={QUOTE_TODOS.map((t) => ({ key: t.key, label: t.label(todoCounts[t.key]), count: todoCounts[t.key], icon: t.icon, selected: quick === t.key, onClick: () => setQuick((q) => (q === t.key ? '' : t.key)) }))}
+        todos={QUOTE_TODOS.map((t) => ({ key: t.key, label: QUOTE_TODO_LABEL[t.key](todoCounts[t.key]), count: todoCounts[t.key], icon: t.icon, selected: quick === t.key, onClick: () => setQuick((q) => (q === t.key ? '' : t.key)) }))}
         query={query} onQuery={setQuery}
         onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}

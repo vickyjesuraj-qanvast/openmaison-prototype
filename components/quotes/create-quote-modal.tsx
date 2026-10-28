@@ -26,7 +26,8 @@ import { ago } from '@/lib/templates/ago'
 import { pickerTemplates, startsLine, type PickerData, type PickerExtras } from '@/lib/templates/picker'
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
-import { UPLOAD_ACCEPT, UPLOAD_KINDS, unreadHelp, type UploadRead } from '@/lib/quotes/upload'
+import { UPLOAD_ACCEPT, unreadHelp, type UploadRead } from '@/lib/quotes/upload'
+import { presetLabel } from '@/lib/quotes/payments'
 import { readQuoteUpload } from '@/lib/quotes/read-upload'   // (S42 B·4 · E-05) the one reader
 import { UploadReadingView } from './upload-reading'
 import { Dropzone } from '@/components/leads/move-stage/fields'   // (S46A) the house drop box — the website's Upload a quote trial draws the same
@@ -61,7 +62,14 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { ki
  * ≤767 it is the canvas' bottom sheet (REG-353). (pending modules S04) Draft with Maison AI is a rule-built first cut from the price book
  * (lib/quotes/draft.ts) — the brief, the lines it drafts as you type, Create the quote; Upload's chip names what it truly reads.
  */
-export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, recent = [], priceBookCount, render, preselect, opensOn = null, onUpload, onDraft }: {
+/** (the calm UI build 2026-10-27, the UI audit's 4-32) What tells two templates apart on a tile — its starter sections' count and its payment
+    split — where the first words of the same sections were cut on every tile; the list itself rides the tile's title tip. */
+function tileFacts(d: { starterGroups: unknown; paymentPreset: string | null }): string {
+  const n = Array.isArray(d.starterGroups) ? d.starterGroups.filter((g) => typeof g === 'string' && g.trim()).length : 0
+  return [n ? `${n} ${n === 1 ? 'section' : 'sections'}` : 'An empty list', presetLabel(d.paymentPreset ?? 'default')].join(' · ')
+}
+
+export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, recent = [], priceBookCount: _priceBookCount, render, preselect, opensOn = null, onUpload, onDraft }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
@@ -203,7 +211,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   const published = picker ? picker.templates : templates.filter((t) => t.status === 'published' && !t.deletedAt)
   const rail = published.slice(0, RAIL_MAX)
   const forName = clients ? client?.name ?? '' : leadName
-  const title = forName ? `Start a quote for ${forName}` : 'Start a quote'
+  const title = forName ? `New quote for ${forName}` : 'New quote'   // (the calm UI build 2026-10-27, W-382) the button that opens it names it
   const pickedId = mode.kind === 'all' && picker ? defaultPick(picker, mode.selectedId) : null   /* (REG-518) the picker's selection; the footer acts on it */
   /* (K4 — P-10) The phone's four rows: the studio's default template (or its first published one) leads; Blank quote; Upload; Draft. */
   const defaultTpl = published.find((t) => t.isDefault) ?? published[0] ?? null
@@ -257,7 +265,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                         <button type="button" className={styles.phoneMain} onClick={() => start(defaultTpl.id)} aria-label={`Use ${defaultTpl.name}`}>
                           <span className={styles.glyph}><Icon name="description" size={20} weight={300} /></span>
                           <span className={styles.rowText}>
-                            <span className={styles.rowTitle}>{defaultTpl.name}{defaultTpl.isDefault ? <MetaChip>Default</MetaChip> : null}{tplLocked ? <ProTag /> : null}</span>
+                            <span className={styles.rowTitle}>{defaultTpl.name}{defaultTpl.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}{tplLocked ? <ProTag /> : null}</span>
                             <span className={styles.rowDesc}>{'defaults' in defaultTpl ? startsLine(defaultTpl) : meta(defaultTpl)}</span>
                           </span>
                         </button>
@@ -265,16 +273,16 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                       </div>
                     ) : null}
                     <div className={styles.phoneRow} data-testid="create-row-blank">
-                      <button type="button" className={styles.phoneMain} onClick={() => start(null)} aria-label="Blank quote — the default template’s settings, an empty table">
+                      <button type="button" className={styles.phoneMain} onClick={() => start(null)} aria-label="Blank quote — start with an empty list">
                         <span className={styles.glyph}><Icon name="add" size={20} weight={300} /></span>
-                        <span className={styles.rowText}><span className={styles.rowTitle}>Blank quote</span><span className={styles.rowDesc}>The default template’s settings, an empty table</span></span>
+                        <span className={styles.rowText}><span className={styles.rowTitle}>Blank quote</span><span className={styles.rowDesc}>Start with an empty list</span></span>
                         <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
                       </button>
                     </div>
                     <div className={styles.phoneRow} data-testid="upload-quote-row">
                       <button type="button" className={styles.phoneMain} onClick={onUpload ? chooseFile : comingSoon}>
                         <span className={styles.glyph}><Icon name="upload_file" size={20} weight={300} /></span>
-                        <span className={styles.rowText}><span className={styles.rowTitle}>Upload a quote</span><span className={styles.rowDesc}>{`${UPLOAD_KINDS} · ${costOf('quote_digitize')} AI credits`}</span></span>
+                        <span className={styles.rowText}><span className={styles.rowTitle}>Upload a quote</span><span className={styles.rowDesc}>{`Spreadsheet or PDF · ${costOf('quote_digitize')} credits`}</span></span>
                         <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
                       </button>
                     </div>
@@ -283,7 +291,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                         <button type="button" className={styles.phoneMain} onClick={openDraft}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <span className={styles.glyph}><img src="/figma-assets/maison-ai-mark.svg" alt="" /></span>
-                          <span className={styles.rowText}><span className={styles.rowTitle}>Draft with Maison AI</span><span className={styles.rowDesc}>Describe the scope — a first cut from your {priceBookCount ? `${priceBookCount}-item ` : ''}price book</span></span>
+                          <span className={styles.rowText}><span className={styles.rowTitle}>Draft with Maison AI</span><span className={styles.rowDesc}>Describe the work; Maison AI drafts it from your Price book.</span></span>
                           <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
                         </button>
                       </div>
@@ -322,7 +330,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                    dropped file is read as a chosen one — the same read, the same 5 AI credits, said on the box as on the row's chip */
                 <section className={styles.block} aria-label="Upload a quote" data-testid="upload-quote-choose">
                   <p className={styles.uploadHelp}>Bring in an existing quote’s lines from a spreadsheet or a PDF — we read them into editable line items</p>
-                  <Dropzone title={<>Drop the quote here or <b>browse</b></>} helper={`${UPLOAD_KINDS} · ${costOf('quote_digitize')} AI credits`} accept={UPLOAD_ACCEPT} label="Upload a quote"
+                  <Dropzone title={<>Drop the quote here or <b>browse</b></>} helper={`Spreadsheet or PDF · ${costOf('quote_digitize')} credits`} accept={UPLOAD_ACCEPT} label="Upload a quote"
                             onBrowse={chooseFile} onPick={(f) => { if (f) void pickFile(f) }} />
                 </section>
               ) : mode.kind === 'upload' ? (
@@ -347,25 +355,25 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                 /* (REG-494) Every published template, searchable, with the one in hand drawn large — inside the modal. */
                 <section className={styles.block} data-fill aria-label="All templates">
                   <TemplatePicker data={picker} picked={pickedId} onPick={(id) => setMode({ kind: 'all', selectedId: id })} now={now} onUse={(id) => start(id)}
-                                  blank={{ label: 'Blank Quote', onUse: () => start(null) }} />
+                                  blank={{ label: 'Blank quote', onUse: () => start(null) }} />
                 </section>
               ) : (
                 <>
                   {/* Templates: eyebrow row, then the rail — Blank Quote first (Figma 1209), then the studio's templates. */}
                   <section className={styles.block} aria-label="From a template">
                     <div className={styles.eyebrowRow}>
-                      <span className={styles.eyebrow}>From a template · {published.length} saved{tplLocked ? <> <ProTag /></> : null}</span>
+                      <span className={styles.eyebrow}>Templates · {published.length}{tplLocked ? <> <ProTag /></> : null}</span>
                       <div className={styles.eyebrowActions}>
                         <Button appearance="text" iconEnd={<Icon name="chevron_right" size={20} />} onPress={() => (picker ? setMode({ kind: 'all', selectedId: null }) : comingSoon())}>View all</Button>
                       </div>
                     </div>
                     <div className={styles.rail}>
                       <div className={styles.tile}>
-                        <button type="button" className={styles.action} onClick={() => start(null)} aria-label="Blank Quote — the default template’s settings, an empty table">
+                        <button type="button" className={styles.action} onClick={() => start(null)} aria-label="Blank quote — start with an empty list">
                           <span className={styles.well} data-blank><Icon name="add" size={40} weight={300} /></span>
                           <span className={styles.caption}>
-                            <span className={styles.nameRow}><span className={styles.name}>Blank Quote</span></span>
-                            <span className={styles.meta}>The default template’s settings, an empty table</span>   {/* (REG-580) */}
+                            <span className={styles.nameRow}><span className={styles.name}>Blank quote</span></span>
+                            <span className={styles.meta}>Start with an empty list</span>   {/* (REG-580) it takes the default template's settings, as it always has; (the calm UI build, W-009) said plainly */}
                           </span>
                         </button>
                       </div>
@@ -386,10 +394,10 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                             <span className={styles.caption}>
                               <span className={styles.nameRow}>
                                 <span className={styles.name}>{t.name}</span>
-                                {t.isDefault ? <MetaChip>Default</MetaChip> : null}
+                                {t.isDefault ? <MetaChip kind="fact">Default</MetaChip> : null}
                               </span>
                               {/* (UX audit Q8) what the new quote gets — its starter sections — not the sample quote's priced lines the page draws */}
-                              {'defaults' in t ? <span className={styles.meta} data-testid="template-starts">{startsLine(t)}</span> : null}
+                              {'defaults' in t ? <span className={styles.meta} data-testid="template-starts" title={startsLine(t)}>{tileFacts(t.defaults)}</span> : null}
                               <span className={styles.meta}>{meta(t)}</span>
                             </span>
                           </button>
@@ -411,7 +419,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                         <span className={styles.rowText}>
                           {/* (pending modules S04 — card: "its chip says 'PDF · XLS · JPG' on a 5-credit press, so fix the words") what it truly reads: a spreadsheet
                               of the quote's lines; a PDF or a photo needs the developers' document reader (only the demo's reference quotes read today) */}
-                          <span className={styles.rowTitle}>Upload a quote <MetaChip>{`${UPLOAD_KINDS} · ${costOf('quote_digitize')} AI credits`}</MetaChip></span>
+                          <span className={styles.rowTitle}>Upload a quote <span className={styles.rowTag}>{`Spreadsheet or PDF · ${costOf('quote_digitize')} credits`}</span></span>
                           <span className={styles.rowDesc}>Bring in an existing quote’s lines from a spreadsheet or a PDF — we read them into editable line items</span>
                         </span>
                         <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
@@ -422,7 +430,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                         <span className={styles.rowText}>
                           <span className={styles.rowTitle}>Draft with Maison AI</span>
                           {/* (REG-403) The 1.0 row says "your 8-item price book" — the count is the studio's My Items (price_book_items). */}
-                          <span className={styles.rowDesc}>Describe the scope — we draft a categorized quote from your {priceBookCount ? `${priceBookCount}-item ` : ''}price book</span>
+                          <span className={styles.rowDesc}>Describe the work; Maison AI drafts it from your Price book.</span>
                         </span>
                         <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
                       </button> : null}

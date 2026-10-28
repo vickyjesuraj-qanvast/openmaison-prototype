@@ -36,7 +36,11 @@ const ok = (cond, name, more = '') => { if (cond) { pass++; console.log('  ✓',
 const as = (member) => sql(`update members set is_you = (id = '${member}')`)
 
 const WHOLE = ['market_insights', 'maison_questions', 'notifications']
-const LABEL = { trends: 'Trends', reports: 'Reports', 'case-studies': 'Case Studies', 'industry-news': 'Industry News' }
+const LABEL = { trends: 'Trends', reports: 'Reports', 'case-studies': 'Case studies', 'industry-news': 'Industry news' }   // (the calm UI build 2026-10-27, a deliberate change) — W-111: sentence case
+/* (the calm UI build 2026-10-27, a deliberate change) — 6-12 · 6-27: the categories are one scope pill "Category: All ▾" (its rows without counts), not chips with counts */
+const catPill = (p) => p.getByTestId('insights-categories').getByRole('button', { name: /^Category: / })
+const catNow = async (p) => ((await catPill(p).getAttribute('aria-label')) ?? '').replace(/^Category: /, '')
+const pickCat = async (p, name) => { await catPill(p).click(); await p.waitForTimeout(300); await p.locator('[role="menu"] [role="menuitemradio"]', { hasText: new RegExp(`^${name}$`) }).click(); await p.waitForTimeout(500) }
 const tagsOf = (r) => { try { return JSON.parse(r.tags) } catch { return [] } }
 
 /* The ghost-vs-page measure (the S17 / S23 / S24 probes'): in the held reveal every element carrying a page module's class in both, index by
@@ -172,31 +176,33 @@ async function measureNav(b, opts, from, pick, blocks, max = 30) {
       ok(new URL(p.url()).pathname === '/market-insights', '…and opens Market Insights')
       ok(await p.locator('nav[aria-label="Workspace"] button[aria-haspopup="menu"][aria-current="page"]').count() === 1, 'the rail lights Tools on it')
       /* the categories: All + each with an article, its count from the record; a category with none is left out */
-      const chips = await p.getByTestId('insights-categories').getByRole('radio').allInnerTexts()
-      const want1 = [`All · ${arts.length}`, ...Object.keys(LABEL).filter((k) => arts.some((a) => a.category === k)).map((k) => `${LABEL[k]} · ${arts.filter((a) => a.category === k).length}`)]
-      ok(JSON.stringify(chips.map((c) => c.trim())) === JSON.stringify(want1), 'the category chips: All and each category with its count from the records (1.0’s four, in its order)', chips.join(' | '))
-      ok(await p.getByTestId('insights-categories').getByRole('radio', { checked: true }).innerText().then((t) => t.startsWith('All')), '…All is picked')
+      ok((await catNow(p)) === 'All', '…All is picked')
+      await catPill(p).click(); await settle(p, 300)
+      const chips = await p.locator('[role="menu"] [role="menuitemradio"]').allInnerTexts()
+      await p.keyboard.press('Escape'); await settle(p, 300)
+      const want1 = ['All', ...Object.keys(LABEL).filter((k) => arts.some((a) => a.category === k)).map((k) => LABEL[k])]
+      ok(JSON.stringify(chips.map((c) => c.trim())) === JSON.stringify(want1), 'the category pill’s rows: All and each category with an article (1.0’s four, in its order)', chips.join(' | '))
       ok(await p.getByTestId('insights-sample-note').isVisible() && /sample articles written for the demo/i.test(await p.getByTestId('insights-sample-note').innerText()), 'the list says its articles are samples written for the demo, their figures illustrative')
       const feat = p.getByTestId('insight-featured')
       ok(await feat.count() === 1 && await feat.getAttribute('data-article') === featured.id && /Featured/.test(await feat.innerText()), '1.0’s featured article: one wide card on All with no search — the newest the editors marked featured', featured.title)
       const rest = arts.filter((a) => a.id !== featured.id).map((a) => a.id)
       ok(JSON.stringify(await order(p)) === JSON.stringify(rest), '…and every other article under it, newest first')
       const eyebrows = await p.getByTestId('insights-list').getByTestId('insight-eyebrow').allInnerTexts()
-      ok(eyebrows.length === rest.length && eyebrows.every((e, i) => e.toLowerCase() === `${LABEL[arts.find((a) => a.id === rest[i]).category]} · sample`.toLowerCase()), 'each card names its category and that it is a sample', eyebrows.join(' | '))
+      ok(eyebrows.length === rest.length && eyebrows.every((e, i) => e.toLowerCase() === `${LABEL[arts.find((a) => a.id === rest[i]).category]}`.toLowerCase()), 'each card names its category (the list’s note says they are samples, once)', eyebrows.join(' | '))   // (the calm UI build 2026-10-27, a deliberate change) — W-413
       const card0 = arts.find((a) => a.id === rest[0])
       const cardText = await p.locator(`[data-article="${card0.id}"]`).first().innerText()
       ok(cardText.includes(card0.title) && /min read/.test(cardText), 'a card carries the article’s title, when it came out and how long it reads')
-      ok(/Articles come from OpenMaison’s editors/.test(await p.getByTestId('market-insights').innerText()), 'the source line says where articles come from')
+      ok(await p.getByTestId('insights-source').count() === 1, 'where articles come from: the header’s info glyph')   // (the calm UI build 2026-10-27, a deliberate change) — W-114: the foot line moved to the glyph
       await shot(p, '01-list-1440', true)
       /* a category: only its articles, the featured card steps aside, the address keeps it */
-      await p.getByTestId('insights-categories').getByRole('radio', { name: /^Reports/ }).click(); await settle(p, 500)
+      await pickCat(p, 'Reports'); await settle(p, 300)
       const reports = arts.filter((a) => a.category === 'reports').map((a) => a.id)
       ok(JSON.stringify(await order(p)) === JSON.stringify(reports) && await p.getByTestId('insight-featured').count() === 0, 'Reports lists only the reports, newest first — the featured card is All’s')
       ok(new URL(p.url()).searchParams.get('category') === 'reports', '…and the address says so')
       await p.locator(`[data-article="${reports[0]}"] a`).first().click(); await p.waitForURL(/\/market-insights\/mi-/, { timeout: 8000 }); await settle(p, 1400)
       await p.locator('a[data-kb="back"]').click(); await p.waitForURL(/\/market-insights\?/, { timeout: 8000 }).catch(() => {}); await settle(p, 1200)
-      ok(new URL(p.url()).searchParams.get('category') === 'reports' && /^Reports/.test(await p.getByTestId('insights-categories').getByRole('radio', { checked: true }).innerText()), 'Back from an article returns to the same category', p.url().replace(BASE, ''))
-      await p.getByTestId('insights-categories').getByRole('radio', { name: /^All/ }).click(); await settle(p, 500)
+      ok(new URL(p.url()).searchParams.get('category') === 'reports' && /^Reports/.test(await catNow(p)), 'Back from an article returns to the same category', p.url().replace(BASE, ''))
+      await pickCat(p, 'All'); await settle(p, 300)
       ok(!new URL(p.url()).searchParams.get('category') && await p.getByTestId('insight-featured').count() === 1, 'All again: the featured card is back')
     }
 
@@ -234,8 +240,9 @@ async function measureNav(b, opts, from, pick, blocks, max = 30) {
       const u = new URL(p.url())
       ok(u.pathname === `/market-insights/${featured.id}` && u.searchParams.get('from') === '/market-insights', 'the featured card opens its article, carrying the way back')
       const head = p.locator('header').filter({ has: p.locator('a[data-kb="back"]') }).first()
-      ok(/Market Insights/.test(await head.innerText()) && (await head.locator('h1').innerText()).trim() === featured.title && /FEATURED/i.test(await head.innerText()), 'the L2 header: Market Insights / its title, Featured')
-      ok((await p.getByTestId('insight-article-eyebrow').innerText()).toLowerCase() === `${LABEL[featured.category]} · sample`.toLowerCase(), 'its category and that it is a sample')
+      /* (the calm UI build 2026-10-27, a deliberate change) 6-34: the L2 header is the crumb alone and the article's own h1 carries the title — said once */
+      ok(/Market Insights/.test(await head.innerText()) && (await head.locator('h1').count()) === 0 && (await p.locator('h1').filter({ hasText: featured.title }).count()) === 1 && /FEATURED/i.test(await head.innerText()), 'the L2 header: Market Insights, Featured; the article’s h1 says its title once')
+      ok((await p.getByTestId('insight-article-eyebrow').innerText()).toLowerCase() === `${LABEL[featured.category]}`.toLowerCase(), 'its category (its note says it is a sample)')   // (the calm UI build 2026-10-27, a deliberate change) — 6-12
       ok(/min read/.test(await p.getByTestId('insight-article-when').innerText()) && (await p.getByTestId('insight-article-when').innerText()).includes(String(featured.read_minutes)), 'the byline: when it came out and how long it reads (the record’s minutes)')
       ok(/sample article written for the demo/i.test(await p.getByTestId('insight-sample-note').innerText()) && /illustrative/.test(await p.getByTestId('insight-sample-note').innerText()), 'the sample note on the article: written for the demo, its figures illustrative — not market data')
       const heads = (featured.content.match(/^#{1,2}\s+.+$/gm) || []).map((l) => l.replace(/^#+\s+/, '').trim())
@@ -315,7 +322,9 @@ async function measureNav(b, opts, from, pick, blocks, max = 30) {
         const loneId = arts.find((a) => a.category === lone).id
         sql(`update market_insights set removed_at = ${Date.now()} where id = '${loneId}'`)
         await go(p, '/market-insights', 1200)
-        ok(await p.getByTestId('insights-categories').getByRole('radio', { name: new RegExp(`^${LABEL[lone]}`) }).count() === 0, `a category with no article is left out (${LABEL[lone]})`)
+        await catPill(p).click(); await settle(p, 300)
+        ok(await p.locator('[role="menu"] [role="menuitemradio"]', { hasText: new RegExp(`^${LABEL[lone]}$`) }).count() === 0, `a category with no article is left out (${LABEL[lone]})`)
+        await p.keyboard.press('Escape'); await settle(p, 300)
         sql(`update market_insights set removed_at = NULL where id = '${loneId}'`)
       }
       /* an article the editors wrote (not a demo sample) says nothing of the kind; with no sample left, the list's note goes too */
@@ -382,7 +391,7 @@ async function measureNav(b, opts, from, pick, blocks, max = 30) {
       const act = p.locator('[role="dialog"]').last().getByRole('button', { name: /^Show me the / }).first()
       const label = (await act.innerText()).trim()
       await act.click(); await settle(p, 900)
-      const picked = (await p.getByTestId('insights-categories').getByRole('radio', { checked: true }).innerText()).toLowerCase()
+      const picked = (await catNow(p)).toLowerCase()
       ok(picked.startsWith(label.replace(/^Show me the /, '').toLowerCase()), `“${label}” picks that category on the page`, picked)
       await p.keyboard.press('Escape'); await settle(p, 300)
       /* ⌘K */

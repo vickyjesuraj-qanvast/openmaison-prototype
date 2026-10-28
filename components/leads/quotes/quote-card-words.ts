@@ -1,5 +1,6 @@
 import { displayDate, displayDateLong, startOfDay } from '@/lib/format'
 import { clientValidityPassed, isQuoteOverdue, sentToClientOf, viewedSince, waitingOnClient, type QuoteListRow } from '@/lib/leads/quote-filters'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 
 /*
  * (Quotes on the move, K4 — P-06 · A-07 · A-08, the owner's "please go ahead" 2026-10-22) The phone card's third line, pure: a READ-ONLY
@@ -23,9 +24,10 @@ export function whenWord(d: Date, now: number): string {
 /** The chip: the status, in the house tag's tones — went out = blue, done = green, expired = yellow, the rest plain. */
 export function cardChip(q: QuoteListRow, now: number): CardChip {
   if (clientValidityPassed(q, now) && q.validUntil) return { label: `Expired ${displayDate(q.validUntil)}`, color: 'yellow', expired: true }
-  if (q.status === 'Confirmed' || q.status === 'Signed') return { label: q.status, color: 'green', expired: false }
-  if (q.status === 'Sent to Client') return { label: 'Sent to client', color: 'blue', expired: false }
-  return { label: q.status, color: 'default', expired: false }
+  /* (the calm UI build 2026-10-27, T-01 · 4-04) the status set on screen — With client, Waiting for approval */
+  if (q.status === 'Confirmed' || q.status === 'Signed') return { label: quoteStatusLabel(q.status), color: 'green', expired: false }
+  if (q.status === 'Sent to Client') return { label: quoteStatusLabel(q.status), color: 'blue', expired: false }
+  return { label: quoteStatusLabel(q.status), color: 'default', expired: false }
 }
 
 /** The "since" beside the chip — at most three short pieces, the first the one that matters most on the move. */
@@ -33,10 +35,11 @@ export function sinceWords(q: QuoteListRow, now: number): SinceWord[] {
   const out: SinceWord[] = []
   const sent = sentToClientOf(q), seen = viewedSince(q)
   const expired = clientValidityPassed(q, now)
-  if (q.status === 'Signed') { out.push({ text: `signed ${displayDate(q.signedAt ?? q.updatedAt ?? q.createdAt)}` }); return out }
-  if (q.status === 'Confirmed') { out.push({ text: `confirmed ${displayDate(q.confirmedAt ?? q.updatedAt ?? q.createdAt)}` }); return out }
+  /* (the calm UI build 2026-10-27, W-376) the chip already says Signed / Confirmed — the line says the day, once */
+  if (q.status === 'Signed') { out.push({ text: displayDate(q.signedAt ?? q.updatedAt ?? q.createdAt) }); return out }
+  if (q.status === 'Confirmed') { out.push({ text: displayDate(q.confirmedAt ?? q.updatedAt ?? q.createdAt) }); return out }
   if (q.status === 'Draft') out.push({ text: `edited ${whenWord(q.updatedAt ?? q.createdAt, now)}` })
-  else if (q.status === 'Sent for Approval') out.push({ text: `for approval since ${displayDate(q.submittedAt ?? q.sentAt ?? q.updatedAt ?? q.createdAt)}` })
+  else if (q.status === 'Sent for Approval') out.push({ text: `since ${displayDate(q.submittedAt ?? q.sentAt ?? q.updatedAt ?? q.createdAt)}` })
   else if (waitingOnClient(q) && sent) {
     if (seen) out.push({ text: `opened ${displayDate(seen)}` })
     else out.push({ text: `sent ${displayDate(sent)}` }, { text: 'not opened' })

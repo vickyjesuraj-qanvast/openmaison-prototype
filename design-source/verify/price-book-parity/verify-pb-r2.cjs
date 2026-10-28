@@ -4,6 +4,7 @@
 // kept in the item's History (who, when, before → after); the list names who changed each item; Who may do what lists the book.
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) B5 5-04: Who may do what is Roles & access' drawer — open it, All roles = the old matrix
 const S = process.env.S, DB = process.env.TESTDB, BASE = 'http://localhost:3011'
 const results = []
 const ok = (name, pass, note = '') => { results.push({ name, pass, note }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${note ? ' — ' + note : ''}`) }
@@ -34,11 +35,11 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
 
   await step('an Owner sees the proposal waiting, with its bell notice', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page)
-    ok('the proposal carries its chip', /proposed/i.test(await card(page, 'Skirting, PVC 80 mm').innerText()))
-    ok('the Proposed to-do counts it', await page.getByRole('button', { name: '1 proposed', exact: true }).count() === 1)   // (REG-666) the segment became a to-do chip
+    ok('the proposal carries its chip', /waiting for approval/i.test(await card(page, 'Skirting, PVC 80 mm').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) T-01: a proposal reads Waiting for approval
+    ok('the Proposed to-do counts it', await page.getByRole('button', { name: '1 approval', exact: true }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change) T-01: the to-do chip counts Approvals   // (REG-666) the segment became a to-do chip
     ok('the bell told the Owner', sql(`select count(*) from notifications where member_id='dane' and kind='price_book_proposed' and title like 'Sarah proposed “Skirting, PVC 80 mm”%'`) === '1')
     await page.getByRole('button', { name: /^Company/ }).first().click(); await page.waitForTimeout(400)
-    ok('the Company panel says one is proposed', /1 proposed/.test(await page.getByRole('menuitem', { name: /Price book/ }).innerText()))
+    ok('the Company panel says one is proposed', /\b1 approval\b/.test(await page.getByRole('menuitem', { name: /Price book/ }).innerText()))   // (the calm UI build 2026-10-27, a deliberate change) §2 Approvals: the panel's badge reads "1 approval"
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await page.getByRole('button', { name: /^(Open|Edit) Skirting,\ PVC\ 80\ mm$/ }).click()
     const dlg = page.getByTestId('item-dialog'); await dlg.waitFor(); await page.waitForTimeout(700)
@@ -72,7 +73,7 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     as('sarah')
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     await page.getByRole('button', { name: /^Company/ }).first().click(); await page.waitForTimeout(400)
-    ok('her Company panel has no queue to answer', !/proposed/.test(await page.getByRole('menuitem', { name: /Price book/ }).innerText()))
+    ok('her Company panel has no queue to answer', !/proposed|\d+ approvals?\b/.test(await page.getByRole('menuitem', { name: /Price book/ }).innerText()))   // (the calm UI build 2026-10-27, a deliberate change) §2 Approvals: no "n approvals" badge
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await page.getByTestId('new-template').click(); await page.waitForTimeout(300)
     ok('New ▾ offers Propose an item', await page.getByRole('menuitem', { name: 'Propose an item' }).count() === 1)
@@ -97,9 +98,9 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     const sd = page.getByTestId('section-dialog'); await sd.waitFor(); await page.waitForTimeout(400)
     ok('a section opens read-only', await page.getByRole('dialog', { name: 'Section details' }).count() === 1 && await sd.getByLabel('Section name').isDisabled() && await sd.getByRole('button', { name: 'Add an item' }).count() === 0)   // (sweep S5 #31) "items"
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted Sections/ }).click()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted sections/i }).click()   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const sheet = page.getByRole('dialog', { name: 'Deleted Sections' }); await sheet.waitFor(); await page.waitForTimeout(500)
-    ok('the Deleted sheet names sections and keeps Empty Trash from her', /No deleted sections\./.test(await sheet.innerText()) && await sheet.getByRole('button', { name: 'Empty Trash' }).isDisabled())
+    ok('the Deleted sheet names sections and keeps Empty Trash from her', /No deleted sections\./.test(await sheet.innerText()) && await sheet.getByRole('button', { name: 'Delete all forever' }).isDisabled())   // (the calm UI build 2026-10-27, a deliberate change) W-006
     await page.keyboard.press('Escape')
   })
 
@@ -116,12 +117,12 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     mine = sql(`select id from price_book_items where name='Probe proposal, glass shelf'`)
     ok('stored as her proposal', sql(`select status || '|' || created_by from price_book_items where id='${mine}'`) === 'proposed|sarah')
     ok('the Owner hears of it', sql(`select count(*) from notifications where member_id='dane' and kind='price_book_proposed' and actor_id='sarah' and title like '%Probe proposal, glass shelf%'`) === '1')
-    ok('she sees it marked Proposed', /proposed/i.test(await card(page, 'Probe proposal, glass shelf').innerText()))
+    ok('she sees it marked Proposed', /waiting for approval/i.test(await card(page, 'Probe proposal, glass shelf').innerText()))   // (the calm UI build 2026-10-27, a deliberate change)
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
     const add = page.getByRole('combobox', { name: 'Add Item' }).first()
     await add.scrollIntoViewIfNeeded(); await add.click(); await add.fill('Probe proposal'); await page.waitForTimeout(500)
     const opt = page.getByRole('option', { name: /Probe proposal, glass shelf/ })
-    ok('her quote offers it, marked Proposed', await opt.count() === 1 && /· Proposed/.test(await opt.innerText()), await opt.count() ? await opt.innerText() : 'none')
+    ok('her quote offers it, marked Proposed', await opt.count() === 1 && /· Waiting for approval/.test(await opt.innerText()), await opt.count() ? await opt.innerText() : 'none')   // (the calm UI build 2026-10-27, a deliberate change) T-01
     await page.keyboard.press('Escape')
     as('michelle')
     await page.goto(`${BASE}/company/price-book`); await ready(page)
@@ -138,20 +139,21 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
     const r = page.locator(`[data-item-id="${HAUL}"]`).first(); await r.scrollIntoViewIfNeeded(); await r.hover()
     await r.getByRole('button', { name: 'More options for Haulage and debris disposal' }).click()
+    await page.getByRole('menu').last().getByRole('menuitem', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: a line's saves to the book sit under Price book ›
     await page.getByRole('menu').last().getByRole('menuitem', { name: 'Propose to My Items' }).click()   // (REG-653, Q-18) the book's own name
     await snack(page, 'Proposed to My Items'); await page.waitForTimeout(500)
     ok('the line’s item is her proposal', sql(`select b.status || '|' || b.created_by from quote_items i join price_book_items b on b.id = i.price_book_item_id where i.id='${HAUL}'`) === 'proposed|sarah')
     await shot('07-save-line-proposed')
     const g = page.locator(`[data-item-id="${BATHS}"]`).first(); await g.scrollIntoViewIfNeeded(); await g.hover()
     await g.getByRole('button', { name: 'More options for Bathrooms' }).click()
-    ok('Save section to My Sections is out of reach', (await page.getByRole('menu').last().getByRole('menuitem', { name: 'Save section to My Sections' }).getAttribute('aria-disabled')) === 'true')
+    ok('Save section to My Sections is out of reach', (await page.getByRole('menu').last().getByRole('menuitem', { name: 'Save to Price book' }).getAttribute('aria-disabled')) === 'true')   // (the calm UI build 2026-10-27, a deliberate change) W-608
     await page.keyboard.press('Escape')
   })
 
   await step('an Owner approves one and sends one back with a note; the proposer hears both', async () => {
     as('dane')
     await page.goto(`${BASE}/company/price-book`); await ready(page)
-    ok('the Proposed to-do gathers all three', await page.getByRole('button', { name: '3 proposed', exact: true }).count() === 1)
+    ok('the Proposed to-do gathers all three', await page.getByRole('button', { name: '3 approvals', exact: true }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change)
     await page.getByRole('button', { name: /^(Open|Edit) Probe\ proposal,\ glass\ shelf$/ }).click(); await page.getByTestId('proposal-bar').waitFor()
     await page.getByTestId('proposal-bar').getByRole('button', { name: 'Approve' }).click(); await snack(page, 'approved — it’s in My Items for the studio'); await page.waitForTimeout(600)
     ok('approved: live, with who approved it', sql(`select status || '|' || reviewed_by from price_book_items where id='${mine}'`) === 'live|dane')
@@ -178,6 +180,7 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
 
   await step('Who may do what lists the book', async () => {
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
+    await openRoles(page)   // (the calm UI build 2026-10-27, a deliberate change)
     const reach = async (k) => JSON.stringify(await page.getByTestId(`may-${k}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))))
     ok('change the book: Owners and Admins; Managers and Designers submit', await reach('price-book') === '["yes","yes","submit","submit","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     ok('approve a proposal: Owners and Admins', await reach('price-book-approve') === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */

@@ -190,14 +190,19 @@ const HOLD_GHOST = () => { const o = performance.getEntriesByType.bind(performan
       const c = await ctxOf(UPRIGHT); await signIn(c); const p = await c.newPage(); watch(p, 'portal-768')
       await go(p, '/my/demo-studio/messages')
       const f = await fades(p)
-      ok(f && f.overflow && (f.left || f.right), '768 upright: the row scrolls and an edge fades where more waits', JSON.stringify(f))
+      /* (the calm UI build 2026-10-27, a deliberate change — 3-36) the bar is the phone's five now (Home · Schedule · Updates · Payments · More ▾), so
+         at 768 the row has room: no fade at either end. Where it still overflows (a long studio name), the fades are checked as before. */
+      if (f && !f.overflow) ok(!f.left && !f.right, '768 upright: the five sections fit the row — nothing fades', JSON.stringify(f))
+      else {
+        ok(f && f.overflow && (f.left || f.right), '768 upright: the row scrolls and an edge fades where more waits', JSON.stringify(f))
+        await p.locator('[data-testid="portal-nav"]').evaluate((n) => { n.style.scrollBehavior = 'auto'; n.scrollLeft = 0 }); await settle(p, 500)
+        const s = await fades(p)
+        ok(s && !s.left && s.right, '768 upright: at the row’s start only the far end fades', JSON.stringify(s))
+        await p.locator('[data-testid="portal-nav"]').evaluate((n) => { n.scrollLeft = n.scrollWidth }); await settle(p, 500)
+        const e = await fades(p)
+        ok(e && e.left && !e.right, '768 upright: at its end only the near end fades', JSON.stringify(e))
+      }
       await shot(p, '04-portal-768-messages')
-      await p.locator('[data-testid="portal-nav"]').evaluate((n) => { n.style.scrollBehavior = 'auto'; n.scrollLeft = 0 }); await settle(p, 500)
-      const s = await fades(p)
-      ok(s && !s.left && s.right, '768 upright: at the row’s start only the far end fades', JSON.stringify(s))
-      await p.locator('[data-testid="portal-nav"]').evaluate((n) => { n.scrollLeft = n.scrollWidth }); await settle(p, 500)
-      const e = await fades(p)
-      ok(e && e.left && !e.right, '768 upright: at its end only the near end fades', JSON.stringify(e))
       /* the fade never takes a section's press: a tap on the last section still goes there */
       const last = p.locator('[data-testid="portal-nav"] a').last()
       const href = await last.getAttribute('href')
@@ -258,7 +263,9 @@ const HOLD_GHOST = () => { const o = performance.getEntriesByType.bind(performan
        broken inside itself or a figure past the tile is the defect) */
     const tileRows = (p) => p.evaluate(() => {
       const measure = (el, text) => { const s = document.createElement('span'), cs = getComputedStyle(el); s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + cs.font + ';letter-spacing:' + cs.letterSpacing + ';text-transform:' + cs.textTransform; s.textContent = text; document.body.appendChild(s); const w = s.getBoundingClientRect().width; s.remove(); return w }
-      return [...document.querySelectorAll('[class*="stat-tile-module__"][class*="__tiles"]')].filter((g) => g.offsetParent && g.children.length >= 2).map((g) => {
+      /* (the Dashboard's calm pass 2026-10-26, a deliberate change) Pulse's four cards sit in the page's own grid (`[data-testid="stands-tiles"]`),
+         not the house tile row — the same rule holds for it */
+      return [...document.querySelectorAll('[class*="stat-tile-module__"][class*="__tiles"], [data-testid="stands-tiles"]')].filter((g) => g.offsetParent && g.children.length >= 2).map((g) => {
         const kids = [...g.children], k = kids.map((e) => e.getBoundingClientRect())
         const bad = []
         for (const t of kids) {
@@ -277,6 +284,18 @@ const HOLD_GHOST = () => { const o = performance.getEntriesByType.bind(performan
         await go(p, u, 1600)
         const t = await tileRows(p)
         const money = /\/money$/.test(u)   // the Money tab's first tile, To collect, takes the row by its own rule (R2-A)
+        if (u === '/projects') {
+          /* (the calm UI build 2026-10-27, a deliberate change — 3-11 · T-15) a phone's Projects listing draws no tile row: its tiles are one line
+             of doors under the scope pill (the same `tile-<scope>` handles, the open value after them). The rule kept: every fact fits the
+             screen — no door past the edge, none broken inside a word — and the house tile row it replaced is not drawn beside it. */
+          const d = await p.evaluate(() => {
+            const line = document.querySelector('p[data-testid="project-tiles"]'); if (!line || !line.offsetParent) return null
+            const W = document.documentElement.clientWidth
+            const doors = [...line.children].map((e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); const s = document.createElement('span'); s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + cs.font; let widest = 0; for (const w of e.textContent.trim().split(/\s+/)) { s.textContent = w; document.body.appendChild(s); widest = Math.max(widest, s.getBoundingClientRect().width); s.remove() } return { id: e.querySelector('[data-testid]')?.getAttribute('data-testid') || e.getAttribute('data-testid'), left: r.left, right: r.right, w: r.width, widest } })
+            return { W, doors }
+          })
+          ok(t.length === 0 && d && d.doors.length > 0 && d.doors.some((x) => /^tile-/.test(x.id || '')) && d.doors.every((x) => x.left >= -0.5 && x.right <= d.W + 0.5 && x.widest <= x.w + 0.5), `${tag} ${u}: the tiles are one line of doors under the pill — each one inside the screen, none broken inside a word (the calm UI build 2026-10-27, a deliberate change)`, JSON.stringify(d))
+        } else
         ok(t.length > 0 && t.every((g) => (g.row >= 264 ? (g.pair || money) : !g.pair)), `${tag} ${u}: two across where the row holds two (≥ 264), one a row where it doesn't`, JSON.stringify(t.map((g) => [g.row, g.pair])))
         ok(t.every((g) => g.bad.length === 0), `${tag} ${u}: no caption broken inside a word, no figure past its tile`, JSON.stringify(t.flatMap((g) => g.bad)))
         ok(await sideways(p) <= 1, `${tag} ${u}: no sideways scroll`)
@@ -287,9 +306,14 @@ const HOLD_GHOST = () => { const o = performance.getEntriesByType.bind(performan
     }
     {
       const c = await ctxOf(DESK); const p = await c.newPage(); watch(p, 'tiles-1440')
+      /* (the Dashboard's calm pass 2026-10-26, a deliberate change) Pulse's figures are its white cards' 28 at a desk (the Claude Design
+         option); the house tile row keeps 20 — read on a page of house tiles. Either way the phone's fit never reaches the desk. */
       await go(p, '/dashboard', 1600)
       const f = await p.locator('[data-testid="stands-tiles"] [class*="stat-tile-module__"][class*="__value"]').evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize))
-      ok(f.length > 0 && f.every((x) => x === '20px'), '1440: every figure at the house 20 (the fit is a phone’s)', JSON.stringify(f))
+      ok(f.length > 0 && f.every((x) => x === '28px'), '1440: every Pulse figure at its card’s 28 (the fit is a phone’s)', JSON.stringify(f))
+      await go(p, '/company/reports/projects', 1600)
+      const h = await p.locator('[class*="stat-tile-module__"][class*="__tiles"] [class*="stat-tile-module__"][class*="__value"]').evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize))
+      ok(h.length > 0 && h.every((x) => x === '20px'), '1440: every house tile’s figure at 20 (the fit is a phone’s)', JSON.stringify(h))
       await c.close()
     }
 
@@ -379,7 +403,7 @@ const HOLD_GHOST = () => { const o = performance.getEntriesByType.bind(performan
       if (m.asideTop !== null) ok(Math.abs(m.asideTop - m.tabsBottom) <= 1, `${tag}: the Create strip docks under the tab strip (${m.asideTop})`, JSON.stringify(m))
       ok(await sideways(p) <= 1, `${tag}: no sideways scroll`)
       if (tag === '844×390') await shot(p, '10-project-sideways-844')
-      await p.locator('[data-testid="project-page"] > [role="tablist"] [role="tab"]', { hasText: 'Money' }).tap()
+      await p.locator('[data-testid="project-page"] > [role="tablist"] [role="tab"]', { hasText: /^(Payments|Money)/ }).tap() /* (the calm UI build 2026-10-27, a deliberate change) the tab reads "Payments" — its slug stays money (3-02) */
       await p.waitForURL(/\/money/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
       ok(/\/money/.test(p.url()), `${tag}: a tap on the pinned strip's Money goes there`)
       await c.close()

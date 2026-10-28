@@ -1,14 +1,9 @@
 'use client'
 
 import { GhostSheet } from './skeleton'
-import { Bone } from './skeleton'
-import { GhostHead, GhostTextButton, Words, type Action } from './ghost-kit'
+import { GhostHead, type Action } from './ghost-kit'
 import { ContractsTabGhost, FirstRunTabGhost, QuotesTabGhost, TasksTabGhost } from '@/components/leads/detail/tab-ghosts'
-import { useFirstRunShape, useSeedFlag } from '@/lib/ghost-shape'
-import { useCountPref } from '@/lib/prefs'
-import { APPROVALS_COUNT_KEY, APPROVALS_DOOR, APPROVALS_SHAPE, approvalsWords } from '@/components/tasks/approvals-line'
-import note from '@/components/company/read-only-note.module.css'
-import approvalsLine from '@/components/tasks/approvals-line.module.css'
+import { useFirstRunShape } from '@/lib/ghost-shape'
 import { useSignedInRole } from './access-gate'
 import { opensPath } from '@/lib/settings/roles'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -29,32 +24,23 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
   )
 }
 
-/** (pending modules S46C · M3) The Tasks page's approvals line as a ghost — the strip, its glyph, the sentence in the page's own class and the door. */
-function ApprovalsGhost({ count }: { count: number }) {
-  return (
-    <div className={`${note.note} ${approvalsLine.line}`}>
-      <Bone w={20} h={20} r={4} /><Words className={approvalsLine.text}>{approvalsWords(count)}</Words><GhostTextButton label={APPROVALS_DOOR} className={approvalsLine.door} />
-    </div>
-  )
-}
-
-/** `approvals` — (pending modules S46C · M3) the page's own count when the reveal draws it; the loader draws what this browser saw last, else
-    what the shell's seed knows now (lib/ghost-shapes.server.ts `tasks.approvals`). */
-export function TasksListGhost({ approvals }: { approvals?: number } = {}) {
+/** `approvals` — (pending modules S46C · M3) the page's own count when the reveal draws it. (the calm UI build 2026-10-27 — the audit's 1-03)
+    The page no longer draws its approvals line (the approvals are the Dashboard's), so neither does its ghost; the prop stays for a caller that
+    still passes it. */
+export function TasksListGhost(props: { approvals?: number } = {}) {
+  void props
   /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
   const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
   const sources = opensPath(useSignedInRole(), '/projects')   // (S43E W6-02) Marketing's page has no Leads · Projects
-  const seeded = useSeedFlag(APPROVALS_SHAPE, false)
-  const remembered = useCountPref(APPROVALS_COUNT_KEY, seeded ? 2 : 0)
-  const count = approvals ?? remembered
-  const notice = count > 0 ? <ApprovalsGhost count={count} /> : null
   const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} sources={sources} />
-  return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{notice}{body}</div>}>{body}</ListGhost>
+  return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{body}</div>}>{body}</ListGhost>
 }
 
 export function QuotesListGhost() {
   const first = useFirstRunShape('tools.quotes')
-  return <ListGhost title={72} label="Loading quotes">{first ? <FirstRunTabGhost tab="quotes" /> : <QuotesTabGhost studio rows={7} />}</ListGhost>
+  /* (the calm UI build 2026-10-27, 4-03 · 1-11 — B4's request) the page header carries New quote at a desk and a tablet (none on a phone, none
+     before the first quote) */
+  return <ListGhost title={72} actions={first ? [] : [{ desk: 105 }]} label="Loading quotes">{first ? <FirstRunTabGhost tab="quotes" /> : <QuotesTabGhost studio rows={7} />}</ListGhost>
 }
 
 export function ContractsListGhost() {

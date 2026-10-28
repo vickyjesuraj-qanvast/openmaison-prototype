@@ -56,7 +56,9 @@ function DayRow({ event: e, time }: { event: ActivityEvent; time: string }) {
 /** (UX audit 2026-09-30, T10) The chips above the timeline — the house `Chips` (REG-614), one at a time. */
 type Show = 'all' | ActivityGroup
 const SHOW: { value: Show; label: string }[] = [
-  { value: 'all', label: 'All' }, { value: 'tasks', label: 'Tasks' }, { value: 'files', label: 'Files' }, { value: 'notes', label: 'Notes' }, { value: 'stage', label: 'Stage' },
+  { value: 'all', label: 'All' }, { value: 'tasks', label: 'Tasks' }, { value: 'files', label: 'Files' }, { value: 'notes', label: 'Notes' },
+  { value: 'quotes', label: 'Quotes' },   // (the calm UI build 2026-10-27 — 2-50) the quotes', contracts' and Quote X-Ray's lines had no chip of their own
+  { value: 'stage', label: 'Stage' },
 ]
 
 /**
@@ -99,7 +101,7 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
   return (
     <div className={styles.tab} data-testid="activity-feed">
       <div className={styles.bar}>
-        {views ?? <h2 className={styles.title}>All Activities</h2>}
+        {views ?? <h2 className={styles.title}>All activities</h2>}   {/* (the calm UI build 2026-10-27 — T-13) */}
         {/* (REG-729) The house toolbar search (the rail's search tile and "/" still reach it). (REG-275) The box matches the sentence
             each row prints, so what a reader actually types is a person, a task or a file name — the placeholder says so. */}
         <div className={styles.actions}>

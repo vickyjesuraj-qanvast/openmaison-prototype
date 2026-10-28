@@ -35,8 +35,8 @@ export function SignHero({ title, quote, onQuote, children, fine = null, docs = 
       {quote ? (
         <button type="button" className={ph.heroRow} onClick={onQuote} disabled={!quote.open} data-testid="sign-quote-row">
           <span className={ph.heroRowIcon} aria-hidden><Icon name="request_quote" size={20} /></span>
-          <span className={ph.heroRowText}>Signs quotation {quote.number}{quote.total ? ` · ${quote.total}` : ''}</span>
-          {quote.open ? <span className={ph.heroRowAct}>As cards<Icon name="chevron_right" size={20} /></span> : null}
+          <span className={ph.heroRowText}>Quote {quote.number}{quote.total ? ` · ${quote.total}` : ''}</span>   {/* (the calm UI build 2026-10-27, 4-09 · W-331) "quote", as every other client page */}
+          {quote.open ? <span className={ph.heroRowAct}>See the quote<Icon name="chevron_right" size={20} /></span> : null}   {/* (W-115) "As cards" meant nothing to a client */}
         </button>
       ) : null}
       <p className={ph.heroText} data-testid="sign-hero-line">{children}</p>

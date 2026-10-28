@@ -30,7 +30,7 @@ export function ContractsSettingsCard({ rules, readOnly }: { rules: ContractRule
   return (
     <div className={styles.setting} id="contracts" data-testid="settings-contracts">
       <div className={styles.settingHead}>
-        <span className={styles.settingTitle}>Contracts · signing links</span>
+        <span className={styles.settingTitle}>Signing links</span>   {/* (the calm UI build, W-503 · 5-44) */}
         <span className={styles.settingHelp}>How long a contract’s signing link stays open after you send it or send a reminder. Past that, the client sees that the link has expired and you send it again. Links already out keep the day they were given. Contract templates and standard PDFs are in <HelpLink href="/company/templates/contracts">Company › Templates › Contracts</HelpLink>.</span>
       </div>
       <Chips label="Signing links stay open for" options={LINK_DAY_CHOICES.map((d) => ({ value: String(d), label: `${d} days` }))} value={String(days)} onChange={(v) => { void choose(v) }} disabled={readOnly} testId="contract-link-days" />

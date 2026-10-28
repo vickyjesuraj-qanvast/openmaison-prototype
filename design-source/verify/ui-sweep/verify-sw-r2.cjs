@@ -49,7 +49,7 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     ok('Copy Link on an empty draft says why and shares nothing', /Add some content before it goes out/.test(await snack(page)) && sql(`select status from contracts where id='${EMPTY}'`) === 'Draft')
     await r.getByRole('button', { name: /^Status .* — change status$/ }).click(); await page.waitForTimeout(300)
     ok('the Status menu opens through the portal', await page.getByRole('menu').first().evaluate((m) => !m.closest('[role="table"]')))
-    await page.getByRole('menuitem', { name: /^Sent to Client/ }).click(); await page.waitForTimeout(700)
+    await page.getByRole('menuitem', { name: /^(Sent to Client|With client|Waiting for signature)/ }).click(); await page.waitForTimeout(700)   // (the calm UI build 2026-10-27, a deliberate change) T-01: the status set on screen
     ok('the status menu keeps Send’s checks', /Add some content before it goes out/.test(await snack(page)) && sql(`select status from contracts where id='${EMPTY}'`) === 'Draft')
     await r.getByRole('button', { name: /^Status .* — change status$/ }).click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: /^Signed/ }).click(); await page.waitForTimeout(500)
@@ -114,7 +114,7 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     await shot(page, '04-tools-768')
     await page.goto(`${BASE}/contracts/${DRAFT}`); await ready(page)
     await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300)
-    await page.getByRole('menuitem', { name: 'Automation' }).click(); await page.waitForTimeout(500)
+    await page.getByRole('menuitem', { name: /^Reminders/ }).click(); await page.waitForTimeout(500)   // (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-120: "Automation" reads "Reminders" everywhere
     // (contracts on the move, a deliberate change of this rule — C1's P-02: on ≤1024 the contract opens as its Contract screen, whose ⋮ › Automation
     // opens the Automation section screen — the dialog is the desk's and a Signed contract's)
     ok('768: Automation from the kebab opens', await page.getByTestId('automation-dialog').isVisible().catch(() => false) || await page.getByTestId('automation-screen').isVisible().catch(() => false))
@@ -158,8 +158,9 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     as('sarah')
     const { ctx, page } = await desk()
     await page.goto(`${BASE}/templates/contracts/${TPL}`); await ready(page)
-    ok('a Designer cannot rename someone else’s template', await page.getByRole('textbox', { name: 'Template name' }).evaluate((e) => e.readOnly))
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-17: the template's name is said once — renamed from ⋮ › Rename…, refused there */
     await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300)
+    ok('a Designer cannot rename someone else’s template', await page.getByRole('menuitem', { name: /^Rename/ }).getAttribute('aria-disabled') === 'true')
     ok('and Delete waits with its reason', await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled') === 'true' && /author, (an )?Owner or (an )?Admin/.test(await page.getByRole('menuitem', { name: /^Delete/ }).innerText()))
     await page.keyboard.press('Escape')
     as('dane')

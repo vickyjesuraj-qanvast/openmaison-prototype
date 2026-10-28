@@ -174,9 +174,9 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
     // ── 5 · Draft with Maison AI ──────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('5 · Draft with Maison AI')
     await go(p, `/leads/${SERENA}/quotes`)
-    await p.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(p, 700)
+    await p.getByRole('button', { name: 'New quote' }).first().click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) W-011
     const modal = p.getByTestId('create-quote')
-    ok(/XLSX · CSV · PDF · 5 AI credits/i.test(await modal.getByTestId('upload-quote-row').innerText()), 'Upload a quote’s chip names what reads — XLSX · CSV · PDF · 5 AI credits')   // (S42 B·4 · E-05, a deliberate change of this rule) a PDF is read from its own words now
+    ok(/Spreadsheet or PDF · 5 credits/i.test(await modal.getByTestId('upload-quote-row').innerText()),   /* (the calm UI build 2026-10-27, a deliberate change) W-016 */ 'Upload a quote’s chip names what reads — XLSX · CSV · PDF · 5 AI credits')   // (S42 B·4 · E-05, a deliberate change of this rule) a PDF is read from its own words now
     await modal.getByTestId('draft-quote-row').click(); await settle(p, 500)
     ok(/Draft with Maison AI for Serena Koh/.test(await modal.innerText()), 'Draft with Maison AI opens in the window, for the lead')
     ok(await modal.getByTestId('draft-create').isDisabled(), 'Create the quote rests until the brief drafts lines')
@@ -238,11 +238,11 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
 
     // ── 7 · the dead presses ──────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('7 · The dead presses, defined or removed')
-    await p.locator('#section-items').getByRole('button', { name: 'Column settings' }).first().click(); await settle(p, 700)
+    await p.locator('#section-items').getByRole('button', { name: 'More options for Items' }).first().click(); await settle(p, 300); await p.getByRole('menuitem', { name: 'Column settings' }).click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) 4-03
     const drawer = p.getByRole('dialog').filter({ hasText: 'Item details' })
     const drawerText = await drawer.innerText()
     ok(!/\bSKU\b|MSRP|Dimensions|Materials|Shipping|Taxable|\bColor\b/.test(drawerText), 'Column settings lists only the columns the table draws (no SKU, MSRP, Color, Dimensions, Materials, Shipping, Taxable)')
-    ok(!/Add New Column/.test(drawerText) && /Unit Price/.test(drawerText), '…and no Add New Column')
+    ok(!/Add New Column/.test(drawerText) && /Unit price/i.test(drawerText), '…and no Add New Column')
     await shot(p, 'pm2-s04-column-settings-1440')
     await p.keyboard.press('Escape'); await settle(p, 400)
     ok(await p.locator('aside[aria-label="Create"] button').count() <= 4 && await p.locator('aside[aria-label="Create"]').getByRole('button', { name: 'Brand Catalog' }).count() === 0, 'the Create strip has no Brand Catalog')
@@ -294,7 +294,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
     console.log('10 · The Quotes heads sort')
     await go(p, '/quotes')
     /* studio-wide, Draft with Maison AI asks for the client first */
-    await p.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(p, 700)
+    await p.getByRole('button', { name: 'New quote' }).first().click(); await settle(p, 700)   // (the calm UI build 2026-10-27, a deliberate change) W-011
     await p.getByTestId('draft-quote-row').click(); await settle(p, 500)
     ok(/Choose a client first/.test(await p.getByTestId('create-quote').innerText()) && await p.getByTestId('draft-quote').count() === 0, 'Tools › Quotes: Draft with Maison AI asks for the client first')
     await p.keyboard.press('Escape'); await settle(p, 400)
@@ -315,7 +315,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
     ok(await head('total').getAttribute('aria-sort') === null, 'an order picked in Filters takes the head’s sort off — one sort at a time')
     await head('status').getByRole('button').click(); await settle(p, 500)
     const st = await p.locator('[data-kb-row] [data-col="status"]').allInnerTexts()
-    const order = ['Draft', 'Sent for Approval', 'Approved', 'Sent to Client', 'Confirmed', 'Signed']
+    const order = ['Draft', 'Waiting for approval', 'Approved', 'With client', 'Confirmed', 'Signed']   // (the calm UI build 2026-10-27, a deliberate change) T-01: the words on screen; the order is the journey's, unchanged
     const rank = st.map((t) => order.findIndex((s) => t.trim().startsWith(s)))
     ok(rank.every((v, i) => i === 0 || rank[i - 1] <= v), `Status sorts in the journey’s order (${st.map((t) => t.trim().split('\n')[0]).join(' · ')})`)
     await head('status').getByRole('button').click(); await head('status').getByRole('button').click(); await settle(p, 400)
@@ -349,7 +349,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
         await shot(pp, 'pm2-s04-editor-390')
       }
       await go(pp, `/leads/${SERENA}/quotes`)
-      await pp.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(pp, 800)
+      await pp.getByRole('button', { name: 'New quote' }).first().click(); await settle(pp, 800)   // (the calm UI build 2026-10-27, a deliberate change) W-011
       await pp.getByTestId('draft-quote-row').click(); await settle(pp, 500)
       await pp.locator('[data-testid="draft-quote"] textarea').fill('New wardrobes in both bedrooms'); await settle(pp, 1800)
       ok(await sideways(pp) <= 0, `${w}: Draft with Maison AI (a bottom sheet) has no sideways scroll`)

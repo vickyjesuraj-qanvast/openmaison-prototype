@@ -157,3 +157,7 @@
   .moneyTiles { --tile-help-lh: 20px; }
   .contractGhost.contractGhost { display: flex; }   /* the line's bone in the ghost (the kit's own line box) */
 }
+
+/* (the calm UI build 2026-10-27) a moved control's own test mark takes no box (a menu row, a name that opens) */
+.menuRow { display: contents; }
+.menuBack { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-subheading-s); }   /* New ▾'s way back from a kind's ways */

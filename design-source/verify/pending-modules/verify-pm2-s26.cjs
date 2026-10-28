@@ -542,8 +542,9 @@ INSERT INTO conversation_messages (id, conversation_id, author_id, author_name, 
       await d.getByTestId('notices-done').click().catch(() => {}); await settle(d, 300)
       const M = await phone(); const m = await M.newPage(); watch(m, 'phone-lead')
       await go(m, `/leads/${serena}`)
-      await m.getByRole('button', { name: 'View Client Info' }).click(); await settle(m, 900)
-      ok(await m.getByTestId('info-team-chat').isVisible(), '390: the Client Info sheet carries the Team chat door too')
+      /* (the calm UI build 2026-10-27, a deliberate change — W-013) the phone's button reads "View details" and opens the "Lead details" sheet (was View Client Info · Client Info) — the same sections */
+      await m.getByRole('button', { name: 'View details' }).click(); await settle(m, 900)
+      ok(await m.getByTestId('info-team-chat').isVisible(), '390: the Lead details sheet carries the Team chat door too')
       await shot(m, 's26-12-client-info-390')
       await M.close()
     }

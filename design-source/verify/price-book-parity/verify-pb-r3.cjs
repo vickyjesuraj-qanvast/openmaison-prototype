@@ -31,6 +31,8 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
 const ELEC = sql(`select id from price_book_items where name='Electrical point, new'`)
 const row = (page, id) => page.locator(`[data-item-id="${id}"]`).first()
 const rowMenu = async (page, id, name) => { const r = row(page, id); await r.scrollIntoViewIfNeeded(); await r.hover(); await r.getByRole('button', { name: `More options for ${name}`, exact: true }).click(); await page.waitForTimeout(250); return page.getByRole('menu').last() }
+/* (the calm UI build 2026-10-27, a deliberate change) 4-07: a line's saves to the book sit under the row ⋮ › Price book › */
+const bookMenu = async (page, id, name) => { const m = await rowMenu(page, id, name); await m.getByRole('menuitem', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(250); return page.getByRole('menu').last() }
 const addBox = async (page, text) => { const a = page.getByRole('combobox', { name: 'Add Item' }).first(); await a.scrollIntoViewIfNeeded(); await a.click(); await a.fill(text); await page.waitForTimeout(500); return a }
 
 ;(async () => {
@@ -73,18 +75,18 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     await page.getByRole('option', { name: /Painting, whole unit/ }).first().click(); await page.waitForTimeout(1500)
     fromBook = sql(`select id from quote_items where quote_id='${Q}' and price_book_item_id='${PAINT}' order by created_at desc limit 1`)
     ok('the picked line has the link and the formatted description', sql(`select link || '|' || (description_html like '%<li>%') from quote_items where id='${fromBook}'`) === 'https://nipponpaint.com.sg/products/weatherbond|1')
-    let menu = await rowMenu(page, fromBook, 'Painting, whole unit')
-    ok('its menu says “From My Items · Painting, whole unit”', /From My Items · Painting, whole unit/.test(await menu.getByTestId('line-source').innerText()) && await menu.getByRole('menuitem', { name: 'Update the item from this line' }).count() === 1 && await menu.getByRole('menuitem', { name: 'Save as a new item' }).count() === 1)
+    let menu = await bookMenu(page, fromBook, 'Painting, whole unit')
+    ok('its menu says “From My Items · Painting, whole unit”', /From the Price book · Painting, whole unit/.test(await menu.getByTestId('line-source').innerText()) && await menu.getByRole('menuitem', { name: 'Update the item from this line' }).count() === 1 && await menu.getByRole('menuitem', { name: 'Save as a new item' }).count() === 1)
     await shot('03-line-source-menu')
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     const name = row(page, fromBook).locator('input[data-name]')
     await name.click(); await name.fill('Painting, whole unit — two coats'); await name.press('Enter'); await waitSave(page)
-    menu = await rowMenu(page, fromBook, 'Painting, whole unit — two coats')
+    menu = await bookMenu(page, fromBook, 'Painting, whole unit — two coats')
     await menu.getByRole('menuitem', { name: 'Update the item from this line' }).click(); await snack(page, 'updated in My Items'); await page.waitForTimeout(500)
     ok('the item takes the line’s name, History says from where', sql(`select name from price_book_items where id='${PAINT}'`) === 'Painting, whole unit — two coats' && sql(`select note from price_book_changes where item_id='${PAINT}' and kind='edited' order by at desc limit 1`) === 'Updated from OM-10001')
     await page.getByRole('button', { name: 'Undo', exact: true }).last().click(); await snack(page, 'is back as it was'); await page.waitForTimeout(500)
     ok('Undo puts the item back', sql(`select name from price_book_items where id='${PAINT}'`) === 'Painting, whole unit')
-    menu = await rowMenu(page, fromBook, 'Painting, whole unit — two coats')
+    menu = await bookMenu(page, fromBook, 'Painting, whole unit — two coats')
     await menu.getByRole('menuitem', { name: 'Save as a new item' }).click(); await snack(page, 'Saved to My Items as a new item'); await page.waitForTimeout(500)
     const made = sql(`select id from price_book_items where name='Painting, whole unit — two coats'`)
     ok('a new item, named for what it is, and the line points at it', !!made && sql(`select price_book_item_id from quote_items where id='${fromBook}'`) === made)
@@ -92,7 +94,7 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     ok('Undo takes it out again; the line points at Painting once more', sql(`select count(*) from price_book_items where name='Painting, whole unit — two coats'`) === '0' && sql(`select price_book_item_id from quote_items where id='${fromBook}'`) === PAINT)
     as('sarah')
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
-    menu = await rowMenu(page, fromBook, 'Painting, whole unit — two coats')
+    menu = await bookMenu(page, fromBook, 'Painting, whole unit — two coats')
     ok('a Designer: Update is the Owners’ and Admins’, the save proposes', (await menu.getByRole('menuitem', { name: 'Update the item from this line' }).getAttribute('aria-disabled')) === 'true' && await menu.getByRole('menuitem', { name: 'Propose as a new item' }).count() === 1)
     await page.keyboard.press('Escape')
   })
@@ -105,7 +107,7 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     sql(`update quote_items set print_one_line=1, print_as_text='Approximate', highlight='light' where id='${BATHS}'`)
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
     const menu = await rowMenu(page, BATHS, 'Bathrooms')
-    await menu.getByRole('menuitem', { name: 'Save section to My Sections' }).click(); await snack(page, 'Section saved to My Sections'); await page.waitForTimeout(400)
+    await menu.getByRole('menuitem', { name: 'Save to Price book' }).click(); await snack(page, 'Section saved to My Sections')   // (the calm UI build 2026-10-27, a deliberate change) W-608; await page.waitForTimeout(400)
     saved = sql(`select id from price_book_sections where name='Bathrooms' order by created_at desc limit 1`)
     const j = (p) => sql(`select json_extract(lines_json, '${p}') from price_book_sections where id='${saved}'`)
     ok('kept: one line, its sub-total word, its highlight', j('$.printOneLine') === '1' && j('$.printAsText') === 'Approximate' && j('$.highlight') === 'light')
@@ -138,7 +140,7 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     await line.getByRole('combobox', { name: 'Unit' }).click(); await page.getByRole('option', { name: 'sqft', exact: true }).click()
     await sd.getByRole('button', { name: 'Add a sub-section' }).click()
     await shot('05-new-section')
-    await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Probe section added to My Sections'); await page.waitForTimeout(600)
+    await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Probe section added to Sections'); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) the tab's own name, "Sections" (4-39, LIBRARY_ROOT)
     const id = sql(`select id from price_book_sections where name='Probe section'`)
     ok('saved once, with the line’s unit, a sub-section and the note', sql(`select count(*) from price_book_sections`) === String(Number(before) + 1) && sql(`select json_extract(lines_json, '$.lines[0].unit') || '|' || json_array_length(lines_json, '$.subs') || '|' || description from price_book_sections where id='${id}'`) === 'sqft|1|Supply and install')
   })
@@ -150,14 +152,14 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     await page.getByRole('dialog', { name: /^Delete Painting/ }).getByRole('button', { name: 'Delete' }).click(); await snack(page, 'Painting, whole unit deleted'); await page.waitForTimeout(600)
     sql(`insert into price_book_items (id, name, kind, unit, cost_minor, markup_minor, created_at, updated_at, deleted_at, status, created_by, updated_by) values ('probe-trash', 'Probe trash item', 'purchase', 'Pieces', 100, 0, strftime('%s','now'), strftime('%s','now'), strftime('%s','now'), 'live', 'dane', 'dane')`)
     await page.goto(`${BASE}/company/price-book`); await ready(page)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted Items/ }).click()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted items/i }).click()   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const sheet = page.getByRole('dialog', { name: 'Deleted Items' }); await sheet.waitFor(); await page.waitForTimeout(500)
     const paintRow = sheet.getByTestId('deleted-library-row').filter({ hasText: 'Painting, whole unit' })
     ok('Painting can be restored, not deleted forever', (await paintRow.getByRole('button', { name: 'Delete Forever' }).getAttribute('aria-disabled')) === 'true')
     ok('its Made by names who added it', /Dane/.test(await paintRow.innerText()))
     await shot('06-deleted-in-use')
-    await sheet.getByRole('button', { name: 'Empty Trash' }).click()
-    await page.getByRole('dialog', { name: 'Empty trash?' }).getByRole('button', { name: 'Empty Trash' }).click(); await page.waitForTimeout(1200)
+    await sheet.getByRole('button', { name: 'Delete all forever' }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-006: Empty Trash reads Delete all forever
+    await page.getByRole('dialog', { name: 'Delete all forever?' }).getByRole('button', { name: 'Delete all forever' }).click(); await page.waitForTimeout(1200)   // (the calm UI build 2026-10-27, a deliberate change)
     ok('Empty Trash takes the unused one and keeps Painting', sql(`select count(*) from price_book_items where id='probe-trash'`) === '0' && sql(`select count(*) from price_book_items where id='${PAINT}'`) === '1')
     await paintRow.getByRole('button', { name: 'Restore' }).click(); await page.waitForTimeout(1000)
     ok('Painting restored', sql(`select deleted_at is null from price_book_items where id='${PAINT}'`) === '1')
@@ -173,9 +175,9 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     const live = sql(`select count(*) from price_book_items where deleted_at is null and status='live'`)
     sql(`update price_book_items set deleted_at = strftime('%s','now') where id='${ELEC}'`)
     await page.goto(`${BASE}/leads/${LEAD}/quotes`); await ready(page)
-    await page.getByRole('button', { name: 'Create Quote' }).first().click(); await page.waitForTimeout(800)
+    await page.getByRole('button', { name: 'New quote' }).first().click(); await page.waitForTimeout(800)   // (the calm UI build 2026-10-27, a deliberate change) W-011
     const expect = Number(live) - 1
-    ok(`the Create Quote window counts the live book (${expect})`, new RegExp(`your ${expect}-item price book`).test(await page.getByRole('dialog').innerText()))
+    ok(`the New quote window's draft row names the Price book (the live count ${expect} is no longer printed)`, /drafts it from your Price book/.test(await page.getByRole('dialog').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) 2-51 · 4-32: “Describe the work; Maison AI drafts it from your Price book.” — no “10-item”
     sql(`update price_book_items set deleted_at = null where id='${ELEC}'`)
     await page.keyboard.press('Escape')
   })
@@ -196,7 +198,8 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     await shot('07-popover-all')
     await a.press('Escape'); await page.waitForTimeout(300)
     const menu = await rowMenu(page, HAUL, 'Haulage and debris disposal')
-    await menu.getByRole('menuitem', { name: /^Add Item/ }).click(); await page.waitForTimeout(200)
+    await menu.getByRole('menuitem', { name: 'More', exact: true }).click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: Add item › sits under More ›
+    await page.getByRole('menu').last().getByRole('menuitem', { name: /^Add item/i }).click(); await page.waitForTimeout(200)
     // REG-773 (UX audit Q7) · (S44I, B6 — a deliberate change of this rule) the row menu's "From Price book…" opens the Price book modal with the row's place
     await page.getByRole('menu').last().getByRole('menuitem', { name: /^Add from Price book/ }).click(); await page.waitForTimeout(800)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
     ok('the popover says where the pick lands', /goes in below “Haulage and debris disposal”/.test(await page.getByRole('dialog', { name: 'Price book' }).innerText()))   // (sweep S5 #13)

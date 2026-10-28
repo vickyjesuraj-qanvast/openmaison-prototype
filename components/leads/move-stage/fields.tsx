@@ -12,18 +12,27 @@ export { TextField } from '@/components/om/text-field'
 export { DateField, DateTimeField } from '@/components/om/date-field'
 
 export function ChoiceChips({
-  options, value, onChange, label, error, required = false,
-}: { options: readonly string[]; value: string | null; onChange: (v: string) => void; label: string; error?: string; required?: boolean }) {
+  options, value, onChange, label, error, required = false, render, autoFocus = false,
+}: { options: readonly string[]; value: string | null; onChange: (v: string) => void; label: string; error?: string; required?: boolean
+  /** (the calm UI build 2026-10-27 — 2-08) a chip's words when they differ from its stored value ("In person" shows "Visit") */
+  render?: (o: string) => string
+  /** (REG-294) the group takes the caret on arrival — its chosen chip, else its first — when the user came here to enter data */
+  autoFocus?: boolean }) {
   const ro = useReadOnly()
+  const group = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!autoFocus || ro) return
+    group.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]:not(:disabled), button:not(:disabled)')?.focus()
+  }, [autoFocus, ro])
   return (
     <div className={styles.chipGroup} data-error={error || undefined}>
       <span className={styles.mutedLabel} data-error={error || undefined}>{required ? `${label}*` : label}</span>
-      <div className={styles.chips} role="radiogroup" aria-label={label} aria-invalid={!!error || undefined} aria-disabled={ro || undefined}>
+      <div ref={group} className={styles.chips} role="radiogroup" aria-label={label} aria-invalid={!!error || undefined} aria-disabled={ro || undefined}>
         {options.map((o) => (
           <button key={o} type="button" role="radio" aria-checked={o === value}
                   className={styles.chip} data-selected={o === value || undefined} disabled={ro}
                   onClick={() => onChange(o)}>
-            {o}
+            {render ? render(o) : o}
           </button>
         ))}
       </div>

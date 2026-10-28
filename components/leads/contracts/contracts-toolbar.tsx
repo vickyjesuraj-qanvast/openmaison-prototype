@@ -83,12 +83,12 @@ export function ContractsToolbar({ query, onQuery, onNew, onWho, onFilter, onCol
 
   return (
     <div className={styles.bar} ref={barRef}>
-      <h2 className={styles.title}>All Contracts</h2>
+      <h2 className={styles.title}>All contracts</h2>
       {/* (UX audit C5) What waits today, before the tools — on a phone its own line under the row (A-07: its words, never a pencil and a number) */}
       {!bare && awaiting && awaiting.count > 0 ? (
         <span className={styles.todo} data-testid="contracts-awaiting" data-compact={compact || undefined}>
-          <Tooltip label={`Awaiting signature (${awaiting.count})`} disabled={!compact}>
-            <ScopePill tone="attention" icon="draw" menu={false} label={`Awaiting signature (${awaiting.count})`} short={compact ? String(awaiting.count) : undefined} compact={compact} selected={awaiting.on} onClick={awaiting.onToggle} />
+          <Tooltip label={`Waiting for signature · ${awaiting.count}`} disabled={!compact}>
+            <ScopePill tone="attention" icon="draw" menu={false} label={`Waiting for signature · ${awaiting.count}`} short={compact ? String(awaiting.count) : undefined} compact={compact} selected={awaiting.on} onClick={awaiting.onToggle} />
           </Tooltip>
         </span>
       ) : null}
@@ -98,28 +98,28 @@ export function ContractsToolbar({ query, onQuery, onNew, onWho, onFilter, onCol
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon — (C4) and on a touch tablet;
               the menu, its title and every action behind it are the same. (P-09) Tools' phone + asks who it is for first. */}
           {folded ? (
-            <Tooltip shortcut="create" label="New Contract">
-              <IconButton icon="add" label="New Contract" variant="primary"
-                          aria-haspopup={sheet && onWho ? 'dialog' : 'menu'} aria-expanded={sheet && onWho ? undefined : menu === 'new'} data-kb="create" data-kb-label="New Contract"
+            <Tooltip shortcut="create" label="New contract">
+              <IconButton icon="add" label="New contract" variant="primary"
+                          aria-haspopup={sheet && onWho ? 'dialog' : 'menu'} aria-expanded={sheet && onWho ? undefined : menu === 'new'} data-kb="create" data-kb-label="New contract"
                           onClick={() => { if (sheet && onWho) onWho(); else setMenu((m) => (m === 'new' ? null : 'new')) }} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined"
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New Contract"
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New contract"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
-              New Contract
+              New contract
             </Button>
           )}
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New Contract">
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New contract">
             <DropdownItem onSelect={pick(() => onNew('blank'))}>From the studio agreement</DropdownItem>   {/* (sweep S2 #20) what it makes — the full agreement, as the picker says; "From Blank" made no blank */}
-            <DropdownItem onSelect={pick(() => onNew('template'))}>From Template</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('import'))}>Import from File</DropdownItem>
+            <DropdownItem onSelect={pick(() => onNew('template'))}>From a template</DropdownItem>   {/* (the calm UI build 2026-10-27, W-199 · T-13) sentence case, parallel */}
+            <DropdownItem onSelect={pick(() => onNew('import'))}>Import a file</DropdownItem>
           </Dropdown>
         </span>
-        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, status, date…" label="Search contracts" />
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search client, title, quote number…" label="Search contracts" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters" shortcut="filters">
             <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
@@ -142,17 +142,17 @@ export function ContractsToolbar({ query, onQuery, onNew, onWho, onFilter, onCol
             />
           </Tooltip>
           {/* (REG-728) 240: Send together's row carries its reason as a second line (UX audit C4 names the document) */}
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="All Contracts">
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="All contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
             {/* (REG-591) Send together: every unsigned document of the lead under one signing link. */}
             {/* (sweep S2 #23) greyed with its reason — (REG-728) in the row's own reason line, under its words */}
             {/* (UX audit C4) the reason names the document that holds it back */}
             <DropdownItem disabled={!!noBundle} title={noBundle ?? undefined} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage templates</DropdownItem>
             {/* (pending modules S03, as the card recommends) Settings › Quotes & pricing › Contracts — the signing links' window */}
-            <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Contracts</DropdownItem>   {/* (sweep S2 · U-07) */}
-            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Contracts</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contract settings</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived contracts</DropdownItem>   {/* (sweep S2 · U-07) */}
+            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted contracts</DropdownItem>
           </Dropdown>
         </span>
       </div>

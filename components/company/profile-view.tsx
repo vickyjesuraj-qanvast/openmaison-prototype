@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -26,7 +26,8 @@ import { EMAIL_RE, MSG } from '@/lib/forms'
 import { QANVAST_REVIEWS_DOOR, REVIEW_LINK_HELP, REVIEW_LINK_LABEL, keptReviewLink, reviewLinkProblem } from '@/lib/company/review-link'   // (pending modules S14)
 import { useCopy } from '@/components/om/use-copy'
 import { displayDate, isSgPhone, phoneDigits } from '@/lib/format'
-import { AboutCard, type AboutSetup } from './about-card'   // (gaps build H)
+import { AboutCard, useAboutForm, type AboutSetup } from './about-card'   // (gaps build H)
+import { PROFILE_TABS, profileTabOf, profileTabOfHash } from '@/lib/company/sections'   // (the calm UI build 2026-10-27 — 5-36)
 import { AccentField } from '@/components/projects/money/accent-field'   // (parity map, FB-103) the brand kit's colour field
 import { ENTITY_FOOTER_MAX, ENTITY_TEXT_MAX } from '@/lib/templates/model'
 import { HelpLink } from './help-link'
@@ -76,7 +77,19 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
   /** (REG-647, settings parity Q-10) How many live quotes and contracts name each entity (by its saved name) — an entity in use is retired, not removed. */
   usage?: Record<string, number> }) {
   const snackbar = useSnackbar()
-  useHashLanding()   // (UX audit S3) Settings' "kept under Company › Profile" and Manage entities land on #entities
+  const router = useRouter()
+  /* (the calm UI build 2026-10-27 — 5-36) four tabs on one page (`?tab=`); an old card address (#entities, #registrations, #qanvast, #about)
+     opens its card's tab first, then lands on the card as before (useHashLanding, re-run as the tab changes) */
+  const tab = profileTabOf(useSearchParams().get('tab'))
+  const q = useSearchParams().toString()
+  useEffect(() => {
+    const t = profileTabOfHash(window.location.hash)
+    if (t && t !== tab && !new URLSearchParams(window.location.search).get('tab')) {
+      const u = new URL(window.location.href); u.searchParams.set('tab', t)
+      router.replace(`${u.pathname}${u.search}${u.hash}`, { scroll: false })
+    }
+  }, [q, tab, router])
+  useHashLanding(tab)   // (UX audit S3) Settings' "kept under Company › Profile" and Manage entities land on #entities
   const [details, setDetails] = useState<StudioDetails>(brand.details)
   const [saved, setSaved] = useState<StudioDetails>(brand.details)
   const [busy, setBusy] = useState(false)
@@ -108,9 +121,14 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
   })
   const [moreOpen, setMoreOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(brand.details.entities.map((e) => [e.id, !!(e.email || e.phone || e.website || e.tagline || e.accent || e.footer || e.branch)])))
   const save = async (): Promise<boolean> => {
-    if (Object.values(detailErrors).some(Boolean) || reviewErr) { setTried(true); document.getElementById(Object.values(detailErrors).some(Boolean) ? 'details' : 'reviews')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return false }
+    /* (the calm UI build 2026-10-27 — 5-36) a field to fix on the other tab opens that tab first, then its card comes into view */
+    const toTab = (t: 'details' | 'entities', card: string) => {
+      if (tab !== t) router.replace(`/company/profile?tab=${t}${from ? `&from=${encodeURIComponent(from)}` : ''}#${card}`, { scroll: false })
+      else document.getElementById(card)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }
+    if (Object.values(detailErrors).some(Boolean) || reviewErr) { setTried(true); toTab('details', Object.values(detailErrors).some(Boolean) ? 'details' : 'reviews'); return false }
     const wrong = entities.find((e) => Object.values(extraErrors(e)).some(Boolean))
-    if (wrong) { setTried(true); setMoreOpen((o) => ({ ...o, [wrong.id]: true })); document.getElementById('entities')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return false }
+    if (wrong) { setTried(true); setMoreOpen((o) => ({ ...o, [wrong.id]: true })); toTab('entities', 'entities'); return false }
     const names = entities.slice(1).map((e) => e.name.trim().toLowerCase())
     if (names.some((n) => !n)) { snackbar({ message: 'Give every entity a name' }); return false }
     if (new Set([details.name.trim().toLowerCase(), ...names]).size !== names.length + 1) { snackbar({ message: 'Two entities can’t share a name' }); return false }
@@ -129,6 +147,9 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
     finally { setBusy(false) }
   }
   const discard = () => setDetails(saved)
+  /* (5-18) the About page's form lives here so its one Discard · Save is the page header's on its tab, and its leave guard stays up on any tab */
+  const aboutForm = useAboutForm(about ?? { about: { year: null, story: '', awards: [] }, photos: [], now: 0 }, canRun && !!about)
+  const onAbout = tab === 'about' && !!about
   /* (REG-618, parity Q-26) An entity's logo is kept as the picture itself, downscaled — as the brand kit keeps its logo. */
   const pickLogo = (i: number) => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'
@@ -143,18 +164,25 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
   }
 
   return (
-    <CompanyShell title="Profile" from={from} skeleton={<ProfileGhost />} actions={canRun ? <>
+    <CompanyShell title="Profile" from={from} skeleton={<ProfileGhost />} tabs={PROFILE_TABS} activeHref={PROFILE_TABS.find((t) => t.key === tab)!.href}
+                  actions={!canRun || tab === 'registrations' ? null : onAbout ? <>
+      {/* (the calm UI build 2026-10-27 — 5-18) one Discard · Save in the header for the tab that is open — the About card's own pair moved here */}
+      <Button variant="secondary" appearance="outlined" onPress={aboutForm.reset} isDisabled={!aboutForm.dirty || aboutForm.busy}>Discard</Button>
+      <Button onPress={() => { void aboutForm.save() }} isDisabled={!aboutForm.dirty || aboutForm.busy} data-testid="about-save">{aboutForm.busy ? 'Saving…' : 'Save'}</Button>
+    </> : <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
-      <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
-    </> : null}>
+      <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save'}</Button>
+    </>}>
       {canRun ? null : <ReadOnlyNote />}
       {/* (UX audit S2) Unsaved edits are not lost to a move inside the app — nor to a tab or a reload (checklist: discarding edits asks first). */}
       <LeaveGuard dirty={dirty && canRun} what="the company details" onSave={save} onDiscard={discard} />
-      <div className={styles.layout} data-testid="profile">
+      <LeaveGuard dirty={aboutForm.dirty} what="the About page" onSave={aboutForm.save} onDiscard={aboutForm.reset} />
+      <div className={styles.layout} data-testid="profile" data-tab={tab}>
         <div className={styles.form}>
-          <ReadOnlyScope readOnly={!canRun}>
+          {tab === 'details' ? <ReadOnlyScope readOnly={!canRun}>
           <section id="details" className={styles.card} aria-labelledby="profile-details">
-            <div className={styles.cardHead}><h2 id="profile-details" className={styles.cardTitle}>Company details</h2><p className={styles.cardHelp}>{PROFILE_DETAILS_HELP}</p></div>
+            {/* (5-35 · 5-36) the studio's words, and the Brand kit's door (it lives under Templates — this is the way there for whoever comes here for the logo) */}
+            <div className={styles.cardHead}><h2 id="profile-details" className={styles.cardTitle}>Company details</h2><p className={styles.cardHelp}>{PROFILE_DETAILS_HELP.lead}<HelpLink href="/company/templates/brand" testId="brand-kit-link">{PROFILE_DETAILS_HELP.link}</HelpLink>{PROFILE_DETAILS_HELP.end}</p></div>
             <div className={styles.details}>
               {DETAIL_FIELDS.map((f) => (
                 <div key={f.key} className={f.wide ? styles.detailWide : undefined}>
@@ -187,14 +215,15 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
               {qanvastReviews ? <p className={styles.cardHelp} data-testid="review-qanvast-door">{QANVAST_REVIEWS_DOOR.lead}<HelpLink href={QANVAST_REVIEWS_DOOR.href} testId="review-qanvast-request">{QANVAST_REVIEWS_DOOR.link}</HelpLink>{QANVAST_REVIEWS_DOOR.end}</p> : null}
             </div>
           </section>
+          </ReadOnlyScope> : null}
           {/* (one-home N-07) The studio's registrations, recorded once — the Navigator and the signing pages read them. */}
-          <RegistrationsCard initial={registrations} canRun={canRun} />
-          </ReadOnlyScope>
+          {tab === 'registrations' ? <ReadOnlyScope readOnly={!canRun}><RegistrationsCard initial={registrations} canRun={canRun} /></ReadOnlyScope> : null}
           {/* (pending modules S37) Listed on Qanvast — beside the registrations it sends: who vouches for the studio, one card after the other. Outside
               the read-only scope (its fieldset would disable What Qanvast has for those who only read): the card shows its presses to Owners and
-              Admins alone and keeps nothing to type on the page. */}
-          {listing ? <QanvastListingCard data={listing} canRun={canRun} /> : null}
-          <ReadOnlyScope readOnly={!canRun}>
+              Admins alone and keeps nothing to type on the page. (the calm UI build 2026-10-27 — 5-36) It stays mounted, hidden, on the other tabs:
+              an application's words survive a trip to Company details for the UEN (its Add your UEN opens that tab). */}
+          {listing ? <div className={styles.pane} hidden={tab !== 'registrations'}><QanvastListingCard data={listing} canRun={canRun} /></div> : null}
+          {tab === 'entities' ? <ReadOnlyScope readOnly={!canRun}>
           {/* (REG-562) Issuing entities and where the money goes. */}
           <section id="entities" className={styles.card} aria-labelledby="profile-entities" data-testid="entities">
             <div className={styles.cardHead}><h2 id="profile-entities" className={styles.cardTitle}>Issuing entities &amp; bank details</h2><p className={styles.cardHelp}>{PROFILE_ENTITIES_HELP}</p></div>
@@ -249,14 +278,8 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
             ))}
             {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('', newId())] }))}>Add an entity</Button></span> : null}
           </section>
-          {about ? <AboutCard data={about} canRun={canRun} /> : null}   {/* (gaps build H, H-Q21) */}
-          {/* (REG-554) The kit lives with the templates now; this is the way there for whoever comes here for the logo. */}
-          <Link href="/company/templates/brand" className={styles.kitLink} data-testid="brand-kit-link">
-            <span className={styles.kitLinkIcon}><Icon name="palette" size={24} weight={300} /></span>
-            <span className={styles.kitLinkText}><span className={styles.kitLinkTitle}>Brand kit</span><span className={styles.cardHelp}>Logo, stamp, badges, colours and type — under Templates, beside the templates that use them.</span></span>
-            <Icon name="chevron_right" size={24} weight={300} />
-          </Link>
-          </ReadOnlyScope>
+          </ReadOnlyScope> : null}
+          {onAbout && about ? <ReadOnlyScope readOnly={!canRun}><AboutCard data={about} canRun={canRun} form={aboutForm} /></ReadOnlyScope> : null}   {/* (gaps build H, H-Q21) */}
         </div>
       </div>
     </CompanyShell>

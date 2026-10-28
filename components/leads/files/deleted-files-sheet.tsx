@@ -85,7 +85,7 @@ export function DeletedFilesSheet({
 
   // A trashed folder's children are trashed with it, so a parent may live in either list.
   const byId = useMemo(() => new Map([...files, ...trashed].map((f) => [f.id, f] as const)), [files, trashed])
-  const locationOf = (f: FileRow) => (f.parentId ? byId.get(f.parentId)?.name ?? 'All Files' : 'All Files')
+  const locationOf = (f: FileRow) => (f.parentId ? byId.get(f.parentId)?.name ?? 'All files' : 'All files')
 
   // Selection can only reference rows that still exist (restore / purge drop them).
   const liveSelected = useMemo(() => new Set([...selected].filter((id) => trashed.some((f) => f.id === id))), [selected, trashed])
@@ -106,13 +106,13 @@ export function DeletedFilesSheet({
             {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
                 `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
             <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
-                        role="dialog" aria-modal aria-label="Deleted Files" tabIndex={-1}>
+                        role="dialog" aria-modal aria-label="Deleted files" tabIndex={-1}>
               {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot. */}
-              <SurfaceHead title="Deleted Files" eyebrow="Files /" className={styles.heading} onClose={onClose}
+              <SurfaceHead title="Deleted files" eyebrow="Files /" className={styles.heading} onClose={onClose}
                            actions={
                              <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
                                      isDisabled={trashed.length === 0}>
-                               Empty Trash
+                               Delete all forever
                              </Button>
                            } />
 
@@ -135,7 +135,7 @@ export function DeletedFilesSheet({
                     <div className={`${styles.hCell} ${styles.colUpdated}`} role="columnheader"><span className={styles.hLabel}>Updated</span><ColumnResizer table="deleted-files" column="updated" label="Updated" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colType}`} role="columnheader"><span className={styles.hLabel}>File type</span><ColumnResizer table="deleted-files" column="type" label="File type" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colSize}`} role="columnheader"><span className={styles.hLabel}>File size</span><ColumnResizer table="deleted-files" column="size" label="File size" min={72} /></div>
-                    <div className={`${styles.hCell} ${styles.colLocation}`} role="columnheader"><span className={styles.hLabel}>File Location</span><ColumnResizer table="deleted-files" column="location" label="File Location" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colLocation}`} role="columnheader"><span className={styles.hLabel}>File location</span><ColumnResizer table="deleted-files" column="location" label="File location" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colActions}`} role="columnheader"><span className={styles.hLabel}>Actions</span></div>
                   </div>
 
@@ -166,7 +166,7 @@ export function DeletedFilesSheet({
                             <Avatar name={f.owner.name} color={f.owner.color} size={24} tooltip={false} />
                             <span className={styles.plain}>{f.owner.name}</span>
                           </>
-                        ) : <span className={styles.plain}>--</span>}
+                        ) : <span className={styles.plain}>—</span>}
                       </div>
                       <div className={`${styles.cell} ${styles.colUpdated}`} role="cell"><span className={styles.plain}>{displayDate(f.updatedAt ?? f.createdAt)}</span></div>
                       <div className={`${styles.cell} ${styles.colType}`} role="cell"><span className={styles.plain}>{fileTypeLabel(f)}</span></div>
@@ -179,7 +179,7 @@ export function DeletedFilesSheet({
                         <button type="button" className={styles.link} disabled={pending.has(f.id)}
                                 onClick={() => { prune([f.id]); void run([f.id], () => onRestore([f.id])) }}>Restore</button>
                         <button type="button" className={styles.link} data-danger disabled={pending.has(f.id)}
-                                onClick={() => setConfirm({ kind: 'forever', ids: [f.id] })}>Delete Forever</button>
+                                onClick={() => setConfirm({ kind: 'forever', ids: [f.id] })}>Delete forever</button>
                       </div>
                     </div>
                   ))}
@@ -191,7 +191,7 @@ export function DeletedFilesSheet({
                 count={liveSelected.size}
                 actions={[
                   { label: 'Restore', onClick: () => { const ids = [...liveSelected]; prune(ids); void run(ids, () => onRestore(ids)) } },
-                  { label: 'Delete Forever', tone: 'danger', onClick: () => setConfirm({ kind: 'forever', ids: [...liveSelected] }) },
+                  { label: 'Delete forever', tone: 'danger', onClick: () => setConfirm({ kind: 'forever', ids: [...liveSelected] }) },
                 ]}
                 onClear={() => setSelected(new Set())}
               />
@@ -210,7 +210,7 @@ export function DeletedFilesSheet({
                 <DangerButton disabled={busy} onClick={() => {
                   if (confirm?.kind === 'forever') { const ids = confirm.ids; prune(ids); void run(ids, () => onDeleteForever(ids)) }
                   setConfirm(null)
-                }}>Delete Forever</DangerButton>
+                }}>Delete forever</DangerButton>
               </>}>
         <span className={styles.confirmText}>
           {confirm?.kind === 'forever' && confirm.ids.length > 1
@@ -222,12 +222,12 @@ export function DeletedFilesSheet({
       </Dialog>
 
       <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
-              title="Empty trash?"
+              title="Delete all forever?"
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
                 <DangerButton disabled={busy} onClick={() => {
                   const ids = trashed.map((f) => f.id); setSelected(new Set()); void run(ids, () => onEmptyTrash()); setConfirm(null)
-                }}>Empty Trash</DangerButton>
+                }}>Delete all forever</DangerButton>
               </>}>
         <span className={styles.confirmText}>
           All {trashed.length} deleted {trashed.length === 1 ? 'file' : 'files'} will be removed permanently. This can’t be undone.

@@ -53,7 +53,13 @@ button.badge[data-notes]:focus-visible { outline: var(--om-border-2) solid var(-
 .kebab button[data-variant]:hover { background: var(--om-color-surface-bg); }   /* above the bare variant's wash, which would turn the disc see-through */
 .kebab button::before { content: ''; position: absolute; inset: -6px; }
 .tile:hover .kebab, .tile:focus-within .kebab, .kebab:has([aria-expanded='true']) { opacity: 1; }
-@media (hover: none) { .kebab { opacity: 1; } }
+/* (the calm UI build 2026-10-27, 6-28) Under a finger there is no hover: the ⋯ shows on the version on screen only — one ⋯ on the row, not
+   one on every thumbnail beside its marks; a tap on another tile puts it on screen and its ⋯ comes with it. The others' ⋯ is out of reach
+   too (hidden, not merely see-through), so a tap on a thumbnail's corner never opens a menu it can't see. */
+@media (hover: none) {
+  .kebab { opacity: 1; }
+  .tile:not([data-on]) .kebab:not(:has([aria-expanded='true'])) { visibility: hidden; }
+}
 .tile[data-running] .open { cursor: default; display: flex; align-items: center; justify-content: center; color: var(--om-color-primary-default); }
 .shimmer { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.5) 50%, transparent 80%) var(--om-color-surface-variant); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
 .spin { position: relative; animation: spin 1s linear infinite; }

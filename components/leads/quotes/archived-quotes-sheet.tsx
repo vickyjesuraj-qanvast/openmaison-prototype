@@ -1,5 +1,6 @@
 'use client'
 
+import { quoteStatusLabel } from '@/lib/quotes/status-words'
 import { useEffect, useState } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -51,7 +52,7 @@ export function ArchivedQuotesSheet({ open, onClose, load, crumb, showLead, onUn
   const allOn = all.length > 0 && all.every((r) => selected.has(r.id))
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
-    <Dialog open={open} onClose={onClose} title="Archived Quotes" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
+    <Dialog open={open} onClose={onClose} title="Archived quotes" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
       <span className={styles.note}>Archived quotes leave the quote lists and keep everything they hold. Unarchive puts one back on its lead.</span>
       <div className={styles.table} role="table" aria-label="Archived quotes" data-testid="archived-quotes" data-lead={showLead || undefined} data-select="" data-kind="archived">
         <div className={styles.head} role="row">
@@ -69,7 +70,7 @@ export function ArchivedQuotesSheet({ open, onClose, load, crumb, showLead, onUn
               <span role="cell" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={selected.has(q.id)} onChange={() => toggle(q.id)} aria-label={`Select ${q.number}`} /></span>
               <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="request_quote" size={20} weight={300} />{q.number} · {q.title}<span className={styles.amount}>{money2(q.amountMinor)}</span></span>
               {showLead ? <span role="cell" className={styles.cell}>{q.leadName}</span> : null}
-              <span role="cell" className={styles.cell}>{q.status}</span>
+              <span role="cell" className={styles.cell}>{quoteStatusLabel(q.status)}</span>
               <span role="cell" className={styles.cell}>{displayDate(new Date(q.archivedAt))}</span>
               <span role="cell" className={`${styles.cell} ${styles.actions}`}>
                 <Tooltip label={`Put ${q.number} back on ${q.leadName}`}>

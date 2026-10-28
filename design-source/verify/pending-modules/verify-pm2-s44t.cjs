@@ -280,6 +280,7 @@ const putDesign = () => { const f = writeJson('design.json', design); sql(`updat
     const bathRow = d.locator(`[data-item-id="${BATHROOMS}"]`).first()
     await bathRow.scrollIntoViewIfNeeded(); await bathRow.hover()
     await bathRow.getByRole('button', { name: /^More options for/ }).click(); await settle(d, 400)
+    await d.getByRole('menuitem', { name: /^Print as/ }).click(); await settle(d, 300)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: a section's print choices live under Print as ›
     await d.getByRole('menuitem', { name: /Price after the contract/ }).click(); await settle(d, 2500)
     ok(sql(`select priced_after from quote_items where id = '${BATHROOMS}'`) === '1', 'C1: ⋮ › Price after the contract marks the section')
     ok(sql(`select id from quote_items where quote_id = '${Q}' and parent_id is null order by position desc limit 1`) === BATHROOMS, 'C1: a marked section gathers at the end of the table')
@@ -301,6 +302,7 @@ const putDesign = () => { const f = writeJson('design.json', design); sql(`updat
     const bathRow2 = d.locator(`[data-item-id="${BATHROOMS}"]`).first()
     await bathRow2.scrollIntoViewIfNeeded(); await bathRow2.hover()
     await bathRow2.getByRole('button', { name: /^More options for/ }).click(); await settle(d, 400)
+    await d.getByRole('menuitem', { name: /^Print as/ }).click(); await settle(d, 300)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: under Print as ›
     await d.getByRole('menuitem', { name: /Price with the contract/ }).click(); await settle(d, 2500)
     ok(sql(`select priced_after from quote_items where id = '${BATHROOMS}'`) === '0' && Number(sql(`select amount_minor from quotes where id = '${Q}'`)) === before, `C1: ⋮ › Price with the contract puts it back in the total (${sql(`select priced_after from quote_items where id = '${BATHROOMS}'`)} · ${sql(`select amount_minor from quotes where id = '${Q}'`)})`)
 
@@ -332,7 +334,10 @@ const putDesign = () => { const f = writeJson('design.json', design); sql(`updat
     for (const w of want) have.push(await insp.getByText(w, { exact: false }).count() > 0 || await insp.getByLabel(w).count() > 0)
     ok(have.every(Boolean), `the Items table's new choices are in More options (${want.filter((_, i) => !have[i]).join(', ') || 'all'})`)
     ok(await insp.getByRole('button', { name: /^Sub-totals/ }).count() === 1, 'M2: Text styles hold a “Sub-totals” style')
-    ok(await insp.getByRole('radiogroup', { name: 'Colour' }).count() >= 3, 'row 309: every printed column card has a Colour')
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-23: a column card's width, alignment, place and Colour sit behind its chevron — open each card in turn */
+    { const opens = insp.getByTestId('column-card-open'); const n = await opens.count(); let withColour = 0
+      for (let i = 0; i < n; i++) { await opens.nth(i).click(); await settle(d, 250); if (await insp.getByRole('radiogroup', { name: 'Colour' }).count() === 1) withColour++; await opens.nth(i).click(); await settle(d, 200) }
+      ok(withColour >= 3, `row 309: every printed column card has a Colour (${withColour} of ${n} cards — the printed ones)`) }
     await shot(d, 'tpl-items-more-1440')
     await d.locator('[data-block-id="py"]').first().click({ force: true }); await settle(d, 500)
     ok(await insp.getByLabel('The percentage').count() === 1 && await insp.getByText('PayNow QR beside the schedule').count() === 1, 'M6 · C5: the Payment schedule offers The percentage and the QR beside it')

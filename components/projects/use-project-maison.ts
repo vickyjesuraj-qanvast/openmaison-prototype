@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { withFrom } from '@/lib/nav'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { dayLabel, plural } from '@/lib/projects/schedule-model'
 import { suggestionLabel, type MaisonAnswer, type MaisonProposal, type MaisonSuggestion } from '@/lib/maison-ai'
 import { addNextStepTask, complianceToDo, draftWeekUpdate, lateMilestones, nextStepTask, teamNames } from '@/app/projects/maison-actions'
@@ -31,7 +32,13 @@ export function briefFactsOf(d: ProjectDetail): ProjectBriefFacts {
     closing: d.closing ?? null, wonAt: d.wonAt.getTime(), completedAt: p.completedAt?.getTime() ?? null, now: d.now,
     /* (simplify S-01) the brief acts on the top Needs you row and tells the week: what runs now, and the client's wait */
     top: d.needs?.[0] ? headerLabel(d.needs[0], firstOf(lead.name)) : null,
-    running: (() => { const m = d.schedule?.running[0] ?? d.schedule?.next.find((x) => x.status === 'blocked'); return m ? { title: m.title, end: m.end } : null })(),
+    running: (() => {
+      const m = d.schedule?.running[0] ?? d.schedule?.next.find((x) => x.status === 'blocked')
+      if (!m) return null
+      /* (the calm UI build 2026-10-27, 3-30) an ask for more time on it, waiting on this viewer — the brief says who asks to finish when */
+      const ask = d.needs?.find((r) => r.kind === 'approve-more-time' && r.ask?.milestoneId === m.id)?.ask
+      return { title: m.title, end: m.end, ask: ask?.asked !== undefined ? { by: ask.who, to: ask.asked } : null }
+    })(),
     wait: d.schedule?.facts.waiting?.onClient ? { title: d.schedule.facts.waiting.title, days: d.schedule.facts.waiting.days, note: d.schedule.facts.waiting.note } : null,
   }
 }
@@ -70,6 +77,8 @@ export function useProjectMaison(o: { projectId: string; name: string; client: s
   const snackbar = useSnackbar()
   const { run } = useRun()
   const { projectId, client, tab, stage, mayChange, hasSchedule, d, doors } = o
+  /* (the calm UI build 2026-10-27, 3-01 · 3-09) a phone's header draws no filled button on the Overview — the brief leads with its step there */
+  const phone = useMediaQuery(MOBILE)
   return useMemo(() => {
     const base = `/projects/${projectId}`
     /* (parity P-34) a milestone past its day now is overdue — the Project stages card's word */
@@ -147,9 +156,10 @@ export function useProjectMaison(o: { projectId: string; name: string; client: s
       const waits = d?.waitingItems ?? []
       const rows = [...needs.map(needRow), ...waits.map(itemRow)]
       return Promise.resolve(rows.length
-        ? { title: needs.length ? `${plural(needs.length, 'thing')} need${needs.length === 1 ? 's' : ''} you` : `Waiting on ${client}`,
-            text: `${needs.length ? 'Each opens where it is fixed' : 'Nothing needs you'}${waits.length ? `; ${plural(waits.length, 'thing')} wait${waits.length === 1 ? 's' : ''} on ${client}` : ''}.`, rows }
-        : { title: 'Nothing waits on you', text: `Nothing waits on ${client} either.` })
+        /* (the calm UI build 2026-10-27, T-01) "n need your attention"; empty: "You’re all caught up" */
+        ? { title: needs.length ? `${plural(needs.length, 'thing')} need${needs.length === 1 ? 's' : ''} your attention` : `Waiting on ${client}`,
+            text: `${needs.length ? 'Each opens where it is fixed' : 'You’re all caught up'}${waits.length ? `; ${plural(waits.length, 'thing')} wait${waits.length === 1 ? 's' : ''} on ${client}` : ''}.`, rows }
+        : { title: 'You’re all caught up', text: `Nothing waits on ${client} either.` })
     } }
     /* (simplify S-01 · S-02) the brief's first button: the top Needs you row — what the header's filled button does (the same row, S-02) */
     const topRow = d?.needs?.[0] ?? null
@@ -183,7 +193,7 @@ export function useProjectMaison(o: { projectId: string; name: string; client: s
     /* (pending modules S14) Ask for a review — a completed project's client, with the studio's review link (lib/maison-ai/review-ask.ts) */
     const review: MaisonSuggestion | null = d && stage === 'completed' ? { label: BRIEF_ACTIONS.review, propose: () => reviewAsk({
       lead: { name: d.lead.name, propertyType: d.lead.propertyType, stage: 'Won', onProject: true }, phone: d.lead.phone, first: client, done: true, here: here() }) } : null
-    const briefs = d ? projectBriefs(briefFactsOf(d)) : []
+    const briefs = d ? projectBriefs({ ...briefFactsOf(d), topHere: phone }) : []
     const pool: MaisonSuggestion[] = [...(top ? [top] : []), late, task, update, compliance, setup, attention, summary, ...(review ? [review] : [])]
     const resolve = (label: string) => pool.find((s) => suggestionLabel(s) === label)
     let suggestions: MaisonSuggestion[]
@@ -200,5 +210,5 @@ export function useProjectMaison(o: { projectId: string; name: string; client: s
       suggestions = [...first, ...rest.filter((s) => !first.includes(s))]
     }
     return { suggestions, resolve: (label: string) => suggestions.find((s) => suggestionLabel(s) === label) ?? resolve(label), briefs, draftWeek }
-  }, [projectId, client, tab, stage, mayChange, hasSchedule, d, doors, router, snackbar, run])
+  }, [projectId, client, tab, stage, mayChange, hasSchedule, d, doors, router, snackbar, run, phone])
 }

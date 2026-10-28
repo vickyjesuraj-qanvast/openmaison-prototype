@@ -3,6 +3,10 @@
 // the rule it keeps, never a count, every press pressed for real (a tap under touch, a click with a mouse), on the production build:
 //  A · B-06   the lead's QUOTES card ≤1024: on a card too narrow for the names, the current step's name alone — whole, one line, under its own mark
 //             (or ending at the bar's end), every mark still at its name's left edge; a card with room (1024 sideways) and the desk draw all six.
+//             (the calm UI build 2026-10-27, a deliberate change — audit 2-25 · T-04) the card says the quote's state ONCE, as a sentence ("Approved —
+//             not sent to Vivien yet"); the track is unlabelled at every width (a segment a step). B-06's rule on the new card: that one sentence
+//             whole — one line, no word broken, inside the card — and the track's marks still cut the studio's steps, the fill ending at the
+//             current step's mark.
 //  B · Won's split, one rule at every width: an uploaded signed quote starts at the studio's usual — its default payment schedule (the demo's
 //      10 · 30 · 30 · 30, and 20 · 40 · 40 once the default template's schedule is that) — on the desk; From System keeps the quote's own.
 //  C · K-9    a phone held sideways (844×390) is a phone: the Move stage window is the step screen, On Hold the sheet, the lead form / Edit Lead /
@@ -97,20 +101,46 @@ const SIZE = {
   const onTop = (loc) => loc.evaluate((el) => { const r = el.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!h && (h === el || el.contains(h) || h.contains(el)) })
   const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   const overlap = (a, c) => a.l < c.r - 0.5 && c.l < a.r - 0.5 && a.t < c.b - 0.5 && c.t < a.b - 0.5
-  /* the QUOTES card's steps, read off the page: each name's own box, the line its words draw, the marks, the bar */
-  const steps = (p) => p.evaluate(() => {
+  /* (the calm UI build 2026-10-27, a deliberate change — audit 2-25) the QUOTES card as it is now: its one state sentence (the lines its words
+     draw, its box against the track's), the track's step count from its own label ("… — step n of N"), the marks, the fill */
+  const quoteCard = (p) => p.evaluate(() => {
     const card = document.querySelector('[data-card="quotes"]'); if (!card) return null
-    const track = card.querySelector('[class*="quote-card-module"][class*="__track"]'), tr = track.getBoundingClientRect()
-    const labels = [...card.querySelectorAll('[class*="quote-card-module"][class*="__stepLabel"]')].map((el) => {
-      const r = el.getBoundingClientRect(), range = document.createRange(); range.selectNodeContents(el)
-      const tf = getComputedStyle(el).transform, tx = tf && tf !== 'none' ? new DOMMatrix(tf).m41 : 0   // a stepped-left name: its slot's own left
-      const lines = [...range.getClientRects()].filter((q) => q.width > 0)
-      const words = range.getBoundingClientRect()
-      return { text: el.textContent, current: el.hasAttribute('data-current'), l: r.left - tx, h: r.height, lines: lines.length, wl: words.left, wr: words.right, tw: words.width }
-    })
-    const marks = [...track.querySelectorAll('[class*="__mark"]')].map((m) => m.getBoundingClientRect().left + 1)
-    return { tl: tr.left, tr: tr.right, labels, marks }
+    const state = card.querySelector('[data-testid="quote-card-state"]'), track = card.querySelector('[class*="quote-card-module"][class*="__track"]')
+    if (!state || !track) return null
+    const tr = track.getBoundingClientRect(), range = document.createRange(); range.selectNodeContents(state)
+    const rects = [...range.getClientRects()].filter((q) => q.width > 0), words = range.getBoundingClientRect()
+    const m = /step (\d+) of (\d+)$/.exec(track.getAttribute('aria-label') || '')
+    const fill = track.querySelector('[class*="__bar"]')?.getBoundingClientRect()
+    /* a word broken across two lines: its own range draws on more than one line */
+    let broken = 0
+    for (const node of [...state.childNodes].filter((n) => n.nodeType === 3)) {
+      for (const w of node.textContent.matchAll(/\S+/g)) {
+        const r = document.createRange(); r.setStart(node, w.index); r.setEnd(node, w.index + w[0].length)
+        if (new Set([...r.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size > 1) broken++
+      }
+    }
+    return {
+      broken,
+      text: (state.textContent || '').trim(), lines: new Set(rects.map((q) => Math.round(q.top))).size, clipped: state.scrollWidth > state.clientWidth + 0.5,
+      wl: words.left, wr: words.right, tl: tr.left, tr: tr.right, tw: tr.width,
+      step: m ? +m[1] : 0, of: m ? +m[2] : 0, fillR: fill ? fill.right : NaN,
+      marks: [...track.querySelectorAll('[class*="__mark"]')].map((x) => x.getBoundingClientRect().left + 1),
+      names: card.querySelectorAll('[class*="quote-card-module"][class*="__stepLabel"]').length,
+    }
   })
+  /** The card's rule at one width: the sentence whole on one line inside the card, the marks at k/N of the track, the fill at the current step's.
+   *  `wraps`: a card too narrow for the sentence (768 upright, two columns) wraps it between words — the house's T-12 ("never cut the fact
+   *  that matters — wrap to a second line instead"); never a word broken, nothing clipped. A phone's full-width card (390) and the cards
+   *  with room hold it on one line. */
+  const cardRule = (s, label, { wraps = false } = {}) => {
+    ok(!!s && s.text.length > 0 && s.names === 0, `${label}: the state is said once, as a sentence — no step names`, s ? `"${s.text}" · ${s.names} names` : 'no card')
+    if (!s) return
+    if (wraps) ok(s.broken === 0 && !s.clipped && s.lines <= 2, `${label} · "${s.text}" whole, wrapping only between words — no word broken (T-12)`, `${s.lines} lines · ${s.broken} broken${s.clipped ? ' · clipped' : ''}`)
+    else ok(s.lines === 1 && s.broken === 0 && !s.clipped, `${label} · "${s.text}" stands on one line, no word broken`, `${s.lines} lines${s.clipped ? ' · clipped' : ''}`)
+    ok(s.wl >= s.tl - 0.5 && s.wr <= s.tr + 0.5, `${label} · "${s.text}" whole inside the card's width`, `${Math.round(s.wl)}–${Math.round(s.wr)} in ${Math.round(s.tl)}–${Math.round(s.tr)}`)
+    ok(s.of >= 2 && s.marks.length === s.of - 1 && s.marks.every((x, k) => Math.abs(x - (s.tl + ((k + 1) / s.of) * s.tw)) <= 1.5), `${label} · the track's ${s.of - 1} marks cut its ${s.of} steps evenly`, s.marks.map((x) => Math.round(x)).join(' '))
+    ok(s.step >= 1 && Math.abs(s.fillR - (s.tl + (s.step / s.of) * s.tw)) <= 1.5, `${label} · the fill ends at the current step's mark (or the bar's end)`, `fill ${Math.round(s.fillR)} · step ${s.step} of ${s.of}`)
+  }
 
   try {
     /* ── A · B-06 the QUOTES card's steps ── */
@@ -121,18 +151,11 @@ const SIZE = {
         let n = 0
         for (const id of QUOTED.slice(0, 6)) {
           await go(p, `/leads/${id}`, 1400)
-          const s = await steps(p); if (!s) continue
+          /* (the calm UI build 2026-10-27, a deliberate change — audit 2-25) the card's one sentence and its unlabelled track (`quoteCard`) */
+          const s = await quoteCard(p); if (!s) continue
           n++
-          const drawn = s.labels.filter((x) => x.h > 0.5)
-          const cur = s.labels.find((x) => x.current)
-          ok(drawn.length === 1 && drawn[0].current, `${size} · ${cur?.text}: only the current step's name is drawn`, s.labels.map((x) => `${x.text}:${Math.round(x.h)}`).join(' · '))
-          ok(cur && cur.lines === 1, `${size} · "${cur?.text}" stands on one line, no word broken`, `${cur?.lines} lines`)
-          ok(cur && cur.wl >= s.tl - 0.5 && cur.wr <= s.tr + 0.5, `${size} · "${cur?.text}" whole inside the bar's width`, `${Math.round(cur?.wl)}–${Math.round(cur?.wr)} in ${Math.round(s.tl)}–${Math.round(s.tr)}`)
-          const i = s.labels.indexOf(cur)
-          const at = i === 0 ? s.tl : s.marks[i - 1]
-          ok(Math.abs(cur.wl - at) <= 1.5 || Math.abs(cur.wr - s.tr) <= 1.5, `${size} · "${cur?.text}" starts under its own mark (or ends at the bar's end)`, `words ${Math.round(cur.wl)} · mark ${Math.round(at)} · bar end ${Math.round(s.tr)}`)
-          ok(s.marks.length === s.labels.length - 1 && s.marks.every((m, k) => Math.abs(m - s.labels[k + 1].l) <= 1.5), `${size} · every mark still at its name's left edge`, s.marks.map((m, k) => `${Math.round(m)}/${Math.round(s.labels[k + 1].l)}`).join(' '))
-          if (n === 1 || cur.text === 'Signed') await shot(p, `a-${size}-${cur.text.replace(/ /g, '')}`)
+          cardRule(s, size, { wraps: size === '768' })
+          if (n === 1 || /^Signed/.test(s.text)) await shot(p, `a-${size}-${s.text.replace(/[^\w]+/g, '').slice(0, 24)}`)
         }
         ok(n >= 3, `${size}: the demo's quoted leads were read (${n})`)
         await c.close()
@@ -140,8 +163,7 @@ const SIZE = {
       for (const size of ['1024', '1440']) {
         const c = await ctx(size); const p = await page(c)
         await go(p, `/leads/${QUOTED[0]}`, 1400)
-        const s = await steps(p)
-        ok(s && s.labels.every((x) => x.h > 0.5 && x.lines === 1), `${size}: a card with room draws every step's name, each on one line`, s?.labels.map((x) => `${x.text}:${Math.round(x.h)}/${x.lines}`).join(' · '))
+        cardRule(await quoteCard(p), `${size} (a card with room)`)   // (the calm UI build 2026-10-27, a deliberate change — audit 2-25) the same card at every width
         await c.close()
       }
     })
@@ -195,7 +217,7 @@ const SIZE = {
         const hold = p.getByTestId('hold-sheet'), hs = p.getByTestId('hold-sheet-save')
         ok(await hold.isVisible() && (await box(hs)).b <= 390.5 && await onTop(hs), 'On Hold rises as the phone’s sheet, Save & move on screen and on top')
         await go(p, '/leads?new=1', 2200)
-        const form = p.getByRole('dialog', { name: 'Create New Lead' }), fb = await box(form)
+        const form = p.getByRole('dialog', { name: /* (the calm UI build 2026-10-27, a deliberate change) B2 2-33 · W-475: the "New lead" form — "Name*", "Mobile number*" */ 'New lead' }), fb = await box(form)
         ok(fb.l <= 0.5 && fb.w >= 843 && Math.abs(fb.b - 390) <= 1, 'the lead form rises as the phone’s bottom sheet (full width, on the screen’s foot)', `${Math.round(fb.l)},${Math.round(fb.t)} ${Math.round(fb.w)}×${Math.round(fb.h)}`)
         ok(await form.getByTestId('paste-message').isVisible(), '…as the phone’s short new lead (the name, the mobile, the fill rows)')
         const addBtn = form.getByRole('button', { name: /^Add lead$/i }).last()
@@ -211,18 +233,20 @@ const SIZE = {
         if (RETURNABLE) {
           await go(p, `/leads/${RETURNABLE}`)
           await tap(p, p.getByRole('button', { name: 'More options' }).first()); await p.waitForTimeout(600)
-          await tap(p, p.getByRole('menuitem', { name: /Return Lead|Appeal/ }).first()); await p.waitForTimeout(1400)
-          const ret = p.getByRole('dialog', { name: /Return Lead|Appeal/ }), rb = await box(ret)
+          await tap(p, p.getByRole('menuitem', { name: /Return Lead|Return to Qanvast|Appeal/ }).first()); await p.waitForTimeout(1400)   // (the calm UI build 2026-10-27, a deliberate change) B2: "Return to Qanvast"
+          const ret = p.getByRole('dialog', { name: /Return Lead|Return to Qanvast|Appeal/ }), rb = await box(ret)
           ok(rb.l <= 0.5 && rb.w >= 843 && Math.abs(rb.b - 390) <= 1, 'Return Lead rises as the phone’s sheet', `${Math.round(rb.l)},${Math.round(rb.t)} ${Math.round(rb.w)}×${Math.round(rb.h)}`)
           const next = ret.locator('[data-surface-foot] button').last()
           ok((await box(next)).b <= 390.5 && await onTop(next), '…its foot’s primary on screen and on top')
           await shot(p, 'c3-return-sideways')
         } else ok(false, 'a Qanvast lead to return')
         await go(p, '/leads')
-        await tap(p, p.getByRole('button', { name: /^Review imported leads/ }).first()); await p.waitForTimeout(1200)
+        /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the docked review bar went — the queue is the scope pill's "To review · n" row */
+        await tap(p, p.locator('button[class*="scope-pill"]').first()); await p.waitForTimeout(500)
+        await tap(p, p.getByTestId('leads-review-open').first()); await p.waitForTimeout(1200)
         const rev = p.getByRole('dialog', { name: 'Review imported leads' }), vb = await box(rev)
         ok(vb.l <= 0.5 && vb.t <= 0.5 && vb.w >= 843 && vb.h >= 389, 'Review imported leads is the whole screen, as on a phone', `${Math.round(vb.w)}×${Math.round(vb.h)}`)
-        const approveAll = rev.getByRole('button', { name: /^Approve All Clean/ })
+        const approveAll = rev.getByRole('button', { name: /^(Approve All Clean|Approve \d+ \(no duplicates\))/ })   // (the calm UI build 2026-10-27, a deliberate change) B2: "Approve n (no duplicates)"
         ok(await onTop(approveAll), '…Approve All Clean on top')
         await shot(p, 'c4-review-sideways')
         ok(!errors.length, 'no page errors on the sideways surfaces', errors.join(' | '))
@@ -307,7 +331,9 @@ const SIZE = {
       console.log('F · W2-13 the composer’s tools')
       for (const size of ['320', '359', '360', '390']) {
         const c = await ctx(size); const p = await page(c)
-        await go(p, `/leads/${OLIVIA}/notes`)
+        /* (the calm UI build 2026-10-27, a deliberate change — audit 2-46) a phone's note composer opens from New › Note (`?new=note`, the quick link's
+           landing) — it no longer sits docked under the list on every visit */
+        await go(p, `/leads/${OLIVIA}/notes?new=note`)
         const bar = p.locator('[class*="lead-notes-module"][class*="__composerBar"]')
         const tools = ['Bulleted list', 'Numbered list', 'Attach file'].map((n) => bar.getByRole('button', { name: n, exact: true }))
         const more = bar.getByTestId('composer-tools'), save = bar.getByRole('button', { name: 'Save', exact: true })
@@ -348,7 +374,7 @@ const SIZE = {
         const c = await ctx(size); const p = await page(c)
         await go(p, '/qanvast-ops/reviews')
         const t = await titleLines(p)
-        const req = p.getByRole('button', { name: /Request reviews/ }).first()
+        const req = p.getByTestId('reviews-request').first()   // (the calm UI build 2026-10-27, a deliberate change) B2: the header's button reads "Ask for reviews" — pressed by its handle
         const rb = await box(req)
         ok(t.lines === 1, `${size}: "Qanvast Ops" on one line`, `${t.lines} lines`)
         ok(rb.l >= 0 && rb.r <= +size && await onTop(req) && (rb.t >= t.tb - 1 || (rb.t < t.tb && rb.b > t.tt)), `${size}: Request reviews on screen, on top — beside a one-line title or under it`)
@@ -457,8 +483,10 @@ const SIZE = {
       {
         const c = await ctx('1280'); const p = await page(c)
         await go(p, `/leads/${QUOTED[0]}`)
-        const s = await steps(p)
-        ok(s && s.labels.every((x) => x.h > 0.5 && x.lines === 1), '1280: the six step names drawn, each on one line (≥1025 unchanged)')
+        /* (the calm UI build 2026-10-27, a deliberate change — audit 2-25) the desk's card is the calm build's too: the six steps are the track's
+           segments (no names at any width — this check read an empty list as a pass), the state one sentence on one line */
+        const s = await quoteCard(p)
+        ok(!!s && s.of === 6 && s.marks.length === 5 && s.lines === 1 && s.names === 0, '1280: the six step names drawn, each on one line (≥1025 unchanged)', s ? `"${s.text}" · ${s.lines} lines · ${s.of} steps · ${s.marks.length} marks` : 'no card')
         await c.close()
       }
     })

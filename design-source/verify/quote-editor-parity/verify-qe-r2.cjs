@@ -45,7 +45,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   await step('designer: Approved is approvers only in the tables too', async () => {
     await page.goto(`${BASE}/leads/${LEAD1}/quotes`); await ready(page)
     const row = page.getByRole('row').filter({ hasText: 'OM-10001' }).first()
-    await row.getByRole('button', { name: /Sent for Approval/ }).first().click()
+    await row.getByRole('button', { name: /Waiting for approval/ }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) T-01: the status set on screen
     const item = page.getByRole('menuitem', { name: /^Approved/ }).first()
     ok('Approved is disabled with “approvers only”', (await item.isDisabled()) && /approvers only/.test(await item.innerText()))
     await shot('02-table-approvers-only')
@@ -120,10 +120,10 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     const sendBtn = page.getByRole('button', { name: 'Send', exact: true })
     ok('an approver’s Send is a menu at Draft', (await sendBtn.getAttribute('aria-haspopup')) === 'menu')
     await sendBtn.click()
-    await page.getByRole('menuitem', { name: /Send for confirmation/ }).click()
+    await page.getByRole('menuitem', { name: /Ask to confirm/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-358
     const dlg = page.getByRole('dialog', { name: 'Send for confirmation' }); await dlg.waitFor()
     const phone = dlg.getByLabel(/Client phone/); if (!(await phone.inputValue())) await phone.fill('91234567')
-    const [pop] = await Promise.all([ctx.waitForEvent('page').catch(() => null), dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()])
+    const [pop] = await Promise.all([ctx.waitForEvent('page').catch(() => null), dlg.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()])   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     if (pop) await pop.close()
     await snack(page, /^Quote sent to .+ for confirmation/)   // REG-776 (UX audit Q11): it names the client and the follow-up
     await page.waitForTimeout(600)

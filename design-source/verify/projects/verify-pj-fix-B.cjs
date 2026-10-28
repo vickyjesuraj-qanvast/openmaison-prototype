@@ -59,7 +59,8 @@ const dm = (n) => { const u = new Date(n * 864e5); return `${u.getUTCDate()} ${M
     /* B-20: Next payment reads the stage's invoice — Ryan's Commencement waits on the studio to confirm the client's proof (never red) */
     const rToConfirm = sql(`select count(*) from project_payments pp join project_invoices i on i.id=pp.invoice_id where i.project_id='${ryan}' and pp.status='to_confirm'`) !== '0'
     const rPay = p.locator('[data-testid="next-payment"]')
-    ok(!rToConfirm || (/payment to confirm/.test(await rPay.innerText()) && (await rPay.getAttribute('data-alert')) === null), `B-20 Next payment in Money's words: "${await rPay.innerText()}"`)
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-23 · W-571) a payment to confirm says its sum: "S$ 13,370 to confirm" */
+    ok(!rToConfirm || (/S\$ ?[\d,]+ to confirm|% to confirm/.test(await rPay.innerText()) && (await rPay.getAttribute('data-alert')) === null), `B-20 Next payment in Money's words: "${await rPay.innerText()}"`)
     await shot('d-ryan-schedule')
     await row('Electrical').locator('[data-testid="milestone-name"]').click(); await p.waitForTimeout(700)
     const mid = Number(sql(`select amount_minor from project_invoices where project_id='${ryan}' and stage_name like 'Mid%' and status <> 'void'`))
@@ -127,7 +128,10 @@ const dm = (n) => { const u = new Date(n * 864e5); return `${u.getUTCDate()} ${M
     await p.keyboard.press('Escape'); await p.waitForTimeout(400)
     await p.getByRole('radio', { name: 'Months' }).click().catch(async () => { await p.getByText('Months', { exact: true }).click() })
     await p.waitForTimeout(500)
-    ok(!/Shaded columns are weekends/.test(await p.locator('[class*="legend"]').innerText()), 'B-30 Months: the legend drops the weekends')
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-23) the legend is the "?" on the chart's head: hovered, its tooltip says it */
+    await p.locator('[data-testid="schedule-legend"]').hover(); await p.waitForTimeout(600)
+    { const tip = await p.locator('[role="tooltip"]').last().innerText().catch(() => ''); ok(/The line marks today/.test(tip) && !/Shaded columns are weekends/.test(tip), 'B-30 Months: the legend drops the weekends') }
+    await p.mouse.move(2, 2)
     await go(`/projects/${ben}/schedule`)
     ok(/true/.test(String(await p.getByRole('radio', { name: 'Months' }).isChecked().catch(() => false))) || (await p.locator('[aria-label="Scale"] [aria-checked="true"], [aria-label="Scale"] [data-selected="true"]').innerText().catch(() => '')).includes('Months'), 'B-30 Months is remembered on reload')
     await p.getByRole('radio', { name: 'Weeks' }).click().catch(async () => { await p.getByText('Weeks', { exact: true }).click() })
@@ -222,7 +226,8 @@ const dm = (n) => { const u = new Date(n * 864e5); return `${u.getUTCDate()} ${M
     console.log('Marcus')
     await go(`/projects/${marcus}/schedule`)
     const quoteCard = p.locator('[data-testid="start-schedule"] [role="radio"], [data-testid="start-schedule"] button').filter({ hasText: /^A quote/ }).first()
-    ok(await quoteCard.isVisible() && /No quote on this project yet/.test(await p.locator('[data-testid="start-schedule"]').innerText()), 'B-45 "A quote" shows, disabled, with why (gaps build C renamed the card)')
+    /* (the calm UI build 2026-10-27, a deliberate change — 3-34) a way that can't be used is one grey line, not a disabled card */
+    ok(await quoteCard.count() === 0 && /Make a quote first to build from it/.test(await p.locator('[data-testid="start-schedule"]').innerText()), 'B-45 "A quote" is not offered; one line says why')
     await p.locator('[data-testid="start-schedule"]').getByText('A schedule template').click(); await p.waitForTimeout(300)
     await p.locator('[data-testid="create-schedule"]').click(); await p.waitForTimeout(1500)
     ok(Number(sql(`select count(*) from project_milestones where project_id='${marcus}' and deleted_at is null and payment_ref like 'split:%'`)) > 0, 'B-07 a template start ties the agreed split\'s stages')

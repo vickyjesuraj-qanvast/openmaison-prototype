@@ -1,4 +1,6 @@
 import { displayDate } from '@/lib/format'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01 · 4-04 — B4's request) a status on screen reads its display word
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import type { ProjectInfoDocument } from '@/components/leads/detail/info-column'
 import type { ProjectDetail } from '@/lib/projects/queries'
 
@@ -13,12 +15,12 @@ export function projectInfoDocuments(d: ProjectDetail, o: { from: string; fileHr
   const quote: ProjectInfoDocument = d.quote ? { key: 'quote', label: 'Signed quote', value: d.quote.number, href: `/quotes/${d.quote.id}?from=${back}`, testId: 'doc-quote' }
     : d.quoteFile ? { key: 'quote', label: 'Signed quote', value: 'Uploaded', href: o.fileHref(d.quoteFile.id), testId: 'doc-quote-file' }
     : { key: 'quote', label: 'Signed quote', value: d.lead.direct ? 'Agreed outside a quote' : null }
-  const contract: ProjectInfoDocument = d.contract ? { key: 'contract', label: 'Contract', value: d.contract.signedAt ? `Signed ${displayDate(d.contract.signedAt)}` : d.contract.status, href: `/contracts/${d.contract.id}?from=${back}`, testId: 'doc-contract' }
+  const contract: ProjectInfoDocument = d.contract ? { key: 'contract', label: 'Contract', value: d.contract.signedAt ? `Signed ${displayDate(d.contract.signedAt)}` : contractStatusLabel(d.contract.status), href: `/contracts/${d.contract.id}?from=${back}`, testId: 'doc-contract' }
     : d.contractFile ? { key: 'contract', label: 'Contract', value: 'Uploaded', href: o.fileHref(d.contractFile.id), testId: 'doc-contract-file' }
     : { key: 'contract', label: 'Contract', value: null }
   return [
     quote, contract,
-    ...d.documents.map((x): ProjectInfoDocument => ({ key: `${x.kind}:${x.id}`, label: x.kind === 'quote' ? 'Quote' : 'Contract', value: `${x.caption} · ${x.status}`,
+    ...d.documents.map((x): ProjectInfoDocument => ({ key: `${x.kind}:${x.id}`, label: x.kind === 'quote' ? 'Quote' : 'Contract', value: `${x.caption} · ${x.kind === 'quote' ? quoteStatusLabel(x.status) : contractStatusLabel(x.status)}`,
       href: `/${x.kind === 'quote' ? 'quotes' : 'contracts'}/${x.id}?from=${back}`, testId: `doc-${x.kind}-other` })),
   ]
 }
@@ -36,12 +38,12 @@ export type ProjectDocumentRow = { key: 'quote' | 'contract'; icon: string; name
 export function projectDocumentRows(d: ProjectDetail, o: { from: string; fileHref: (fileId: string) => string }): ProjectDocumentRow[] {
   const back = encodeURIComponent(o.from)
   const quote: ProjectDocumentRow = d.quote
-    ? { key: 'quote', icon: 'request_quote', name: `Quote ${d.quote.number}`, when: d.quote.signedAt ? `Signed ${displayDate(d.quote.signedAt)}` : d.quote.status, href: `/quotes/${d.quote.id}?from=${back}`, testId: 'project-doc-quote' }
+    ? { key: 'quote', icon: 'request_quote', name: `Quote ${d.quote.number}`, when: d.quote.signedAt ? `Signed ${displayDate(d.quote.signedAt)}` : quoteStatusLabel(d.quote.status), href: `/quotes/${d.quote.id}?from=${back}`, testId: 'project-doc-quote' }
     : d.quoteFile ? { key: 'quote', icon: 'request_quote', name: 'Signed quote', when: 'Uploaded copy, in Files', href: o.fileHref(d.quoteFile.id), testId: 'project-doc-quote' }
     : { key: 'quote', icon: 'request_quote', name: 'Signed quote', when: d.lead.direct ? 'Agreed outside a quote' : 'None yet', testId: 'project-doc-quote' }
   const c = d.contract
   const contract: ProjectDocumentRow = c
-    ? { key: 'contract', icon: 'contract', name: c.title, when: c.signedAt ? `Signed ${displayDate(c.signedAt)}` : c.status === 'Sent to Client' ? (c.sentAt ? `Sent ${displayDate(c.sentAt)} · not signed yet` : 'Sent · not signed yet') : c.status,
+    ? { key: 'contract', icon: 'contract', name: c.title, when: c.signedAt ? `Signed ${displayDate(c.signedAt)}` : c.status === 'Sent to Client' ? (c.sentAt ? `Sent ${displayDate(c.sentAt)} · not signed yet` : 'Sent · not signed yet') : contractStatusLabel(c.status),
         href: `/contracts/${c.id}?from=${back}`, testId: 'project-doc-contract' }
     : d.contractFile ? { key: 'contract', icon: 'contract', name: 'Signed contract', when: 'Uploaded copy, in Files', href: o.fileHref(d.contractFile.id), testId: 'project-doc-contract' }
     : { key: 'contract', icon: 'contract', name: 'Contract', when: 'None yet', testId: 'project-doc-contract' }

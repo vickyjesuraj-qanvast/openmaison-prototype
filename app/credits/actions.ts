@@ -93,7 +93,7 @@ async function amountReachedHeadsUp(m: { id: string; name: string }) {
   if (!bal) return
   const used = await usedSince(bal.periodStart.getTime(), m.id)
   if (used < cap.monthlyCap) return
-  await notify('credit_amount_reached', await ownerIds(), { title: `${m.name} used their ${fmtCredits(cap.monthlyCap)} AI credits for the month`, body: 'The studio’s credits are untouched. Raise their monthly amount if they need more.', href: `/company/plan?member=${m.id}`, actorId: m.id })
+  await notify('credit_amount_reached', await ownerIds(), { title: `${m.name} used their ${fmtCredits(cap.monthlyCap)} AI credits for the month`, body: 'The studio’s credits are untouched. Raise their monthly limit if they need more.', href: `/company/plan?member=${m.id}`, actorId: m.id })
 }
 
 /** The viewer's summary, fresh — after a spend in a rail-less editor, or when a dialog opens. */
@@ -265,7 +265,7 @@ export async function talkToUs(input: { note: string; phone: string }): Promise<
 
 export async function setMonthlyAmount(memberId: string, amount: number | null): Promise<{ ok: true; previous: number | null } | Err> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
-  const o = await ownerOnly('set monthly amounts'); if ('error' in o) return o
+  const o = await ownerOnly('set monthly limits'); if ('error' in o) return o
   if (amount != null && (!Number.isInteger(amount) || amount < 0 || amount > 10_000_000)) return { error: 'Enter a whole number of AI credits, or leave it empty for no limit.' }
   const [m] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.id, memberId))
   if (!m) return { error: 'That member is no longer in the studio.' }
@@ -290,7 +290,7 @@ export async function setMonthlyAmount(memberId: string, amount: number | null):
 /** A default for members added from now on (Q-25, integration B-16) — written as their row when Company › Members adds them. */
 export async function setDefaultMonthlyAmount(amount: number | null): Promise<{ ok: true } | Err> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
-  const o = await ownerOnly('set monthly amounts'); if ('error' in o) return o
+  const o = await ownerOnly('set monthly limits'); if ('error' in o) return o
   if (amount != null && (!Number.isInteger(amount) || amount < 0 || amount > 10_000_000)) return { error: 'Enter a whole number of AI credits, or leave it empty for no limit.' }
   const value = JSON.stringify({ monthlyAmount: amount })
   await db.insert(settings).values({ key: 'credit_defaults', value, updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } })
@@ -310,7 +310,7 @@ export async function askForCredits(input: { kind: 'pool' | 'monthly'; needed: n
   if (!open) {
     await db.insert(creditRequests).values({ id: randomUUID(), memberId: m.id, kind, needed: Math.max(0, Math.floor(input.needed) || 0), status: 'open', createdAt: new Date() })
     await notify('credit_request', await ownerIds(), {
-      title: kind === 'monthly' ? `${m.name} asks for more AI credits — they have used their monthly amount` : `${m.name} asks for more AI credits — the studio is out`,
+      title: kind === 'monthly' ? `${m.name} asks for more AI credits — they have used their monthly limit` : `${m.name} asks for more AI credits — the studio is out`,
       body: input.needed ? `The next piece of work needs ${fmtCredits(input.needed)}.` : null, href: `/company/plan?member=${m.id}`, actorId: m.id,
     })
     done()

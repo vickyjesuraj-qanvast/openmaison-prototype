@@ -7,6 +7,7 @@ import { CompareSlider } from '@/components/om/compare-slider'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
+import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSheetLayout } from '@/components/om/sheet'
 import { useMediaQuery } from '@/lib/breakpoint'
@@ -157,6 +158,15 @@ export function PresentDialog({ open, onClose, room, original, versions, start, 
   /* (pending modules S20) the drift guard lined this version up with its photo — said beside what changed, with what the repair cost */
   const repair = cur.v?.applied.repair ?? null
   const carried = cur.v && parent && parent.key !== ORIGINAL ? carriedFacts(cur.v, labels) : []
+  /* (the calm UI build 2026-10-27, 6-33 · W-243) ONE list — "In V3": everything the version shows, a *New* mark on what changed from the one
+     it was made from (it listed the change twice: "What changed from V2", then "Everything in V3" again). A version made from the Original
+     changed everything it shows, so its list is the change itself, unmarked. Nothing either list said is dropped: a change the carried list
+     doesn't name (a note…) joins the list, marked. */
+  const factKey = (f: { what: string; to: string }) => `${f.what}|${f.to}`
+  const changedKeys = new Set(changed.map(factKey))
+  const inList: { what: string; to: string; fresh: boolean }[] = carried.length
+    ? [...carried.map((f) => ({ ...f, fresh: changedKeys.has(factKey(f)) })), ...changed.filter((f) => !carried.some((c) => factKey(c) === factKey(f))).map((f) => ({ ...f, fresh: true }))]
+    : changed.map((f) => ({ ...f, fresh: false }))
   const aspect = shapes[cur.url] ?? null
   const nav = (d: -1 | 1) => {
     const end = d < 0 ? i === 0 : i === list.length - 1
@@ -169,8 +179,9 @@ export function PresentDialog({ open, onClose, room, original, versions, start, 
     )
   }
   return (
-    /* (phone-9) a phone's head keeps to one line — the room and the version; the version's full name heads its facts */
-    <Dialog open={open} onClose={onClose} title={phone || sideways ? `${room} · ${short(cur)}` : `${room} · ${cur.label}`} size="modal" fluid
+    /* (phone-9) a phone's head keeps to one line — the room and the version; the version's full name heads its facts. (the calm UI build
+       2026-10-27, 6-33 · W-243) every width: "Living room — V3" — the dot-chain ("Living room · V3 · Relit · Golden Hour") is the list's own lines */
+    <Dialog open={open} onClose={onClose} title={`${room} — ${short(cur)}`} size="modal" fluid
             footer={<div className={styles.footRow}>
               <Button appearance="outlined" variant="secondary" isDisabled={!parent} onPress={() => setCompare((c) => !c)}>{showing ? 'Show it alone' : `Before and after${parent ? ` · ${short(parent)}` : ''}`}</Button>
               <Button onPress={onClose}>Done</Button>
@@ -190,19 +201,16 @@ export function PresentDialog({ open, onClose, room, original, versions, start, 
           <div className={styles.facts} ref={factsRef}>
             {(phone || sideways) && cur.v ? <span className={styles.presentName}>{cur.label}</span> : null}
             <div className={styles.section}>
-              <span className={styles.head}><span>{cur.v ? 'What changed' : 'The photo'}</span>{parent ? <span>From {short(parent)}</span> : null}</span>
-              {changed.length ? <div className={`${styles.lines} ${styles.factLines}`}>{changed.map((l, k) => <div key={k} className={styles.line}><span>{l.what}</span><span>{l.to}</span></div>)}</div>
-                : <span className={styles.hint}>{cur.v ? 'A whole-room look.' : 'The room as it was photographed.'}</span>}
+              <span className={styles.head}><span>{cur.v ? `In ${short(cur)}` : 'The photo'}</span>{parent ? <span>From {short(parent)}</span> : null}</span>
+              {inList.length ? (
+                <div className={`${styles.lines} ${styles.factLines}`}>
+                  {inList.map((l, k) => <div key={k} className={styles.line} data-new={l.fresh || undefined}><span className={styles.factWhat}>{l.what}{l.fresh ? <MetaChip color="blue">New</MetaChip> : null}</span><span>{l.to}</span></div>)}
+                </div>
+              ) : <span className={styles.hint}>{cur.v ? 'A whole-room look.' : 'The room as it was photographed.'}</span>}
               {/* (F064) what the pass could not do, said beside what it was asked — the studio's own view, never the client's */}
               {caveat ? <span className={styles.hint} data-tone="warn" data-testid="viz-present-caveat"><Icon name="info" size={16} weight={300} /> {caveat}</span> : null}
               {repair ? <span className={styles.hint} data-testid="viz-present-repair"><Icon name="check_circle" size={16} weight={300} /> {repair.words}{repair.credits > 0 ? ` · ${fmtCredits(repair.credits)} AI credits` : ''}</span> : null}
             </div>
-            {carried.length ? (
-              <div className={styles.section}>
-                <span className={styles.head}><span>Everything in {short(cur)}</span></span>
-                <div className={`${styles.lines} ${styles.factLines}`}>{carried.map((l, k) => <div key={k} className={styles.line}><span>{l.what}</span><span>{l.to}</span></div>)}</div>
-              </div>
-            ) : null}
           </div>
           <div className={styles.thumbs} ref={thumbsRef} role="group" aria-label="Versions">
             {list.map((x) => (

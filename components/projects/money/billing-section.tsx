@@ -2,8 +2,7 @@
 
 import type { MouseEvent, ReactNode } from 'react'
 import Link from 'next/link'
-import { Button, Tag } from '@/components/ds'
-import { Chips } from '@/components/om/chips'
+import { Button, SegmentedButton, SegmentedButtonItem, Tag } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
 import { MetaChip } from '@/components/om/meta-chip'
 import { CreditsTable } from '@/components/company/plan/credits-table'
@@ -25,11 +24,14 @@ import styles from './money.module.css'
 
 /** (Q-05) The admin's views of Billing: the stages (All) · every invoice sent · the payments · the credit notes — one table, four views. */
 export type BillingView = 'all' | 'invoices' | 'payments' | 'credits'
-const VIEWS: { value: BillingView; label: string }[] = [{ value: 'all', label: 'All' }, { value: 'invoices', label: 'Invoices' }, { value: 'payments', label: 'Payments' }, { value: 'credits', label: 'Credit notes' }]
+/* (the calm UI build 2026-10-27, T-01 · §2 "money received → Collected" — the orchestrator's consistency pass) the region is "Client payments"
+   inside the "Payments" tab, so its view of the money that came in says "Collected", not a third "Payments"; the key stays `payments` */
+const VIEWS: { value: BillingView; label: string }[] = [{ value: 'all', label: 'All' }, { value: 'invoices', label: 'Invoices' }, { value: 'payments', label: 'Collected' }, { value: 'credits', label: 'Credit notes' }]
 
 /* (S-07) Stage · Amount · Invoice · Paid · Next step — the milestone and the GST are sub-lines, so at 768 the step stays inside the width */
+/* (the calm UI build 2026-10-27, 3-04 · W-381) "Stage" is a project's lifecycle alone — a payment part's column is "Payment" (the key stays) */
 const BILL_DEFS: readonly TableColumnDef[] = [
-  { key: 'stage', label: 'Stage', track: 'minmax(170px, 190fr)', locked: true },
+  { key: 'stage', label: 'Payment', track: 'minmax(170px, 190fr)', locked: true },
   { key: 'amount', label: 'Amount', track: 'minmax(124px, 190fr)' },   // its GST sub-line reads whole at 1440
   { key: 'invoice', label: 'Invoice', track: 'minmax(190px, 330fr)' },   // "INV-… · sent … · due … · n days overdue"
   { key: 'paid', label: 'Paid', track: 'minmax(124px, 200fr)' },
@@ -38,7 +40,7 @@ const BILL_DEFS: readonly TableColumnDef[] = [
 /* (Q-05) the Invoices view keeps today's *Invoices sent* columns */
 const INVOICE_DEFS: readonly TableColumnDef[] = [
   { key: 'invoice', label: 'Invoice', track: 'minmax(170px, 170fr)', locked: true },
-  { key: 'stage', label: 'Stage', track: 'minmax(150px, 150fr)' },
+  { key: 'stage', label: 'Payment', track: 'minmax(150px, 150fr)' },
   { key: 'amount', label: 'Amount', track: 'minmax(140px, 140fr)' },
   { key: 'gst', label: 'GST', track: 'minmax(110px, 110fr)' },
   { key: 'sent', label: 'Sent', track: 'minmax(120px, 120fr)' },
@@ -85,11 +87,22 @@ export function BillingSection({ data, inv, payments, cn, view, onView, admin, f
 }) {
   const { money: m, client, viewer, rules, now } = data
   const nameOf = inv.nameOf
-  const chips = admin ? <Chips label="Billing view" options={VIEWS} value={view} onChange={(v) => onView(v as BillingView)} testId="money-billing-view" /> : null
+  /* (the calm UI build 2026-10-27, 3-08 · T-10) the one table's four views are a view switch — the design system's SegmentedButton, never chips */
+  const chips = admin ? (
+    <SegmentedButton aria-label="Client payments view" selectedKeys={[view]} data-testid="money-billing-view"
+                     onSelectionChange={(keys) => { const v = String([...keys][0] ?? ''); if (VIEWS.some((x) => x.value === v)) onView(v as BillingView) }}>
+      {VIEWS.map((x) => <SegmentedButtonItem key={x.value} id={x.value}>{x.label}</SegmentedButtonItem>)}
+    </SegmentedButton>
+  ) : null
   const split = data.split && inv.splitEditable ? <button type="button" className={textLink.link} onClick={inv.openSplit} data-testid="money-change-split">Change the split</button> : null
   const tools = split || chips ? <>{split}{chips}</> : undefined
   const source = m.source === 'quote' && data.quote ? `From ${data.quote.number}’s payment schedule` : 'The split agreed when the project began'
-  const sub = `${source} — each stage bills its share of the contract value${m.stages.some((st) => st.fixedMinor != null) ? ' (a fixed fee first)' : ''}, GST included.`
+  const sub = `${source} — each payment bills its share of the contract value${m.stages.some((st) => st.fixedMinor != null) ? ' (a fixed fee first)' : ''}, GST included.`
+  /* (the calm UI build 2026-10-27, W-525 · W-638 · T-05) the regions' explanations are one hover away under a quiet "How … works" (the house
+     Tooltip), not a line on every visit */
+  const how = (label: string, words: string, testId: string) => (
+    <Tooltip label={words}><span className={textLink.link} tabIndex={0} data-testid={testId}>{label}</span></Tooltip>
+  )
 
   /* ── the cells ── */
   const step = (i: InvoiceView) => {
@@ -154,9 +167,11 @@ export function BillingSection({ data, inv, payments, cn, view, onView, admin, f
       </span>
     )
   }
+  /* (the calm UI build 2026-10-27, 3-05) an invoice whose only step was "Open" is opened by its name and its row — the name keeps that step's mark */
+  const opensOnly = (i: InvoiceView) => !inv.nextStep(i) && ['sent', 'to_confirm', 'overdue', 'part_paid', 'paid', 'void', 'credited'].includes(i.state)
   const nameButton = (label: string, i: InvoiceView | null, sub: ReactNode, faint = false) => (
     <span className={styles.stack}>
-      {i ? <button type="button" className={`${styles.nameLink}${faint ? ` ${styles.void}` : ''}`} onClick={() => onOpen(i.id)} data-testid="invoice-row-open">{label}</button> : <span className={styles.name}>{label}</span>}
+      {i ? ((b) => (opensOnly(i) ? <span className={styles.menuRow} data-testid="invoice-open">{b}</span> : b))(<button type="button" className={`${styles.nameLink}${faint ? ` ${styles.void}` : ''}`} onClick={() => onOpen(i.id)} data-testid="invoice-row-open">{label}</button>) : <span className={styles.name}>{label}</span>}
       {sub ? <span className={styles.sub}>{sub}</span> : null}
     </span>
   )
@@ -220,7 +235,10 @@ export function BillingSection({ data, inv, payments, cn, view, onView, admin, f
 
   /* ── the variation orders: Changes to the contract ── */
   const voCell = (v: VariationView, key: string): ReactNode => {
-    if (key === 'vo') return <span className={styles.stack}><Link href={withFrom(`/quotes/${v.id}${isAccounting(viewer.role) ? '/preview' : ''}`, inv.here)} className={styles.nameLink}>{v.number}</Link><span className={styles.sub}>{v.title}</span></span>
+    if (key === 'vo') {
+      const link = <Link href={withFrom(`/quotes/${v.id}${isAccounting(viewer.role) ? '/preview' : ''}`, inv.here)} className={styles.nameLink}>{v.number}</Link>
+      return <span className={styles.stack}>{inv.voNext(v) ? link : <span className={styles.menuRow} data-testid="vo-open">{link}</span>}<span className={styles.sub}>{v.title}</span></span>
+    }
     if (key === 'change') return <span className={`${styles.num}${v.amountMinor < 0 ? ` ${styles.neg}` : ''}`}>{signedMoney(v.amountMinor)}</span>
     if (key === 'status') {
       const t = variationTone(v)
@@ -231,14 +249,15 @@ export function BillingSection({ data, inv, payments, cn, view, onView, admin, f
     }
     if (key === 'next') {
       const s = inv.voNext(v)
-      return <span className={styles.rowActions}><Button appearance="text" onPress={s.run} isDisabled={inv.busy === v.id} data-testid={s.testId}>{s.label}</Button><RowMenu label={`More actions for ${v.number}`} title={v.number} items={inv.voMenu(v)} /></span>
+      return <span className={styles.rowActions}>{s ? <Button appearance="text" onPress={s.run} isDisabled={inv.busy === v.id} data-testid={s.testId}>{s.label}</Button> : null}<RowMenu label={`More actions for ${v.number}`} title={v.number} items={inv.voMenu(v)} /></span>
     }
     return null
   }
   const showVos = m.variations.length > 0 || (data.deletedVariations ?? 0) > 0
 
   return (
-    <section id="billing" className={styles.list} aria-label="Billing" data-list="billing">
+    /* (the calm UI build 2026-10-27, 3-02 · W-122 · T-01) the region is "Client payments" — the stages, invoices, receipts and credit notes */
+    <section id="billing" className={styles.list} aria-label="Client payments" data-list="billing">
       {view === 'payments' ? payments.table(tools)
         : view === 'credits' ? cn.table(tools)
           : view === 'invoices' ? (
@@ -249,15 +268,16 @@ export function BillingSection({ data, inv, payments, cn, view, onView, admin, f
                           empty="Nothing sent yet — each stage’s invoice is sent from All." />
           ) : (
             <div onClick={onRow} className={styles.billing}>
-              <CreditsTable table="project-money-billing" title="Billing" testId="money-stages" defs={BILL_DEFS} rows={rows} rowKey={(r) => r.key} cell={cell} actions={tools} rowAttrs={rowAttrs}
-                            help={sub} empty="No payment stages." />
+              <CreditsTable table="project-money-billing" title="Client payments" testId="money-stages" defs={BILL_DEFS} rows={rows} rowKey={(r) => r.key} cell={cell} actions={tools} rowAttrs={rowAttrs}
+                            help={how('How client payments work', sub, 'money-billing-how')} empty="No payments in the schedule." />
             </div>
           )}
       {view === 'all' && showVos ? (
         <div id="changes">
-          <CreditsTable table="project-money-variations" title="Changes to the contract" testId="money-variations" defs={VO_DEFS} rows={m.variations} rowKey={(v) => v.id} cell={voCell}
+          {/* (the calm UI build 2026-10-27, 3-02 · W-134) "Variation orders" — the head and the link already said it */}
+          <CreditsTable table="project-money-variations" title="Variation orders" testId="money-variations" defs={VO_DEFS} rows={m.variations} rowKey={(v) => v.id} cell={voCell}
                         rowAttrs={(v) => ({ 'data-vo': v.number, 'data-vo-id': v.id, 'data-focus': focus === v.id ? '' : undefined })}
-                        help={`Variation orders — ${client.firstName} approves each on its link; once approved, the contract moves and the unsent invoices follow.`}
+                        help={how('How variation orders work', `${client.firstName} approves each on its link; once approved, the contract moves and the unsent invoices follow.`, 'money-variations-how')}
                         empty={inv.locked ? 'No variation orders were made on this project.' : 'No variation orders now — New ▾ starts one.'}
                         actions={<button type="button" className={textLink.link} onClick={inv.openDeletedVos} data-testid="money-deleted-vos">Deleted variation orders</button>} />
         </div>

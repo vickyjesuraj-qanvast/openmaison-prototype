@@ -7,6 +7,7 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import { markQuoteStatus, undoQuoteStatus, type StatusUndo } from '@/app/quotes/actions'
 import { asksBeforeMarking } from '@/lib/quotes/policy'
 import type { QuoteStatus } from '@/lib/leads/quote-filters'
+import { quoteStatusLabel } from '@/lib/quotes/status-words'   // (the calm UI build 2026-10-27, T-01) the status set on screen
 
 type Q = { id: string; number: string; status: string }
 /** A mark landed (`undo` = what it replaced) or was taken back (`undone`). */
@@ -38,11 +39,11 @@ export function useQuoteStatus(onChanged?: (c: StatusChanged) => void): { change
           const u = await undoQuoteStatus(q.id, r.undo)
           if ('error' in u) return u
           onChanged?.({ quoteId: q.id, status: u.status, undo: r.undo, undone: true })
-        }, `Quote ${r.number} is ${r.undo.status} again`)
+        }, `Quote ${r.number} is “${quoteStatusLabel(r.undo.status)}” again`)
       }
       const message = r.status === 'Sent for Approval'
         ? `Quote ${r.number} sent for approval — ${r.told ? `${r.told} ${r.told === 1 ? 'approver' : 'approvers'} told` : 'the approvers are told'}`
-        : `Quote ${r.number} marked ${r.status}`
+        : `Quote ${r.number} marked “${quoteStatusLabel(r.status)}”`
       snackbar({ message, actionLabel: 'Undo', onAction: undo })
     })
   }
@@ -52,9 +53,9 @@ export function useQuoteStatus(onChanged?: (c: StatusChanged) => void): { change
     commit(q, status)
   }
   const dialog = (
-    <ConfirmDialog open={!!asking} tone="primary" title={asking ? `Mark ${asking.q.number} ${asking.status}?` : ''}
+    <ConfirmDialog open={!!asking} tone="primary" title={asking ? `Mark ${asking.q.number} “${quoteStatusLabel(asking.status)}”?` : ''}
                    message={asking ? `Nothing reaches the client — no link or WhatsApp goes out from here. Mark it anyway?${asking.status === 'Sent to Client' ? ' To send it, open the quote and use Send.' : ''}` : ''}
-                   confirmLabel={asking ? `Mark ${asking.status}` : 'Mark'} cancelLabel="Cancel"
+                   confirmLabel={asking ? `Mark “${quoteStatusLabel(asking.status)}”` : 'Mark'} cancelLabel="Cancel"
                    onCancel={() => setAsking(null)} onConfirm={() => { const a = asking; setAsking(null); if (a) commit(a.q, a.status) }} />
   )
   return { change, dialog }

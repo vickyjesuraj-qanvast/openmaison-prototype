@@ -125,7 +125,7 @@ export function TagPicker({
             </div>
             <div className={styles.rule} />
             <div className={styles.foot}>
-              <button type="button" className={styles.link} onClick={onManage}>Manage Tags</button>
+              <button type="button" className={styles.link} onClick={onManage}>Manage tags</button>
             </div>
           </div>
     </>
@@ -137,7 +137,7 @@ export function TagPicker({
   if (sheet) {
     return (
       <Sheet open={open} onClose={onClose} title="Tags"
-             footer={<button type="button" className={styles.link} onClick={onManage}>Manage Tags</button>}>
+             footer={<button type="button" className={styles.link} onClick={onManage}>Manage tags</button>}>
         <div className={styles.sheetBody}>{body}</div>
       </Sheet>
     )
@@ -146,7 +146,7 @@ export function TagPicker({
   return (
     <AnimatePresence>
       {open && position !== null ? (
-        <motion.div ref={ref} className={styles.picker} role="dialog" aria-label="Add Tag"
+        <motion.div ref={ref} className={styles.picker} role="dialog" aria-label="Add tag"
                     data-fixed={position ? '' : undefined}
                     style={position ? { position: 'fixed', top: position.top, left: position.left, width: 352 } : undefined}
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit">

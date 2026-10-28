@@ -9,7 +9,7 @@ import styles from '@/components/projects/money/money.module.css'
 
 /**
  * (gaps build F2 — F2-Q2 · Q3, Q-20) A project's profit, for Owners and Admins only (the server hands nobody else the figures): contract value −
- * committed costs, its margin's word (Healthy ≥ 20% · Tight · At risk) and the cash so far (collected − paid out).
+ * committed costs, its margin's word (Healthy ≥ 20% · Tight · At risk) and the cash in hand (collected − paid out).
  * (simplify S-07 · S-09 · Q-08) ONE tile now — the Money tab's third, beside To collect and To pay: the figure is "--" until costs pass a tenth of
  * the contract (`profitGrade` — today's Margin early-estimate rule extended to the figure), its word rides as the tile's chip (Healthy / Tight /
  * At risk / *Early estimate* / *No costs yet*), the cash so far is its line, and how it is worked out is its hover. The Margin and Cash so far
@@ -26,6 +26,7 @@ export function ProfitTile({ profit: p, onPress }: { profit: ProfitView
   return (
     <StatTile label="Profit" value={<Tooltip label={how}><span tabIndex={onPress ? undefined : 0} className={styles.tileValue}>{shown.value}</span></Tooltip>} figure={shown.value} grade={shown.grade} testId="tile-profit"
               press={onPress ? { label: `Profit ${shown.value}, ${shown.word}. ${how}. Opens Costs`, onPress } : undefined}
-              help={<span className={styles.tileHelp}><span data-testid="tile-profit-word"><MetaChip color={shown.tone}>{shown.word}</MetaChip></span><span>{p.cashMinor < 0 ? `The studio is funding it — ${money2(-p.cashMinor)} more paid out than collected` : `Cash so far ${money2(p.cashMinor)}`}</span></span>} />
+              help={<span className={styles.tileHelp}><span data-testid="tile-profit-word"><MetaChip color={shown.tone}>{shown.word}</MetaChip></span>{/* (the calm UI build 2026-10-27, 3-03 · W-132) "Cash in hand" says what it is; the sum it is lives in its tooltip */}
+                <Tooltip label={`Collected ${money2(p.collectedMinor)} − paid out ${money2(p.paidMinor)}`}><span tabIndex={onPress ? undefined : 0} data-testid="tile-profit-cash">{p.cashMinor < 0 ? `The studio is funding it — ${money2(-p.cashMinor)} more paid out than collected` : `Cash in hand ${money2(p.cashMinor)}`}</span></Tooltip></span>} />
   )
 }

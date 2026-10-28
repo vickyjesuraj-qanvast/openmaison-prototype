@@ -100,7 +100,10 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
   const first = (s) => Number((String(s).match(/-?\d[\d,]*/) || ['NaN'])[0].replace(/,/g, ''))
   /** the tiles' comparison with the equal span before, in the page's words */
   const priorWords = (now, before) => (now > before ? `Up from ${before.toLocaleString('en-SG')}` : now < before ? `Down from ${before.toLocaleString('en-SG')}` : 'Same as before')
-  const pickRange = async (p, label) => { await p.getByTestId('health-range').getByRole('radio', { name: label }).click(); await settle(p, 600) }
+  /* (the calm UI build 2026-10-27, a deliberate change) the period is the house pill (5-19); Studio health opens on four tiles, the rest under Show all figures (5-22) */
+  const showAll = async (p) => { const b = p.getByTestId('health-all'); if (await b.count() && await b.getAttribute('aria-expanded') === 'false') { await b.click(); await settle(p, 400) } }
+  const pickIn = async (p, id, label) => { await p.getByTestId(id).getByRole('button').first().click(); await settle(p, 450); await p.getByRole('menuitemradio', { name: new RegExp(`^${label}`) }).first().click(); await settle(p, 700) }
+  const pickRange = async (p, label) => { await pickIn(p, 'health-range', label); await showAll(p) }
   const usageTablesBefore = sql(`select group_concat(name) from sqlite_master where type = 'table' and (name like '%usage%' or name like '%page_view%' or name like '%rollup%')`)
   const rowsBefore = num(`select (select count(*) from studio_sessions) + (select count(*) from portal_sessions) + (select count(*) from lead_events)`)
 
@@ -117,12 +120,15 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       ok(tabs.join(' · ') === 'Leads · Projects · Meetings · Finance · Studio health', 'Reports: Leads · Projects · Meetings · Finance · Studio health', tabs.join(' · '))
       ok(await p.getByTestId('studio-health').isVisible(), 'an Owner reads Studio health')
       ok((await p.getByTestId('studio-health').getAttribute('data-range')) === '90', 'it opens on the house reports’ 90 days')
+      await showAll(p)
       const groups = await p.locator('[data-testid^="health-group-"] h2').allInnerTexts()
-      ok(groups.join(' · ') === 'Your team · New work · Work done · Your clients', 'four groups: Your team · New work · Work done · Your clients', groups.join(' · '))
+      ok(/^(Your team|Members) · New work · Work done · Your clients$/.test(groups.join(' · ')), 'four groups: Your team · New work · Work done · Your clients', groups.join(' · '))
       const labels = (await p.locator('[data-testid^="health-tile-"] [class*="__label"]').allInnerTexts()).map((t) => t.trim().toLowerCase())
-      ok(['active members', 'sign-ins', 'ai runs', 'leads added', 'projects started', 'quotes sent', 'invoices sent', 'tasks done', 'tickets resolved', 'site updates', 'hangout chats', 'portal sign-ins', 'issues reported', 'messages', 'choices made'].every((l) => labels.includes(l)), 'the tiles: 1.0’s, in 2.0’s words (no page views)', labels.join(', '))
+      /* (the calm UI build 2026-10-27, a deliberate change) the model's new words (AI uses · Qanvast Hangout chats · Issues, 5-22 / §2) land with B1's lib/studio-health — either reads */
+      ok([/^active members$/, /^sign-ins$/, /^ai (runs|uses)$/, /^leads added$/, /^projects started$/, /^quotes sent$/, /^invoices sent$/, /^tasks done$/, /^(tickets|issues) resolved$/, /^site updates$/, /^(qanvast )?hangout chats$/, /^portal sign-ins$/, /^(tickets|issues) raised$/, /^messages$/, /^choices made$/].every((l) => labels.some((x) => l.test(x))) || ['active members', 'sign-ins', 'ai runs', 'leads added', 'projects started', 'quotes sent', 'invoices sent', 'tasks done', 'tickets resolved', 'site updates', 'hangout chats', 'portal sign-ins', 'tickets raised', 'messages', 'choices made'].every((l) => labels.includes(l)), 'the tiles: 1.0’s, in 2.0’s words (no page views)', labels.join(', '))   // (Dashboard redesign 2026-10-26, a deliberate change) "Issues reported" → "Tickets raised": one name, the studio's
       ok(!labels.some((l) => /page view|top page|funnel/.test(l)), 'no page views, top pages or funnels — the telemetry she declined')
-      ok((await p.getByTestId('health-caption').innerText()).trim() === 'Filtering on the day each thing was done', 'the caption says what the range filters on (the house reports’ grammar)', await p.getByTestId('health-caption').innerText())
+      ok((await p.getByTestId('health-caption').getAttribute('data-tip')) === 'Counts what was done in this period, by the day it was done', 'the period pill’s tooltip says what the range filters on (5-19)', await p.getByTestId('health-caption').getAttribute('data-tip'))   // (the calm UI build 2026-10-27, a deliberate change)
+      await p.getByTestId('health-foot').getByRole('button').first().click(); await settle(p, 300)   // (the calm UI build 2026-10-27, a deliberate change) the foot is behind How these are counted (T-05)
       ok(/Up from” and “Down from” compare with the same span just before/.test(await p.getByTestId('health-foot').innerText()), 'the foot says what “Up from” compares with')
       ok(/doesn’t track the pages people open/.test(await p.getByTestId('health-foot').innerText()), 'the foot says why page views aren’t there')
       await shot(p, 's39-health-1440', true)
@@ -147,7 +153,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
         ok(n(await tileValue(p, 'ai')) === runs, `${label}: AI runs = the ledger’s charges (${runs})`)
         if (runs || credits) ok(first(await tileHelp(p, 'ai')) === credits, `${label}: …and its AI credits net of refunds (${credits})`, await tileHelp(p, 'ai'))
         const idle = team.length - active
-        ok(await tileHelp(p, 'active') === (idle ? `${idle} did nothing` : 'Everyone took part'), `${label}: …and how many did nothing`, await tileHelp(p, 'active'))
+        ok(idle ? new RegExp(`^${idle} (did nothing|not active in this period)$`).test(await tileHelp(p, 'active')) : await tileHelp(p, 'active') === 'Everyone took part', `${label}: …and how many did nothing`, await tileHelp(p, 'active'))   // (the calm UI build 2026-10-27, a deliberate change) W-075 lands with B1's model
         const leads = num(`select count(*) from leads where deleted_at is null and direct = 0 and ${ms('created_at')} >= ${lo}`)
         ok(n(await tileValue(p, 'leads')) === leads, `${label}: Leads added = live leads created in the range (${leads})`)
         if (plo !== null) {
@@ -164,7 +170,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
         ok(n(await tileValue(p, 'updates')) === num(`select count(*) from project_updates u join projects j on j.id = u.project_id join leads l on l.id = j.lead_id where u.status = 'published' and u.deleted_at is null and j.deleted_at is null and l.deleted_at is null and ${w('u.published_at')}`), `${label}: Site updates = the Dashboard’s published updates, in the range`)
         ok(n(await tileValue(p, 'chats')) === num(`select count(*) from hangout_meetings where status = 'completed' and ended_at is not null and ${w('ended_at')}`), `${label}: Hangout chats = chats held at a Hangout in the range`)
         ok(n(await tileValue(p, 'portalSignIns')) === num(`select count(*) from portal_sessions where kind = 'client' and ${w('created_at')}`), `${label}: Portal sign-ins = clients’ portal sessions started in the range`)
-        ok(n(await tileValue(p, 'issues')) === num(`select count(*) from project_tickets where raised_kind = 'client' and ${w('created_at')}`), `${label}: Issues reported = tickets clients raised in the range`)
+        ok(n(await tileValue(p, 'issues')) === num(`select count(*) from project_tickets where raised_kind = 'client' and ${w('created_at')}`), `${label}: Tickets raised = tickets clients raised in the range`)
         ok(n(await tileValue(p, 'messages')) === num(`select (select count(*) from project_messages where author_kind = 'client' and channel = 'client' and deleted_at is null and ${w('created_at')}) + (select count(*) from lead_messages where author_kind = 'client' and deleted_at is null and ${w('created_at')})`), `${label}: Messages = what clients wrote, in the range`)
         ok(n(await tileValue(p, 'choices')) === num(`select count(*) from project_selections where chosen_by = 'client' and chosen_at is not null and deleted_at is null and ${w('chosen_at')}`), `${label}: Choices made = choices clients made, in the range`)
         if (days === 30) await shot(p, 's39-health-30-1440')
@@ -179,9 +185,9 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       const leads = n(await tileValue(p, 'leads'))
       await p.getByTestId('health-tile-leads').click(); await p.waitForURL(/\/company\/reports\/leads/); await settle(p, 1600)
       ok(new URL(p.url()).searchParams.get('range') === '30', 'Leads added opens Reports › Leads on the same range')
-      const cap = await p.getByTestId('insights-range').innerText()
+      const cap = await p.getByTestId('insights-range').getAttribute('data-tip') ?? ''   // (the calm UI build 2026-10-27, a deliberate change) the count rides the period pill's tooltip (W-519)
       ok(n(cap.split('·')[1]) === leads, `Reports › Leads says the same: “${cap}”`)
-      ok((await p.getByTestId('insights-range-chips').getByRole('radio', { checked: true }).innerText()).trim() === 'Last 30 days', '…its range chip on Last 30 days')
+      ok(/Period: Last 30 days/.test(await p.getByTestId('insights-range-chips').innerText()), '…its period pill on Last 30 days')
       /* (S42 audit C-21, call C·3 — a deliberate change of this rule) another Reports tab opens as the strip does: no L2 Back — the browser's Back */
       ok(await p.getByRole('link', { name: /^Back to/ }).count() === 0 && !/[?&]from=/.test(p.url()), 'Reports › Leads opens as a tab of the same page — no L2 Back, no ?from=')
       await p.goBack()
@@ -201,7 +207,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await p.getByTestId('health-tile-active').click(); await p.waitForURL(/\/company\/members/); await settle(p, 1600)
       ok(String(await p.getByTestId('member-row').count()) === activeTotal, `Active members’ “of ${activeTotal}” = Company › Members’ active members`)
       /* AI runs: Plan › Usage's "Times used" — on all time against its last 6 months, when every charge falls inside them */
-      await go(p, '/company/reports/health?range=all', 1600)
+      await go(p, '/company/reports/health?range=all', 1600); await showAll(p)
       const runsAll = n(await tileValue(p, 'ai'))
       await go(p, '/company/plan?range=6m', 1800)
       const times = (await p.getByTestId('usage-tools').locator('[role="cell"][data-col="times"]').allInnerTexts()).reduce((s, t) => s + n(t), 0)
@@ -214,7 +220,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/qanvast-ops/studios', 1800)
       const ops = {}
       for (const k of ['signins', 'issues', 'messages', 'choices']) ops[k] = n(await p.getByTestId(`qanvast-usage-${k}`).locator('[class*="__value"]').innerText().catch(() => 'NaN'))
-      await go(p, '/company/reports/health?range=30', 1600)
+      await go(p, '/company/reports/health?range=30', 1600); await showAll(p)
       const mine = { signins: n(await tileValue(p, 'portalSignIns')), issues: n(await tileValue(p, 'issues')), messages: n(await tileValue(p, 'messages')), choices: n(await tileValue(p, 'choices')) }
       ok(JSON.stringify(ops) === JSON.stringify(mine), `Your clients (30 days) = Qanvast Ops › Studios’ usage — one rule`, `${JSON.stringify(ops)} vs ${JSON.stringify(mine)}`)
       /* plain tiles stay plain; the doors open with the way back */
@@ -227,11 +233,11 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
     if (want(4)) {
       console.log('4 · Over time — the house chart')
       for (const [range, every, kind] of [['30', /^Each day/, 'day'], ['90', /^Each week, from Monday/, 'week'], ['365', /^Each month/, 'month']]) {
-        await go(p, `/company/reports/health?range=${range}`, 1600)
+        await go(p, `/company/reports/health?range=${range}`, 1600); await showAll(p)   // (the calm UI build 2026-10-27, a deliberate change) the AI tile is under Show all figures (5-22)
         const t = p.getByTestId('health-trend')
         ok(await t.getByTestId('insight-chart').isVisible(), `${range} days: the chart (the house ArticleChart)`)
         ok(every.test(await t.locator('figcaption').innerText().then((s) => s.split('\n')[1] ?? '')), `…one point a ${kind}`)
-        ok((await t.locator('[aria-label="Series"] li').allInnerTexts()).join(' · ') === 'Active members · AI runs', '…two series: Active members · AI runs')
+        ok((await t.locator('[aria-label="Series"] li').allInnerTexts()).join(' · ') === 'Active members · AI uses' /* (the calm UI build 2026-10-27, a deliberate change) 5-22 · T-01: "AI uses", as the tile */, '…two series: Active members · AI uses')
         await t.getByTestId('insight-chart-numbers').click(); await settle(p, 400)
         const rowsT = await t.getByTestId('insight-chart-table').locator('tbody tr').evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll('td')].map((td) => Number(td.textContent.replace(/[^0-9.-]/g, '')))))
         const aiSum = rowsT.reduce((s, r) => s + (r[1] || 0), 0)
@@ -248,7 +254,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/company/reports/health', 1600)
       const table = p.getByTestId('health-members')
       const heads = (await table.locator('[role="columnheader"]').allInnerTexts()).map((h) => h.trim().toLowerCase())
-      ok(heads.join(' · ') === 'member · last active · days active · ai runs · quotes sent · tasks done · site updates', 'the columns, Sign-ins off until switched on', heads.join(' · '))
+      ok(/^member · last active · days active · ai (runs|uses) · quotes sent · tasks done · site updates$/.test(heads.join(' · ')), 'the columns, Sign-ins off until switched on', heads.join(' · '))   // (the calm UI build 2026-10-27, a deliberate change) AI uses once B1's model lands (5-22)
       ok(await table.locator('[role="row"][data-testid="health-member-row"]').count() === num(`select count(*) from members where is_active = 1`), 'a row for every active member — the idle too')
       const now = Date.now(), lo = now - 90 * DAY
       const daneDays = num(`select count(distinct date(at / 1000, 'unixepoch', 'localtime')) from (${ACTS_SQL}) where m = 'dane' and at >= ${lo} and at <= ${now + 5000}`)
@@ -283,7 +289,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       if (dl) {
         const file = path.join(dir, 'export.csv'); await dl.saveAs(file).catch(() => {})
         const body = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : ''
-        ok(/Studio health/.test(body) && /By team member/.test(body) && /Active members/.test(body), 'the sheet holds the page’s figures and the table', dl.suggestedFilename())
+        ok(/Studio health/.test(body) && /By (team )?member/.test(body) && /Active members/.test(body),   /* (the calm UI build 2026-10-27, a deliberate change) 5-41 */ 'the sheet holds the page’s figures and the table', dl.suggestedFilename())
       } else ok(false, 'a file downloads')
       await settle(p, 800)
       await p.getByRole('button', { name: 'Maison AI' }).first().click(); await settle(p, 800)
@@ -292,7 +298,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await ask.click(); await settle(p, 900)
       const ans = await p.locator('[role="dialog"]').last().innerText().catch(() => '')
       const idle = num(`select count(*) from members m where is_active = 1 and not exists (select 1 from (${ACTS_SQL}) a where a.m = m.id and a.at >= ${Date.now() - 90 * DAY})`)
-      ok(idle ? new RegExp(`${idle} members? did nothing`).test(ans) : /Everyone did something/.test(ans), '…answered from the report on screen', ans.split('\n').slice(0, 3).join(' / '))
+      ok(idle ? new RegExp(`${idle} members? (did nothing|not active)`).test(ans) : /Everyone (did something|was active)/.test(ans), '…answered from the report on screen'   /* (the calm UI build 2026-10-27, a deliberate change) W-075 */, ans.split('\n').slice(0, 3).join(' / '))
       await p.keyboard.press('Escape'); await settle(p, 400)
       ok(sql(`select group_concat(name) from sqlite_master where type = 'table' and (name like '%usage%' or name like '%page_view%' or name like '%rollup%')`) === usageTablesBefore, 'no usage, page-view or rollup table exists or appears')
       ok(num(`select (select count(*) from studio_sessions) + (select count(*) from portal_sessions) + (select count(*) from lead_events)`) === rowsBefore, 'reading the page writes no record')
@@ -344,7 +350,8 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       as('germaine')
       await go(p, '/company/members/germaine/profile', 1800)
       const card = p.getByTestId('card-preview-card')
-      ok(/years in interior design/.test(await card.innerText()) && await card.getByLabel('Known for').count() === 1, 'her card shows her years and what she is known for')
+      ok(/years in interior design/.test(await card.innerText()) && await card.getByTestId('known-for').count() === 1,   // (the calm UI build 2026-10-27, a deliberate change) Known for is a line of words now (5-24)
+         'her card shows her years and what she is known for')
       ok(await card.getByTestId('work-tile').count() > 0, '…and her work, with pictures')
       const link = p.getByTestId('card-known-edit')
       ok(await link.count() === 1, 'her own profile links to her lead preferences (it was a link for Owners and Admins only)')

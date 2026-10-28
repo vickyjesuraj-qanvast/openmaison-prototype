@@ -48,10 +48,10 @@ export type OverviewGhostShape = { setup: boolean; schedule: boolean; money: boo
 export function OverviewGhost({ shape: s }: { shape: OverviewGhostShape }) {
   return (
     <>
-      <AiBriefGhost more={false} />
+      <AiBriefGhost more={false} single={false} />   {/* (the calm UI build 2026-10-27 — B2's request) a project keeps its stack of briefs */}
       <div className={overview.grid}>
         <div className={`${overview.column} ${overview.act}`}>
-          <span data-card="needs"><CardGhost title={s.setup ? 'Before work starts' : 'Needs you'} rows={s.setup ? 3 : 4} two /></span>
+          <span data-card="needs"><CardGhost title={s.setup ? 'Before work starts' : 'Needs your attention'} rows={3} two /></span>
           <span data-card="my-work"><CardGhost title="MY TASKS" rows={3} /></span>
           <span data-card="with-client"><CardGhost title="With the client" rows={s.setup ? 1 : 3} two /></span>
           {s.schedule && !s.setup && !s.closing ? <span data-card="coming-up"><CardGhost title="Coming up" rows={3} /></span> : null}
@@ -60,7 +60,7 @@ export function OverviewGhost({ shape: s }: { shape: OverviewGhostShape }) {
           <span data-card="progress"><CardGhost title="Progress" rows={s.setup ? 3 : 6} fold={s.setup ? 0 : 3} /></span>
           {s.documents !== false ? <DocumentsGhost /> : null}
           {s.closing ? <span data-card="closing-summary"><CardGhost title="Closing summary" rows={5} /></span>
-            : s.money ? <span data-card="money"><CardGhost title="Money" rows={4} /></span> : null}
+            : s.money ? <span data-card="money"><CardGhost title="Payments" rows={4} /></span> : null}
           <span data-card="recent-activity" className={overview.activityFold} data-folded=""><RecentActivityGhost rows={3} /></span>
         </div>
       </div>

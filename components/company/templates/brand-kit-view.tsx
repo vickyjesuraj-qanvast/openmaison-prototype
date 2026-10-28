@@ -49,8 +49,9 @@ function ownBrandNote(name: string, o: BrandOverrides | undefined): string | nul
     fonts.length === FONT_ROLES.length ? 'its own fonts' : fonts.length ? `its own ${listOf(fonts.map((r) => FONT_ROLE_LABEL[r]))} ${fonts.length === 1 ? 'font' : 'fonts'}` : '',
   ].filter(Boolean)
   if (!parts.length) return null
-  const one = parts.length === 1 && (o.logo !== undefined || colours.length === 1 || fonts.length === 1)
-  return `${name} sets ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}` : parts[0]}, so changing ${one ? 'that' : 'those'} here doesn’t show on it. Templates that use the brand kit follow it.`
+  /* (the calm UI build 2026-10-27, the UI audit's 4-35) the preview draws the template in the kit now — its own settings cleared for the preview —
+     so the note no longer admits a preview that doesn't move; it says, once and quietly, what the template keeps when it prints */
+  return `When it prints, ${name} keeps ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}` : parts[0]}.`
 }
 
 /**
@@ -108,6 +109,9 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
   const [pageCount, setPageCount] = useState<number | null>(null)
   const previewData = useMemo(() => ({ ...sample, studio: details }), [sample, details])
   const ownNote = previewDesign && previewName ? ownBrandNote(previewName, previewDesign.brand) : null
+  /* (the calm UI build 2026-10-27, the UI audit's 4-35) the default template drawn with the kit alone — its own brand settings cleared for the
+     preview — so a colour, a font or the logo changed here moves the preview at once (the note below says what the template keeps on paper) */
+  const kitDesign = useMemo<TemplateDesign | null>(() => (previewDesign ? { ...previewDesign, brand: {} } : null), [previewDesign])
 
   return (
     <CompanyShell title="Templates" tabs={templateTabs()} from={from} skeleton={<BrandKitGhost />} actions={!canRun ? null : <>
@@ -122,9 +126,9 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
         {/* (Dane UAT 2.01) The scope holds the kit's fields only: the preview and its Preview stay pressable for a member who may only read. */}
         <ReadOnlyScope readOnly={!canRun}>
         <div className={styles.form}>
-          <p className={styles.lead}>Every template starts from this kit — its logo, stamp, badges, colours and type. Change one thing here and every template that uses it follows. A template can still differ on its own Brand tab.</p>
+          <p className={styles.lead}>Your logo, colours and fonts — every template uses them.</p>   {/* (the calm UI build 2026-10-27, W-184) one line */}
           <section id="marks" className={styles.card} aria-labelledby="brand-marks">
-            <div className={styles.cardHead}><h2 id="brand-marks" className={styles.cardTitle}>Logo and marks</h2><p className={styles.cardHelp}>The logo, the company stamp and the accreditation badges a template can place. PNG, JPG or SVG.</p></div>
+            <div className={styles.cardHead}><h2 id="brand-marks" className={styles.cardTitle}>Logo and marks</h2><p className={styles.cardHelp}>PNG, JPG or SVG.</p></div>
             <div className={styles.marks}>
               <div className={styles.mark}>
                 <span className={styles.markLabel}>Logo</span>
@@ -172,7 +176,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
           </section>
 
           <section id="colours" className={styles.card} aria-labelledby="brand-colours">
-            <div className={styles.cardHead}><h2 id="brand-colours" className={styles.cardTitle}>Colours</h2><p className={styles.cardHelp}>Six named colours every template refers to by name — change one here and every template that uses it follows.</p></div>
+            <div className={styles.cardHead}><h2 id="brand-colours" className={styles.cardTitle}>Colours</h2></div>
             <div className={styles.colours}>
               {COLOR_KEYS.map((key: ColorKey) => (
                 <div key={key} className={styles.colour}>
@@ -200,7 +204,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
           </section>
 
           <section id="type" className={styles.card} aria-labelledby="brand-type">
-            <div className={styles.cardHead}><h2 id="brand-type" className={styles.cardTitle}>Fonts</h2><p className={styles.cardHelp}>Four roles a template’s text takes. Sizes are in points, as on paper.</p></div>
+            <div className={styles.cardHead}><h2 id="brand-type" className={styles.cardTitle}>Fonts</h2><p className={styles.cardHelp}>Sizes are in points, as on paper.</p></div>
             <div className={styles.roles}>
               {FONT_ROLES.map((role: FontRole) => {
                 const f = kit.fonts[role]
@@ -233,7 +237,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
         <aside className={styles.preview} aria-label="Preview" data-testid="brand-kit-preview">
           <span className={styles.previewLabel}>{previewName ? `Default template · ${previewName}` : 'Sample quote'}</span>
           <div className={styles.previewPage}>
-            {previewDesign ? <TemplateThumb design={previewDesign} brand={shownKit} data={previewData} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
+            {kitDesign ? <TemplateThumb design={kitDesign} brand={shownKit} data={previewData} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
           </div>
           {/* (Dane UAT 2.01 · 3.34) Every page, large — at every width; ≤1024 the first page steps out and this stays beside the label. */}
           {previewDesign ? <span className={styles.previewOpen}><Button appearance="text" iconStart={<Icon name="visibility" size={20} weight={300} />} onPress={() => setPreviewOpen(true)} data-testid="brand-kit-preview-open">Preview</Button></span> : null}
@@ -247,7 +251,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
       {previewDesign ? (
         <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} size="modal" width={1200} height="xl" title={previewName ?? 'Sample quote'}
                 subtitle={`${previewDesign.page.paper}${pageCount ? ` · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}` : ''} · drawn with this brand kit and a sample quote`}>
-          <TemplatePreviewPages paper={previewDesign.page.paper} design={previewDesign} brand={shownKit} sample={previewData} onPages={(n) => setPageCount((c) => (c === n ? c : n))} />
+          <TemplatePreviewPages paper={previewDesign.page.paper} design={kitDesign ?? previewDesign} brand={shownKit} sample={previewData} onPages={(n) => setPageCount((c) => (c === n ? c : n))} />
         </Dialog>
       ) : null}
     </CompanyShell>

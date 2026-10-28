@@ -58,7 +58,7 @@ const LINKS: Link[] = [
   { icon: 'docs', label: 'Quote', kind: 'quote' },
   { icon: 'contract', label: 'Contract', kind: 'other' },   /* (REG-534) a new contract on this lead, straight into the editor */
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
-  { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
+  { icon: 'call_log', label: 'Contact log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
   /* (pending modules S23 — REG-552's hold lifted for this card) Meeting, where the mock drew it (`event`): plan one on the Meetings tab */
   { icon: 'event', label: 'Meeting', kind: 'other' },
   { icon: 'wand_shine', label: 'AI Visualizer', kind: 'other' },   /* (REG-673, Q-01) one spelling everywhere — the product's name */
@@ -75,7 +75,7 @@ const LINKS: Link[] = [
 const PROJECT_LINKS: Link[] = [
   { icon: 'task_alt', label: 'Task', kind: 'task' },
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
-  { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },
+  { icon: 'call_log', label: 'Contact log', kind: 'callLog' },
   { icon: 'event', label: 'Meeting', kind: 'other' },   // (pending modules S23) a site meeting, on Client › Meetings
   { icon: 'photo_camera', label: 'Update', kind: 'other' },
   { icon: 'request_quote', label: 'Variation order', kind: 'other' },

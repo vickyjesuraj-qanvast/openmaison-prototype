@@ -5,7 +5,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
-import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { displayDate } from '@/lib/format'
 import { HOLD_ENDED, ON_HOLD_START } from '@/lib/projects/hold'
 import { STAGE_LABEL, type ProjectStage } from '@/lib/projects/model'
@@ -67,7 +67,8 @@ export function stageRow(row: ProjectStageRow, f: ProjectStageFacts): ProjectSta
   if (me < at) {
     /* a passed stage keeps its check; In progress is the way back from Completed (Reopen) — Setting up is never gone back to */
     if (row === 'in_progress') return { label, move: f.runs ? 'reopen' : null, why: f.runs ? null : RUNS_RULE, current: false, done: true }
-    return { label, move: null, why: f.startedAt ? `Started ${displayDate(new Date(f.startedAt))}` : 'The project has started', current: false, done: true }
+    /* (the calm UI build 2026-10-27, 3-53 · W-615) said as the stage it is: "Done 21 Aug ’26" — "Started …" read as Setting up's own start */
+    return { label, move: null, why: f.startedAt ? `Done ${displayDate(new Date(f.startedAt))}` : 'Done', current: false, done: true }
   }
   if (row === 'in_progress') {
     const why = f.held ? ON_HOLD_START : !f.mayChange ? TEAM_RULE : null
@@ -103,7 +104,9 @@ export function ProjectStageMenu({ open, anchor, onClose, facts, onPick }: {
   const item = (r: ProjectStageRow) => {
     const s = stageRow(r, facts)
     return (
-      <DropdownItem key={r} disabled={!!s.why} title={s.why ?? undefined} selected={s.current} meta={s.current ? 'current' : undefined}
+      /* (the calm UI build 2026-10-27, 3-53) the running stage says since when */
+      <DropdownItem key={r} disabled={!!s.why} title={s.why ?? undefined} selected={s.current}
+                    meta={s.current ? (r === 'in_progress' && facts.startedAt ? `since ${displayDate(new Date(facts.startedAt))}` : 'current') : undefined}
                     onSelect={() => { onClose(); if (s.move) onPick(s.move) }}>
         <span className={ddStyles.itemText} data-testid={`project-stage-row-${r}`}>{s.label}</span>
         {s.done ? <span className={ddStyles.done} aria-hidden><Icon name="check_circle" size={20} fill /></span> : null}
@@ -112,10 +115,9 @@ export function ProjectStageMenu({ open, anchor, onClose, facts, onPick }: {
   }
   return (
     <PortalMenu open={open} anchor={anchor} onClose={onClose} width={MENU_WIDTH.wide} role="menu" sheetTitle="Move stage">
-      <DropdownLabel tone="green" dot>Active</DropdownLabel>
+      {/* (the calm UI build 2026-10-27, 3-53 · W-101) four rows need no group heads — the rule keeps On hold apart */}
       {item('setting_up')}{item('in_progress')}{item('completed')}
       <DropdownDivider />
-      <DropdownLabel tone="orange" dot>Inactive</DropdownLabel>
       {item('on_hold')}
     </PortalMenu>
   )

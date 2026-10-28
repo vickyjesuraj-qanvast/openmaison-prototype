@@ -30,7 +30,6 @@ import { CreditsChip } from '@/components/credits/credits-chip'
 import { chargeAI, chargeAIQuietly, refundAIWork, useCredits } from '@/components/credits/credits-client'
 import { fmtCredits, spendable } from '@/lib/credits/model'
 import { costOf, renderAction } from '@/lib/credits/schedule'
-import { designKindLabel } from '@/components/visualizer/home/kind-label'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { duration, ease } from '@/lib/motion'
 import { backLabel as backLabelFor, withFrom } from '@/lib/nav'
@@ -73,6 +72,7 @@ import { ToolsPanel } from './panels/tools-panel'
 import { AddRoomDialog, AddRoomOptions } from './dialogs/add-room'
 import { AddItemDialog, QuoteDialog, SwatchDialog } from './dialogs/small-dialogs'
 import { ShareDialog } from './dialogs/share-dialog'
+import { designKindLabel } from '@/components/visualizer/home/kind-label'
 import { PresentDialog } from './dialogs/present-dialog'
 import { MoodboardDialog } from './dialogs/moodboard-dialog'
 import { DeletedVersionsDialog, DeleteVersionDialog } from './dialogs/deleted-versions'
@@ -355,7 +355,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     /* keeping the version: no Cancel from here (F211) */
     setRunning((r) => (r ? { ...r, step: r.steps.length - 1, saving: true } : r))
     const saved = await saveRender(r0.id, { jobId, kind, model: used.quality, parentKey: viewKey, variants: out.variants.map((v) => ({ image: v.dataUrl, applied: v.applied, finishes: v.finishes, materials: v.materials })) })
-      .catch(() => ({ error: 'Couldn’t keep this render — please try again.' }))
+      .catch(() => ({ error: 'Couldn’t keep this version — please try again.' }))
     /* (critic 10) a save that failed takes its tiles away and leaves every pick where it was — (Q-31) and gives the credits back */
     if ('error' in saved) { stop(await giveBack(saved.error)); return }
     chargeRef.current = null
@@ -378,7 +378,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     snack({
       key: 'viz-ready',
       message: `${elsewhere ? `${r0.name} · ` : ''}${names} ${made.length === 1 ? 'is' : 'are'} ready${lined ? ' · lined up with your photo' : ''}`,
-      actionLabel: 'Compare', onAction: () => {
+      actionLabel: 'Before and after', onAction: () => {   // (the calm UI build 2026-10-27, 6-18) the canvas bar's name for it
         setPresent(null); setShare(null); setBoard(null); setQuoteFor(null); setDeletedOpen(false); setMenu(null)
         setRoomPick(r0.id); setViewKeys((v) => ({ ...v, [r0.id]: saved.keys[0]! })); setPinning(false); setDraftPin(null); setActivePin(null); setNotesFor(null); setCompare({ on: true, key: null }); setShareAsk(saved.keys[0]!)
       },
@@ -632,7 +632,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     const r = await linkDesignToLead(data.design.id, leadId).catch(() => ({ error: 'Couldn’t link the design — please try again' })).finally(() => { linking.current = false })
     if ('error' in r) { snack({ message: r.error.startsWith('Couldn’t') ? r.error : `Couldn’t link the design — ${r.error.replace(/\.$/, '').replace(/^./, (c) => c.toLowerCase())}` }); return }
     setLinkOpen(false); setLinkAsk(false); router.refresh()
-    snack({ message: `Linked to ${r.leadName}`, actionLabel: 'Undo', onAction: () => { void act(unlinkDesign(data.design.id, r.undo), 'undo the link', { done: () => snack({ message: 'Back to a personal design' }) }) } })
+    snack({ message: `Linked to ${r.leadName}`, actionLabel: 'Undo', onAction: () => { void act(unlinkDesign(data.design.id, r.undo), 'undo the link', { done: () => snack({ message: 'Back to a design of the studio’s own' }) }) } })
   }
   const addSampleRoom = async (key: string, asSketch: boolean) => { setRoomBusy(true); landRoom(await addRoom(data.design.id, { imageUrl: '', sampleKey: key, asSketch }).catch(() => ({ error: 'Couldn’t add the room — please try again' }))) }
   const addLeadFileRoom = async (f: { id: string; name: string; url: string }) => {
@@ -997,8 +997,10 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const toolbar = (
     <>
       <Tooltip label={markersHidden ? 'Show markers' : 'Hide markers'}><IconButton icon={markersHidden ? 'visibility' : 'visibility_off'} label={markersHidden ? 'Show markers' : 'Hide markers'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setMarkersHidden(!markersHidden)} data-testid="viz-markers" /></Tooltip>
+      {/* (the calm UI build 2026-10-27, 6-18 · W-148) one name for one action — the bar's button says "Before and after", as the version's
+          ⋮, its tooltip, Present and the ready snackbar's Compare… the tooltip still names what it lays underneath */}
       <Tooltip label={!view ? 'Pick a version to compare' : compare.on ? 'Show it alone' : `Before and after · ${parentLabel}`}>{narrow ? <IconButton icon="compare" label="Before and after" size={36} variant="bare" iconSize={20} iconWeight={300} selected={compare.on} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle" />
-        : <button type="button" className={styles.compareBtn} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle"><Icon name="compare" size={20} weight={300} />Compare</button>}</Tooltip>
+        : <button type="button" className={styles.compareBtn} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle"><Icon name="compare" size={20} weight={300} />Before and after</button>}</Tooltip>
       <Tooltip label={!view ? 'Pins go on a version — generate one first' : pinning ? 'Stop pinning' : 'Pin a note on the photo'}><IconButton icon="push_pin" label="Pin a note" size={36} variant="bare" iconSize={20} iconWeight={300} selected={pinning} aria-pressed={pinning} disabled={!view || readOnly} onClick={() => { if (!pinning) setCompare({ on: false, key: null }); setPinning(!pinning); setDraftPin(null); setActivePin(null) }} data-testid="viz-pin-toggle" /></Tooltip>
       <Tooltip label="Present"><IconButton icon="fullscreen" label="Present" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setPresent(viewKey)} data-testid="viz-present-open" /></Tooltip>
       <Tooltip label="Download"><IconButton icon="download" label="Download" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => download(viewKey)} /></Tooltip>
@@ -1039,6 +1041,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     </div>
   ) : null
   const mv = menu?.kind === 'version' ? versionOf(menu.key) : null
+  /* (the calm UI build 2026-10-27, 6-18) the version whose ⋮ is open is the one on screen — its Share and Download are in view already */
+  const mvOnScreen = !!mv && !!view && mv.key === viewKey
   const mvLines = mv && room ? quoteLines(mv, ed.detectionOf(room.id)) : []
   /* (tablet-15) why a version has nothing to quote, in words that say what to do — a whole-room look names no finishes */
   const noQuoteReason = (v: VersionView) => (v.finishes.reshaped ? 'A whole-room look has no finishes to quote — pick finishes on the Original' : 'This version has no finishes to quote')
@@ -1073,9 +1077,9 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     { label: 'Which version did the client like?', answer: favourites.length
       ? { title: `${favourites.length === 1 ? '1 favourite' : `${favourites.length} favourites`}`, text: `The version${favourites.length === 1 ? '' : 's'} ${leadFirst ?? 'the client'} hearted on the link.`,
           rows: favourites.flatMap((k) => { const at = versionAt(k); return at ? [{ id: k, label: `V${at.v.n} · ${at.r.name}`, meta: at.v.descriptor, run: () => goVersion(at.r, k) }] : [] }) }
-      : { title: 'No favourite yet', text: `When ${leadFirst ?? 'the client'} hearts a render on the link you sent, it shows here.` } },
+      : { title: 'No favourite yet', text: `When ${leadFirst ?? 'the client'} hearts a version on the link you sent, it shows here.` } },
   ] : !room ? [
-    { label: 'Which photo makes the best render?', answer: { title: 'A photo that renders well', text: 'The engine repaints what it can see — the more of the room in good light, the better.',
+    { label: 'Which photo works best?', answer: { title: 'A photo that renders well', text: 'The engine repaints what it can see — the more of the room in good light, the better.',
       rows: [
         { id: 'light', label: 'In daylight, the lights on', meta: 'No harsh sun across the floor' },
         { id: 'corner', label: 'From a corner, at chest height', meta: 'Two walls, the floor and some ceiling in view' },
@@ -1132,8 +1136,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       })
     } },
     !anyLive || readOnly || leadClosed
-      ? { label: data.lead ? `Draft the WhatsApp note to ${leadFirst}` : 'Draft a note to go with these renders', answer: { title: 'Nothing to share yet', text: readOnly ? 'This design is deleted.' : leadClosed ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : 'Generate a version first — the note goes with the renders you share.' } }
-      : { label: data.lead ? `Draft the WhatsApp note to ${leadFirst}` : 'Draft a note to go with these renders', run: shareNow },
+      ? { label: data.lead ? `Draft the WhatsApp note to ${leadFirst}` : 'Draft a note to go with these versions', answer: { title: 'Nothing to share yet', text: readOnly ? 'This design is deleted.' : leadClosed ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : 'Generate a version first — the note goes with the versions you share.' } }
+      : { label: data.lead ? `Draft the WhatsApp note to ${leadFirst}` : 'Draft a note to go with these versions', run: shareNow },
   ]
 
   /* ── the tray ≤1024 (F173): it rises and settles on the sheet's curve; the rooms and the versions fold away on the same beat ── */
@@ -1175,6 +1179,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
 
   return (
     <div ref={rootRef} className={styles.editor} data-card={(!!notesFor || pinCardOpen) || undefined} data-narrow={narrow || undefined} data-tray={(narrow && tray) || undefined} data-tray-leaving={(narrow && trayLeaving && !tray) || undefined} data-rail={hasRail || undefined} data-short={short || undefined} data-testid="viz-editor">
+      {/* (the calm UI build 2026-10-27, 6-08) no "LEAD · MET" chip beside the name — the name and Back say whose it is; what it is
+          ("Project · P-2026-001") rides the name's tooltip */}
       <EditorTopbar backLabel={backLabel} onBack={() => { void leave(back) }} title={title} chip={designKindLabel(data.design.kind, data.lead?.stage, data.lead?.projectNumber)} rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} roomId={roomId} onRoom={(id) => setRoomPick(id)}
                     onRoomMenu={openRoomMenu} roomMenuOpen={menu?.kind === 'room'} onAddRoom={() => setAddRoomOpen(true)}
                     saving={!conflict && !ed.save.error && (ed.save.saving || ed.dirty)} savedLabel={savedLabel} savedTone={conflict || ed.save.error ? 'warn' : 'ok'}
@@ -1197,7 +1203,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       ) : linkAsk && !data.lead && !(narrow && tray) ? (
         /* (UX audit V2) right after the welcome's upload lands: is it for a lead? */
         <div className={styles.note} role="note" data-testid="viz-link-ask"><Icon name="person" size={20} weight={300} />
-          <span className={styles.noteText}>For a lead? Link this design to it — its renders can then go to the lead’s Files, a quote and the client.</span>
+          <span className={styles.noteText}>For a lead? Link this design to it — its versions can then go to the lead’s Files, a quote and the client.</span>
           <Button appearance="text" onPress={() => setLinkOpen(true)}>Link it</Button>
           <Button appearance="text" onPress={() => setLinkAsk(false)}>Not now</Button></div>
       ) : !hintSeen && rooms.length && !(narrow && tray) && !short ? (
@@ -1261,23 +1267,26 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       <PortalMenu open={menu?.kind === 'version' && !!mv} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={mv ? `V${mv.n} · ${mv.descriptor}` : ''}>
         {mv ? (
           <>
+            {/* (the calm UI build 2026-10-27, 6-18 · W-367) one place each: for the version on screen, Share is the top bar's Share (it picks the
+                version on screen) and Download the canvas bar's download — both in view at every width wherever this ⋮ is — so its ⋮ leaves
+                them out; another version's ⋮ keeps both, so it is still shared or saved in one press */}
             {/* (UX audit V4) a version made this visit: Share is its next step, first */}
-            {fresh.includes(mv.key) ? <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem> : null}
+            {fresh.includes(mv.key) && !mvOnScreen ? <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem> : null}
             {/* (UX audit V1) what the client said on it, readable here */}
             {badges[mv.key]?.notes ? <DropdownItem onSelect={() => { setMenu(null); openNotes(mv.key) }}>{`From the client · ${badges[mv.key]!.notes} ${badges[mv.key]!.notes === 1 ? 'note' : 'notes'}`}</DropdownItem> : null}
-            {fresh.includes(mv.key) || badges[mv.key]?.notes ? <DropdownDivider /> : null}
+            {(fresh.includes(mv.key) && !mvOnScreen) || badges[mv.key]?.notes ? <DropdownDivider /> : null}
             {/* (surfaces-27) with the Original on screen, a version's own ⋯ offers its before and after — never a dead Compare */}
             {!view ? <DropdownItem onSelect={() => { setMenu(null); setPinning(false); setDraftPin(null); setActivePin(null); setView(mv.key); setCompare({ on: true, key: null }) }}>Before and after</DropdownItem>
               : mv.key !== viewKey ? <DropdownItem onSelect={() => { setMenu(null); setPinning(false); setDraftPin(null); setActivePin(null); setCompare({ on: true, key: mv.key }) }}>{`Compare with V${view.n}`}</DropdownItem>
                 : <DropdownItem onSelect={() => { setMenu(null); setPinning(false); setDraftPin(null); setActivePin(null); setCompare({ on: true, key: null }) }}>Before and after</DropdownItem>}
             <DropdownItem onSelect={() => { setMenu(null); setPresent(mv.key) }}>Present</DropdownItem>
             <DropdownItem onSelect={() => { setMenu(null); setBoard(mv.key) }}>Moodboard</DropdownItem>
-            <DropdownItem onSelect={() => { setMenu(null); download(mv.key) }}>Download</DropdownItem>
+            {mvOnScreen ? null : <DropdownItem onSelect={() => { setMenu(null); download(mv.key) }}>Download</DropdownItem>}
             <DropdownDivider />
             {/* (files-9) a deleted lead takes nothing more from its design — the rows say why */}
             {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void toFiles(mv) }} disabled={leadDeleted} help={leadDeleted ? LEAD_DELETED_ROW : undefined}>Save to Files</DropdownItem> : null}
             {data.lead ? <DropdownItem onSelect={() => { setMenu(null); setQuoteFor(mv) }} disabled={leadDeleted || !mvLines.length} help={leadDeleted ? LEAD_DELETED_ROW : !mvLines.length ? noQuoteReason(mv) : undefined}>Add to a quote…</DropdownItem> : null}
-            {fresh.includes(mv.key) ? null : <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem>}
+            {fresh.includes(mv.key) || mvOnScreen ? null : <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem>}
             <DropdownDivider />
             <DropdownItem tone="danger" onSelect={() => { setMenu(null); askRemoveVersion(mv) }} disabled={readOnly}>Delete</DropdownItem>
           </>

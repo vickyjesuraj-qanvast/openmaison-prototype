@@ -31,10 +31,12 @@ export const isVisibility = (s: string): s is Visibility => (VISIBILITIES as rea
 export const ITEM_VIEWS = ['none', 'category', 'room', 'section'] as const
 export type ItemsView = (typeof ITEM_VIEWS)[number]
 /** (REG-567) The grid's groups are called sections now, so the free "Section" label reads "Section label" wherever the two could meet. */
-export const ITEM_VIEW_LABEL: Record<ItemsView, string> = { none: 'None', category: 'Category', room: 'Room', section: 'Section label' }
+/* (The calm UI build 2026-10-27, the UI audit's 4-01 · W-019 · W-356) The line's trade is "Trade" on screen — the word Settings, the template and
+   the print already use (the stored key stays `category`); the free label is "Print group". */
+export const ITEM_VIEW_LABEL: Record<ItemsView, string> = { none: 'None', category: 'Trade', room: 'Room', section: 'Print group' }
 export const isItemsView = (s: string): s is ItemsView => (ITEM_VIEWS as readonly string[]).includes(s)
 /** The bucket a line with no label falls into, per view (reference: "Uncategorized" for categories, "Unassigned" for rooms / sections). */
-export const UNLABELLED: Record<Exclude<ItemsView, 'none'>, string> = { category: 'Uncategorized', room: 'Unassigned', section: 'Unassigned' }
+export const UNLABELLED: Record<Exclude<ItemsView, 'none'>, string> = { category: 'No trade', room: 'Unassigned', section: 'Unassigned' }   // (the calm UI build, W-416) was "Uncategorized"
 
 export const DENSITIES = ['single', 'double', 'triple'] as const
 export type ItemsDensity = (typeof DENSITIES)[number]
@@ -47,9 +49,11 @@ export const isDensity = (s: string): s is ItemsDensity => (DENSITIES as readonl
 export const COLUMN_KEYS = ['sku', 'type', 'category', 'section', 'qty', 'unit', 'cost', 'msrp', 'markup', 'margin', 'unitPrice', 'discount', 'gst', 'room', 'color', 'dimensions', 'materials', 'shipping', 'shippingMarkup', 'taxable', 'vendor', 'website', 'rebate'] as const
 export type ColumnKey = (typeof COLUMN_KEYS)[number]
 export const COLUMN_LABEL: Record<ColumnKey, string> = {
-  sku: 'SKU', type: 'Type', category: 'Category', section: 'Section label', qty: 'Qty', unit: 'Unit', cost: 'Cost', msrp: 'MSRP', markup: 'Markup', margin: 'Margin',   // (REG-574) "Section label": the grid's sections took the word (REG-567)
-  unitPrice: 'Unit Price', discount: 'Discount', gst: 'GST (%)', room: 'Room', color: 'Color', dimensions: 'Dimensions', materials: 'Materials',
-  shipping: 'Shipping', shippingMarkup: 'Shipping Markup', taxable: 'Taxable', vendor: 'Vendor/Sub', website: 'Website Link',
+  /* (the calm UI build 2026-10-27 — 4-01 · 4-25 · W-019 · W-356 · W-422 · T-13) Trade, Print group, Unit price, Vendor — the Price book's and
+     Settings' words; sentence case. The keys stay. */
+  sku: 'SKU', type: 'Type', category: 'Trade', section: 'Print group', qty: 'Qty', unit: 'Unit', cost: 'Cost', msrp: 'MSRP', markup: 'Markup', margin: 'Margin',   // (REG-574) the free label; the grid's sections took "Section" (REG-567)
+  unitPrice: 'Unit price', discount: 'Discount', gst: 'GST (%)', room: 'Room', color: 'Colour', dimensions: 'Dimensions', materials: 'Materials',
+  shipping: 'Shipping', shippingMarkup: 'Shipping markup', taxable: 'Taxable', vendor: 'Vendor', website: 'Website link',
   rebate: 'Rebate',   // (REG-596) Owners only — a vendor rebate on the line, counted in the owner's margin, never printed
 }
 /** Columns the table can actually render today (the rest are in the catalogue, off, and answer coming soon when switched on). */
@@ -61,7 +65,9 @@ export type ColumnSettings = { details: { description: boolean; images: boolean;
     too, REG-435): Qty · Unit · Cost · Markup · Unit Price · Discount · GST (%). A stored 'status' entry is dropped on read. */
 export const DEFAULT_COLUMNS: ColumnSettings = {
   details: { description: true, images: true, autonumber: true },
-  columns: COLUMN_KEYS.map((key) => ({ key, on: ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst'].includes(key) })),
+  /* (the calm UI build 2026-10-27, the UI audit's 4-02 · 4-12) A new quote opens on Qty · Unit · Cost · Markup · Unit price (Cost and Markup only
+     for those who see costs — COST_COLUMNS); Discount and GST (%) — "0%" and "9" on every line — start off in Column settings. */
+  columns: COLUMN_KEYS.map((key) => ({ key, on: ['qty', 'unit', 'cost', 'markup', 'unitPrice'].includes(key) })),
 }
 /** (Quotes on the move — P-07, Q-03) The touch tablet's working grid: Item · Qty · Unit · Unit price · Total, no thumbnail, the number in the
     Item cell. Remembered per browser under `TABLET_COLUMNS_KEY` (Column settings on a tablet edits this set), apart from the quote's own

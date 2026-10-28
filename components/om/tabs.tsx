@@ -22,7 +22,10 @@ export function Tabs({
   /** (REG-645) A tab marked `soon` is a module still to come: it stays in the row and answers with `onSoon` (the house "Coming soon").
       (gaps build, package A — 12) `count`: what is still to do there, as the DS Badge's count after the label (the rail's and the Tools tiles'
       count look); none, or 0, draws the tab exactly as before. */
-  items: { label: string; href: string; soon?: boolean; count?: number }[]
+  items: { label: string; href: string; soon?: boolean; count?: number
+    /** (the calm UI build 2026-10-27 — the audit's 2-22 · T-07, additive) the count's look: a quiet grey number by default; `late` — the DS
+        Badge's red — only when what it counts is overdue and yours */
+    countTone?: 'late' }[]
   activeHref: string
   'aria-label'?: string
   className?: string
@@ -81,7 +84,7 @@ export function Tabs({
                prefetch only fetches the loading boundary — which is precisely the flash we are trying to remove. */
             prefetch
           >
-            {t.count ? <span className={styles.withCount}>{t.label}<Badge variant="count" count={t.count} aria-label={`${t.count} to do`} /></span> : t.label}
+            {t.count ? <span className={styles.withCount}>{t.label}<Badge variant="count" count={t.count} aria-label={`${t.count} to do`} className={t.countTone === 'late' ? undefined : styles.quietCount} /></span> : t.label}
             {selected ? <span className={styles.ink} aria-hidden /> : null}
           </Link>
           </Tooltip>

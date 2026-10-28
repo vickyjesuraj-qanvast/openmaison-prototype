@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 export function DeleteTasksDialog({ open, all, count = 1, onNo, onYes }: { open: boolean; all: boolean; count?: number; onNo: () => void; onYes: () => void }) {
   const many = !all && count > 1
   return (
-    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={all ? 'Delete all Tasks' : many ? 'Delete Tasks' : 'Delete Task'} confirmLabel="Delete"
+    <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title={all ? 'Delete all tasks' : many ? 'Delete tasks' : 'Delete task'} confirmLabel="Delete"
                    message={all
                      ? 'Are you sure you want to delete all tasks in this project? This action cannot be undone.'
                      : many

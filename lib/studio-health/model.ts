@@ -19,7 +19,7 @@
  *     against the tasks added in the range; a task counts for whoever ticked it.
  *   - **Tickets resolved** — a ticket resolved or closed in the range, against those raised in it. **Site updates** — the Dashboard's rule
  *     (published, on live projects). **Hangout chats** — chats held at a Hangout (its "Chats held").
- *   - **Your clients** — Qanvast Ops › Studios' four usage figures (lib/platform-studios.ts): portal sign-ins, issues raised, messages from
+ *   - **Your clients** — Qanvast Ops › Studios' four usage figures (lib/platform-studios.ts): portal sign-ins, tickets raised, messages from
  *     clients, choices made — the same rows, per range.
  *   - **Over time** — active members and AI runs each day (30 days), each week from Monday (90 days) or each month — the AI runs add up to
  *     the tile; active members count each person once a point. (1.0 drew sign-ins too; on one scale a week's sign-ins dwarf the people, and a
@@ -79,14 +79,16 @@ export type TileGroup = { key: 'team' | 'work' | 'done' | 'clients'; title: stri
 
 /** The groups and their tiles, in the page's order — the ghost draws these words too. (invented copy, 1.0's labels where 2.0 has the thing) */
 export const GROUPS: readonly { key: TileGroup['key']; title: string; help: string; tiles: readonly { key: TileKey; label: string }[] }[] = [
-  { key: 'team', title: 'Your team', help: 'Who used OpenMaison — from what they did, not the pages they opened', tiles: [
-    { key: 'active', label: 'Active members' }, { key: 'signIns', label: 'Sign-ins' }, { key: 'ai', label: 'AI runs' }] },
+  /* (the calm UI build 2026-10-27 — the audit's 5-22 · 5-41, T-01 · T-09 · W-006 · W-031 · W-064) Members (was "Your team"), AI uses (was "AI
+     runs"), Qanvast Hangout chats, Issues resolved, "not active in this period" (was "did nothing") */
+  { key: 'team', title: 'Members', help: 'Who used OpenMaison — from what they did, not the pages they opened', tiles: [
+    { key: 'active', label: 'Active members' }, { key: 'signIns', label: 'Sign-ins' }, { key: 'ai', label: 'AI uses' }] },
   { key: 'work', title: 'New work', help: 'What came in and what went out to clients', tiles: [
     { key: 'leads', label: 'Leads added' }, { key: 'projects', label: 'Projects started' }, { key: 'quotes', label: 'Quotes sent' }, { key: 'invoices', label: 'Invoices sent' }] },
   { key: 'done', title: 'Work done', help: 'What the team finished', tiles: [
-    { key: 'tasks', label: 'Tasks done' }, { key: 'tickets', label: 'Tickets resolved' }, { key: 'updates', label: 'Site updates' }, { key: 'chats', label: 'Hangout chats' }] },
+    { key: 'tasks', label: 'Tasks done' }, { key: 'tickets', label: 'Issues resolved' }, { key: 'updates', label: 'Site updates' }, { key: 'chats', label: 'Qanvast Hangout chats' }] },
   { key: 'clients', title: 'Your clients', help: 'What clients did on their portal', tiles: [
-    { key: 'portalSignIns', label: 'Portal sign-ins' }, { key: 'issues', label: 'Issues reported' }, { key: 'messages', label: 'Messages' }, { key: 'choices', label: 'Choices made' }] },
+    { key: 'portalSignIns', label: 'Portal sign-ins' }, { key: 'issues', label: 'Issues raised' }, { key: 'messages', label: 'Messages' }, { key: 'choices', label: 'Choices made' }] },
 ]
 
 export type MemberHealth = {
@@ -125,7 +127,7 @@ const priorLine = (now: number, before: number | null): string | null => (before
     help is a few words, one line at a phone's two-up tiles. */
 export const helpShown = (key: TileKey, range: HealthRange) => !(PRIOR_KEYS.has(key) && range === null)
 /** Over time's subtitle on a range — the page's and its ghost's words. */
-export const trendSubtitle = (range: HealthRange) => `${range === 30 ? 'Each day' : range === 90 ? 'Each week, from Monday' : 'Each month'} — active members and AI runs`
+export const trendSubtitle = (range: HealthRange) => `${range === 30 ? 'Each day' : range === 90 ? 'Each week, from Monday' : 'Each month'} — active members and AI uses`
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 type Bucket = { label: string; lo: number; hi: number }
@@ -200,7 +202,7 @@ export function healthReport(f: HealthFacts, range: HealthRange): HealthReport {
   }
   const sitting = staff.length - active
   const help: Record<TileKey, string | null> = {
-    active: sitting ? `${sitting.toLocaleString('en-SG')} did nothing` : 'Everyone took part',
+    active: sitting ? `${sitting.toLocaleString('en-SG')} not active in this period` : 'Everyone took part',
     signIns: signIns.length ? `by ${plural(new Set(signIns.map((s) => s.m)).size, 'member')}` : 'No one signed in',
     ai: runs.length || credits ? `${credits.toLocaleString('en-SG')} credits used` : 'No AI tool used',
     leads: priorLine(leads, leadsPrior),
@@ -212,7 +214,7 @@ export function healthReport(f: HealthFacts, range: HealthRange): HealthReport {
     updates: updates.length ? `on ${plural(new Set(updates.map((u) => u.projectId)).size, 'project')}` : 'None published',
     chats: chats.length ? `at ${plural(new Set(chats.map((c) => c.eventId)).size, 'Hangout')}` : 'None held',
     portalSignIns: cSign.length ? `by ${plural(new Set(cSign.map((s) => s.c)).size, 'client')}` : 'No client signed in',
-    issues: cIssues.length ? `${cIssues.filter((i) => i.open).length.toLocaleString('en-SG')} still open` : 'None reported',
+    issues: cIssues.length ? `${cIssues.filter((i) => i.open).length.toLocaleString('en-SG')} still open` : 'None raised',   // (the Dashboard redesigned, P-13: one name — the studio's word is Tickets; "issue" is the client's)
     messages: cMsgs.length ? `from ${plural(new Set(cMsgs.map((s) => s.c ?? '?')).size, 'client')}` : 'None from clients',
     choices: priorLine(cChoices, prior(f.clients.choices)),
   }
@@ -232,7 +234,7 @@ export function healthReport(f: HealthFacts, range: HealthRange): HealthReport {
     labels: buckets.map((b) => b.label),
     series: [
       { key: 'active', label: 'Active members', values: buckets.map((b) => new Set(acts.filter((a) => inB(b, a.at)).map((a) => a.m)).size) },
-      { key: 'ai', label: 'AI runs', values: buckets.map((b) => f.ai.filter((r) => r.run && inB(b, r.at)).length) },
+      { key: 'ai', label: 'AI uses', values: buckets.map((b) => f.ai.filter((r) => r.run && inB(b, r.at)).length) },
     ],
   } : null
 
@@ -282,7 +284,7 @@ export function healthSheet(r: HealthReport, now: number): { head: string[]; bod
     r.trend.labels.forEach((l, i) => body.push([l, ...r.trend!.series.map((s) => String(s.values[i] ?? 0))]))
     body.push([])
   }
-  body.push(['By team member'], ['Member', 'Role', 'Last active', 'Days active', 'Sign-ins', 'AI runs', 'Quotes sent', 'Tasks done', 'Site updates'])
+  body.push(['By member'], ['Member', 'Role', 'Last active', 'Days active', 'Sign-ins', 'AI uses', 'Quotes sent', 'Tasks done', 'Site updates'])   // (the calm UI build 2026-10-27, T-01 · 5-41) the export's words, as the page's
   for (const m of r.members) body.push([m.name, m.role, lastActiveWords(m.lastActive, now), String(m.days), String(m.signIns), String(m.aiRuns), String(m.quotesSent), String(m.tasksDone), String(m.updates)])
   return { head: [`Studio health · ${rangeLabel(r.range)} · ${r.active} of ${plural(r.total, 'member')} active`], body }
 }

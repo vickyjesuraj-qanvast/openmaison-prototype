@@ -72,7 +72,7 @@ export function PlanDialog({ open, onClose, onSave, team, client, defaults, toda
         </div>
         <TextField label="What you want out of it (optional)" value={v.aimNote} onChange={(x) => set({ aimNote: x })} maxLength={200} />
         <div className={styles.pair}>
-          <DateTimeField label="Date & time" required value={v.when} onChange={(x) => set({ when: x })} today={today} error={tried ? errors.when : undefined} />
+          <DateTimeField label="Date and time" required value={v.when} onChange={(x) => set({ when: x })} today={today} error={tried ? errors.when : undefined} />
           <TextField label="How long" value={lengthLabel(v.lengthMin)} mode="select" options={lengths} onChange={(x) => set({ lengthMin: LENGTHS.find((l) => l.label === x)?.min ?? DEFAULT_LENGTH_MIN })} />
         </div>
         <div className={styles.pair}>

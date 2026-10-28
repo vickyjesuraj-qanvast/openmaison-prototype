@@ -24,11 +24,13 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   ok(daneRows === Number(q(`SELECT count(*) FROM leads WHERE deleted_at IS NULL AND direct = 0`)), `Dane sees ${daneRows} leads (every live lead)`)
   const block = page.getByRole('button', { name: /^Demo Studio/ })
   ok(await block.isVisible(), 'the Demo Studio block is a button')
-  ok((await block.innerText()).includes('Dane Bruce Lee'), 'second line reads Dane Bruce Lee')
+  ok((await block.innerText()).includes('Dane · Owner'), 'second line reads the member signed in — Dane · Owner')   // (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-38: was the mock's "Dane Bruce Lee")
   await page.screenshot({ path: `${OUT}/va-01-rail-dane.png`, clip: { x: 0, y: 824, width: 360, height: 200 } })
   await block.click()
   const menu = page.getByRole('menu', { name: 'View as' })
   await menu.waitFor()
+  /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-40) the block's menu opens Your profile · Sign out; View as and the plan fold under Demo */
+  if (!(await menu.getByRole('group', { name: 'Members' }).count())) { await menu.getByTestId('demo-fold').click(); await page.waitForTimeout(300) }
   const items = menu.getByRole('group', { name: 'Members' }).getByRole('menuitemradio')   // (REG-705) the menu also holds the Studio plan group
   ok((await items.count()) === 9, `menu lists ${await items.count()} members (9 expected, Hui Min, Priya Tan · Accounting and Nurul Huda · Marketing included)`) /* (parity map, FB-114; S44O — call C6, R164's Marketing member: deliberate changes of this rule) */
   ok(await menu.getByText('Demo only', { exact: true }).isVisible(), 'Demo only pill')
@@ -82,6 +84,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
 
   console.log('Back to Dane')
   await page.getByRole('button', { name: /^Demo Studio/ }).click()
+  { const m = page.getByRole('menu', { name: 'View as' }); await m.waitFor(); if (!(await m.getByRole('group', { name: 'Members' }).count())) await m.getByTestId('demo-fold').click() }   // (the calm UI build 2026-10-27, a deliberate change) the Demo fold (remembered once opened)
   await page.getByRole('menu', { name: 'View as' }).getByRole('menuitemradio').filter({ hasText: 'Dane' }).click()
   await page.getByText('Viewing as Dane · Owner').waitFor({ timeout: 10000 })
   ok(q(`SELECT id FROM members WHERE is_you = 1`) === 'dane', 'the flag is back on Dane')

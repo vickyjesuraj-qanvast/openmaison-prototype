@@ -9,8 +9,9 @@ import { formatProjectNumber, parseProjectNumbering, type ProjectNumbering } fro
 export const TICKET_STATUSES = ['open', 'in_progress', 'resolved', 'closed'] as const
 export type TicketStatus = (typeof TICKET_STATUSES)[number]
 export const isTicketStatus = (s: string): s is TicketStatus => (TICKET_STATUSES as readonly string[]).includes(s)
-/** The state's word — the same on both sides (1.0's four). */
-export const STATUS_WORDS: Record<TicketStatus, string> = { open: 'Open', in_progress: 'In progress', resolved: 'Resolved', closed: 'Closed' }
+/** The state's word — the same on both sides (1.0's four). (the calm UI build 2026-10-27, 3-37 · W-215) the one display map: `in_progress` reads
+    "Being fixed" — "In progress" is a project's stage word; the stored value and what the filters keep stay as they were. */
+export const STATUS_WORDS: Record<TicketStatus, string> = { open: 'Open', in_progress: 'Being fixed', resolved: 'Resolved', closed: 'Closed' }
 /** The house chip's colour for a state: open waits (red, as 1.0's pill), in progress is being looked at (yellow), resolved green, closed grey. */
 export const STATUS_TONE: Record<TicketStatus, 'red' | 'yellow' | 'green' | 'default'> = { open: 'red', in_progress: 'yellow', resolved: 'green', closed: 'default' }
 /** Open and In progress still need the studio; Resolved and Closed are done (a client's reply reopens a Resolved one). */
@@ -86,7 +87,7 @@ export function eventLine(event: string, by: string, detail?: string | null): st
   if (event === 'resolved') return `${by} marked it resolved`
   if (event === 'reopened') return `${by} reopened it`
   if (event === 'closed') return `${by} closed it`
-  if (event === 'escalated') return `${by} escalated it — Urgent`
+  if (event === 'escalated') return `${by} flagged it to the Owner — Urgent`   // (the calm UI build 2026-10-27, 1-10 · W-181) Escalate → Flag to the Owner
   if (event === 'assigned') return !detail ? `${by} left it with nobody for now` : detail === by ? `${by} took it on` : `${by} gave it to ${detail}`
   if (event === 'priority') return `${by} set it to ${detail ?? 'Normal'}`
   return by
@@ -94,6 +95,15 @@ export function eventLine(event: string, by: string, detail?: string | null): st
 
 /** "Quality of work · Reported 3 Oct by Benjamin" — the line under a ticket's subject (the client's side reads "by you"). */
 export const raisedLine = (o: { category: string; day: string; by: string }) => `${o.category} · Reported ${o.day} by ${o.by}`
+
+/* (the calm UI build 2026-10-27, 1-22 · 1-24 · W-198) the card and the drawer in the house's words — a day as "18 Oct" this year and "18 Oct ’25"
+   another year (T-11), the reporter after the thing: "Reported by Mei Ling Han on 18 Oct" (the client's) · "Raised by Germaine on 18 Oct" (the studio's) */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+export function ticketDay(at: number, now: number): string {
+  const d = new Date(at), y = new Date(now).getFullYear()
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}${d.getFullYear() === y ? '' : ` ’${String(d.getFullYear()).slice(2)}`}`
+}
+export const reportedLine = (o: { client: boolean; by: string; day: string }) => `${o.client ? 'Reported' : 'Raised'} by ${o.by} on ${o.day}`
 
 /* ── (parity map 2026-10-10 — UC-058 · FR-084) the ticket's number, the studio's pattern: Settings › Finance › Document numbers' Tickets row ──
    The default is today's — T-{YYYY}-{nnn}, counted per year across the studio — so a studio that never opens the row numbers as it always did;

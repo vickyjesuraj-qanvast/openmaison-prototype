@@ -23,7 +23,7 @@ const sub = (b: Block): string => {
   switch (b.kind) {
     case 'header': case 'footer': return b.repeat === 'every' ? 'Every page' : b.repeat === 'first' ? 'First page' : 'After the first page'
     case 'cover': return 'Its own page'
-    case 'items': return `${b.groupBy === 'none' ? 'Quote sections' : { category: 'By trade', room: 'By room', section: 'By section label' }[b.groupBy]}${b.subGroupBy !== 'none' ? ` › ${b.subGroupBy}` : ''} · ${b.columns.filter((c) => c.on).length} columns`
+    case 'items': return `${b.groupBy === 'none' ? 'Quote sections' : { category: 'By trade', room: 'By room', section: 'By print group' }[b.groupBy]}${b.subGroupBy !== 'none' ? ` › ${b.subGroupBy}` : ''} · ${b.columns.filter((c) => c.on).length} columns`
     case 'totals': return `${b.lines.filter((l) => l.on).length} lines`
     case 'payments': return `${b.layout.charAt(0).toUpperCase()}${b.layout.slice(1)} layout`
     case 'bank': return b.qr ? 'With the PayNow QR' : 'Bank and account'

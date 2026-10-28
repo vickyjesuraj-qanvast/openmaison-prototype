@@ -1,10 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Switch, Tag as TagChip } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { DemoNote } from '@/components/om/demo-note'
 import { MetaChip } from '@/components/om/meta-chip'
+import { Tooltip } from '@/components/om/tooltip'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { HowItWorks } from '@/app/settings/how-it-works'   // (the calm UI build 2026-10-27, T-05) the house fold for a card's own rules
 import { Chips } from '@/components/om/chips'
 import { StatTile } from '@/components/om/stat-tile'
 import { TextField } from '@/components/om/text-field'
@@ -32,8 +38,29 @@ type Arrival = { fileName: string; at: number; rows: number }
 /* (pending modules S37) the listing's own line is Company › Profile's, not a connection here */
 export type Simulated = Record<Exclude<SimulatedKey, 'listing' | 'qanvastAccount'>, boolean> & { calendar: boolean }   /* (pending modules S41b-5) Qanvast Ops › Lead credits · Reviews say their own line */
 const ALL_SIMULATED: Simulated = { qanvast: true, email: true, meta: true, gmail: true, xero: true, calendar: true }
+/* (the calm UI build 2026-10-27 — 5-16, T-05: no prototype talk on a studio's screen) a stand-in says so as one quiet "Demo" chip in its card's
+   title row; its sentence (lib/services/registry.ts) is the chip's tooltip and accessible name — a press or a key shows it too */
 function SimulatedLine({ k, on }: { k: Exclude<SimulatedKey, 'listing'>; on: boolean }) {
-  return on ? <span className={styles.hint} data-testid={`int-simulated-${k}`}>{SIMULATED_WORDS[k]}</span> : null
+  return on ? <DemoNote text={SIMULATED_WORDS[k]} testId={`int-simulated-${k}`} /> : null   // (the calm UI build 2026-10-27 — B1's request, 5-16) the house DemoNote, not a copy of it
+}
+/* (5-14 · W-336) one status word for "is it on": Connected (green) or Not connected */
+const Status = ({ on, n }: { on: boolean; n?: number }) => (on ? <MetaChip color="green">{n ? `Connected · ${n}` : 'Connected'}</MetaChip> : <MetaChip>Not connected</MetaChip>)
+
+/** (5-15) What a developer needs to wire another form tool to the link — the steps and the fields, in one place behind "For your developer". */
+const DEVELOPER_NOTE = 'Paste the link into your form or integration tool. Each submission is sent to it as a POST request with a JSON body, and the lead appears in Leads — unread, or in Review imported leads when its phone is already known. Accepted JSON fields: name, phone, email, budget, property_type, notes, source. Common aliases like full_name, mobile and message work too.'
+
+/** (5-15 · T-02) A link's ⋮ — Try it · Regenerate · Revoke; its one verb (Copy link) stays on the row. */
+function HookMenu({ label, items }: { label: string; items: { label: string; run: () => void; disabled?: boolean; tone?: 'danger' }[] }) {
+  const anchor = useRef<HTMLSpanElement>(null)
+  const [open, setOpen] = useState(false)
+  return (
+    <span ref={anchor}>
+      <Tooltip label="More" disabled={open}><IconButton icon="more_vert" label={label} variant="bare" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="webhook-more" /></Tooltip>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={label}>
+        {items.map((a) => <DropdownItem key={a.label} onSelect={() => { setOpen(false); a.run() }} disabled={a.disabled} tone={a.tone}>{a.label}</DropdownItem>)}
+      </PortalMenu>
+    </span>
+  )
 }
 
 /** (sweep S4 #25) A secret copied through the house hook: the button reads "Copied", and a failed copy says so — never the secret in a snackbar. */
@@ -162,19 +189,17 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
         <section className={styles.card} aria-labelledby="int-qanvast">
           <div className={styles.cardHead}>
             {/* (pending modules S37) the card follows the studio's listing on Qanvast — its one home is Company › Profile */}
-            <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2>{qanvastListed ? <MetaChip color="green">{QANVAST_CONNECTION.listed.chip}</MetaChip> : <MetaChip>{QANVAST_CONNECTION.notListed.chip}</MetaChip>}</div>
+            <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2><Status on={qanvastListed} /><SimulatedLine k="qanvast" on={simulated.qanvast} /></div>
             {qanvastListed
               ? <p className={styles.cardHelp} data-testid="int-qanvast-help">{QANVAST_CONNECTION.listed.lead}<HelpLink href="/qanvast-ops">{QANVAST_CONNECTION.listed.returns}</HelpLink>{QANVAST_CONNECTION.listed.mid}<HelpLink href="/company/profile#qanvast" testId="int-qanvast-listing">{QANVAST_CONNECTION.listed.link}</HelpLink>{QANVAST_CONNECTION.listed.end}</p>
               : <p className={styles.cardHelp} data-testid="int-qanvast-help">{QANVAST_CONNECTION.notListed.lead}<HelpLink href="/company/profile#qanvast" testId="int-qanvast-listing">{QANVAST_CONNECTION.notListed.link}</HelpLink>{QANVAST_CONNECTION.notListed.end}</p>}
-            <SimulatedLine k="qanvast" on={simulated.qanvast} />
           </div>
         </section>
 
         <section id="email" className={styles.card} aria-labelledby="int-email" data-testid="int-email">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-email" className={styles.cardTitle}>Website form by email</h2><MetaChip color="green">Ready</MetaChip></div>
+            <div className={styles.titleRow}><h2 id="int-email" className={styles.cardTitle}>Website form by email</h2><Status on /><SimulatedLine k="email" on={simulated.email} /></div>
             <p className={styles.cardHelp}>Set your website form to email this address. Each enquiry becomes a lead with the source Website, unread until someone opens it. A phone number already on a lead goes to Review imported leads instead of a second lead.</p>
-            <SimulatedLine k="email" on={simulated.email} />
           </div>
           <div className={styles.row}>
             <code className={styles.address} data-testid="intake-address">{address}</code>
@@ -182,15 +207,14 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           </div>
           <div className={styles.meta}>
             <span>{last(emailArrivals)}</span>
-            {canManage ? <Button appearance="text" iconStart={<Icon name="mail" size={18} />} isDisabled={busy !== null} onPress={() => { void simulate('email') }}>{busy === 'email' ? 'Arriving…' : 'Simulate an enquiry arriving (demo)'}</Button> : null}
+            {canManage ? <Button appearance="text" iconStart={<Icon name="mail" size={18} />} isDisabled={busy !== null} onPress={() => { void simulate('email') }} data-testid="int-email-try">{busy === 'email' ? 'Arriving…' : 'Try it'}</Button> : null}   {/* (W-377) the card's Demo chip says it is a stand-in */}
           </div>
         </section>
 
         <section id="meta" className={styles.card} aria-labelledby="int-meta" data-testid="int-meta">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-meta" className={styles.cardTitle}>Meta Lead Ads</h2>{capture.meta.connected ? <MetaChip color="green">Connected</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
+            <div className={styles.titleRow}><h2 id="int-meta" className={styles.cardTitle}>Meta Lead Ads</h2><Status on={capture.meta.connected} /><SimulatedLine k="meta" on={simulated.meta} /></div>
             <p className={styles.cardHelp}>Connect the Facebook page your ads run on, pick the lead forms, and every submission becomes a lead with the source Meta Ads. The form’s questions land in the lead’s fields as mapped below.</p>
-            <SimulatedLine k="meta" on={simulated.meta} />
           </div>
           {capture.meta.connected ? (
             <>
@@ -215,13 +239,14 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
               </div>
               <div className={styles.meta}>
                 <span>{last(metaArrivals)}</span>
-                {canManage ? <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null || !capture.meta.forms.some((f) => f.on)} onPress={() => { void simulate('meta', capture.meta.forms.find((f) => f.on)?.name) }}>{busy === 'meta' ? 'Arriving…' : 'Simulate a form submission (demo)'}</Button> : null}
+                {canManage ? <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null || !capture.meta.forms.some((f) => f.on)} onPress={() => { void simulate('meta', capture.meta.forms.find((f) => f.on)?.name) }}>{busy === 'meta' ? 'Arriving…' : 'Try it'}</Button> : null}
               </div>
             </>
           ) : (
             <div className={styles.row}>
-              {canManage ? <Button iconStart={<Icon name="link" size={20} />} onPress={() => { void save({ meta: { ...capture.meta, connected: true, page: `${studioName.replace(/ Pte\.? Ltd\.?$/i, '')} · Facebook page` } }, 'Meta Lead Ads connected') }}>Connect a Facebook page</Button> : null}
-              <span className={styles.hint}>{canManage ? 'The platform opens Meta’s login; the prototype connects a stand-in page.' : 'An Owner or an Admin connects the studio’s Facebook page.'}</span>
+              {/* (5-14 · 5-16) the words first, Connect outlined at the card's right — the same place on every card; the stand-in is the Demo chip's */}
+              <span className={styles.rowWords}>{canManage ? 'Meta’s login opens to pick the page.' : 'An Owner or an Admin connects the studio’s Facebook page.'}</span>
+              {canManage ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} onPress={() => { void save({ meta: { ...capture.meta, connected: true, page: `${studioName.replace(/ Pte\.? Ltd\.?$/i, '')} · Facebook page` } }, 'Meta Lead Ads connected') }}>Connect a Facebook page</Button> : null}
             </div>
           )}
         </section>
@@ -230,31 +255,28 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
             Google, shown once), counters, a log; "Simulate a POST" plays what a real POST would through the same intake. */}
         <section id="webhooks" className={styles.card} aria-labelledby="int-webhooks" data-testid="int-webhooks">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-webhooks" className={styles.cardTitle}>Webhooks</h2>{activeHooks.length ? <MetaChip color="green">{`${activeHooks.length} active`}</MetaChip> : <MetaChip>None yet</MetaChip>}</div>
-            <p className={styles.cardHelp}>Generate webhook URLs for external systems to push leads directly into your studio. Supports any platform that can POST JSON (Zapier, Make, Typeform, Facebook Lead Ads, etc.).</p>
+            {/* (the calm UI build 2026-10-27 — 5-15 · W-429 · W-202) the card a studio owner sets up, in his words; the developer's (POST, JSON,
+                the field keys) behind "For your developer" */}
+            <div className={styles.titleRow}><h2 id="int-webhooks" className={styles.cardTitle}>Other forms (Zapier, Typeform…)</h2><Status on={activeHooks.length > 0} n={activeHooks.length} /></div>
+            <p className={styles.cardHelp}>Connect any form tool: make a link, paste it into the tool, and each answer arrives as a lead.</p>
+            <HowItWorks label="For your developer" testId="webhooks-developer">{DEVELOPER_NOTE}</HowItWorks>
           </div>
-          <ol className={styles.steps}>
-            <li>Generate a URL below and paste it into your form / integration tool.</li>
-            <li>When someone submits the form, a POST request is sent to the URL.</li>
-            <li>The lead appears in your Leads page — unread, or in Review imported leads when the phone is already known.</li>
-          </ol>
-          <span className={styles.hint}>Accepted JSON fields: name, phone, email, budget, property_type, notes, source. Also accepts common aliases like full_name, mobile, message.</span>
           {canManage ? (
             <div className={styles.newHook} data-testid="new-webhook">
-              <span className={styles.eyebrow}>New webhook endpoint</span>
+              <span className={styles.eyebrow}>New link</span>
               <div className={styles.hookForm}>
                 <TextField label="Source" mode="select" options={WEBHOOK_PLATFORMS.map((p) => p.label)} value={WEBHOOK_PLATFORMS.find((p) => p.key === platform)!.label} onChange={(v) => setPlatform(WEBHOOK_PLATFORMS.find((p) => p.label === v)?.key ?? 'generic')} helper={WEBHOOK_PLATFORMS.find((p) => p.key === platform)!.help} />
                 <TextField label="Source label (optional)" value={hookLabel} onChange={setHookLabel} maxLength={80} trailingIcon={null} helper="Incoming leads are tagged with this source name." />
                 <TextField label="Notes (optional)" value={hookNotes} onChange={setHookNotes} maxLength={200} trailingIcon={null} helper="Internal — not shown to clients." />
               </div>
-              <div><Button iconStart={<Icon name="add" size={20} />} isDisabled={busy !== null} onPress={() => { void generate() }}>{busy === 'hook' ? 'Creating…' : 'Generate webhook URL'}</Button></div>
+              <div><Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} isDisabled={busy !== null} onPress={() => { void generate() }} data-testid="webhook-make">{busy === 'hook' ? 'Making…' : 'Make a link'}</Button></div>   {/* (W-201) */}
             </div>
           ) : null}
           {created ? (
             <div className={styles.created} role="status" data-testid="webhook-created">
-              <span className={styles.createdTitle}>{created.webhook.platform === 'google_ads' ? 'Connect in Google Ads' : created.webhook.platform === 'meta' ? 'Connect Meta via Zapier / Make' : 'Webhook created'}</span>
-              <span className={styles.eyebrow}>Webhook URL</span>
-              <div className={styles.row}><code className={styles.address} data-testid="webhook-url">{webhookUrl(created.webhook.token)}</code><CopyButton variant="outlined" text={webhookUrl(created.webhook.token)} label="Copy URL" done="Webhook URL copied" what="webhook URL" /></div>
+              <span className={styles.createdTitle}>{created.webhook.platform === 'google_ads' ? 'Connect in Google Ads' : created.webhook.platform === 'meta' ? 'Connect Meta via Zapier / Make' : 'Link made'}</span>
+              <span className={styles.eyebrow}>The link</span>
+              <div className={styles.row}><code className={styles.address} data-testid="webhook-url">{webhookUrl(created.webhook.token)}</code><CopyButton variant="outlined" text={webhookUrl(created.webhook.token)} label="Copy link" done="Link copied" what="link" /></div>
               {created.key ? (
                 <>
                   <span className={styles.eyebrow}>Signing key</span>
@@ -270,23 +292,23 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
             <ul className={styles.hooks} aria-label="Webhook endpoints">
               {activeHooks.map((w) => (
                 <li key={w.id} className={styles.hook} data-testid="webhook-row">
-                  <div className={styles.hookHead}><span className={styles.hookLabel}>{w.label}</span><MetaChip>{WEBHOOK_PLATFORMS.find((p) => p.key === w.platform)?.label ?? w.platform}</MetaChip>{w.notes ? <span className={styles.hint}>{w.notes}</span> : null}</div>
+                  {/* (5-24) the platform is the label's quiet second word, not a capital tag */}
+                  <div className={styles.hookHead}><span className={styles.hookLabel}>{w.label}</span><span className={styles.hint}>{WEBHOOK_PLATFORMS.find((p) => p.key === w.platform)?.label ?? w.platform}</span>{w.notes ? <span className={styles.hint}>· {w.notes}</span> : null}</div>
                   <div className={styles.meta} data-testid="webhook-counters"><span>{w.received} received</span><span>{w.created} created</span><span>{w.duplicates} {w.duplicates === 1 ? 'duplicate' : 'duplicates'}</span><span>{w.lastAt ? `Last: ${displayDateTimeDot(new Date(w.lastAt))}` : 'No requests received yet.'}</span></div>
                   <div className={styles.row}>
                     {/* (sweep S4 #17) the URL carries the endpoint's secret token — only Owners and Admins are sent it, and only they copy it */}
-                    {canManage && w.token ? <CopyButton text={webhookUrl(w.token)} label="Copy URL" done="Webhook URL copied" what="webhook URL" /> : null}
-                    {canManage ? (
-                      <>
-                        <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null} onPress={() => { void post(w) }}>{busy === w.id ? 'Arriving…' : 'Simulate a POST (demo)'}</Button>
-                        <Button appearance="text" iconStart={<Icon name="refresh" size={18} />} onPress={() => setConfirm({ kind: 'regen', w })}>Regenerate</Button>
-                        <Button appearance="text" iconStart={<Icon name="delete" size={18} />} onPress={() => setConfirm({ kind: 'revoke', w })}>Revoke</Button>
-                      </>
-                    ) : null}
+                    {canManage && w.token ? <CopyButton text={webhookUrl(w.token)} label="Copy link" done="Link copied" what="link" /> : null}
+                    {/* (5-15 · T-02 · W-377) one verb on the row; Try it, Regenerate and Revoke in its ⋮ */}
+                    {canManage ? <HookMenu label={`More for ${w.label}`} items={[
+                      { label: busy === w.id ? 'Arriving…' : 'Try it', run: () => { void post(w) }, disabled: busy !== null },
+                      { label: 'Regenerate', run: () => setConfirm({ kind: 'regen', w }) },
+                      { label: 'Revoke', run: () => setConfirm({ kind: 'revoke', w }), tone: 'danger' },
+                    ]} /> : null}
                   </div>
                 </li>
               ))}
             </ul>
-          ) : <span className={styles.hint} data-testid="webhooks-empty">No webhook endpoints yet. Generate one above to start receiving leads from external systems.</span>}
+          ) : <span className={styles.hint} data-testid="webhooks-empty">No links yet. Make one above to start receiving leads from another form.</span>}
           {capture.webhookLog.length ? (
             <div className={styles.log} data-testid="webhook-log">
               <span className={styles.eyebrow}>Recent activity</span>
@@ -302,9 +324,8 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
         {/* (REG-612, parity Q-36 · I-10) Email lead sources — 1.0's Gmail ingestion as a stand-in: an inbox, the platforms to monitor, Sync now. */}
         <section id="gmail" className={styles.card} aria-labelledby="int-gmail" data-testid="int-gmail">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-gmail" className={styles.cardTitle}>Email lead sources</h2>{email.connected ? <MetaChip color="green">Active</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
+            <div className={styles.titleRow}><h2 id="int-gmail" className={styles.cardTitle}>Leads by email (Gmail)</h2><Status on={email.connected} /><SimulatedLine k="gmail" on={simulated.gmail} /></div>   {/* (W-180) */}
             <p className={styles.cardHelp}>Leads that arrive by email from the portals — Homereno, Houzz, Renopedia and more — are read and added to the listing with the portal as their source; a known phone waits in Review imported leads.</p>
-            <SimulatedLine k="gmail" on={simulated.gmail} />
           </div>
           {email.connected ? (
             <>
@@ -334,14 +355,14 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
                 </div>
               </div>
               <div className={styles.row} data-testid="gmail-sync-row">
-                {canManage ? <Button iconStart={<Icon name="refresh" size={20} />} isDisabled={busy !== null || email.platforms.length + email.custom.length === 0} onPress={() => { void sync() }}>{busy === 'gmail' ? 'Syncing…' : 'Sync now'}</Button> : null}
+                {canManage ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="refresh" size={20} />} isDisabled={busy !== null || email.platforms.length + email.custom.length === 0} onPress={() => { void sync() }}>{busy === 'gmail' ? 'Syncing…' : 'Sync now'}</Button> : null}   {/* (5-14 · T-03) no filled button on a page of connections */}
                 {canManage ? <Button variant="secondary" appearance="outlined" onPress={() => { void disconnect() }}>Disconnect</Button> : null}
               </div>
             </>
           ) : (
             <div className={styles.row}>
               <div className={styles.emptyMail}><span className={styles.emptyTitle}>No email accounts connected</span><span className={styles.hint}>Connect your Gmail to automatically import leads from Homereno, Houzz, Renopedia and more.</span></div>
-              {canManage ? <Button iconStart={<Icon name="mail" size={20} />} onPress={() => { void connect() }}>Connect Gmail</Button> : null}
+              {canManage ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="mail" size={20} />} onPress={() => { void connect() }}>Connect Gmail</Button> : null}
             </div>
           )}
         </section>
@@ -352,9 +373,8 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
         {xero ? (   /* (S44O — call C6) the books' card — not Marketing's */
         <section id="xero" className={styles.card} aria-labelledby="int-xero" data-testid="int-xero">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-xero" className={styles.cardTitle}>Xero</h2>{xero.connected ? <MetaChip color="green">Connected</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
+            <div className={styles.titleRow}><h2 id="int-xero" className={styles.cardTitle}>Xero</h2><Status on={xero.connected} /><SimulatedLine k="xero" on={simulated.xero} /></div>
             <p className={styles.cardHelp}>The studio’s books pushed to Xero — clients and vendors as contacts, invoices sent, credit notes, the payments that count, supplier bills, approved expenses and payments out. Unapproved money is never pushed.{canManage ? <> The organisations, the accounts and tax codes and the sync log are in <HelpLink href="/company/finance/accounting" testId="int-xero-open">Finance › Xero</HelpLink>.</> : null}</p>
-            <SimulatedLine k="xero" on={simulated.xero} />
           </div>
           {xero.connected ? (
             <div className={styles.row}>
@@ -364,7 +384,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           ) : (
             <div className={styles.row}>
               <div className={styles.emptyMail}><span className={styles.emptyTitle}>Xero is not connected</span><span className={styles.hint}>{canManage ? 'Connect it and pick the organisation for each issuing entity; the accounts and tax codes are mapped for you.' : 'An Owner or an Admin connects Xero.'}</span></div>
-              {canManage ? <Button iconStart={<Icon name="link" size={20} />} isDisabled={busy !== null} onPress={() => { void xeroStep('xero', 'connect Xero', () => connectXero(), { message: 'Xero connected — accounts and tax codes mapped', actionLabel: 'Open Xero', onAction: () => router.push('/company/finance/accounting') }) }} data-testid="int-xero-connect">Connect Xero</Button> : null}
+              {canManage ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} isDisabled={busy !== null} onPress={() => { void xeroStep('xero', 'connect Xero', () => connectXero(), { message: 'Xero connected — accounts and tax codes mapped', actionLabel: 'Open Xero', onAction: () => router.push('/company/finance/accounting') }) }} data-testid="int-xero-connect">Connect Xero</Button> : null}
             </div>
           )}
         </section>
@@ -376,7 +396,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
             the developers' (pending modules S34). Xero's card pattern, read-only. (pending modules S23) (invented copy) */}
         <section id="calendar" className={styles.card} aria-labelledby="int-calendar" data-testid="int-calendar">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-calendar" className={styles.cardTitle}>Calendar invites</h2><MetaChip color="green">Works without connecting</MetaChip></div>
+            <div className={styles.titleRow}><h2 id="int-calendar" className={styles.cardTitle}>Calendar invites</h2><span className={styles.hint}>No set-up needed</span></div>   {/* (W-336) not a status: nothing to connect */}
             <p className={styles.cardHelp}>Every meeting’s invitation adds to Google Calendar, Apple Calendar or Outlook from its link — Google opens its own event page filled in, the others take the invite file. Send the invitation from a meeting in <HelpLink href="/meetings" testId="int-calendar-open">Meetings</HelpLink>.</p>
           </div>
           {/* (pending modules S34) the studio's own calendar is a slot (lib/meetings/calendar-sync.ts): while it is empty, the line says it comes later */}

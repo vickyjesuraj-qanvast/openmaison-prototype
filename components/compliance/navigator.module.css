@@ -6,17 +6,30 @@
  */
 .page { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
 .intro { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 90ch; }
+/* (the calm UI build 2026-10-27, 6-02) the page's one fact — "2 of 5 done" — and where it is recorded */
+.progress { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .link { composes: link from '../om/text-link.module.css'; }
 
 .actions { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .card { composes: card from '../leads/detail/card.module.css'; padding: var(--om-spacing-5); gap: var(--om-spacing-3); scroll-margin-block: 120px; }
-.cardHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+.cardHead { display: flex; align-items: flex-start; gap: var(--om-spacing-2); min-width: 0; }
 .cardText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .cardTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+/* (the calm UI build, 6-02 — W-373) the whole head opens the steps: the accordion's heading > button, its chevron at the end (turned while open) */
+.cardHeading { flex: 1; min-width: 0; margin: 0; font: inherit; }
+.headToggle {
+  display: flex; align-items: flex-start; gap: var(--om-spacing-3); width: 100%; min-height: 44px; margin: calc(-1 * var(--om-spacing-1)); padding: var(--om-spacing-1);
+  border: 0; border-radius: var(--om-radius-1); background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; transition: background-color var(--motion-hover);
+}
+.headToggle:hover { background: var(--om-color-hover-04p); }
+.headToggle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+.chev { flex-shrink: 0; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.headToggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+.open { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .cardSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .about { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); max-width: 90ch; }
 .state { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.toggle { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; }
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--om-spacing-5); }
 .stepsCol { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
 .stepsLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
@@ -27,6 +40,9 @@
 .title { composes: title from '../om/tab-toolbar.module.css'; }
 .barActions { composes: actions from '../om/tab-toolbar.module.css'; }
 .filters { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+/* (the calm UI build, 6-13) the kind of home and the search share the row the "Rules for …" head had */
+.kindRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.kindRow > :first-child { flex: 1; min-width: 0; }
 .count { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .bar { flex-wrap: nowrap; } .card { padding: var(--om-spacing-4); } }
 .list[data-ordered] { list-style: decimal; }

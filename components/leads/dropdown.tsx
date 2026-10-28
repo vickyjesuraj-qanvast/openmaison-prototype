@@ -131,7 +131,7 @@ export function Dropdown({
  *  (the notes family's 140, 931:45488; the Add Item box's 360, 1271:40932; the 400 popovers). */
 export const MENU_WIDTH = { standard: 200, wide: 240, detail: 320 } as const
 
-export function DropdownItem({ children, onSelect, tone, disabled, title, help, meta, selected, role = 'menuitem', checked, submenu, keys, shortcut }: {
+export function DropdownItem({ children, onSelect, tone, disabled, title, help, meta, selected, role = 'menuitem', checked, submenu, keys, shortcut, testId }: {
   children: ReactNode
   onSelect: () => void
   /** Destructive item (Delete) — red text, as om/menu's `tone`. A disabled one reads disabled, not dangerous (REG-265). */
@@ -156,6 +156,8 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, help, 
   /** (REG-715) The row's keyboard shortcut at its right end, as desktop menus show it — a spec, or an id in `lib/keys/registry.ts`. */
   keys?: string
   shortcut?: string
+  /** (the calm UI build 2026-10-27, T-02) A control moved into a ⋮ keeps its handle: the probes' `data-testid` rides on its row. */
+  testId?: string
 }) {
   /* (audit 2026-09-26, fresh-phone 10) A radio / checkbox row whose label is plain text drew nothing for its checked state, so a scope
      pill's sheet ("Kind: All ▾") could not say which choice was current. It now wears the DS menu item's Selected state (primary/variant
@@ -166,7 +168,7 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, help, 
   return (
     <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={disabled ? undefined : title}
             aria-checked={role === 'menuitem' ? undefined : !!checked} aria-haspopup={submenu ? 'menu' : undefined}
-            data-selected={isSelected || undefined} data-kb={shortcut} aria-keyshortcuts={keys || shortcut ? ariaKeys(keys ?? keysOf(shortcut!) ?? '') : undefined}
+            data-selected={isSelected || undefined} data-kb={shortcut} data-testid={testId} aria-keyshortcuts={keys || shortcut ? ariaKeys(keys ?? keysOf(shortcut!) ?? '') : undefined}
             onClick={disabled ? undefined : onSelect}>
       {line2 ? (
         <span className={styles.itemStack}><span className={styles.itemLabel}>{children}</span><span className={styles.itemHelp}>{line2}</span></span>

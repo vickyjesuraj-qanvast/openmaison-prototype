@@ -38,7 +38,7 @@
 .lines { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
 .line { display: flex; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .line:first-child { border-top: 0; }
-.line span:last-child { color: var(--om-color-on-surface-secondary); text-align: right; }
+.line > span:last-child { color: var(--om-color-on-surface-secondary); text-align: right; }   /* (6-33) a line's own two spans — never a chip's inside them */
 .lineWhat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lineWhat small { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .hint { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-1); }
@@ -79,8 +79,10 @@
 .facts[data-more-down], .thumbs[data-more-down] { --fade-b: 32px; }
 /* (verify round 1) a narrow side column reads name over value — "Oak Coffee Table" on one line, its change under it — never two squeezed columns */
 .factLines .line { flex-direction: column; align-items: stretch; gap: 2px; }
-.factLines .line span:first-child { font: var(--om-type-subtitle-m); }
-.factLines .line span:last-child { text-align: left; font: var(--om-type-body-s); overflow-wrap: anywhere; }
+.factLines .line > span:first-child { font: var(--om-type-subtitle-m); }
+.factLines .line > span:last-child { text-align: left; font: var(--om-type-body-s); overflow-wrap: anywhere; }
+/* (the calm UI build 2026-10-27, 6-33) Present's one list: what changed from the version it was made from wears the house *New* tag beside its name */
+.factWhat { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
 .thumb { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: left; border-radius: var(--om-radius-1); }
 .thumb img { width: 100%; height: auto; aspect-ratio: 104 / 66; object-fit: cover; border-radius: var(--om-radius-1); box-shadow: 0 0 0 1px var(--om-color-surface-variant); }
 @media (hover: hover) { .thumb:hover img { box-shadow: 0 0 0 2px var(--om-color-on-surface-border); } }

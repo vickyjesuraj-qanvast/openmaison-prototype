@@ -1,6 +1,7 @@
 import { displayDate, startOfDay } from '@/lib/format'
 import type { Contract } from '@/lib/db/schema'
 import { linkExpired } from '@/lib/contracts/link'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 
 /*
  * (Contracts on the move, C4 — P-07 · A-01 · A-07 · A-08, Q-03 as picked; his "please check and built accordingly" 2026-10-22) The phone
@@ -34,14 +35,16 @@ export function contractCardChip(c: Pick<Contract, 'status' | 'signExpiresAt' | 
   if (c.status === 'Sent to Client') {
     /* past its window the link no longer signs — the chip says so with its day, as the Quotes card's "Expired 21 Sep ’26" (its ⋮ offers Send the link again) */
     if (!c.toRead && linkExpired(c, now)) return { label: c.signExpiresAt ? `Link expired ${displayDate(c.signExpiresAt)}` : 'Link expired', color: 'yellow' }
-    return { label: 'Sent to client', color: 'blue' }
+    /* (the calm UI build 2026-10-27, W-363) out for signature reads as the state it is; a letter to read signs nothing, so it keeps "Sent to client" */
+    return { label: c.toRead ? 'Sent to client' : contractStatusLabel(c.status), color: 'blue' }
   }
-  return { label: c.status, color: 'default' }
+  return { label: contractStatusLabel(c.status), color: 'default' }
 }
 
 /** The "since" beside the chip — at most three short pieces, the first the one that matters most on the move. */
 export function contractSinceWords(c: Pick<Contract, 'status' | 'sentAt' | 'viewedAt' | 'signedAt' | 'signExpiresAt' | 'updatedAt' | 'createdAt' | 'toRead' | 'signedBy'>, now: number): ContractSinceWord[] {
-  if (c.status === 'Signed') return [{ text: `signed ${displayDate(c.signedAt ?? c.updatedAt ?? c.createdAt)}` }]
+  /* (the calm UI build 2026-10-27, 4-26 · W-376) the chip says Signed; the since is its day alone — "Signed · 15 Sep ’26", the word once */
+  if (c.status === 'Signed') return [{ text: displayDate(c.signedAt ?? c.updatedAt ?? c.createdAt) }]
   if (c.status === 'Sent to Client') {
     const out: ContractSinceWord[] = []
     if (c.toRead) { out.push({ text: `sent to read${c.sentAt ? ` ${agoWord(c.sentAt.getTime(), now)}` : ''}` }); if (c.viewedAt) out.push({ text: `opened ${agoWord(c.viewedAt.getTime(), now)}` }); return out }

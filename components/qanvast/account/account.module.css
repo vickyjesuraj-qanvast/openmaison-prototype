@@ -11,6 +11,12 @@
 .views { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }
 .rail.rail { flex: 0 1 auto; }
 .tools { composes: actions from '../../om/tab-toolbar.module.css'; }
+/* (the calm UI build 2026-10-27, 2-10) the views at the second level: the house Tabs, set into the page — no strip of their own (no white plate,
+   no shadow, no side padding), a 1px rule under them. Order-proof against the house tab strip (a doubled class). */
+.viewTabsWrap { min-width: 0; }
+.viewTabs.viewTabs { background: transparent; box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); padding: 0; z-index: auto; }
+/* the ghost's strip (components/shell/ghost-kit.tsx GhostTabs) set in the same way, so the hand-over lands in place */
+.viewTabsWrap.viewTabsWrap > div { background: transparent; box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); padding-left: 0; padding-right: 0; }
 .menuWrap { composes: menuWrap from '../../om/tab-toolbar.module.css'; }
 
 /* a section of a view: its title over a help line, then its body */

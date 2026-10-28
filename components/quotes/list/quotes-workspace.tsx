@@ -32,6 +32,7 @@ import { templateDefaultBlock } from '@/lib/company/template-rules'
 import { DeletedQuotesSheet } from '@/components/leads/quotes/deleted-quotes-sheet'
 import { ArchivedQuotesSheet } from '@/components/leads/quotes/archived-quotes-sheet'
 import type { Quote } from '@/lib/db/schema'
+import { QUOTE_TODO_LABEL } from '@/lib/quotes/status-words'
 import { EMPTY_QUOTE_FILTERS, QUOTE_TODOS, activeQuoteFilterCount, applyQuoteFilters, nextQuoteHeadSort, quickMatch, quoteTodoCounts, searchQuotes, sortQuotesByHead, type QuoteFilters, type QuoteHeadSort, type QuoteQuick, type QuoteSortKey, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { StudioQuotesData } from '@/lib/quotes/list'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -168,10 +169,11 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
   return (
     <PageReveal skeleton={<QuotesListGhost />}>   {/* (REG-708) the page's own ghost, as its loading.tsx */}
       <div className={pageStyles.body} style={{ position: 'relative' }}>
-        <PageHeader title="Quotes" />
+        {/* (the calm UI build 2026-10-27, 1-11 · 1-30) the L1 header's one filled button — the toolbar keeps it on a phone only */}
+        <PageHeader title="Quotes" actions={phone || quotes.length === 0 ? undefined : <Button onPress={() => setCreateOpen(true)} data-kb="create">New quote</Button>} />
         <div className={styles.frame}>
-          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={quotes.length === 0} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-                         todos={QUOTE_TODOS.map((t) => ({ key: t.key, label: t.label(todoCounts[t.key]), count: todoCounts[t.key], icon: t.icon, selected: quick === t.key, onClick: () => setQuick((q) => (q === t.key ? '' : t.key)) }))}
+          <QuotesToolbar createInHeader onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={quotes.length === 0} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
+                         todos={QUOTE_TODOS.map((t) => ({ key: t.key, label: QUOTE_TODO_LABEL[t.key](todoCounts[t.key]), count: todoCounts[t.key], icon: t.icon, selected: quick === t.key, onClick: () => setQuick((q) => (q === t.key ? '' : t.key)) }))}
                          onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', '/quotes')) : a === 'settings' ? router.push(withFrom('/settings?section=quotes', '/quotes')) : a === 'archived' ? setArchivedOpen(true) : setDeletedOpen(true))}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */ />
           {templateFilter ? (
             <div className={styles.templateChip} role="status">

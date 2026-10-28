@@ -33,6 +33,13 @@
 .navLink { display: inline-flex; align-items: center; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); text-decoration: none; border-bottom: 4px solid transparent; padding-top: 4px; transition: color var(--motion-hover); }
 .navLink:hover { color: var(--om-color-on-surface-default); }
 .navLink[aria-current='page'] { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-bottom-color: var(--brand); }
+/* (the calm UI build 2026-10-27, 3-36) the desk's More ▾ — a section link's face on a button (doubled: order-proof against the button's own
+   reset), its menu the rest of the sections; it reads as the place you are, with that section's name, while you are on one of them */
+.navMore.navMore { gap: 2px; margin: 0; padding: 4px 0 0; border: 0; border-bottom: 4px solid transparent; background: none; cursor: pointer; }
+.navMore.navMore[data-active] { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-bottom-color: var(--brand); }
+.navMore.navMore:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* a menu row's own box (its test mark) takes no box of its own */
+.menuRow { display: contents; }
 .who { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 .whoName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .textButton { height: 36px; padding: 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: transparent; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; transition: background var(--motion-hover); }
@@ -106,6 +113,11 @@
 .rowLead { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 .rowGlyph { composes: thumb from '../om/thumb.module.css'; width: 40px; height: 40px; color: var(--om-color-on-surface-secondary); }
 .rowGo { flex: none; min-height: 44px; display: inline-flex; align-items: center; }
+/* (the calm UI build 2026-10-27, 3-50) a row that opens as a whole (Files › Documents): the house row hover, its chevron at the end */
+.rowLink.rowLink { color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+@media (hover: hover) { .rowLink.rowLink:hover { background: var(--om-color-hover-04p); } }
+.rowLink.rowLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.rowChevron { flex: none; display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .contact { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
 /* ── Files ── */
@@ -232,7 +244,8 @@
 }
 
 /* (gaps build D, item 8) the Documents card's group heads — the card's eyebrow, between its rows */
-.docGroup { margin: 0; padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 3-50 · T-06) sentence case — capitals are a status's alone */
+.docGroup { margin: 0; padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-1); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .docGroup { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-1); } }
 /* (parity map, CP-099) a kind's tiles sit under its heading as the documents' rows do: the heading's 4 below, then the tiles */
 .docGroup + .tiles { padding-top: var(--om-spacing-2); }

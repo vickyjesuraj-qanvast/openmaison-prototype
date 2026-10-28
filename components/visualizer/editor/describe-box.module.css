@@ -3,7 +3,7 @@
    so a box resting on one line cut the second line in half (the placeholder's "warmer evening light"). With the padding outside the
    scroller every height is whole lines — 20px each — and nothing peeks. */
 .box { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.label { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
+.label { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }   /* (the calm UI build 2026-10-27, 6-08 · T-06) the field's one label, in sentence case — capitals are for a status (was an uppercase caption, REG-729) */
 /* (F145) The tray's box: the caption steps out of sight (still the textarea's name) — its placeholder says what the box is for. */
 .box[data-compact] .label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .field { position: relative; display: flex; padding: 9px 44px 9px var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); cursor: text; transition: border-color var(--motion-hover), box-shadow var(--motion-hover); }

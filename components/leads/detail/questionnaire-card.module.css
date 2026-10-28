@@ -4,6 +4,11 @@
 .body { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 
+/* (the calm UI build 2026-10-27 — 2-18) the one line — "7 of 11 answered · none by Olivia yet", the tab's summary's own */
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .line { font: var(--om-type-body-l); }
+}
 /* "Total questions answered" (fills, subheading-m) · "7 / 11" (body-m secondary), on one baseline. */
 .row { display: flex; align-items: baseline; gap: var(--om-spacing-2); }
 .label { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }

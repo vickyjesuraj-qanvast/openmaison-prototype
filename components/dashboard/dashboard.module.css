@@ -1,27 +1,153 @@
 /*
- * (pending modules S22) The Dashboard — no stylesheet of its own beyond its frame: the page's content box (Market Insights' `.content`, the house
- * 24 / 16 insets), the lead Overview's card grid weighted act : glance (the project Overview's `.grid` · `.act` · `.glance`), and the house
- * number tiles two to a row in the narrow glance stack. Composed, never copied.
+ * (pending modules S22; the Dashboard redesigned, 2026-10-26 — lane D1) The Dashboard's frame: the page's box, the greeting, the Pulse cards and
+ * the two stacks weighted act : glance, at every width (brief § 3, the drawn frames). The cards inside are their lanes' (the house Card, Row,
+ * StatTile …); this sheet only places them. Composed, never copied; house tokens only; an override of a house class is order-proof by a doubled
+ * class (the load-order lesson, REG-2883…).
+ *
+ * (**the calm pass 2026-10-26** — his "data looks fine … visually it looks too busy", the Claude Design option he took (calm-mock-claude-design.png)
+ * and his six corrections, brief-calm.md · lane C1) The content sits on the grey page surface and every region is a white card with NO border
+ * and NO shadow; the measures every card reads are set here, once, on the page:
+ *   --dash-card-pad   inside a card (24 at a desk · 20 on a tablet · 16 on a phone)
+ *   --dash-gap        between cards (24 · 16 · 16)
+ *   --dash-band       between the page's bands — the greeting, Pulse, the columns (32 · 24 · 16)
+ *   --dash-surface    the page's own surface (the dock's fade reads it)
+ * Radii stay the house's (8 for a card, CLAUDE.md › Radii — the option's ~16 is not taken, his correction 6).
  */
-.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
-.grid { min-width: 0; }
-.col { min-width: 0; }
-/* Where it stands: the tiles inside the card's own 20 inset; two to a row in the glance stack at a desk (the house row is one line from 1025 —
-   five tiles there would be under the ~176 floor), an odd last tile taking the row as a phone's does */
-.tiles { padding: 0 var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
-@media (min-width: 1025px) {
-  .tiles .standTiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tiles .standTiles[data-odd] > :last-child { grid-column: 1 / -1; }
+
+/* ── the page and its content box ── */
+/* the grey page (the shell's own canvas, so the white rail stands on it as in the option) — over the shared body's white, order-proof */
+.page.page {
+  --dash-card-pad: var(--om-spacing-6);
+  --dash-gap: var(--om-spacing-6);
+  --dash-band: var(--om-spacing-8);
+  --dash-surface: var(--om-color-surface-bg);
+  --stat-tile-pad: var(--dash-card-pad);
+  --dash-track-h: 40px;
+  background: var(--om-color-surface-bg);
+  min-width: 0;
 }
-/* A phone reads the page in its order — what needs you, your tasks, what is next, where it stands, the team, the updates, the article: the
-   columns dissolve (the lead Overview's rule) and each card takes its place (the lead's and the project's own `order`s are for their own cards — these outrank them, 0,4,0). */
+/* The content box: 64 in from the rail and the screen's edge at 1440 (the option's 136 − 72: the shell's 8 gutter and the box's 56), less on a
+   narrower desk; the bands 32 apart; the foot is the page's own 24 — the docked Maison AI is the body's last child, in the page's flow, and keeps
+   its own band (lane C4: the last card ends 24 above the band, 32 above the pill). */
+.content {
+  display: flex; flex-direction: column; gap: var(--dash-band); min-width: 0;
+  padding: var(--om-spacing-8) calc(var(--om-spacing-12) + var(--om-spacing-2));
+  padding-bottom: var(--om-spacing-6);
+}
+@media (max-width: 1279px) { .content { padding-inline: var(--om-spacing-8); } }
+.slot { min-width: 0; display: flex; flex-direction: column; }
+.slot:empty { display: none; }
+/* the two stacks: act (Needs you · Your day · On site) and glance (Pipeline · Projects · Team load), 2 : 1 at a desk (the option's 810 : 406),
+   the glance never under 320 */
+.grid { display: flex; gap: var(--dash-gap); align-items: flex-start; min-width: 0; }
+.act, .glance { min-width: 0; display: flex; flex-direction: column; gap: var(--dash-gap); }
+.act { flex: 2 1 0; }
+.glance { flex: 1 1 0; min-width: 320px; }
+.glance:not(:has(> .slot:not(:empty))) { display: none; }
+/* a tablet held sideways (touch or not): the desk's two stacks at 1.5 : 1 */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (min-height: 501px) {
+  .page.page { --dash-card-pad: var(--om-spacing-5); --dash-gap: var(--om-spacing-4); --dash-band: var(--om-spacing-6); }
+  .content { padding: var(--om-spacing-6); }
+  .act { flex-grow: 1.5; }
+  .glance { min-width: 0; }
+}
+/* One column in reading order — a tablet upright, a phone held sideways, a phone: the stacks dissolve so every region is the content box's
+   own, and each takes its place (greeting · Pulse · Needs you · Your day · Projects · Pipeline · Team load · On site). */
+@media (max-width: 1024px) and (orientation: portrait), (max-width: 1024px) and (max-height: 500px), (max-width: 767px) {
+  .page.page { --dash-card-pad: var(--om-spacing-5); --dash-gap: var(--om-spacing-4); --dash-band: var(--om-spacing-4); }
+  .content { padding: var(--om-spacing-6) var(--om-spacing-4); gap: var(--dash-gap); }
+  .grid, .act, .glance { display: contents; }
+  .content > .slot[data-slot='greeting'] { order: 0; }
+  .content > .slot[data-slot='pulse'] { order: 2; }
+  .content .slot[data-slot='needs'] { order: 3; }
+  .content .slot[data-slot='day'] { order: 5; }
+  .content .slot[data-slot='projects'] { order: 6; }
+  .content .slot[data-slot='pipeline'] { order: 7; }
+  .content .slot[data-slot='team'] { order: 8; }
+  .content .slot[data-slot='site'] { order: 9; }
+}
+/* a phone reads what needs it before the figures (the drawn phone: Needs you, then Pulse 2 × 2); the docked field sits above the phone's own
+   dock, the house FAB clearance */
 @media (max-width: 767px) {
-  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
-  .content .grid .col > [data-card='needs'] { order: 0; }
-  .content .grid .col > [data-card='my-work'] { order: 1; }
-  .content .grid .col > [data-card='coming-up'] { order: 2; }
-  .content .grid .col > [data-card='stands'] { order: 3; }
-  .content .grid .col > [data-card='team'] { order: 4; }
-  .content .grid .col > [data-card='updates'] { order: 5; }
-  .content .grid .col > [data-card='article'] { order: 6; }
+  .page.page { --dash-card-pad: var(--om-spacing-4); }
+  .content { padding: var(--om-spacing-5) var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  .content > .slot[data-slot='pulse'] { order: 4; }
 }
+
+/* ── the greeting: the page's title and its ONE line, Studio / Mine and the page's ⋮ at its right ── */
+.hello { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; min-width: 0; }
+.helloText { min-width: 0; flex: 1 1 320px; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.helloTitle { margin: 0; font: var(--om-type-heading-h1); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+/* the line: the day in the secondary ink, what needs you in ink, the news as its one link */
+.helloLine { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.helloNeeds { font: var(--om-type-subtitle-l); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* kept whole on a narrow line */
+.helloDate { white-space: nowrap; }
+.helloEnd { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+@media (max-width: 1024px) { .helloTitle { font: var(--om-type-heading-h2); } }
+@media (max-width: 767px) {
+  .helloTitle { font: var(--om-type-heading-h3); }
+  /* the greeting's line is a sentence: the house's 14 on a phone, never under */
+  .helloLine { font: var(--om-type-body-m); }
+  .helloNeeds { font: var(--om-type-subtitle-m); }
+  .hello { align-items: flex-start; }
+  .helloEnd { margin-left: auto; }
+  /* (the calm UI build 2026-10-27 — the audit's 1-28) the scope is the page ⋮'s now, so the ⋮ sits at the greeting's end, on its title's line —
+     never a row of its own */
+  .hello { flex-wrap: nowrap; }
+  .helloText.helloText { flex: 1 1 0; }
+}
+/* Since you were last here — the line's one link (the design system's Link, in the line's own type), kept whole on its line where it fits (a
+   narrow screen takes it to the next line as one); on touch its press reaches the house 44 above and below the words without moving them */
+.sinceBox { display: inline-block; max-width: 100%; }
+.sinceLink.sinceLink { display: inline; font: inherit; }
+@media (hover: none) and (max-width: 1024px) { .sinceLink.sinceLink { padding-block: var(--om-spacing-3); margin-block: calc(-1 * var(--om-spacing-3)); } }
+
+/* Studio / Mine as a grey track, the chosen one white (the option's) — the design system's SegmentedButton, its items' outline, tint and
+   corners set over order-proof: the track is the surface's variant grey, the chosen item a white face inside a 4 ring of the track's grey */
+.track.track { background: var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.track.track .trackItem.trackItem {
+  height: var(--dash-track-h, 40px); margin: 0; padding-inline: var(--om-spacing-4); border-radius: var(--om-radius-2);
+  box-shadow: none; background: transparent; color: var(--om-color-on-surface-secondary);
+}
+.track.track .trackItem.trackItem[data-hovered]:not([data-selected]), .track.track .trackItem.trackItem[data-pressed]:not([data-selected]) { background: transparent; color: var(--om-color-on-surface-default); }
+.track.track .trackItem.trackItem[data-selected] { background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); box-shadow: inset 0 0 0 var(--om-spacing-1) var(--om-color-surface-variant); }
+@media (hover: none) and (max-width: 1024px) { .page.page { --dash-track-h: 44px; } }
+
+/* ⋮ beside Studio / Mine: the house icon button, centred in its own box (a card's ⋮ is the card frame's, components/dashboard/cards/card-frame.tsx) */
+.dashMenu { display: inline-flex; align-items: center; }
+/* a menu row's own box (its test mark) takes no box of its own */
+.menuRow { display: contents; }
+/* a menu row that carries a glyph before its words (Cards on your page's tick boxes, the Ask row, the news list) */
+.menuCheck { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+
+/* ── Pulse: the figures as white cards (the house StatTile, look="card") — in one row at a desk and a tablet held sideways, two across upright
+   and on a phone (an odd last one takes the row) ── */
+.pulse { min-width: 0; }
+.pulseTiles { display: grid; grid-template-columns: repeat(var(--pulse-n, 4), minmax(0, 1fr)); gap: var(--dash-gap); min-width: 0; }
+@media (max-width: 1024px) and (orientation: portrait), (max-width: 767px) {
+  .pulseTiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pulseTiles > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* each figure's cell: a press, a resting mouse or a long press — its words never selected by the hold */
+.figure { min-width: 0; display: flex; -webkit-touch-callout: none; user-select: none; }
+.figure > * { flex: 1 1 auto; min-width: 0; }
+/* a caption's tones: a client's lateness amber (theirs — his correction 2), ours and late red (S-05) */
+.theirs { color: var(--om-color-on-tertiary-yellow-variant); }
+.late { color: var(--om-color-tertiary-red-default); }
+
+/* ── a Needs you row a Since link stands for: brought into view, pulsed once (the house fresh pulse, lead overview `.pulse`) ── */
+.content [data-inbox-row] { position: relative; }
+.content [data-inbox-row][data-fresh]::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
+  background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent);
+  animation: dashFresh 1.4s ease-out forwards;
+}
+@keyframes dashFresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ── the ghost (components/dashboard/dashboard-ghost.tsx) draws on the page's own classes — the greeting's and Pulse's here, the cards' their
+   lanes' (cards.module.css, inbox.module.css), the dock's its own — so it needs no class of its own ── */
+/* Needs you's verb in the ghost: the house Row's text button (2026-10-27) — its words in the DS text button's md (36 tall, 8 in), at the end of
+   C2's 96 slot (`[data-row-actions]`), 44 under a finger */
+.needsVerb { display: inline-flex; align-items: center; height: 36px; padding-inline: var(--om-spacing-2); }
+.needsVerbWords { font: var(--om-type-subheading-m); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .needsVerb { height: 44px; } }

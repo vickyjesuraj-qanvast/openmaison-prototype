@@ -33,7 +33,7 @@ export function LightingPanel({ pending, onLighting, advanced, onAdvanced }: {
   const picked = !!l.presetId && RELIGHT_PRESETS.some((p) => p.id === l.presetId)
   const off = !l.presetId && JSON.stringify(k) === JSON.stringify(neutralKnobs()) && !l.instruction.trim()
   return (
-    <Panel title="Lighting" sub="The photo previews it as you pick — Generate keeps it" testId="viz-lighting"
+    <Panel title="Lighting" sub="Preview on the photo — Generate keeps it" testId="viz-lighting"   /* (the calm UI build 2026-10-27, 6-35) */
            actions={!off ? <Button appearance="text" onPress={() => onLighting(() => ({ presetId: null, knobs: neutralKnobs(), instruction: '' }))}>Reset</Button> : undefined}>
       {/* (F169) one Tab stop — the arrows move along the moods and pick the one reached */}
       <div className={styles.cards} role="radiogroup" aria-label="Lighting" onKeyDown={(e) => { rovingKey(e, ':scope > [role=radio]') }}>

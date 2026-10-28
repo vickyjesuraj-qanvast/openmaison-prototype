@@ -65,13 +65,22 @@ export function accessState(s: AccessStamps | null): AccessState {
   if (s.openedAt) return 'opened'
   return s.invitedAt ? 'invited' : 'none'
 }
-/** The chip: board 9's words — "Opened 2 hours ago" green · "Invited, not opened" yellow · "Not invited" grey · "Withdrawn 3 Oct" red. */
-export function accessChip(s: AccessStamps | null, now: number): { label: string; tone: 'green' | 'yellow' | 'default' | 'red'; state: AccessState } {
+/** The chip: board 9's colours — "Opened" green · "Invited" yellow · "Not invited" grey · "Withdrawn" red. (the calm UI build 2026-10-27, 5-42 ·
+    T-04) The chip says the state only: when it was opened, invited or withdrawn is said once, in the row's own line (the Client access panel's
+    caption, `accessWhen`) or its Last opened / Invited columns (Company › Client portal › Clients) — never twice on one row. */
+export const ACCESS_LABEL: Record<AccessState, string> = { opened: 'Opened', invited: 'Invited', none: 'Not invited', withdrawn: 'Withdrawn' }
+export function accessChip(s: AccessStamps | null, _now: number): { label: string; tone: 'green' | 'yellow' | 'default' | 'red'; state: AccessState } {
   const state = accessState(s)
-  if (state === 'opened') return { state, tone: 'green', label: `Opened ${agoText(s!.lastOpenedAt ?? s!.openedAt!, now)}` }
-  if (state === 'invited') return { state, tone: 'yellow', label: 'Invited, not opened' }
-  if (state === 'withdrawn') return { state, tone: 'red', label: `Withdrawn ${shortDay(s!.withdrawnAt!)}` }
-  return { state, tone: 'default', label: 'Not invited' }
+  const tone = state === 'opened' ? 'green' : state === 'invited' ? 'yellow' : state === 'withdrawn' ? 'red' : 'default'
+  return { state, tone, label: ACCESS_LABEL[state] }
+}
+/** (the calm UI build 2026-10-27, 5-42) The when that left the chip, for a row's own line: "opened 2 hours ago" · "withdrawn 3 Oct"; null when
+    there is none to say (not invited, invited — the invite's day is the line's own "Sent 8 Aug"). */
+export function accessWhen(s: AccessStamps | null, now: number): string | null {
+  const state = accessState(s)
+  if (state === 'opened') return `opened ${agoText(s!.lastOpenedAt ?? s!.openedAt!, now)}`
+  if (state === 'withdrawn') return `withdrawn ${shortDay(s!.withdrawnAt!)}`
+  return null
 }
 /** The order the Clients tab sorts by state: who opened it, who was invited, who was not, who was withdrawn. */
 export const ACCESS_ORDER: Record<AccessState, number> = { opened: 0, invited: 1, none: 2, withdrawn: 3 }
@@ -122,9 +131,11 @@ export const PORTAL_TABS: readonly PortalTab[] = [
   { key: 'home', label: 'Home', icon: 'home', path: '' },
   /* (r4b) the project's schedule as last shared, and its published updates (boards 2 · 3) */
   { key: 'schedule', label: 'Schedule', icon: 'calendar_month', path: 'schedule' },
-  { key: 'updates', label: 'Updates', icon: 'chat', path: 'updates' },
-  /* (Projects round 6) Money — board 4: what's due and how to pay, I have paid, the receipts */
-  { key: 'money', label: 'Money', icon: 'payments', path: 'money' },
+  /* (the calm UI build 2026-10-27, 3-37) Updates wear a page's glyph — the bubble is Messages' alone */
+  { key: 'updates', label: 'Updates', icon: 'article', path: 'updates' },
+  /* (Projects round 6) Money — board 4: what's due and how to pay, I have paid, the receipts. (the calm UI build 2026-10-27, 3-02 · T-01) it reads
+     "Payments", as the studio's project tab does; its key, section and address stay `money` */
+  { key: 'money', label: 'Payments', icon: 'payments', path: 'money' },
   { key: 'choices', label: 'Choices', icon: 'palette', path: 'choices' },   // (Projects round 8)
   { key: 'designs', label: 'Designs', icon: 'wand_shine', path: 'designs' },   // (Projects round 9) the rooms shared from the Visualizer
   { key: 'floor-plan', label: 'Floor plan', icon: 'space_dashboard', path: 'floor-plan' },   // (gaps build G, G-Q1) marked up together — its own switch
@@ -138,8 +149,9 @@ export const PORTAL_TABS: readonly PortalTab[] = [
 ]
 export const portalTabHref = (slug: string, t: PortalTab) => portalPath(slug, t.path)
 /** (REG-1050, the consistency walk) The phone's bar is the studio's own dock (MobileChrome, REG-298/300): four tabs and More — Home ·
-    Schedule · Updates · Money in the bar, the rest (Choices · Designs · Files) in More's sheet. A section that is off leaves either list; More
-    goes when nothing is left in it. At a desk the header keeps every tab. */
+    Schedule · Updates · Payments in the bar, the rest (Choices · Designs · Files) in More's sheet. A section that is off leaves either list; More
+    goes when nothing is left in it. (the calm UI build 2026-10-27, 3-36) At a desk the header draws the same five — the four and a More ▾ menu
+    of the same rest. */
 export const PORTAL_BAR_KEYS: readonly string[] = ['home', 'schedule', 'updates', 'money']
 export const portalBar = <T extends PortalTab>(tabs: readonly T[]) => ({
   bar: tabs.filter((t) => PORTAL_BAR_KEYS.includes(t.key)),

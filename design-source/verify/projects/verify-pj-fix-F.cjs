@@ -129,7 +129,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     // ── Benjamin reads what she did — under her name; his stale press is refused by name ──────────────────────────────────────────────
     console.log('Benjamin reads it (1440)')
     await d.locator('[data-testid="portal-confirm-yes"]').first().click(); await settle(d, 1400)
-    ok(/Mei Ling has already answered for this stage/.test(await snack(d).innerText()), 'F-03 his stale press is refused by name — “Mei Ling has already answered”')
+    ok(/Mei Ling has already answered for this milestone/.test(await snack(d).innerText()), 'F-03 his stale press is refused by name — “Mei Ling has already answered” (the calm UI build 2026-10-27, a deliberate change: the client says milestones)')
     await go(d, '/my/demo-studio/schedule')
     ok(/Mei Ling confirmed it/.test(await d.locator(`[data-stage-id="${EL}"]`).innerText()) && !/You confirmed it/.test(await d.locator(`[data-stage-id="${EL}"]`).innerText()), 'F-03 Schedule: “Mei Ling confirmed it”, never “You”')
     await go(d, '/my/demo-studio/choices')
@@ -155,7 +155,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     await go(d, '/my/demo-studio')
     ok(await d.locator('[data-testid="portal-need"][data-kind="file"]').count() === 0, 'F-14 once opened, the file leaves What needs you')
     const gone = await d.request.get(BASE + '/my/demo-studio/money/invoice/not-an-invoice')
-    ok(/This isn’t on your page any more/.test(await gone.text()) && /Back to Money/.test(await gone.text()), 'F-23 another id: the portal’s notice with Back to Money — never a bare 404')
+    ok(/This isn’t on your page any more/.test(await gone.text()) && /Back to Payments/.test(await gone.text()), 'F-23 another id: the portal’s notice with Back to Payments — never a bare 404 (the calm UI build 2026-10-27, a deliberate change: the tab reads Payments)')
 
     // ── Ryan on his phone: a part payment's receipt ──────────────────────────────────────────────────────────────────────────────────
     console.log('Ryan (390)')

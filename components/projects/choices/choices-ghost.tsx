@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { Bone } from '@/components/shell/skeleton'
 import { Line, Para, Slot, Words, cycle } from '@/components/shell/ghost-kit'
-import chipRow from '@/components/om/chips.module.css'
-import rail from '@/components/om/chip-rail.module.css'
 import empty from '@/components/om/empty-state.module.css'
 import styles from './choices.module.css'
 
@@ -13,7 +11,7 @@ function ChoiceGhost({ i }: { i: number }) {
       <div className={styles.band}><Bone w={20} h={20} r="50%" /><span className={styles.bandText}><Line w={cycle([300, 260, 340], i)} lh={20} h={12} /></span><Slot kind="btn" w={cycle([160, 152, 120], i)} /></div>
       <div className={styles.body}>
         <div className={styles.head}>
-          <span className={styles.headText}><Line w={cycle([180, 220, 160], i)} lh={24} h={16} /><span className={styles.meta}><Slot kind="chip" w={120} /><Slot kind="chip" w={88} /><Slot kind="chip" w={168} /></span></span>
+          <span className={styles.headText}><Line w={cycle([180, 220, 160], i)} lh={24} h={16} /><span className={styles.meta}><Line w={cycle([220, 180, 200], i)} lh={20} h={10} /></span></span>
           <Slot kind="icon" />
         </div>
         <span className={styles.note}><Para lines={1} lh={20} h={12} w="62%" last="62%" /></span>
@@ -53,7 +51,8 @@ export function ChoicesGhost({ first = false, title }: { first?: boolean; /** (s
         {title ?? <Words as="h2" className={styles.title}>All Choices</Words>}
         <span className={styles.actions}><Slot kind="search" /><Slot kind="btnFold" w={140} /></span>
       </div>
-      <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[82, 112].map((w, k) => <Slot key={k} kind="pill" w={w} />)}</div></div></div></div></div>
+      {/* (the calm UI build 2026-10-27, 3-08) the one Group pill */}
+      <div><Slot kind="btn" w={164} /></div>
       <div className={styles.groups}>
         <section className={styles.group}>
           <Line w={168} lh={24} h={14} />

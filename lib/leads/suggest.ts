@@ -58,10 +58,12 @@ export function suggestMember(lead: SuggestLead, members: SuggestMember[], stats
     if (pref.matched.length) {
       const strong = pref.matched.filter((x) => x.priority === 'must'), soft = pref.matched.filter((x) => x.priority === 'nice')
       const words = (xs: typeof pref.matched) => xs.map((x) => (x.key === 'style' ? `${x.value} style` : x.key === 'area' ? `${x.value} area` : x.value)).join(' & ')
-      bits.push(`Prefers ${[strong.length ? `${words(strong)} (must match)` : '', soft.length ? `${words(soft)} (preferred)` : ''].filter(Boolean).join(', ')} leads.`)
-    } else if (!m.leadPreferences) bits.push('No preferences set — considered on availability.')
-    if (s && (s.projects12m > 0 || s.closeRate > 0)) bits.push(`${s.projects12m} project${s.projects12m === 1 ? '' : 's'} in the last 12 months with a ${Math.round(s.closeRate)}% close rate.`)
-    if (s && s.active <= 3) bits.push(`Currently has capacity (${s.active} active lead${s.active === 1 ? '' : 's'}).`)
+      /* (the calm UI build 2026-10-27 — audit 2-41, W-393) the studio's words, not the scorer's: "Takes HDB 4-Room leads." — "(must match)" and
+         "(preferred)" were the engine's weights; the order still puts the must-haves first */
+      bits.push(`Takes ${words([...strong, ...soft])} leads.`)
+    } else if (!m.leadPreferences) bits.push('No lead preferences set.')
+    if (s && (s.projects12m > 0 || s.closeRate > 0)) bits.push(`${s.projects12m} project${s.projects12m === 1 ? '' : 's'} in the last 12 months, ${Math.round(s.closeRate)}% of leads won.`)
+    if (s && s.active <= 3) bits.push(`Has room for more (${s.active} open lead${s.active === 1 ? '' : 's'}).`)
     return { id: m.id, name: m.name, score: pref.score + performance + specialty, reason: bits.join(' '), breakdown: { preference: pref.score, performance, specialty } }
   })
   scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))

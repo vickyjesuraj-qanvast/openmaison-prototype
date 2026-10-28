@@ -41,7 +41,7 @@ export function DetailSkeleton({ wide = false, tab, tabs, shape }: { wide?: bool
   const body = wide ? (tabGhost(tab) ? <TabGhostFor tab={tab} /> : null) : null
   return (
     <GhostSheet label="Loading lead">
-      <LeadHeadGhost shape={s} />
+      <LeadHeadGhost shape={s} overview={!tab || tab === 'overview'} />
       {/* (REG-708) one bone per tab the strip shows (DETAIL_TABS — Meetings is hidden, REG-552), as wide as its label reads; (one-home N-10)
           three once the lead's other tabs live on its project */}
       {/* (S43E, F3-03 W3-04) the open tab’s place, so the strip never jumps sideways at the hand-over (S42 A-10’s rule, here too) */}
@@ -70,7 +70,7 @@ export function DetailSkeleton({ wide = false, tab, tabs, shape }: { wide?: bool
 
 /** The L2 header on its own classes: back · the crumb over the name and its four chips · Stage ▾, the locked Convert (≥1025, while Won is out of
     reach) and the one filled primary · ⋮ — on a phone the name and ⋮ share the first line and the pill and the primary fill the second (REG-359). */
-function LeadHeadGhost({ shape }: { shape: LeadGhostShape }) {
+function LeadHeadGhost({ shape, overview = true }: { shape: LeadGhostShape; /** (the calm UI build 2026-10-27, 2-02 · 2-38 — B2's request) the Overview's header has no chips; another tab's carries the facts as one plain line */ overview?: boolean }) {
   return (
     <div className={`${hdr.header} ${styles.head}`}>
       <span className={hdr.back}><Bone w={24} h={24} r={4} /></span>
@@ -78,13 +78,13 @@ function LeadHeadGhost({ shape }: { shape: LeadGhostShape }) {
         <span className={hdr.crumb}><Line w={44} lh={16} h={10} /></span>
         <div className={hdr.titleRow}>
           <span className={hdr.title}><Line w={148} lh={24} h={20} /></span>
-          <span className={hdr.chips}>{[80, 71, 94, 80].map((w, i) => <Slot key={i} kind="chip" w={w} />)}</span>
+          {overview ? null : <span className={hdr.chips}><span className={ov.headFacts}><Line w={240} lh={20} h={12} /></span></span>}
         </div>
       </div>
       <div className={hdr.actions}>
         <span className={`${ov.anchor} ${ov.stageAction}`}><Slot kind="btn" w={134} /></span>
         {/* (UX audit 2026-09-30, L6) Convert to Project outlined with its lock — up to 1024 the row is the pill and the primary (overview.module.css) */}
-        {shape.locked && !shape.onProject ? <span className={`${ov.anchor} ${ov.convertLocked}`}><Slot kind="btn" w={178} /></span> : null}
+        {/* (the calm UI build 2026-10-27, 2-05) the locked Convert left the header — Stage ▾'s Won row carries it — so the ghost draws no bone for it */}
         {/* the one filled primary — "Move to Met" … Convert to Project, or a Won lead's Open project; it fills the phone's second line */}
         {shape.noPrimary ? null : <span className={`${ov.anchor} ${ov.convertAction}`}><Slot kind="btn" w={shape.onProject ? 124 : 140} fill /></span>}   {/* (S44O — C6) Marketing's lead past Met has none */}
       </div>
@@ -217,7 +217,7 @@ function OverviewGhost({ onProject, quotes = true }: { onProject: boolean; /** (
           {onProject ? null : (
             <div data-card="my-work">
               <section className={card.card}>
-                <CardHead title="MY TASKS" meta={78} />
+                <CardHead title="Open tasks" meta={78} />
                 <div className={mw.groupLabel} data-tone="red"><Line w={72} lh={20} h={12} /></div>
                 <div className={mw.list}>
                   {[176, 132, 204].map((w, i) => (
@@ -233,7 +233,7 @@ function OverviewGhost({ onProject, quotes = true }: { onProject: boolean; /** (
           )}
           {quotes ? <div data-card="quotes">
             <section className={card.card}>
-              <CardHead title="QUOTES" />
+              <CardHead title="Quotes" />
               <div className={qc.body}>
                 <div className={qc.group}>
                   <div className={qc.amountRow}>
@@ -249,7 +249,7 @@ function OverviewGhost({ onProject, quotes = true }: { onProject: boolean; /** (
           {onProject ? null : (
             <div data-card="questionnaire">
               <section className={card.card}>
-                <CardHead title="QUESTIONNAIRE" link={64} />
+                <CardHead title="Questionnaire" link={64} />   {/* (the calm UI build 2026-10-27, 3-41 — B2's request) the cards' sentence-case heads */}
                 <div className={qn.body}>
                   <div className={qn.group}>
                     <div className={qn.row}><span className={qn.label}><Line w={172} lh={20} h={12} /></span><Line w={36} lh={20} h={12} /></div>

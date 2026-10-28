@@ -18,7 +18,9 @@ export const MODES: { key: Mode; label: string; icon: string }[] = [
   { key: 'furniture', label: 'Furniture', icon: 'weekend' },
   { key: 'style', label: 'Style', icon: 'style' },
   { key: 'lighting', label: 'Lighting', icon: 'lightbulb' },
-  { key: 'tools', label: 'Tools', icon: 'handyman' },
+  /* (the calm UI build 2026-10-27, 6-17 · W-412) "Tools" inside a tool opened from Tools said nothing — the tab is what it does to the room;
+     its key, its testid (viz-mode-tools) and every address stay */
+  { key: 'tools', label: 'Whole room', icon: 'handyman' },
 ]
 /** (E3) The compact button's verb where the go line is narrow — only the labels longer than it ("Furnish the room" → "Furnish"); a
     label not listed keeps its words (cut with "…" if it must). */
@@ -120,7 +122,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
   /** (REG-704) The price of this Generate — null where nothing is charged. */
   price?: FootPrice | null
   /** (pending modules S36 — the website's trial: one version, Fast, 1.0's) What this Generate allows, said in place of the Versions and
-      Quality options — "2 of 3 free renders left"; the options and their Change (and the compact tune button) step away. */
+      Quality options — "2 of 3 free versions left"; the options and their tune button step away. */
   allowance?: ReactNode
 }) {
   const many = intent.kind === 'edit' || intent.kind === 'restyle' || intent.kind === 'transfer'
@@ -159,7 +161,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
         </span>
       </Tooltip>
       {/* (pending modules S20 — the drift guard, 1.0's render_repair) the one charge Generate can add after the press, said where the prices are */}
-      {price?.per && price.repair ? <span className={styles.optsText} data-testid="viz-repair-note">If the camera moves in a render, it’s lined up with your photo again — {fmtN(price.repair)} AI credits a version</span> : null}
+      {price?.per && price.repair ? <span className={styles.optsText} data-testid="viz-repair-note">If the camera moves in a version, it’s lined up with your photo again — {fmtN(price.repair)} AI credits a version</span> : null}
     </div>
   )
   const errorLine = error ? <span className={styles.error} role="alert" data-testid="viz-error"><Icon name="error" size={16} weight={300} />{error}</span> : null
@@ -168,6 +170,10 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
   const chip = priced ? <CostChip n={price.cost} /> : undefined
   const priceWords = priced ? ` · ${fmtN(price.cost)} AI credits` : ''
   const shortLine = priced && price.short && !error ? <span className={styles.short} role="status" data-testid="viz-short">{price.short}</span> : null
+  /* (simplicity pass · REG-704) how many versions, how fine, the price and what's left after it — in one sentence. (the calm UI build
+     2026-10-27, 6-04 · W-248) it is the tune button's tooltip beside Generate, and heads the switches once they are open — no longer a line
+     of its own under Generate at rest (the compact go line's grammar, at every width) */
+  const summary = `Makes ${!oneOnly ? `${variants} ${variants === 1 ? 'version' : 'versions'}` : '1 version'} · ${quality === 'high' ? 'High quality' : 'Fast'}${priced ? ` · ${fmtN(price.cost)} AI credits${price.left != null ? ` · ${fmtN(price.left)} left after` : ''}` : ''}`
   if (compact) {
     /* what went wrong, or why Generate waits: beside the button when nothing is picked, else on its own line under the row */
     const status = errorLine ?? shortLine ?? (reason && !intent.kind ? <span className={styles.compactText}>{reason}</span> : null)
@@ -182,7 +188,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
             </button>
           ) : null}
           <span className={styles.compactStatus}>{changes.length ? null : status}</span>
-          {allowance ? null : <Tooltip label={`Makes ${oneOnly ? 1 : variants} · ${quality === 'high' ? 'High quality' : 'Fast'}`}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} /></Tooltip>}
+          {allowance ? null : <Tooltip label={summary} disabled={opts}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} /></Tooltip>}
           {/* (F158) the count lives in the text beside it — the button says only what it does (its full words stay its name) */}
           <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.goCompact} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate">
             <span className={styles.goText}>{busy ? intent.busy : intent.kind === 'edit' ? 'Generate' : intent.kind === 'restyle' ? 'Restyle' : intent.label}</span>
@@ -211,15 +217,21 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
           {note ? <span className={styles.note} data-testid="viz-ignored">{note}</span> : null}
         </div>
       ) : null}
-      <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.go} data-priced={priced || undefined} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate"><span className={styles.goLabel}>{busy ? intent.busy : intent.label}</span></Button>
+      {/* (the calm UI build 2026-10-27, 6-04 · W-248) Generate and, beside it, the tune button that holds Versions and Quality (it was the
+          "Makes 1 version · Fast  Change" line under Generate — the same Change, now the button; its testid moved with it) */}
+      <div className={styles.goRow}>
+        <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.go} data-priced={priced || undefined} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate"><span className={styles.goLabel}>{busy ? intent.busy : intent.label}</span></Button>
+        {allowance ? null : <Tooltip label={summary} disabled={opts}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} data-testid="viz-options-toggle" /></Tooltip>}
+      </div>
+      {/* the line under Generate says why it waits — only while it waits (the intent's reason) — or what went wrong */}
       {errorLine ?? (reason ? <span className={styles.hint} data-idle={!intent.total || undefined}>{reason}</span> : null)}
-      {/* (simplicity pass) how many versions and how fine: one quiet line, the two switches only on Change; (REG-704) the price and what's
-          left after it on the same line — or, when it can't be afforded, what it needs and the cheaper way */}
-      {allowance ? <div className={styles.opts} data-testid="viz-allowance"><span className={styles.optsText}>{allowance}</span></div> : <div className={styles.opts}>
-        {shortLine ?? <span className={styles.optsText} data-testid="viz-options">Makes {!oneOnly ? `${variants} ${variants === 1 ? 'version' : 'versions'}` : '1 version'} · {quality === 'high' ? 'High quality' : 'Fast'}{priced ? ` · ${fmtN(price.cost)} AI credits${price.left != null ? ` · ${fmtN(price.left)} left after` : ''}` : ''}</span>}
-        <button type="button" className={styles.link} aria-expanded={opts} onClick={() => setOpts((o) => !o)} data-testid="viz-options-toggle">{opts ? 'Done' : 'Change'}</button>
-      </div>}
-      {opts && !allowance ? knobs : null}
+      {/* (pending modules S36) the trial's allowance, said where the options were; (REG-704) the price it can't afford, with the cheaper way,
+          stays in view — it changes the decision */}
+      {allowance ? <div className={styles.opts} data-testid="viz-allowance"><span className={styles.optsText}>{allowance}</span></div> : shortLine ? <div className={styles.opts}>{shortLine}</div> : null}
+      {opts && !allowance ? <>
+        <span className={`${styles.optsText} ${styles.optsHead}`} data-testid="viz-options">{summary}</span>
+        {knobs}
+      </> : null}
     </div>
   )
 }

@@ -43,7 +43,7 @@ export type PlatformModule = {
 
 export const PILLARS: Record<PillarId, Pillar> = {
   design: {
-    id: 'design', index: '03', eyebrow: 'PILLAR 03 · DESIGN MEETINGS', name: 'Design Meetings',
+    id: 'design', index: '03', eyebrow: 'PILLAR 03 · DESIGN', name: 'Design',   // (the calm UI build 2026-10-27 — the audit's 6-29, W-026) the pillar is Design; its module is Meeting Copilot, as in the app
     promise: 'Show them the home before it exists.',
     blurb: 'Create and edit renders from your room photos. Win clients with your vision and expertise, not just your price.',
   },
@@ -133,16 +133,16 @@ export const MODULES: PlatformModule[] = [
     capabilities: [
       { title: 'Line-item extraction', desc: 'Turn a quote — a spreadsheet or a PDF — into structured, editable line items.', icon: 'description' },
       { title: 'Margin check', desc: 'See your margin on every line, with a flag wherever a price looks thin.', icon: 'trending_up' },
-      { title: 'Quote X-Ray', desc: 'Drop in a quote — yours or a competitor’s — and see straight through it.', icon: 'scan' },
+      { title: 'Quote X-Ray', desc: 'Compare a quote with another studio’s, line by line.', icon: 'scan' },   // (6-29) what the app's tool does
       { title: 'Approval workflow', desc: 'Match your studio’s approval workflow with optional internal sign-offs.', icon: 'approval' },
     ],
     whyHeading: WHY.heading, whyBody: WHY.body,
     relatedHeading: RELATED, relatedDescription: 'Explore more OpenMaison features built for healthier profits.',
-    relatedCards: [{ slug: 'finance', title: 'Real-time P&L for projects', blurb: 'Powered by Finance & Margins' }],
+    relatedCards: [{ slug: 'finance', title: 'Real-time P&L for projects', blurb: 'Powered by Finance' }],
     ctaHeading: CTA.heading, ctaDescription: CTA.description,
   },
   {
-    slug: 'finance', href: site('/platform/finance'), pillar: 'margin', name: 'Finance & Margins', icon: 'account_balance_wallet', menuBlurb: 'Live per-project P&L',
+    slug: 'finance', href: site('/platform/finance'), pillar: 'margin', name: 'Finance', icon:   /* (6-29, W-028) the app's name */ 'account_balance_wallet', menuBlurb: 'Live per-project P&L',
     headline: 'Always know where your margins stand.',
     subcopy: 'See real-time margins across every project and generate finance-ready reports. Get the complete picture with commissions, variation orders and GST built-in.',
     stepsHeading: 'Project finances, made simple.',
@@ -296,7 +296,7 @@ export const HUB_CARD_COPY: Record<ModuleSlug, string> = {
 export const HUB_MATRIX: { dim: string; stack: string; us: string }[] = [
   { dim: 'Leads', stack: 'Inbox + Spreadsheet', us: 'Auto-captured from all sources' },
   { dim: 'Quotes', stack: 'Manually created & checked', us: 'Margin check on every line, upload your own quote' },
-  { dim: 'Design', stack: 'Separate render and layouting tool', us: 'Built-in visualiser and 3D planner' },
+  { dim: 'Design', stack: 'Separate render and layouting tool', us: 'AI Visualizer and 3D Space Planner, built in' },   // (6-29, W-022)
   { dim: 'Projects', stack: 'Trello + Spreadsheet', us: 'Built-in project management. Convert quote to plan with a click.' },
   { dim: 'Customer updates', stack: 'Whatsapp, email, spreadsheet', us: 'Branded client portal for all updates & documents.' },
   { dim: 'Finance', stack: 'Xero, Reconciliation post project', us: 'Real-time P&L and finance-ready reports' },

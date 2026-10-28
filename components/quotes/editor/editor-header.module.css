@@ -82,6 +82,11 @@
   .switch::after { content: ''; position: absolute; inset: -10px 0; }
 }
 /* (REG-632, contracts parity Q-09) The contract raised from this quote — a chip that opens it. */
+/* (the calm UI build 2026-10-27, 4-03 · 4-11) the number and version as the title's grey subtitle; the contract as one quiet link */
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.contractLink { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-decoration: none; white-space: nowrap; border-radius: var(--om-radius-1); padding: 0 var(--om-spacing-1); }
+.contractLink:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.contractLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .chipLink { display: inline-flex; border-radius: var(--om-radius-1); text-decoration: none; }
 .chipLink:hover > span { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
 .chipLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

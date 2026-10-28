@@ -59,22 +59,34 @@ export type DashArticle = { id: string; title: string; caption: string; href: st
 /** What the ghost draws for this viewer (the app shell's seed reads the same rules, lib/ghost-shapes.server.ts `dashboardShape`). */
 export type DashboardShape = { tiles: number; team: boolean; updates: boolean; article: boolean }
 
+/**
+ * (the Dashboard redesigned, 2026-10-26 — his marks on https://claude.ai/artifact/5d1yTNS7mtU47teLjeP2WY, every proposal Build, every question
+ * as recommended, and his note "the CTAs are too much to the eyes because of primary color") **The page as it reads it** — the contract
+ * between the build's lanes (design-source/context/dashboard-redesign-2026-10-26/brief.md). Each part is its own file and its own lane's:
+ * the frame (lib/dashboard/frame.ts) · Since (since.ts) · Pulse (pulse.ts) — D1; Needs you (inbox.ts) — D2; the cards (cards.ts) — D3;
+ * Maison AI docked (dock.ts) — D4. A part that can't be read for this member is null and its card is left out.
+ */
 export type DashboardData = {
   viewer: { id: string; first: string; role: string }
   now: number
   today: number
-  brief: Brief
-  /** The brief's two questions and the page's others — each asked of Maison AI (its sheet answers from the records). */
-  asks: string[]
-  needs: DashRow[]
-  /** The viewer's open tasks (MY TASKS), and where each one is — a lead's or a project's name. */
-  tasks: import('@/lib/db/schema').LeadTask[]
-  where: Record<string, string>
-  coming: DashComing[]
-  tiles: DashTile[]
-  team: DashPerson[] | null
-  updates: DashUpdate[] | null
-  article: DashArticle | null
+  /** Studio or Mine (Q-07) — and whether this member has the switch. */
+  scope: import('./frame').DashScope
+  canSwitchScope: boolean
+  /** The role's cards in reading order, minus those this member hid (Q-06) — and those they hid, for "Show hidden cards". */
+  cards: import('./frame').DashCardKey[]
+  hidden: import('./frame').DashCardKey[]
+  /** "Good morning, Dane" and its line ("Monday 26 October · 15 things need you, 3 of them since Friday"). */
+  greeting: { title: string; line: string }
+  since: import('./since').SinceData | null
+  pulse: import('./pulse').PulseData | null
+  needs: import('./inbox').InboxData
+  day: import('./cards').DayData | null
+  pipeline: import('./cards').PipelineData | null
+  projects: import('./cards').ProjectsData | null
+  team: import('./cards').TeamData | null
+  site: import('./cards').SiteData | null
+  dock: import('./dock').DockData
   shape: DashboardShape
 }
 

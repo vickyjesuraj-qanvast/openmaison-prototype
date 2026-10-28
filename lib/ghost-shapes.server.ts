@@ -1,22 +1,24 @@
 import 'server-only'
-import { and, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { startOfDay } from '@/lib/format'
 import {
   contractTemplates, contracts, leadFiles, leadTasks, leads, libraryFolders, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates,
   quoteTextTemplates, quotes, studioMaterials, taskTemplates, visualizerDesigns, projects, marketplaceBanners, marketplaceBrands, marketInsights, members,
-  commissionRequests, vendors, projectTickets,
+  commissionRequests, vendors, projectTickets, leadAssignees, meetings,
 } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { isAccounting, isMarketing, runsStudio, seesBooks } from '@/lib/settings/roles'
 import { seesCost } from '@/lib/settings/cost-visibility'   // (pending modules S41b-1)
 import { setupModeFor } from '@/lib/studio-setup/queries'
-import { seesSiteUpdates, seesTeam } from '@/lib/dashboard/model'
-import { recentSiteUpdates } from '@/lib/dashboard/updates'
+import { seesTeam } from '@/lib/dashboard/model'
+import { siteThisWeek } from '@/lib/dashboard/cards-queries'   // (the Dashboard redesigned — D3's On site rule, read light)
+import { HIDEABLE, cardsFor, parsePrefs } from '@/lib/dashboard/frame'
 import { myOpenTasks } from '@/lib/dashboard/queries'   // (S42 audit A-16)
 import { listingShape } from '@/lib/qanvast-listing/queries'   // (pending modules S37)
 import { ticketRaise } from '@/lib/projects/tickets'   // (pending modules S46B) Projects › Tickets' New ticket
 import { meetingRows } from '@/lib/meetings/queries'   // (pending modules S46B) Tools › Meeting Copilot's first screen
-import { standingOf } from '@/lib/meetings/model'
+import { idsOf, standingOf } from '@/lib/meetings/model'
 import { qanvastAccountIsStandIn } from '@/lib/qanvast-account/service'   // (S42E, E-07)
 import { commissionAsksShape } from '@/lib/finance/sections'   // (S43D, F2-01)
 import { fetchLeadRows } from '@/lib/leads/queries'   // (S44Z) the lead header's seed
@@ -25,6 +27,7 @@ import { headHasPrimary } from '@/lib/leads/stage-policy'
 import { railBadges } from '@/lib/leads/tasks'   // (pending modules S46C · M3) read once per request — the shell already asked for it
 import { quoteTodoCounts, type QuoteListRow } from '@/lib/leads/quote-filters'   // (responsive audit W6, W5-33) the Quotes to-do pills' seed
 import { sentToClientDates } from '@/lib/quotes/sent-to-client'
+import { itemVisible } from '@/lib/company/price-book-rules'   // (calm-build regression fix F) the Price book's to-do seed, by the page's own rule
 
 /**
  * (UX audit build · REG-817) Which pages open on their FIRST RUN right now — told to the ghosts by the app shell, so even a browser's first
@@ -98,7 +101,10 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
     /* (S42 audit A-07 · A-16) …and only when Workload has a line to draw: a running project, or someone it lists (a Designer, a Manager —
        a Manager always lists themselves); a new studio's first day has neither */
     'dashboard.team': seesTeam(viewer.role) && (viewer.role === 'Manager' || projectRows.some((p) => p.stage !== 'completed') || Number((await db.select({ n: sql<number>`count(*)` }).from(members).where(and(eq(members.isActive, true), inArray(members.role, ['Designer', 'Manager']))))[0]?.n ?? 0) > 0),
-    'dashboard.updates': seesSiteUpdates(viewer.role) && (await recentSiteUpdates(viewer, Date.now(), 1).catch(() => [])).length > 0,
+    /* (the Dashboard redesigned, 2026-10-26 — lane D1) the page's shape for its loader: a Manager's page (the leads' three figures, the team's
+       cards), the cards this member hid for themselves, whether Projects and On site have something to draw (`dashboardSeed`) */
+    'dashboard.manager': viewer.role === 'Manager',
+    ...(await dashboardSeed(viewer, projectRows.filter((p) => p.stage !== 'completed').map((p) => p.leadId), seen).catch(() => ({}))),
     /* (S42 audit A-06 · A-16) MY TASKS draws its rows or its one quiet row; Needs you draws one row on a studio with nothing in it yet */
     'dashboard.mytasks': (await myOpenTasks(viewer.id, seen).catch(() => [])).length > 0,
     'dashboard.quiet': projectRows.length === 0 && !leadRows.some((l) => sees(l.id)),
@@ -120,6 +126,11 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
     'lib.materials': empty(mt, 'materials'),
     'lib.price-book-items': empty(bi, 'book-items'),
     'lib.price-book-sections': empty(bs, 'book-sections'),
+    /* (calm-build regression fix F — D's request) Price book › My Items' to-do chip (a proposal waiting) for a browser's first loader, as the page's
+       reveal draws it: a proposed, live item this member sees (`itemVisible` — the page's own rule); price-book-ghost.tsx reads it */
+    'lib.price-book-items.todo': await db.select({ status: priceBookItems.status, createdBy: priceBookItems.createdBy }).from(priceBookItems)
+      .where(and(eq(priceBookItems.status, 'proposed'), isNull(priceBookItems.deletedAt)))
+      .then((rows) => rows.some((r) => itemVisible(viewer, r))).catch(() => false),
     /* (pending modules S17) whether each library's top level opens on a Folders row — its gallery ghost draws one only then (Templates ›
        Schedules has none, and its ghost drew two folders over the cards) */
     ...Object.fromEntries(Object.entries(LIBRARY_OF).map(([key, library]) => [`lib.${key}.folders`, folders.has(library)])),
@@ -152,6 +163,33 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
       .where(and(eq(vendors.isContractor, true), eq(vendors.isActive, true), isNull(vendors.mergedInto)))
       .then((r) => Number(r[0]?.n ?? 0) > 0).catch(() => false),
   }
+}
+
+/** (the Dashboard redesigned, 2026-10-26 — lane D1) The Dashboard's shape for its loader, by the cards' own rules read light: the cards a member
+    hid for themselves (his Q-06, `dashboard.hidden.<card>`); whether Projects has a line to draw (D3's `fetchProjectsHealth`: an open project
+    this member sees — their own for a Designer, and for an Owner's or Admin's remembered Mine); whether On site has the week's photos (D3's
+    `siteThisWeek`, the card's own rule); whether Your day's week has anything in it (`dashboard.week`: one of the member's open tasks due by
+    the week's end or late, or one of their meetings planned in it — D3's `fetchDay` read light; Accounting's week of money is left to the
+    page's memory). A browser that has seen the page draws what it held last instead (`CARD_COUNT_KEYS`). */
+async function dashboardSeed(viewer: Awaited<ReturnType<typeof fetchViewer>>, openLeadIds: string[], seen: Set<string> | null): Promise<Record<string, boolean>> {
+  const [m] = await db.select({ prefs: members.dashboardPrefs }).from(members).where(eq(members.id, viewer.id)).limit(1)
+  const prefs = parsePrefs(m?.prefs ?? null)
+  const cards = cardsFor(viewer.role)
+  const ownOnly = runsStudio(viewer.role) ? prefs.scope === 'mine' : viewer.role !== 'Manager'
+  const projectsShown = cards.includes('projects') && openLeadIds.length > 0 && (!ownOnly || Number((await db.select({ n: sql<number>`count(*)` }).from(leadAssignees)
+    .where(and(eq(leadAssignees.memberId, viewer.id), inArray(leadAssignees.leadId, openLeadIds))))[0]?.n ?? 0) > 0)
+  const site = cards.includes('site') && await siteThisWeek(viewer).catch(() => false)
+  const weekEnd = startOfDay(new Date()) + 7 * 86_400_000
+  const week = isAccounting(viewer.role) || (await myOpenTasks(viewer.id, seen).catch(() => [])).some((t) => t.dueAt && t.dueAt.getTime() < weekEnd)
+    || (await db.select({ leadId: meetings.leadId, memberIds: meetings.memberIds, createdBy: meetings.createdBy }).from(meetings)
+      .where(and(isNull(meetings.deletedAt), eq(meetings.status, 'planned'), gte(meetings.startsAt, new Date(startOfDay(new Date()))), lt(meetings.startsAt, new Date(weekEnd)))).catch(() => []))
+      .some((r) => (!seen || seen.has(r.leadId)) && (idsOf(r.memberIds).includes(viewer.id) || r.createdBy === viewer.id))
+  /* (the Dashboard's closing pass, 2026-10-26) a browser's first visit has no memory of the Since chips (`dashboard.since` = none): an Accounting
+     member's page holds none on the demo (no leads, no site, no articles — only a client's word that they paid), so their first ghost draws no
+     Since row; every other role's page has news and draws it. A browser that has seen the page draws what it held (its own memory).
+     (the calm pass 2026-10-26 — lane C1) The news is the greeting line's one link now, no row of chips: the same seed says whether the ghost's
+     line carries the link's words. */
+  return { ...Object.fromEntries(HIDEABLE.map((k) => [`dashboard.hidden.${k}`, prefs.hidden.includes(k)])), 'dashboard.projects': projectsShown, 'dashboard.updates': site, 'dashboard.week': week, 'dashboard.since': isAccounting(viewer.role) }
 }
 
 /** (S43D, F2-01) Whether Finance › Commission opens with its asks band — the page's own rule (`fetchCommissions`: whoever sees the books reads every

@@ -16,12 +16,13 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = { title: 'Sign in', robots: { index: false, follow: false } }
 
-/** The demo's line under the form: who to try — the studio's first Owner, by their mobile, else their email. Never in a real build. */
+/** The demo's line under the form: who to try — the studio's first Owner, by their mobile, else their email. Never in a real build.
+    (the calm UI build 2026-10-27 — the audit's 1-46) just what to type — the box says "Demo: any 6 digits work — try {it}" */
 async function demoHint(): Promise<string | null> {
   const [o] = await db.select({ name: members.name, phone: members.phone, email: members.email }).from(members)
     .where(and(eq(members.role, 'Owner'), eq(members.isActive, true))).orderBy(asc(members.name)).limit(1)
   const key = o ? contactsOf(o)[0] : null
-  return o && key ? `${o.name}, the studio’s Owner, signs in with ${key.kind === 'phone' ? phoneTyped(key.value).replace(' ', '\u00a0') : key.value}.` : null   // a number never breaks across lines
+  return o && key ? (key.kind === 'phone' ? phoneTyped(key.value).replace(' ', '\u00a0') : key.value) : null   // a number never breaks across lines
 }
 
 /**

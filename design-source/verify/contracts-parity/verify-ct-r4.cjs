@@ -108,7 +108,7 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     ok('the last editor is kept', sql(`select updated_by from contract_templates where id='${agr}'`) === 'sarah')
     sql(`update contract_templates set deleted_at = strftime('%s','now') where id='${agr}'`)
     await page.goto(`${BASE}/company/templates/contracts`); await ready(page)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted Templates/ }).click()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: /Deleted templates/i }).click()   // (the calm UI build 2026-10-27, a deliberate change) sentence case
     const sheet = page.getByRole('dialog', { name: 'Deleted Templates' }); await sheet.waitFor(); await page.waitForTimeout(600)
     const row = sheet.getByTestId('deleted-library-row').filter({ hasText: 'Interior Design Service Agreement' })
     ok('its Delete Forever waits while contracts name it', (await row.getByRole('button', { name: 'Delete Forever' }).getAttribute('aria-disabled')) === 'true')
@@ -122,13 +122,13 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     await openEditor(page, id)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await snack(page, 'no Client signature field')
-    ok('Send names what is missing', (await page.getByRole('dialog', { name: 'Send for digital signature' }).count()) === 0)
+    ok('Send names what is missing', (await page.getByRole('dialog', { name: 'Send for signature' }).count()) === 0)
     await page.getByRole('button', { name: 'Show me' }).click(); await page.waitForTimeout(500)
     ok('“Show me” opens eSignatures', await page.getByTestId('esign-gates').isVisible())
     await page.getByTestId('esign-field').filter({ hasText: 'Client signature' }).getByRole('button', { name: 'Insert' }).click(); await page.waitForTimeout(1500)
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    const dlg = page.getByRole('dialog', { name: 'Send for digital signature' }); await dlg.waitFor()
+    const dlg = page.getByRole('dialog', { name: 'Send for signature' }); await dlg.waitFor()
     ok('the dialog says what is worth knowing', /names no quote/.test(await dlg.getByTestId('send-notes').innerText()))
     await shot('04-send-notes')
     await page.keyboard.press('Escape')
@@ -139,17 +139,17 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     // (REG-780, UX audit C2) the quote it names must not be a Draft under required approval — approved (idempotent with the step above)
     sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${OLIVIA}')`)
     await openEditor(page, OLIVIA)
-    await page.getByRole('button', { name: 'Automation' }).click()
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.getByRole('menuitem', { name: 'Reminders…' }).click(); await page.waitForTimeout(400)   // (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-120: the bell is the ⋮'s Reminders…
     await page.getByRole('switch', { name: 'Remind me to follow up' }).or(page.getByLabel('Remind me to follow up')).first().click({ force: true })
     await page.getByRole('switch', { name: 'Remind me to thank the client' }).or(page.getByLabel('Remind me to thank the client')).first().click({ force: true })
     await page.waitForTimeout(800); await page.keyboard.press('Escape')
     ok('both switches are on', sql(`select reminders || thank_you from contracts where id='${OLIVIA}'`) === '11')
     // (REG-786, UX audit C8) a Draft's copy icon says it sends: "Copy link — marks it Sent"
-    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(1200)
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.getByRole('menuitem', { name: 'Copy signing link' }).click(); await snack(page, 'waiting for signature now')   // (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-156 · W-363; await page.waitForTimeout(1200)
     ok('a follow-up task, three days out, on the contract', sql(`select count(*) from lead_tasks where contract_id='${OLIVIA}' and kind='Follow-up' and done=0 and due_at between strftime('%s','now','+2 days') and strftime('%s','now','+4 days')`) === '1')
     ok('the studio heard it went out', Number(sql(`select count(*) from notifications where kind='contract_sent'`)) > before)
     await openEditor(page, OLIVIA)
-    await page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Signed)$/ }).first().click()
+    await page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Waiting for signature|Signed)$/ }).first().click()
     await page.getByRole('menuitemradio', { name: /^Signed/ }).click()
     await page.getByRole('dialog', { name: 'Mark as signed' }).getByRole('button', { name: 'Mark as signed' }).click()
     // (REG-779, UX audit C1) "{title} marked Signed", and while the lead isn't Won (Olivia's is New) the snackbar offers Move to Won
@@ -164,8 +164,8 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
   await step('Activity names who acted, and keeps the move back and the archive', async () => {
     await openEditor(page, OLIVIA)
     await page.getByTestId('contract-editor').getByRole('button', { name: /^Signed$/ }).first().click()
-    await page.getByRole('menuitemradio', { name: /^Sent to Client/ }).click()
-    await page.getByRole('dialog', { name: /Move back to/ }).getByRole('button', { name: 'Move back' }).click(); await snack(page, 'Contract marked Sent to Client'); await page.waitForTimeout(800)
+    await page.getByRole('menuitemradio', { name: /^(Sent to Client|Waiting for signature)/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-363
+    await page.getByRole('dialog', { name: /Move back to/ }).getByRole('button', { name: 'Move back' }).click(); await snack(page, 'Contract marked Waiting for signature')   /* (the calm UI build 2026-10-27, a deliberate change) W-363 */; await page.waitForTimeout(800)
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
     const row = page.getByRole('row').filter({ hasText: OLIVIA_TITLE }).first()   // (REG-788, R66) the demo's agreement is named after its paper, "Interior Design Service Agreement"
     await row.hover(); await row.getByRole('button', { name: /^More actions for/ }).click(); await page.getByRole('menuitem', { name: 'Archive' }).click(); await snack(page, 'Contract archived'); await page.waitForTimeout(600)

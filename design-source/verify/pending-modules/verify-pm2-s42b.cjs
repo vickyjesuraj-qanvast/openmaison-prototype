@@ -170,8 +170,11 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     sql(`update contracts set status = 'Draft', sent_at = null, sign_expires_at = null where id = '${C_OLIVIA}'`)
     await go(d, `/contracts/${C_OLIVIA}`); await settle(d, 900)
     await d.getByRole('button', { name: /^Send$/ }).first().click(); await settle(d, 800)
-    const sendDlg = d.getByRole('dialog', { name: 'Send for digital signature' })
-    ok(/demo only: no text is sent, any six digits sign it/.test(await text(sendDlg)), 'the Send dialog says how the client confirms — demo only, no text is sent')
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-20 · W-448: the dialog is "Send for signature" and its head says one line; how the
+       client confirms (the demo's note among it) waits under "How signing works" — the house Tooltip on the desk */
+    const sendDlg = d.getByRole('dialog', { name: 'Send for signature' })
+    await sendDlg.getByTestId('send-how').getByRole('button', { name: /How signing works/ }).hover(); await settle(d, 500)
+    ok(/demo only: no text is sent, any six digits sign it/.test(await d.locator('[role="tooltip"]').last().innerText().catch(() => '')), 'the Send dialog says how the client confirms — demo only, no text is sent')
     await shot(d, 'b03-send-dialog-1440')
     await d.keyboard.press('Escape'); await settle(d, 300)
     await go(d, `/contracts/${C_RYAN}`); await settle(d, 900)
@@ -179,8 +182,10 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     // ── B-19 · a signed contract has no Write with AI ──────────────────────────────────────────────────────────────────────────
     console.log('B-19 · A signed contract’s bar')
     ok(await d.getByTestId('contract-writing').count() === 0 && await d.getByRole('button', { name: /Write with AI/ }).count() === 0, 'no Write with AI on a signed contract')
-    const bold = d.getByRole('button', { name: 'Bold' }).first()
-    ok(await bold.isDisabled() && await bold.evaluate((el) => getComputedStyle(el).color) !== await d.getByRole('button', { name: /Outline/ }).first().evaluate((el) => getComputedStyle(el).color), 'the format tools rest greyed (disabled colour), the banner says why')
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-18 · REG-B4.104: a signed contract's bar shows no formatting tools at all (they were
+       greyed and did nothing) — only the Outline toggle, so a closed Outline still opens; the banner still says why */
+    const lockedBar = d.locator('[role="toolbar"][aria-label="Document"][data-locked]')
+    ok(await lockedBar.count() === 1 && await d.getByRole('button', { name: 'Bold' }).count() === 0 && await lockedBar.getByRole('button', { name: /Outline/ }).count() === 1 && /this copy is locked|kept as it was/.test(await d.getByTestId('contract-banner').first().innerText().catch(() => '')), 'the format tools rest greyed (disabled colour), the banner says why')
     await shot(d, 'b19-signed-bar-1440')
 
     // ── B-04 · Settings counts follow Who sees leads ───────────────────────────────────────────────────────────────────────────
@@ -295,20 +300,20 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
       const notes0 = sql(`select quote(notes_html) from quotes where id = '${Q_OLIVIA}'`)
       await go(d, `/quotes/${Q_OLIVIA}`); await settle(d, 1200)
       const sec = d.locator('#section-notes')
-      if (!(await sec.locator('[contenteditable]').count())) { await sec.getByText('Additional Notes', { exact: true }).first().click(); await settle(d, 600) }
+      if (!(await sec.locator('[contenteditable]').count())) { await sec.getByText('Additional notes', { exact: true }).first().click(); await settle(d, 600) }   // (the calm UI build 2026-10-27, a deliberate change) W-200 · T-13: the section's title is "Additional notes"
       await sec.scrollIntoViewIfNeeded()
       await sec.getByTestId('writing-help').click(); await settle(d, 400)
       await d.locator('[role=menu] [role=menuitem]').filter({ hasText: 'Add what’s missing' }).click(); await settle(d, 700)
       await d.getByTestId('writing-use').click(); await settle(d, 1500)
       const said = await snackText(d)
-      ok(/Added to Additional Notes/.test(said), `B-20: the snackbar keeps the section’s own title — “${said.replace(/\s*Undo.*$/, '')}”`)
+      ok(/Added to Additional notes/.test(said), `B-20: the snackbar keeps the section’s own title — “${said.replace(/\s*Undo.*$/, '')}”`)   // (the calm UI build 2026-10-27, a deliberate change) the same rule on the title's new words, "Additional notes" (W-200)
       sql(`update quotes set notes_html = ${notes0} where id = '${Q_OLIVIA}'`)
     }
 
     // ── B-15 · B-21 · Draft with Maison AI ──
     console.log('B-15 · B-21 · Draft with Maison AI')
     await go(d, `/leads/${SERENA}/quotes`)
-    await d.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(d, 800)
+    await d.getByRole('button', { name: /* (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote" */ 'New quote' }).first().click(); await settle(d, 800)
     await d.getByTestId('draft-quote-row').click(); await settle(d, 500)
     await d.getByTestId('draft-brief').locator('textarea').fill('Install 6 downlights in the living room'); await settle(d, 2500)
     const rows = d.getByTestId('draft-row')
@@ -319,7 +324,7 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     await d.keyboard.press('Escape'); await settle(d, 400)
     const T = await phoneCtx(768, 1024); const t = await page(T, 'tablet')
     await go(t, `/leads/${SERENA}/quotes`)
-    await t.getByRole('button', { name: /Create Quote/ }).first().click(); await settle(t, 800)
+    await t.getByRole('button', { name: /* (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote" */ /New quote/ }).first().click(); await settle(t, 800)
     await t.getByTestId('draft-quote-row').click(); await settle(t, 500)
     await t.getByTestId('draft-brief').locator('textarea').fill('Hack and re-tile both bathrooms, paint the whole flat'); await settle(t, 2500)
     const cell = t.getByTestId('draft-row').first().locator('[role="cell"]').nth(1)
@@ -331,12 +336,12 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     console.log('E-05 · B·4 · Upload a quote reads a PDF’s words, never its name')
     const upload = async (p, f) => {
       await go(p, `/leads/${SERENA}/quotes`)
-      await p.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(p, 800)
+      await p.getByRole('button', { name: /* (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote" */ 'New quote' }).first().click(); await settle(p, 800)
       const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.getByTestId('upload-quote-row').click()])
       await fc.setFiles(f); await settle(p, 3000)
       return p.getByTestId('upload-quote')
     }
-    ok(/XLSX · CSV · PDF · 5 AI credits/i.test(await text((await (async () => { await go(d, `/leads/${SERENA}/quotes`); await d.getByRole('button', { name: 'Create Quote' }).first().click(); await settle(d, 800); return d.getByTestId('upload-quote-row') })()))), 'the Upload row says what it reads: XLSX · CSV · PDF')
+    ok(/* (the calm UI build 2026-10-27, a deliberate change) W-016 · 1-11: "Spreadsheet or PDF · 5 credits", "New quote" */ /Spreadsheet or PDF · 5 credits/i.test(await text((await (async () => { await go(d, `/leads/${SERENA}/quotes`); await d.getByRole('button', { name: 'New quote' }).first().click(); await settle(d, 800); return d.getByTestId('upload-quote-row') })()))), 'the Upload row says what it reads: XLSX · CSV · PDF')
     await d.keyboard.press('Escape'); await settle(d, 300)
     let box = await upload(d, EMPTY_STANLEY)
     ok(/We couldn’t read Stanley flat quote\.pdf/.test(await text(box)) && !/Cove Interior/.test(await text(box)) && await d.getByRole('button', { name: 'Create the quote' }).isDisabled(), 'an empty PDF NAMED like a reference reads nothing — never the demo’s Cove quote')
@@ -344,11 +349,11 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     await shot(d, 'e05-empty-named-1440')
     await d.keyboard.press('Escape'); await settle(d, 300)
     box = await upload(d, URBAN)
-    ok(/23 lines\s*read from Urban Nest Design & Renovation’s quote · S\$40,210\.00/.test(await text(box)), 'a text PDF reads from its own words, by rule — 23 lines, S$40,210.00')
+    ok(/23 items\s*read from Urban Nest Design & Renovation’s quote · S\$40,210\.00/.test(await text(box)), 'a text PDF reads from its own words, by rule — 23 lines, S$40,210.00')   // (the calm UI build 2026-10-27, a deliberate change) §2 · 4-28: a quote's lines read as "items"
     await shot(d, 'e05-pdf-read-1440')
     await d.keyboard.press('Escape'); await settle(d, 300)
     box = await upload(d, COVE_RENAMED)
-    ok(/20 lines\s*read from Cove Interior’s quote · S\$42,680\.00/.test(await text(box)), 'the sample Cove quote renamed “my old quote.pdf” is still Cove’s — recognised by what it says')
+    ok(/20 items\s*read from Cove Interior’s quote · S\$42,680\.00/.test(await text(box)), 'the sample Cove quote renamed “my old quote.pdf” is still Cove’s — recognised by what it says')   // (the calm UI build 2026-10-27, a deliberate change) §2 · 4-28: a quote's lines read as "items"
     await d.keyboard.press('Escape'); await settle(d, 300)
 
     // ── E-05 · the website's free trial ──
@@ -360,20 +365,26 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     ok(await v.getByTestId('trial-quote-failed').count() === 1 && !/Cove Interior|42,680/.test(await text(v.locator('main'))), 'the trial: an empty PDF named like a reference reads nothing — never the demo’s quote to keep')
     await shot(v, 'e05-trial-empty-1440')
     await v.getByTestId('trial-quote-pick').locator('input[type="file"]').setInputFiles(URBAN); await settle(v, 3500)
-    ok(/23 lines\s*read from Urban Nest/.test(await text(v.locator('main'))), 'the trial: a text PDF reads from its own words')
+    ok(/23 items\s*read from Urban Nest/.test(await text(v.locator('main'))), 'the trial: a text PDF reads from its own words')   // (the calm UI build 2026-10-27, a deliberate change) §2 · 4-28: a quote's lines read as "items"
     await V.close()
 
     // ── D-08 · the VO upload ──
     console.log('D-08 · D·2 · The VO upload')
     await go(d, `/projects/${P1}/money`); await settle(d, 1200)
     await d.getByRole('button', { name: /^New/ }).first().click(); await settle(d, 400)
-    const voRow = d.getByRole('menuitem', { name: /Variation order from a contractor’s quote/ }).first()
-    ok(/a spreadsheet or a PDF/.test(await text(voRow)) && !/photo/.test(await text(voRow)), 'the menu says what the dialog reads — “a spreadsheet or a PDF”')
+    /* (the calm UI build 2026-10-27, a deliberate change) 3-26 · T-05: New ▾ is five kinds with no helper lines; a kind made more than one way
+       opens its ways in place — Variation order › From a contractor’s quote. The rule stays: the way promises nothing the dialog doesn't read
+       (no photo), and the dialog says it reads a spreadsheet or a PDF */
+    await d.getByRole('menuitem', { name: /^Variation order$/ }).first().click(); await settle(d, 400)
+    const voRow = d.getByTestId('money-new-level').getByRole('menuitem', { name: /From a contractor’s quote/ }).first()
+    const voRowWords = await text(voRow)
     await voRow.click(); await settle(d, 800)
     const vo = d.getByTestId('vo-upload-dialog')
+    const voDlg = await text(d.getByRole('dialog', { name: 'Variation order from a contractor’s quote' }))
+    ok(!/photo/i.test(voRowWords) && /a spreadsheet of its lines \(XLSX · CSV\) or a PDF/.test(voDlg) && !/photo/i.test(voDlg), 'the menu says what the dialog reads — “a spreadsheet or a PDF”')
     ok(/XLSX · CSV · PDF · 5 AI credits/.test(await text(vo)), 'the drop zone: XLSX · CSV · PDF · 5 AI credits')
     await vo.locator('input[type="file"]').setInputFiles(URBAN); await settle(d, 3500)
-    ok(/23 lines\s*read from Urban Nest/.test(await text(d.getByTestId('vo-upload-read'))), 'a contractor’s PDF quote reads from its own words')
+    ok(/* (the calm UI build 2026-10-27, a deliberate change) T-01: a quote's lines read as "items" */ /23 items\s*read from Urban Nest/.test(await text(d.getByTestId('vo-upload-read'))), 'a contractor’s PDF quote reads from its own words')
     await d.keyboard.press('Escape'); await settle(d, 400)
 
     // ── E-05 · X-Ray ──

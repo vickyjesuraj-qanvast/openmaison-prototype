@@ -2,6 +2,9 @@
 // Against :3011 on the scratch test.db (never local.db).
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const S = process.env.S || '/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/24a43f16-101f-4145-ad44-d6551add8f54/scratchpad/verify'
 const DB = `${S}/test.db`
 const OUT = `${S}/shots`
@@ -59,6 +62,7 @@ const balance = () => Number(q(`SELECT plan_credits + topup_credits FROM studio_
   await block.click()
   const menu = page.getByRole('menu', { name: 'View as' })
   await menu.waitFor()
+  await openDemo(page)
   const plans = menu.getByTestId('demo-plan')
   ok(await plans.isVisible(), 'View as has the Studio plan group')
   ok((await plans.getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).getAttribute('aria-checked')) === 'true', 'Pro — Studio is ticked')
@@ -147,13 +151,13 @@ const balance = () => Number(q(`SELECT plan_credits + topup_credits FROM studio_
 
   console.log('View as › Almost out, then back to the base')
   await page.getByRole('button', { name: /^Demo Studio/ }).click()
-  await page.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Almost out/ }).click()
+  await (await openDemo(page)).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Almost out/ }).click()
   await page.getByText('Studio plan: Pro — Studio · almost out (demo)').waitFor({ timeout: 10000 })
   await page.waitForTimeout(800)
   ok(balance() === 15 && balance() === ledgerSum(), 'Almost out: 15 AI credits, still = the ledger')
   ok(['low', 'empty'].includes(await page.getByTestId('rail-credits').getAttribute('data-tone')), `the rail row takes the low tone (${await page.getByTestId('rail-credits').getAttribute('data-tone')})`)
   await page.getByRole('button', { name: /^Demo Studio/ }).click()
-  await page.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).click()
+  await (await openDemo(page)).getByTestId('demo-plan').getByRole('menuitemradio', { name: /^Pro — Studio The base plan/ }).click()
   await page.getByText('Studio plan: Pro — Studio (demo)').waitFor({ timeout: 10000 })
   await page.waitForTimeout(800)
   ok(balance() >= 10500 && balance() === ledgerSum(), `the base plan brings a healthy month back (${balance()})`)
@@ -161,7 +165,7 @@ const balance = () => Number(q(`SELECT plan_credits + topup_credits FROM studio_
   console.log('One trial per studio')
   const pickPlan = async (name) => {
     await page.getByRole('button', { name: /^Demo Studio/ }).click()
-    await page.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
+    await (await openDemo(page)).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
     await page.waitForTimeout(1500)
   }
   await pickPlan(/^Pro — Studio · trial/)

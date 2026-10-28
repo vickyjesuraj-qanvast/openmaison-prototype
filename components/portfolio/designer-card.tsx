@@ -3,7 +3,6 @@
 import { useState, type CSSProperties } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Dialog } from '@/components/om/dialog'
 import { workFacts, yearsLine, type PublicCard, type WorkCard } from '@/lib/portfolio/model'
 import styles from './designer-card.module.css'
@@ -28,7 +27,8 @@ export function DesignerCard({ card, when, compact = false, testId = 'designer-c
         <span className={styles.who}>
           <h3 className={styles.name}>{card.name}</h3>
           <span className={styles.title}>{[card.title, years].filter(Boolean).join(' · ')}</span>
-          {card.knownFor.length ? <span className={styles.known} aria-label="Known for">{card.knownFor.map((k) => <MetaChip key={k}>{k}</MetaChip>)}</span> : null}
+          {/* (the calm UI build 2026-10-27 — 5-24, T-06) what they are known for is words, not capital tags (a tag reads as a status) */}
+          {card.knownFor.length ? <span className={styles.known} data-testid="known-for">{`Known for ${card.knownFor.join(' · ')}`}</span> : null}
         </span>
       </div>
       {card.bio && !compact ? <p className={styles.bio}>{card.bio}</p> : null}

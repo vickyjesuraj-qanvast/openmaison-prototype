@@ -13,7 +13,7 @@ import { setInvoiceRules } from '@/app/projects/money-actions'
 import { setScheduleRules } from '@/app/projects/schedule-actions'
 import { setHandoverReview } from '@/app/projects/ending-actions'
 import { money2 } from '@/lib/quotes/math'
-import { APPROVAL_RULES, COST_APPROVALS_WORDS, OWNER_APPROVALS_HELP } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
+import { APPROVAL_RULES, COST_APPROVALS_WORDS, OWNER_APPROVALS_HELP, OWNER_APPROVALS_TITLE } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import s from './settings.module.css'
 import u from '@/components/projects/updates/update-review-setting.module.css'
 
@@ -84,10 +84,10 @@ export function OwnerApprovals({ data, canManage }: { data: OwnerApprovalsData; 
   return (
     <div className={s.setting} id="owner-approvals" data-testid="owner-approvals">
       <div className={s.settingHead}>
-        <span className={s.settingTitle}>What waits for an Owner or an Admin{locked ? <> <ProTag /></> : null}</span>
+        <span className={s.settingTitle}>{OWNER_APPROVALS_TITLE}{locked ? <> <ProTag /></> : null}</span>   {/* (the calm UI build, 5-33 · W-068) was “What waits for an Owner or an Admin” */}
         <span className={s.settingHelp}>{OWNER_APPROVALS_HELP}</span>
       </div>
-      <div className={`${s.eventTable} ${u.table}`} role="table" aria-label="What waits for an Owner or an Admin" data-card-table="">
+      <div className={`${s.eventTable} ${u.table}`} role="table" aria-label={OWNER_APPROVALS_TITLE} data-card-table="">
         <div className={s.eventHead} role="row">
           <span role="columnheader">Rule</span><span role="columnheader">Who approves</span><span role="columnheader" className={s.eventCol}>On</span>
         </div>

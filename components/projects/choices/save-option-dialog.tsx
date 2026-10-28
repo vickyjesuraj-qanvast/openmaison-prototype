@@ -14,7 +14,7 @@ import { GENERIC_CATEGORIES } from '@/lib/visualizer/catalogue'
 import { OptionSquare } from './choice-card'
 import styles from './choices.module.css'
 
-const NO_CATEGORY = 'No category'
+const NO_CATEGORY = 'No trade'   // (the calm UI build, landing) §2's word; display only — sent as null
 /** A first guess at a material's kind from the option's and the choice's words — the studio changes it in the box. */
 function guessKind(words: string): string {
   const w = words.toLowerCase()
@@ -98,7 +98,7 @@ export function SaveOptionDialog({ open, option, to, choiceTitle, trades, units 
           {book ? (
             <>
               <div className={styles.row2}>
-                <TextField label="Category" mode="select" options={[NO_CATEGORY, ...trades]} value={category} onChange={setCategory} helper="One of the studio’s trades" />
+                <TextField label="Trade" mode="select" options={[NO_CATEGORY, ...trades]} value={category} onChange={setCategory} helper="One of the studio’s trades" />
                 <TextField label="Unit" mode="select" options={[...units]} value={unit} onChange={setUnit} searchable={units.length > 8} />
               </div>
               {costs ? (

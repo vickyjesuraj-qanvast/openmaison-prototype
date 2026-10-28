@@ -57,14 +57,14 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await page.goto(`${BASE}/leads/${HARPREET}/contracts`); await ready(page)
     ok('C6 the empty state names the quote a new contract will use', /Names OM-10006 · S\$67,393/.test(await page.getByTestId('contracts-empty-quote').innerText()))
     await shot(page, 'c6-empty-names-quote')
-    await page.getByRole('button', { name: 'From Template' }).click(); await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(500)
+    await page.getByRole('button', { name: 'From a template' }).click(); await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(500)
     const picked = page.locator('[data-testid="contract-template-option"][aria-checked="true"]')
     ok('C6 · Q9 the picker opens with a template picked (the last-used agreement)', (await picked.count()) === 1 && /Interior Design Service Agreement/.test(await picked.innerText()) && /Last used/i.test(await picked.innerText()))
     const order = await page.evaluate(() => { const g = document.querySelector('[role="radiogroup"][aria-label="Contract templates"]'); const f = [...document.querySelectorAll('button')].find((b) => /Variations/.test(b.textContent || '')); return g && f ? !!(g.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) : false })
     ok('C6 templates come before the folders', order)
-    ok('C6 Use template is live on open', !(await page.getByRole('button', { name: 'Use template' }).isDisabled()))
+    ok('C6 Continue is live on open — (the calm UI build 2026-10-27, a deliberate change) W-616', !(await page.getByRole('button', { name: 'Continue', exact: true }).isDisabled()))
     await shot(page, 'c6-picker-preselected')
-    await page.getByRole('button', { name: 'Use template' }).click()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
     await page.waitForURL(/\/contracts\/[0-9a-f-]{36}/); await page.getByTestId('contract-editor').waitFor(); await ready(page)
     A = idFromUrl(page.url())
     ok('C10 a lead’s first agreement is titled as its paper', sql(`select title from contracts where id = '${A}'`) === 'Interior Design Service Agreement')
@@ -78,21 +78,23 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     ok('C7 a Smart Text chip shows what it prints', tip === 'Prints as: Harpreet Kaur', tip)
     await shot(page, 'c7-chip-prints-as', { x: 440, y: 60, width: 1000, height: 420 })
     await page.mouse.move(10, 900); await page.waitForTimeout(300)
-    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).hover(); await page.waitForTimeout(700)
-    ok('C8 the copy-link icon on a Draft says it marks it Sent', (await page.locator('[role="tooltip"]').innerText().catch(() => '')) === 'Copy link — marks it Sent')
+    /* (the calm UI build 2026-10-27, a deliberate change) 4-18 · W-156: the header's link icon is the ⋮'s Copy signing link — its row says, before the press, that copying sends it */
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.waitForTimeout(300); 
+    ok('C8 the Copy signing link row on a Draft says it sends the contract', /Copying it sends the contract/.test(await page.getByRole('menuitem', { name: /^Copy signing link/ }).innerText()))
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300)
     await shot(page, 'c8-copy-link-tooltip', { x: 700, y: 0, width: 740, height: 140 })
     /* a failed copy leaves it a Draft */
     // REG-897 (Dane UAT 12.10): a refused Clipboard API still gets the browser's own Copy — a copy fails only when both refuse
     await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')); document.execCommand = () => false })
-    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click()
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Copy signing link' }).click()   // (the calm UI build 2026-10-27, a deliberate change) 4-18
     const t1 = await snack(page, /stays a Draft/)
     await page.waitForTimeout(800)
     ok('C8 a failed copy says so and the contract stays a Draft', /Couldn’t copy the link — the contract stays a Draft/.test(t1) && sql(`select status from contracts where id = '${A}'`) === 'Draft', t1)
     await page.reload(); await ready(page)
-    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click()
-    const t2 = await snack(page, /Sent to Client now/)
+    await page.getByTestId('contract-header').getByRole('button', { name: 'More options' }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'Copy signing link' }).click()   // (the calm UI build 2026-10-27, a deliberate change) 4-18
+    const t2 = await snack(page, /waiting for signature now/)   // (the calm UI build 2026-10-27, a deliberate change) W-363
     await page.waitForTimeout(800)
-    ok('C8 a copy that worked marks it Sent to Client', /Signing link copied — the contract is Sent to Client now/.test(t2) && sql(`select status from contracts where id = '${A}'`) === 'Sent to Client', t2)
+    ok('C8 a copy that worked marks it Sent to Client', /Signing link copied — the contract is waiting for signature now/.test(t2) && sql(`select status from contracts where id = '${A}'`) === 'Sent to Client', t2)
   })
 
   /* ── C5 on Tools › Contracts and the lead tab ── */
@@ -100,7 +102,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     sql(`update contracts set sent_at = strftime('%s','now') - 3*86400, viewed_at = NULL where id = '${A}'`)
     await page.goto(`${BASE}/contracts`); await ready(page)
     const chip = page.getByTestId('contracts-awaiting')
-    ok('C5 the to-do chip counts what is out for signature', /Awaiting signature \(1\)/.test(await chip.innerText()))
+    ok('C5 the to-do chip counts what is out for signature', /Waiting for signature · 1/.test(await chip.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) W-363 · T-07
     const row = page.locator(`[data-kb-id="${A}"]`)
     ok('C5 the row says it is not opened and how long it has waited', (await row.getByTestId('contract-waiting').innerText()) === 'Not opened in 3d')
     const clear = await row.evaluate((r) => { const w = r.querySelector('[data-testid="contract-waiting"]').getBoundingClientRect(); const c = r.querySelector('[data-col="created"]'); const t = document.createRange(); t.selectNodeContents(c); return Math.round(t.getBoundingClientRect().left - w.right) })
@@ -128,7 +130,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     /* (pending modules S03, a deliberate change of this rule) the same link is the contract's token, never its id */
     ok('C5 Send a reminder reuses the Send dialog with a nudge and the same link', /gentle reminder/.test(msg) && msg.includes(`/sign/${sql(`select sign_token from contracts where id = '${A}'`)}`) && (await dlg.getByLabel('Client name').inputValue()) === 'Harpreet Kaur')
     await shot(page, 'c5-send-a-reminder')
-    await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()
+    await dlg.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const t = await snack(page, /Reminder sent to/)
     ok('C5 the reminder answers in words', /Reminder sent to Harpreet Kaur/.test(t), t)
   })
@@ -136,25 +138,25 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
   /* ── C10 · C9 · C4: the Variation Order (repaired, R65) is titled on its own and has somewhere to sign ── */
   await step('C10 C9 Variation Order', async () => {
     await page.goto(`${BASE}/leads/${HARPREET}/contracts`); await ready(page)
-    await page.getByRole('button', { name: 'New Contract' }).click(); await page.getByRole('menuitem', { name: 'From Template' }).click()
+    await page.getByRole('button', { name: 'New Contract' }).click(); await page.getByRole('menuitem', { name: 'From a template' }).click()
     await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(400)
     await page.getByRole('button', { name: /Variations/ }).click(); await page.waitForTimeout(300)
     await page.getByTestId('contract-template-option').filter({ hasText: 'Variation Order' }).first().click()
-    await page.getByRole('button', { name: 'Use template' }).click()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
     await page.waitForURL(/\/contracts\/[0-9a-f-]{36}/); await page.getByTestId('contract-editor').waitFor(); await ready(page)
     V = idFromUrl(page.url())
     ok('C10 the lead’s first Variation Order is not numbered after the agreement', sql(`select title from contracts where id = '${V}'`) === 'Variation Order')
     ok('C4 the repaired Variation Order carries a Client signature', sql(`select count(*) from contracts where id = '${V}' and body like '%data-sign="client-signature"%'`) === '1')
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    const dlg = page.getByRole('dialog', { name: 'Send for digital signature' }); await dlg.waitFor(); await page.waitForTimeout(400)
+    const dlg = page.getByRole('dialog', { name: 'Send for signature' }); await dlg.waitFor(); await page.waitForTimeout(400)
     ok('C4 it can be sent (the Send dialog opens)', true)
     ok('C12 "Reset message" (not "Reset to draft")', (await dlg.getByRole('button', { name: 'Reset message' }).count()) === 1 && (await dlg.getByText('Reset to draft').count()) === 0)
     ok('C9 the Send dialog offers Signed in person? Mark as signed', /Signed in person\?/.test(await dlg.getByTestId('send-mark-signed').innerText()) && (await dlg.getByRole('button', { name: 'Mark as signed' }).isVisible()))
     await shot(page, 'c9-send-dialog-mark-signed')
     await dlg.getByRole('button', { name: 'Copy link' }).click()
-    const tc = await snack(page, /Sent to Client now/)
+    const tc = await snack(page, /waiting for signature now/)   // (the calm UI build 2026-10-27, a deliberate change) W-363
     await page.waitForTimeout(600)
-    ok('C8 the Send dialog’s Copy link on a Draft copies, then marks it Sent', /Signing link copied — the contract is Sent to Client now/.test(tc) && sql(`select status from contracts where id = '${V}'`) === 'Sent to Client' && (await dlg.getByRole('button', { name: 'Copied' }).count()) === 1, tc)
+    ok('C8 the Send dialog’s Copy link on a Draft copies, then marks it Sent', /Signing link copied — the contract is waiting for signature now/.test(tc) && sql(`select status from contracts where id = '${V}'`) === 'Sent to Client' && (await dlg.getByRole('button', { name: 'Copied' }).count()) === 1, tc)
     await dlg.getByRole('button', { name: 'Mark as signed' }).first().click()
     await page.getByRole('dialog', { name: 'Mark as signed' }).waitFor()
     ok('C9 …which opens Mark as signed', true)
@@ -172,7 +174,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await page.getByRole('button', { name: 'More options', exact: true }).last().click()   // the tab toolbar's ⋮ (the lead header's comes first)
     await page.getByRole('menuitem', { name: 'Send together for signature' }).click()
     const dlg = page.getByRole('dialog', { name: 'Send together for signature' }); await dlg.waitFor(); await page.waitForTimeout(300)
-    await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()
+    await dlg.getByRole('button', { name: /^Send (via|on) WhatsApp/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     await snack(page, /documents sent under one link/)
     await page.waitForTimeout(800)
     BUNDLE = sql(`select bundle_id from contracts where id = '${A}'`)
@@ -223,13 +225,13 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
   /* ── C9 · C1: Mark as signed from a row, the snackbar's next step ── */
   await step('C9 mark signed from a row', async () => {
     await page.goto(`${BASE}/leads/${VIVIEN}/contracts`); await ready(page)
-    await page.getByRole('button', { name: 'From Template' }).click(); await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(300)
-    await page.getByRole('button', { name: 'Use template' }).click(); await page.waitForURL(/\/contracts\/[0-9a-f-]{36}/); await ready(page)
+    await page.getByRole('button', { name: 'From a template' }).click(); await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(300)
+    await page.getByRole('button', { name: 'Continue', exact: true }).click(); await page.waitForURL(/\/contracts\/[0-9a-f-]{36}/); await ready(page)
     const C = idFromUrl(page.url())
     await page.goto(`${BASE}/leads/${VIVIEN}/contracts`); await ready(page)
     await page.locator(`[data-kb-id="${C}"]`).hover(); await page.getByRole('button', { name: /^More actions for/ }).first().click()
-    const copyRow = page.getByRole('menuitem', { name: /Copy Link/ })
-    ok('C8 a Draft row’s Copy Link says it marks it Sent', /Marks it Sent to Client/.test(await copyRow.innerText()))
+    const copyRow = page.getByRole('menuitem', { name: /Copy link/i })
+    ok('C8 a Draft row’s Copy link says it sends the contract', /Copying it sends the contract/.test(await copyRow.innerText()))   // (the calm UI build 2026-10-27, a deliberate change) T-13 · W-363
     await page.waitForTimeout(500); await shot(page, 'c9-row-kebab')
     await page.getByRole('menuitem', { name: 'Mark as signed…' }).click()
     const dlg = page.getByRole('dialog', { name: 'Mark as signed' }); await dlg.waitFor()
@@ -250,11 +252,11 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     const t = await snack(page, /still a Draft/)
     ok('C2 Send says the quote is still a Draft, with the way to it', /Before you send: OM-10001 is still a Draft — approve and send it first/.test(t) && /Open the quote/.test(t), t)
-    ok('C2 …and nothing opened', (await page.getByRole('dialog', { name: 'Send for digital signature' }).count()) === 0)
+    ok('C2 …and nothing opened', (await page.getByRole('dialog', { name: 'Send for signature' }).count()) === 0)
     await page.waitForTimeout(500); await shot(page, 'c2-draft-quote-blocks-send')
     await page.goto(`${BASE}/leads/${OLIVIA}/contracts`); await ready(page)
     await page.locator(`[data-kb-id="${OLIVIA_C}"]`).getByRole('button', { name: /^Status Draft/ }).click()
-    await page.getByRole('menuitem', { name: 'Sent to Client' }).click()
+    await page.getByRole('menuitem', { name: 'Waiting for signature' }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-363
     const t2 = await snack(page, /still a Draft/)
     ok('C2 the list’s status menu holds it too', /OM-10001 is still a Draft — approve and send it first/.test(t2) && sql(`select status from contracts where id = '${OLIVIA_C}'`) === 'Draft', t2)
     sql(`update members set is_you = case id when 'dane' then 1 else 0 end`)
@@ -288,10 +290,10 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await page.getByRole('button', { name: 'Send to client' }).click()
     const dlg = page.getByRole('dialog', { name: 'Send to client' }); await dlg.waitFor(); await page.waitForTimeout(400)
     ok('C12 X-Ray’s dialog takes the recipient: name and phone', (await dlg.getByLabel('Client name').inputValue()) === 'Vivien Lee' && /\d{4} \d{4}/.test(await dlg.getByLabel('Client phone').inputValue()))
-    ok('C12 its subtitle says what the button does', /Send via WhatsApp opens your chat/.test(await dlg.innerText()) && await dlg.getByRole('button', { name: 'Send via WhatsApp' }).isVisible())
+    ok('C12 its subtitle says what the button does', /Send on WhatsApp opens your chat/.test(await dlg.innerText()) && await dlg.getByRole('button', { name: 'Send on WhatsApp' }).isVisible())   // (the calm UI build 2026-10-27, a deliberate change) — 6-19 · W-058
     ok('C12 Reset message', (await dlg.getByRole('button', { name: 'Reset message' }).count()) === 1)
     await shot(page, 'c12-xray-send-dialog')
-    await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()
+    await dlg.getByRole('button', { name: 'Send on WhatsApp' }).click()
     const t = await snack(page, /on WhatsApp/)
     ok('C12 after sending, a snackbar offers Add a follow-up', /Sent to Vivien Lee on WhatsApp/.test(t) && /Add a follow-up/.test(t), t)
     await page.waitForTimeout(500); await shot(page, 'c12-xray-sent-snackbar')
@@ -307,9 +309,9 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     const Q = sql(`select id from quotes where number = 'OM-10007'`)
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
-    await page.getByRole('menuitem', { name: /Send for signature/ }).click()
+    await page.getByRole('menuitem', { name: /^Send to sign/ }).click()   // (the calm UI build 2026-10-27, a deliberate change) W-358
     await page.getByTestId('contract-template-option').first().waitFor(); await page.waitForTimeout(400)
-    ok('Q9 Send for signature opens the picker with a template picked and Use template live', (await page.locator('[data-testid="contract-template-option"][aria-checked="true"]').count()) === 1 && !(await page.getByRole('button', { name: 'Use template' }).isDisabled()))
+    ok('Q9 Send for signature opens the picker with a template picked and Continue live — (the calm UI build 2026-10-27, a deliberate change) W-616', (await page.locator('[data-testid="contract-template-option"][aria-checked="true"]').count()) === 1 && !(await page.getByRole('button', { name: 'Continue', exact: true }).isDisabled()))
     await shot(page, 'q9-send-for-signature-picker')
     await page.keyboard.press('Escape')
   })

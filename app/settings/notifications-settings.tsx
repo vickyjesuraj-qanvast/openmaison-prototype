@@ -2,17 +2,18 @@
 
 import { usePlanLock } from '@/components/credits/credits-client'
 import { ProTag } from '@/components/credits/pro-tag'
-import { EVENTS_CARD, EVENTS_PERSONAL, NOTIFICATIONS_HELP } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
+import { EVENTS_CARD, EVENTS_PERSONAL, NOTIFICATIONS_HELP, WORDING_WORDS, untouchedPointer } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import { useRef, useState, type SyntheticEvent } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
 import { Dialog, FootStart } from '@/components/om/dialog'
+import { Drawer } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
-import { CHANNELS, EVENTS, FIELDS, IN_APP_ONLY, SAMPLE_FIELDS, UNTOUCHED_OPTIONS, DEFAULT_TEMPLATES, renderTemplate, templateFor, type Channel, type EventKey, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
+import { CHANNELS, EVENTS, FIELDS, IN_APP_ONLY, SAMPLE_FIELDS, UNTOUCHED_OPTIONS, DEFAULT_TEMPLATES, renderTemplate, sampleFieldsFor, templateFor, type Channel, type EventKey, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
 import { setMessageTemplate, setNotificationRules } from '@/app/notifications/actions'
 import { ReadOnlyScope } from '@/components/om/read-only'
-import { ModuleHead } from './module-head'
+import { ModuleHead, ModuleRelated } from './module-head'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
@@ -26,6 +27,12 @@ import styles from './settings.module.css'
  * (REG-604) Settings › Notifications, no mock — the Settings shell's cards on the DS: which channels carry each event and who
  * receives it, the follow-up delay and the stop rule, and every message with its fields, previewed as a recipient would read it.
  * The sending is the platform's; the rules and the copy live here.
+ * (the calm UI build 2026-10-27, 5-05 · T-14 — "Notifications draws all 232 message previews open — the page is 26,324 px tall") The *Message
+ * wording* card is gone from the page: each event's row ends in **Edit wording** (*See wording* for whoever may only read), which opens that
+ * event's WhatsApp and Email messages in the house Drawer — each previewed as before, each with its Edit (the same message dialog: Insert a
+ * field, Reset to the house draft, the preview, Save). Every message, every test id (`message-<event>-<channel>`) is kept; the page is the
+ * events table, Follow-ups, Messages to clients and Sent messages (its door in the head). The events card sits outside the read-only scope so a
+ * reader can open the wording too — its switches still say no to them (`isDisabled`).
  */
 export function NotificationsSettings({ rules: initial, templates: initialTemplates, canManage = true, clientMessages, studio = 'Demo Studio' }: { rules: NotificationRules; templates: MessageTemplate[]; /** (REG-646, settings parity Q-07 · Q-08) Owners and Admins change it; everyone else reads it. */ canManage?: boolean
   /** (pending modules S31) the open studio's name — the messages' samples print it (the demo's in its base) */
@@ -82,11 +89,13 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
     catch { snackbar({ message: 'Couldn’t save the message — please try again' }) }
   }
   const house = (t: MessageTemplate) => DEFAULT_TEMPLATES.find((d) => d.event === t.event && d.channel === t.channel)!
+  /* (the calm UI build, 5-05) the event whose wording is open in the drawer */
+  const [wordingFor, setWordingFor] = useState<EventKey | null>(null)
+  const wordingEvent = EVENTS.find((e) => e.key === wordingFor) ?? null
   return (
     <section className={styles.panel} aria-labelledby="settings-notifications-title" data-testid="settings-notifications">
-      <ModuleHead id="settings-notifications-title" title="Notifications" readOnly={readOnly}
-                  help={NOTIFICATIONS_HELP} />
-      <ReadOnlyScope readOnly={readOnly}>
+      <ModuleHead id="settings-notifications-title" title="Studio notifications" readOnly={readOnly}
+                  help={NOTIFICATIONS_HELP} after={<span className={styles.headDoor}><HelpLink href="#sent-messages" testId="notifications-sent-link" standalone>{WORDING_WORDS.sent}</HelpLink></span>} />
 
       <div className={styles.setting} data-testid="notification-channels">
         <div className={styles.settingHead}>
@@ -95,10 +104,11 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
           <span className={styles.settingHelp}>{EVENTS_CARD.help}{EVENTS_PERSONAL.lead}<HelpLink href="/profile#notifications" testId="events-personal-link">{EVENTS_PERSONAL.link}</HelpLink>{EVENTS_PERSONAL.end}</span>
           {waLock.locked ? <span className={styles.settingHelp} data-testid="whatsapp-locked"><ProTag /> WhatsApp notifications come with Pro — on Free none goes out, and the column reads off; your choices are kept for Pro.</span> : null}
         </div>
-        <div className={styles.eventTable} role="table" aria-label="Events and channels" data-card-table="">
+        <div className={`${styles.eventTable} ${styles.wording}`} role="table" aria-label="Events and channels" data-card-table="">
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Event</span><span role="columnheader">Who</span>
             {CHANNELS.map((c) => <span key={c.key} role="columnheader" className={styles.eventCol}>{c.label}</span>)}
+            <span role="columnheader" className={styles.srOnly}>{WORDING_WORDS.column}</span>
           </div>
           {EVENTS.map((e) => (
             <div key={e.key} className={styles.eventRow} role="row" data-testid={`event-${e.key}`}>
@@ -114,21 +124,30 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
                 return (
                   <span key={c.key} role="cell" className={styles.eventCol} data-label={c.label}>
                     {appOnly ? <Tooltip label="Offers stay in the app — never sent by email or WhatsApp"><span>{sw}</span></Tooltip>
-                      : rides ? <Tooltip label="Goes out with the in-app notice — switch In app on first"><span>{sw}</span></Tooltip> : sw}
+                      : rides ? <Tooltip label="Goes out with the in-app notification — switch In app on first"><span>{sw}</span></Tooltip> : sw}
                   </span>
                 )
               })}
+              {/* (the calm UI build, 5-05) the event's messages — a notice that stays in the app has none to word */}
+              <span role="cell" className={`${styles.eventCol} ${styles.wordingCell}`}>
+                {IN_APP_ONLY.has(e.key) ? null : (
+                  <Button appearance="text" onPress={() => setWordingFor(e.key)} aria-haspopup="dialog" aria-expanded={wordingFor === e.key} aria-label={`${readOnly ? WORDING_WORDS.see : WORDING_WORDS.edit} — ${e.label}`} data-testid={`wording-${e.key}`}>
+                    {readOnly ? WORDING_WORDS.see : WORDING_WORDS.edit}
+                  </Button>
+                )}
+              </span>
             </div>
           ))}
         </div>
       </div>
+      <ReadOnlyScope readOnly={readOnly}>
 
       <div className={styles.setting} data-testid="notification-followups">
         <div className={styles.settingHead}>
           <span className={styles.settingTitle}>Follow-ups</span>
           <span className={styles.settingHelp}>A task with a time is raised 30 minutes before it; the rule below keeps closed leads quiet.</span>
           {/* (UX audit S9) The untouched-lead delay is a response rule — it lives under Lead management now; this line says where. */}
-          <span className={styles.settingHelp} data-testid="untouched-pointer">A New lead with no contact logged is raised as “untouched” after {UNTOUCHED_OPTIONS.find((o) => o.minutes === rules.untouchedMinutes)?.label ?? '30 minutes'} — set under <HelpLink href="/settings?section=leads#untouched-leads" testId="untouched-link">Lead management › Untouched leads</HelpLink>.</span>
+          <span className={styles.settingHelp} data-testid="untouched-pointer">{untouchedPointer(UNTOUCHED_OPTIONS.find((o) => o.minutes === rules.untouchedMinutes)?.label ?? '30 minutes')}<HelpLink href="/settings?section=leads#untouched-leads" testId="untouched-link">Lead management › Untouched leads</HelpLink>.</span>
         </div>
         {/* (Projects round 7, Q-29) The rule as derivedDue keeps it (lib/notifications/queries.ts, REG-920): a Won lead's tasks carry on as its
             project's, so their reminders keep coming while the project runs — the line said "Won" and was not true. */}
@@ -138,34 +157,37 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
         </label>
       </div>
 
-      {/* (one-home N-08) "Message wording" — "Messages" is the client conversations' word (the rail's Messages, a project's Messages tab) */}
-      <div className={styles.setting} data-testid="notification-messages">
-        <div className={styles.settingHead}>
-          <span className={styles.settingTitle}>Message wording</span>
-          <span className={styles.settingHelp}>Every email and WhatsApp the rules can send, with its fields filled the way a recipient reads it. The link always points at the record.</span>
-        </div>
-        <ul className={styles.messages}>
-          {EVENTS.filter((e) => !IN_APP_ONLY.has(e.key)).map((e) => (['whatsapp', 'email'] as const).map((ch) => {   /* (pending modules S41b-4) nothing to word for a notice that stays in the app */
-            const t = templateFor(templates, e.key, ch)
-            const on = rules.channels[e.key][ch]
-            return (
-              <li key={`${e.key}-${ch}`} className={styles.message} data-off={on ? undefined : ''} data-testid={`message-${e.key}-${ch}`}>
-                <div className={styles.messageHead}>
-                  <span className={styles.messageTitle}><Icon name={ch === 'whatsapp' ? 'chat' : 'mail'} size={18} weight={300} />{e.label} · {ch === 'whatsapp' ? 'WhatsApp' : 'Email'}{on ? '' : ' · off'}</span>
-                  {readOnly ? null : <Button appearance="text" onPress={() => openEdit(t)}>Edit</Button>}
-                </div>
-                {ch === 'email' && t.subject ? <span className={styles.messageSubject}>{renderTemplate(t.subject, sample)}</span> : null}
-                <p className={styles.messageBody}>{renderTemplate(t.body, sample)}</p>
-              </li>
-            )
-          }))}
-        </ul>
-      </div>
       {clientMessages ? <ClientMessagesSettings rules={clientMessages} readOnly={readOnly} studio={studio} /> : null}   {/* (gaps build H, H-Q18) */}
       </ReadOnlyScope>
 
       {/* (gaps build E, item 5) what the rules above sent — readable by everyone (their own messages), so it sits outside the read-only scope */}
       <SentMessages />
+      <ModuleRelated section="notifications" />   {/* (the calm UI build, 5-17) */}
+
+      {/* (the calm UI build, 5-05 · W-259) one event's wording — what the old Message wording card drew for it (one-home N-08: "Message wording",
+          as "Messages" is the client conversations' word), its Edit the message dialog below (over the drawer) */}
+      <Drawer open={!!wordingEvent} onClose={() => setWordingFor(null)} title={wordingEvent?.label ?? ''} crumb={WORDING_WORDS.title} width="widest" label={`${WORDING_WORDS.title} — ${wordingEvent?.label ?? ''}`}>
+        {wordingEvent ? (
+          <div className={styles.wordingList} data-testid="notification-messages">
+            <p className={styles.settingHelp}>{WORDING_WORDS.help}</p>
+            {(['whatsapp', 'email'] as const).map((ch) => {
+              const t = templateFor(templates, wordingEvent.key, ch)
+              const on = rules.channels[wordingEvent.key][ch]
+              return (
+                <div key={ch} className={styles.message} data-off={on ? undefined : ''} data-testid={`message-${wordingEvent.key}-${ch}`}>
+                  <div className={styles.messageHead}>
+                    <span className={styles.messageTitle}><Icon name={ch === 'whatsapp' ? 'chat' : 'mail'} size={18} weight={300} />{ch === 'whatsapp' ? 'WhatsApp' : 'Email'}{on ? '' : ' · off'}</span>
+                    {readOnly ? null : <Button appearance="text" onPress={() => openEdit(t)}>Edit</Button>}
+                  </div>
+                  {/* (the calm UI build 2026-10-27 — B1's request, 5-47) the sample's link is the event's own place (sampleFieldsFor), not always a lead */}
+                  {ch === 'email' && t.subject ? <span className={styles.messageSubject}>{renderTemplate(t.subject, sampleFieldsFor(wordingEvent.key, sample))}</span> : null}
+                  <p className={styles.messageBody}>{renderTemplate(t.body, sampleFieldsFor(wordingEvent.key, sample))}</p>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+      </Drawer>
 
       <Dialog open={!!edit} onClose={() => setEdit(null)} title={edit ? `${EVENTS.find((e) => e.key === edit.event)?.label} · ${edit.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}` : 'Message'} size="modal" width={600}
               subtitle="The fields fill themselves when the message is sent — the preview shows a sample lead."
@@ -187,8 +209,8 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
             </span>
             <div className={styles.preview}>
               <span className={styles.previewLabel}>Preview</span>
-              {draft.channel === 'email' && draft.subject ? <span className={styles.messageSubject}>{renderTemplate(draft.subject, sample)}</span> : null}
-              <p className={styles.messageBody}>{renderTemplate(draft.body, sample)}</p>
+              {draft.channel === 'email' && draft.subject ? <span className={styles.messageSubject}>{renderTemplate(draft.subject, sampleFieldsFor(draft.event, sample))}</span> : null}
+              <p className={styles.messageBody}>{renderTemplate(draft.body, sampleFieldsFor(draft.event, sample))}</p>
             </div>
           </div>
         ) : null}

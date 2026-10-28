@@ -79,7 +79,7 @@ async function writeCopilot(next: CopilotSettings): Promise<CopilotSettings> {
 /** One co-pilot part on or off for every meeting. */
 export async function saveCopilotFeature(key: string, on: boolean): Promise<{ copilot: CopilotSettings } | Refusal> {
   const who = await runner(); if ('error' in who) return who
-  if (!FEATURES.some((f) => f.key === key)) return { error: 'That part of the co-pilot isn’t there any more' }
+  if (!FEATURES.some((f) => f.key === key)) return { error: 'That part of Copilot isn’t there any more' }
   const cur = await fetchCopilotSettings()
   return { copilot: await writeCopilot({ ...cur, features: { ...cur.features, [key]: on === true } }) }
 }

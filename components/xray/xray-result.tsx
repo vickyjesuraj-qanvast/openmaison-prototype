@@ -8,7 +8,6 @@ import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -37,7 +36,7 @@ import styles from './xray-result.module.css'
 
 /**
  * A comparison's record page (REG-529): the L2 header (crumb Quote X-Ray, Back where you came from, New comparison), then one
- * reading column — the summary with its three figures, Say this with Send to client, the brands worth a word, and the
+ * reading column — the summary with its three figures, What to tell the client with Send to client, the brands worth a word, and the
  * item-by-item table on the listing's model.
  * Round 3 of the X-Ray parity (REG-640) makes it a working copy: a match can be corrected on its row — *Not the same item* ·
  * *Same item as…* — and everything follows, with Undo (Q-14); a quote that changed after the reading says so, and *Run again*
@@ -46,14 +45,17 @@ import styles from './xray-result.module.css'
  */
 /** The record page's title, its lead's X-Ray page and its crumbs — the reading's frame, shared with its locked frame (pending modules S19). */
 export function recordFrame(record: Pick<XrayRecord, 'leadId' | 'leadName' | 'yourLabel' | 'otherStudio'>, from: string | undefined) {
-  const title = `${record.leadName ?? record.yourLabel} · vs ${record.otherStudio}`
+  /** The reading's full name — the tab's title, the menu sheet's head, the delete's words. */
+  const name = `${record.leadName ?? record.yourLabel} · vs ${record.otherStudio}`
   /* (REG-639, Q-12) a reading belongs to its lead: the crumbs name the lead and its X-Ray page, and every way on keeps that scope */
   const scopedSetup = record.leadId ? withFrom(`/quote-x-ray?lead=${record.leadId}`, `/leads/${record.leadId}`) : '/quote-x-ray'
   /* (sweep S3) Back goes where the page was opened from, and its crumb names that place (lib/nav `fromLabel`) — never a place Back doesn't go */
   const fromName = from && !from.startsWith('/quote-x-ray') ? fromLabel(from) : undefined
   const crumbs = fromName && from ? [{ label: fromName === 'Lead' && record.leadName ? record.leadName : fromName, href: from }, { label: 'Quote X-Ray', href: scopedSetup }]
     : record.leadId && record.leadName ? [{ label: record.leadName, href: `/leads/${record.leadId}` }, { label: 'Quote X-Ray', href: scopedSetup }] : [{ label: 'Quote X-Ray', href: '/quote-x-ray' }]
-  return { title, scopedSetup, crumbs }
+  /* (the calm UI build 2026-10-27, W-425 — T-04) where the crumb already names the lead, the heading doesn't say it again: "Yours vs Flo Design" */
+  const title = record.leadName && crumbs.some((c) => c.label === record.leadName) ? `Yours vs ${record.otherStudio}` : name
+  return { title, name, scopedSetup, crumbs }
 }
 
 export function XrayResult({ record, from }: { record: XrayRecord; from: string | undefined }) {
@@ -74,9 +76,10 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
   const phone = useMediaQuery(MOBILE)
   const defs = useMemo(() => xrayColumnDefs(r.otherStudio), [r.otherStudio])
   const columnPrefs = useTableColumns('xray-items', defs, phone)
-  const { title, scopedSetup, crumbs } = recordFrame(record, from)
+  const { title, name, scopedSetup, crumbs } = recordFrame(record, from)
   const here = withFrom(`/quote-x-ray/${record.id}`, from)
   const quoteHref = record.quote?.live ? withFrom(`/quotes/${record.quote.id}`, here) : null
+  const quoteNumber = record.quote?.number ?? r.yourLabel.split(' · ')[0]!
   const questions = new Set(Object.entries(asQuestion).filter(([, on]) => on).map(([n]) => Number(n)))
   /* (Q-08) the draft follows the screen: a point switched to its question goes out as the question */
   /* (UX audit C12) …and its greeting follows the recipient's name in the Send dialog */
@@ -135,7 +138,7 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
     try {
       const res = await deleteComparison(record.id)
       if ('error' in res) { if ('locked' in res) { answerLock(res.error, 'quote_xray'); return } snackbar({ message: res.error === 'not-allowed' ? COMPARISON_DELETE_RULE : 'That comparison is already gone' }); return }
-      router.push(scopedSetup); snackbar({ message: `${title} deleted` })
+      router.push(scopedSetup); snackbar({ message: `${name} deleted` })
     } catch { fail('delete') }
   }
 
@@ -143,12 +146,14 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
     <PageReveal skeleton={<XrayRecordSkeleton />}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeaderL2 backHref={from ?? scopedSetup} crumbs={crumbs} title={title}
-                      chips={<><MetaChip>{displayDate(new Date(record.createdAt))}</MetaChip><MetaChip>{r.compared} {r.compared === 1 ? 'item' : 'items'} compared</MetaChip>{record.sent ? <MetaChip icon="send">Sent {displayDate(new Date(record.sent.at))}</MetaChip> : null}</>}
+                      /* (the calm UI build 2026-10-27, 6-08 · W-085 — T-06) the day and the send as one plain meta line, not capitals chips; the
+                         count lives once, in Item by item's head (6-05) */
+                      chips={<span className={styles.headMeta} data-testid="xray-head-meta">{displayDate(new Date(record.createdAt))}{record.sent ? <> · <span>Sent {displayDate(new Date(record.sent.at))}</span></> : null}</span>}
                       actions={<Button appearance="outlined" variant="secondary" iconStart={<Icon name="add" size={20} />} onPress={() => router.push(scopedSetup)}>New comparison</Button>}
                       titleActions={<>
                         <span className={styles.anchor}>
                           <Tooltip label="More options" disabled={kebab}><IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebab} onClick={() => setKebab((o) => !o)} /></Tooltip>
-                          <Dropdown open={kebab} onClose={() => setKebab(false)} align="right" sheetTitle={title}>
+                          <Dropdown open={kebab} onClose={() => setKebab(false)} align="right" sheetTitle={name}>
                             {record.quote?.live ? <DropdownItem disabled={rerunning} onSelect={() => { void runAgain() }}>Run again</DropdownItem> : null}
                             {quoteHref ? <DropdownItem onSelect={() => { setKebab(false); router.push(quoteHref) }}>Open the quote</DropdownItem> : null}
                             <DropdownItem tone="danger" disabled={!record.canDelete} help={record.canDelete ? undefined : COMPARISON_DELETE_RULE} onSelect={() => { setKebab(false); setDeleting(true) }}>Delete</DropdownItem>   {/* (REG-728) the rule in the row, not a native title */}
@@ -165,7 +170,8 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
         <div className={styles.column}>
           {/* (pending modules S41b-3) the reading's four cards, shared with the website's free trial (./xray-reading.tsx) */}
           <XrayReadingCards r={r} phone={phone}
-                            yourLabel={<>{quoteHref ? <Link href={quoteHref} className={styles.link} data-testid="xray-quote-link">{r.yourLabel}</Link> : r.yourLabel}{record.quote?.gone ? ` — the quote was ${record.quote.gone}` : ''}</>}
+                            /* (the calm UI build, 6-03) the quote's number, in the Yours tile's help — still the way to open it */
+                            yourLabel={<>{quoteHref ? <Tooltip label={r.yourLabel}><Link href={quoteHref} className={styles.link} data-testid="xray-quote-link">{quoteNumber}</Link></Tooltip> : quoteNumber}{record.quote?.gone ? ` — the quote was ${record.quote.gone}` : ''}</>}
                             sayAction={<Button iconStart={<Icon name="chat" size={20} />} onPress={() => setSendOpen(true)}>Send to client</Button>}
                             asQuestion={asQuestion} onToggleQuestion={(n) => setAsQuestion((a) => ({ ...a, [n]: !a[n] }))}
                             columns={columnPrefs.columns} onReorder={columnPrefs.reorder} rowActions={record.correctable ? rowActions : undefined} onColumns={() => setColumnsOpen(true)} />
@@ -191,7 +197,7 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
                        placeholder={pairing?.row.yourIds?.length ? `Choose one of ${r.otherStudio}’s lines` : 'Choose one of your lines'} empty="No line to pair with"
                        load={async () => pairing?.options ?? []} confirmLabel="Pair" onPick={(id) => pairWith(id)} />
         <ConfirmDialog open={deleting} title="Delete this comparison?" confirmLabel="Delete"
-                       message={`${title} will be deleted permanently. This can’t be undone.`}
+                       message={`${name} will be deleted permanently. This can’t be undone.`}
                        onCancel={() => setDeleting(false)} onConfirm={() => { void remove() }} />
       </div>
     </PageReveal>

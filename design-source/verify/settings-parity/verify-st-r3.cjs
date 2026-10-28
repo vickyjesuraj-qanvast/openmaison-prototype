@@ -52,7 +52,8 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     await page.getByTestId('reasons-lost').getByRole('button', { name: /^Unresponsive/ }).click()
     const d2 = page.getByRole('dialog', { name: 'Lost reason' })
     // REG-849 (Dane UAT 2.21): the gate's label is "Contacts expected first"
-    await d2.getByLabel('Contacts expected first').fill('5'); await d2.getByRole('button', { name: 'Save' }).click(); await snack(page, 'Reasons saved')
+    await d2.getByLabel('Contacts logged first').fill('5');   // (the calm UI build 2026-10-27, a deliberate change) W-154
+    await d2.getByRole('button', { name: 'Save' }).click(); await snack(page, 'Reasons saved')
     ok('the gate is now 5', /Unresponsive\s*·\s*after 5 contacts/.test(await page.getByTestId('reasons-lost').innerText()) && sql(`select value from settings where key='lead_reasons'`).includes('"minContacts":5'))
     await shot('03-reasons')
   })
@@ -77,10 +78,10 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
   })
 
   await step('issuing entities: a rename follows, one in use is retired and leaves the pickers', async () => {
-    await page.goto(`${BASE}/company/profile`); await page.getByTestId('entities').waitFor(); await ready(page)
+    await page.goto(`${BASE}/company/profile?tab=entities`); await page.getByTestId('entities').waitFor(); await ready(page)   // (the calm UI build 2026-10-27, a deliberate change) Profile's Bank & entities tab (5-36)
     await page.getByRole('button', { name: 'Add an entity' }).click()
     await page.getByTestId('entity').nth(1).getByLabel('Entity name').fill('Acme Build Pte Ltd')
-    await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     const eid = sql(`select json_extract(value, '$.details.entities[1].id') from settings where key='brand'`)
     ok('the new entity carries its own id', !!eid && eid !== 'null', eid)
     const q = sql(`select id from quotes where status='Draft' and deleted_at is null limit 1`)
@@ -89,15 +90,15 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     const ent = page.getByTestId('entity').nth(1)
     ok('in use: Retire, not remove', (await ent.getByRole('button', { name: 'Retire' }).count()) === 1 && (await ent.getByRole('button', { name: 'Remove this entity' }).count()) === 0)
     await ent.getByLabel('Entity name').fill('Acme Builders Pte Ltd')
-    await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     ok('the quote follows the rename', sql(`select issuing_entity from quotes where id='${q}'`) === 'Acme Builders Pte Ltd')
     await page.getByTestId('entity').nth(1).getByRole('button', { name: 'Retire' }).click()
-    await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     ok('retired on the record', sql(`select json_extract(value, '$.details.entities[1].retired') from settings where key='brand'`) === '1')
     await shot('05-entity-retired')
     const other = sql(`select id from quotes where status='Draft' and deleted_at is null and id <> '${q}' limit 1`)
     await page.goto(`${BASE}/quotes/${other}`); await ready(page)
-    const sel = page.getByRole('combobox', { name: 'Issuing Entity' })
+    const sel = page.getByRole('combobox', { name: /^(Issuing Entity|Issued by)/ })   // (the calm UI build 2026-10-27, a deliberate change) 4-31: "Issued by"
     if (await sel.count()) {
       await sel.first().scrollIntoViewIfNeeded(); await sel.first().click(); await page.waitForTimeout(300)
       const opts = await page.getByRole('option').allInnerTexts(); await page.keyboard.press('Escape')
@@ -108,7 +109,7 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     // (one-home N-06, a deliberate change of this rule) Settings › Studio keeps no copy of the entities — Company › Profile shows it retired.
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
     ok('Settings › Studio keeps no copy of the entities', (await page.getByTestId('studio-entities').count()) === 0)
-    await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
+    await page.goto(`${BASE}/company/profile?tab=entities`); await page.getByTestId('profile').waitFor(); await ready(page)   // (the calm UI build 2026-10-27, a deliberate change) 5-36
     ok('Company › Profile shows it retired', (await page.getByTestId('entity-retired').count()) >= 1)
   })
 
@@ -117,7 +118,7 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     const label = page.getByLabel('Source label (optional)')
     if (await label.count()) {
       await label.fill('Zapier leads')
-      await page.getByRole('button', { name: 'Generate webhook URL' }).click(); await snack(page, 'Webhook created')
+      await page.getByRole('button', { name: 'Make a link' }).click(); await snack(page, 'Webhook created')   // (the calm UI build 2026-10-27, a deliberate change) W-201
       ok('the label joins the lead sources', sql(`select value from settings where key='lead_sources'`).includes('Zapier leads'))
       await page.keyboard.press('Escape')
     } else ok('the label joins the lead sources', false, 'no webhook form')
@@ -133,7 +134,7 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     await page.getByTestId('int-webhooks').scrollIntoViewIfNeeded(); await shot('06-ways-in')
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
     await page.getByLabel('Company name').fill('Acme Interiors Pte Ltd')
-    await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     await page.goto(`${BASE}/company/integrations`); await page.getByTestId('intake-address').waitFor(); await ready(page)
     ok('a renamed studio keeps its intake address', (await page.getByTestId('intake-address').innerText()) === addr, addr)
   })
@@ -158,7 +159,8 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     ok('the copied question is required', sql(`select required from questions where lead_id='${lead}' and text='Do you have pets?' order by created_at desc limit 1`) === '1')
     await page.reload(); await ready(page)
     ok('the tab marks it', (await page.getByTestId('question-required').count()) >= 1)
-    ok('and counts the required still open', /Required still open: \d/.test(await page.getByTestId('required-open').innerText()))
+    // (the calm UI build 2026-10-27, a deliberate change) T-07: a count reads "Label · n" — "Required still open · 1"
+    ok('and counts the required still open', /Required still open · \d/.test(await page.getByTestId('required-open').innerText()))
     await shot('07-required-question')
   })
 

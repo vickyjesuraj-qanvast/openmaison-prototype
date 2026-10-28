@@ -260,8 +260,9 @@ export function MarkDoneSheet({ milestoneId, open, nested = false, onClose, onDo
             </section>
 
             {data.invoice ? (
-              <section className={m.region} aria-label="Money" data-testid="done-sheet-money">
-                <span className={m.label}>Money</span>
+              <section className={m.region} aria-label="Payments" data-testid="done-sheet-money">
+                {/* (the calm UI build 2026-10-27, 3-02 · T-01) the project's money is its Payments */}
+                <span className={m.label}>Payments</span>
                 {data.invoice.mode === 'awaiting' ? <p className={m.line}>{`The ${data.invoice.stage} invoice waits for an Owner or an Admin to approve it.`}</p> : (
                   <div className={m.tick}>
                     <Checkbox isSelected={invoice} onChange={setInvoice} data-testid="done-sheet-invoice">{`${data.invoice.mode === 'send' ? 'Send' : 'Submit'} the ${data.invoice.stage} invoice${data.invoice.mode === 'submit' ? ' for approval' : ''} · ${money2(data.invoice.amountMinor)}`}</Checkbox>

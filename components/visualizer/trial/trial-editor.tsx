@@ -226,7 +226,7 @@ export function TrialEditor({ room, tool, left, onLeft, onLeave, onNewPhoto, onO
     snack({
       key: 'viz-ready',
       message: `${versionRange(made.map((m) => m.n))} is ready${lined ? ' · lined up with your photo' : ''} · ${allowanceLine(kept.left)}`,
-      actionLabel: 'Compare', onAction: () => { setMenu(null); setStored(made[0]!.key); setCompare({ on: true, key: null }) },
+      actionLabel: 'Before and after', onAction: () => { setMenu(null); setStored(made[0]!.key); setCompare({ on: true, key: null }) },   // (the calm UI build 2026-10-27, 6-18) the studio editor's one name
     })
   }
   const cancelRun = () => {
@@ -448,7 +448,7 @@ export function TrialEditor({ room, tool, left, onLeft, onLeave, onNewPhoto, onO
     <>
       <Tooltip label={markersHidden ? 'Show markers' : 'Hide markers'}><IconButton icon={markersHidden ? 'visibility' : 'visibility_off'} label={markersHidden ? 'Show markers' : 'Hide markers'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setMarkersHidden(!markersHidden)} data-testid="viz-markers" /></Tooltip>
       <Tooltip label={!view ? 'Pick a version to compare' : compare.on ? 'Show it alone' : `Before and after · ${parentLabel}`}>{narrow ? <IconButton icon="compare" label="Before and after" size={36} variant="bare" iconSize={20} iconWeight={300} selected={compare.on} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle" />
-        : <button type="button" className={styles.compareBtn} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle"><Icon name="compare" size={20} weight={300} />Compare</button>}</Tooltip>
+        : <button type="button" className={styles.compareBtn} aria-pressed={compare.on} disabled={!view} onClick={toggleCompare} data-testid="viz-compare-toggle"><Icon name="compare" size={20} weight={300} />Before and after</button>}</Tooltip>
       <Tooltip label="Download"><IconButton icon="download" label="Download" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => download(viewKey)} data-testid="trial-download" /></Tooltip>
     </>
   )

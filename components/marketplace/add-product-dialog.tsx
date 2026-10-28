@@ -15,7 +15,7 @@ import { productPrice, tradeFor, type ProductView, type VendorLink } from '@/lib
 import { addProductToPriceBook } from '@/app/marketplace/actions'
 import styles from './brand-page.module.css'
 
-const NO_CATEGORY = 'No category'
+const NO_CATEGORY = 'No trade'   // (calm-build regression fix F, R3 — the UI audit's 4-01 · §2 Trade) the line's grouping reads Trade, as the Price book's own dialogs; display only — the sentinel is sent as `category: null`, the stored field stays `category`
 
 /**
  * (pending modules S24 — the card's question "Should a brand link to Finance › Vendors or the Price book?": a product to the Price book) Add a
@@ -79,16 +79,16 @@ export function AddProductDialog({ product, brand, vendor, trades, units = UNITS
     } finally { setBusy(false) }
   }
   const price = shown ? productPrice(shown) : null
+  /* (the calm UI build 2026-10-27, 6-25 · W-220) what the press does, in the studio's words: the vendor it gets (and joins, when it isn't one) */
   const subtitle = [
-    `It joins My Items with its words, picture and page, ${vendor ? `with ${vendor.name}` : `with ${brand.name}`} as its vendor.`,
-    vendor ? null : `${brand.name} joins your vendors too.`,
+    vendor ? `${vendor.name} becomes its vendor.` : `${brand.name} becomes its vendor and joins your vendors.`,
     proposes ? 'An Owner or an Admin approves it before the studio uses it.' : null,
   ].filter(Boolean).join(' ')
   return (
     <Dialog open={!!product} onClose={onClose} closeOnScrim={false} size="form" width={600} title="Add to Price book" subtitle={subtitle}
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button>
-              <Button onPress={() => { void save() }} isDisabled={busy} data-testid="product-save">{busy ? 'Adding…' : proposes ? 'Propose it' : 'Add to My Items'}</Button>
+              <Button onPress={() => { void save() }} isDisabled={busy} data-testid="product-save">{busy ? 'Adding…' : proposes ? 'Propose it' : 'Add'}</Button>
             </>}>
       {shown ? (
         <div className={styles.fields} data-testid="product-dialog">
@@ -102,7 +102,7 @@ export function AddProductDialog({ product, brand, vendor, trades, units = UNITS
           </div>
           <TextField label="Name" required value={name} onChange={setName} maxLength={120} error={nameError} autoFocus />
           <div className={styles.row2}>
-            <TextField label="Category" mode="select" options={[NO_CATEGORY, ...trades]} value={category} onChange={setCategory} helper="One of the studio’s trades" />
+            <TextField label="Trade" mode="select" options={[NO_CATEGORY, ...trades]} value={category} onChange={setCategory} helper="Your trades, from Settings" />
             <TextField label="Unit" mode="select" options={[...units]} value={unit} onChange={setUnit} searchable={units.length > 8} />
           </div>
           {costs ? (

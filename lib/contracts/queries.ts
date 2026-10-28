@@ -324,7 +324,9 @@ export async function fetchContractTemplateEditor(templateId: string): Promise<C
 export type ContractTemplateOption = { id: string; title: string; body: string; updatedAt: Date; isDefault: boolean; /** (REG-664) */ folderId: string | null; /** (UX audit C6) the picker opens on the last-used one when no default is set */ lastUsedAt: Date | null
   /** (pending modules S03) a standard PDF, and its file's name */ kind: string; fileName: string | null }
 /** (REG-664) The picker's data: the live templates and Templates › Contracts' folders, browsed as the gallery files them. */
-export type ContractPickerData = { templates: ContractTemplateOption[]; folders: { id: string; name: string; parentId: string | null }[] }
+export type ContractPickerData = { templates: ContractTemplateOption[]; folders: { id: string; name: string; parentId: string | null }[]
+  /** (the calm UI build 2026-10-27, 4-38) the studio's letterhead, so the picker's cards draw each template's own page as the gallery does */
+  paper?: { brand: BrandKit; studio: StudioDetails } }
 /** (REG-632, Q-13) The default first, then the most recently used. */
 export async function fetchContractTemplateOptions(): Promise<ContractTemplateOption[]> {
   return db.select({ id: contractTemplates.id, title: contractTemplates.title, body: contractTemplates.body, updatedAt: contractTemplates.updatedAt, isDefault: contractTemplates.isDefault, folderId: contractTemplates.folderId, lastUsedAt: contractTemplates.lastUsedAt, kind: contractTemplates.kind, fileName: contractTemplates.fileName }).from(contractTemplates).where(isNull(contractTemplates.deletedAt)).orderBy(desc(contractTemplates.isDefault), desc(contractTemplates.lastUsedAt), asc(contractTemplates.title))

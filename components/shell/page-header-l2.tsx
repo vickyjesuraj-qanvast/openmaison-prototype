@@ -33,7 +33,9 @@ export function PageHeaderL2({
   crumb?: string
   /** (REG-536) The crumb as links — every segment with an href is clickable; `crumb` is the text fallback. */
   crumbs?: CrumbItem[]
-  title: string
+  /** (the calm UI build 2026-10-27, 6-34 — additive) Optional: with none the header is the crumbs alone (no trailing slash, no title row) —
+   *  for a page whose own first heading names it (a Market Insights article), so the title isn't said twice. Chips, if any, keep their row. */
+  title?: string
   /** `MetaChip`s, 8 apart, centred on the title line. */
   chips?: ReactNode
   actions?: ReactNode
@@ -56,12 +58,14 @@ export function PageHeaderL2({
           <Icon name="arrow_back" size={24} weight={300} />
         </Link>
       </Tooltip>
-      <div className={styles.titleBlock} data-pinned={titleActions ? '' : undefined}>
-        {crumbs ? <Crumbs items={crumbs} className={styles.crumb} trailingSlash /> : <span className={styles.crumb}>{crumb} / </span>}
-        <div className={styles.titleRow}>
-          <h1 className={styles.title}>{title}</h1>
-          {chips ? <div className={styles.chips}>{chips}</div> : null}
-        </div>
+      <div className={styles.titleBlock} data-pinned={titleActions ? '' : undefined} data-crumb-only={title === undefined ? '' : undefined}>
+        {crumbs ? <Crumbs items={crumbs} className={styles.crumb} trailingSlash={title !== undefined} /> : <span className={styles.crumb}>{title === undefined ? crumb : `${crumb} / `}</span>}
+        {title !== undefined ? (
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>{title}</h1>
+            {chips ? <div className={styles.chips}>{chips}</div> : null}
+          </div>
+        ) : chips ? <div className={styles.titleRow}><div className={styles.chips}>{chips}</div></div> : null}
       </div>
       {actions ? <div className={styles.actions}>{actions}</div> : null}
       {titleActions ? <div className={styles.titleActions}>{titleActions}</div> : null}

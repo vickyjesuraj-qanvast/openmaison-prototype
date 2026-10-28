@@ -36,3 +36,10 @@
 .recentHead { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin: 0 calc(-1 * var(--om-spacing-2)) 0 0; }
 .recentTitle { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .recentRows { display: flex; flex-direction: column; margin: 0 calc(-1 * var(--om-spacing-2)); }
+/* (the Dashboard redesigned 2026-10-26, P-10 — "a list you can act on") a row with its verb: the words open the record (the house row), the
+   quiet verb sits at its end — side by side, never one inside the other (the project Overview's split row, REG-1445) */
+.split { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.split > .row { flex: 1 1 auto; min-width: 0; }
+.split > .row:disabled { cursor: default; }
+.split > .row:disabled:hover { background: none; }
+.verb { flex-shrink: 0; display: inline-flex; padding-right: var(--om-spacing-2); }

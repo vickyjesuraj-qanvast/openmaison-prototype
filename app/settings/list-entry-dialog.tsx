@@ -11,7 +11,7 @@ import styles from './settings.module.css'
 export type EntryEdit = { name: string; position: number; gate?: number }
 /** (Dane UAT 2.21) A Lost reason's logged-contacts number: the Lost dialog's hint, not a block — one label and one help line, here and on
     Settings' add row. */
-export const GATE_LABEL = 'Contacts expected first'
+export const GATE_LABEL = 'Contacts logged first'   // (the calm UI build, W-154 · 5-32)
 export const GATE_HELP = 'Blank asks for none — the Lost dialog says how many are logged'
 
 /**

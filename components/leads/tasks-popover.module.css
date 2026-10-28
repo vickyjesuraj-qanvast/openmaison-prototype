@@ -17,7 +17,7 @@
 /* "OPEN TASKS · 3": subheading/s label + count, body/s dot. */
 .sectionLabel {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  font: var(--om-type-subheading-s); text-transform: uppercase;
+  font: var(--om-type-subheading-s);   /* (the calm UI build 2026-10-27 — T-06) a count label, not a status: sentence case */
   color: var(--om-color-on-surface-secondary);
 }
 .sectionLabel [data-dot] { font: var(--om-type-body-s); }

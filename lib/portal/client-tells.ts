@@ -69,7 +69,7 @@ export async function tellScheduleShared(projectId: string): Promise<number> {
     if (!p || !last) return 0
     const again = shares.length > 1
     return tellClient({ event: 'client_schedule_shared', leadId: p.leadId, ref: last.id, path: 'schedule', fields: {},
-      plain: { title: again ? 'Your schedule has changed' : 'Your schedule is ready', line: again ? 'Your schedule has changed — see what moved on your page.' : 'The stages ahead and when each is planned are on your page.' } })
+      plain: { title: again ? 'Your schedule has changed' : 'Your schedule is ready', line: again ? 'Your schedule has changed — see what moved on your page.' : 'The milestones ahead and when each is planned are on your page.'   /* (the calm UI build 2026-10-27, 3-04) */ } })
   } catch { return 0 }
 }
 

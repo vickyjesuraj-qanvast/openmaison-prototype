@@ -57,3 +57,4 @@
   .factHead { display: none; }   /* a phone stacks each row: its label, then its value (the Registrations table's way) */
   .factRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
 }
+

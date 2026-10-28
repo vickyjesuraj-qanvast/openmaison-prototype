@@ -49,7 +49,7 @@ export function SizeDialog({ open, onClose, underlay, onApply }: { open: boolean
     onApply(perOwn)
   }
   return (
-    <Dialog open={open} onClose={onClose} title="Change its size" subtitle={`${name || 'The floor plan'} — the rooms and the furniture’s places follow it.`} size="form" width={600} closeOnScrim={false}
+    <Dialog open={open} onClose={onClose} title="Set its size" subtitle={`${name || 'The floor plan'} — the rooms and the furniture’s places follow it.`} size="form" width={600} closeOnScrim={false}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={apply} isDisabled={!pic} data-testid="planner-size-apply">Change it</Button></>}>
       <div className={styles.body} data-testid="planner-size-dialog">
         {error ? <p className={styles.error} role="alert">{error}</p> : !pic ? <div className={styles.well} role="status" aria-live="polite"><span className={styles.wellText}>Reading the plan…</span></div> : (

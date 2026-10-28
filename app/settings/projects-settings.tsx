@@ -1,12 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { withFrom } from '@/lib/nav'
-import { moduleLinks, settingsHref } from '@/lib/settings/modules'
-import { PROJECTS_MONEY_POINTER, PROJECTS_VISIBILITY_POINTER, PROJECT_NUMBERS_HELP, PROJECT_NUMBER_HELPERS, projectsModuleHelp } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
+import { PROJECT_NUMBERS_HELP, PROJECT_NUMBER_HELPERS, RELATED_DOORS, projectsModuleHelp } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import { VISIBILITY_HREF } from '@/lib/settings/types'   // (pending modules S14)
-import { HelpLink } from '@/components/company/help-link'
 import { Button, Switch } from '@/components/ds'
 import { TextField } from '@/components/om/text-field'
 import { ReadOnlyScope } from '@/components/om/read-only'
@@ -18,7 +14,7 @@ import { setProjectNumbering } from './actions'
 import { HandoverSetting } from '@/components/projects/ending/handover-setting'   // (Projects round 7)
 import { ScheduleSettings } from '@/components/projects/schedule/schedule-settings'   // (gaps build, package C)
 import type { ScheduleRules, TypeDefaults } from '@/lib/projects/schedule-rules'
-import { ModuleHead } from './module-head'
+import { ModuleHead, ModuleRelated } from './module-head'
 import { TicketCategoriesSetting, type TicketCategoriesData } from '@/components/projects/tickets/ticket-categories-setting'   // (gaps build H)
 import { WorkloadComplianceSettings } from '@/components/projects/workload/workload-settings'   // (gaps build I)
 import { OwnerApprovals, type OwnerApprovalsData } from './owner-approvals'   // (simplify S-20)
@@ -50,8 +46,6 @@ export function ProjectsSettings({ numbering, numbers, studio, canManage, approv
   /** (gaps build I, I-Q3 · I-Q11) Workload's default capacity and Compliance's starter tasks */ gapsI?: { capacity: number; starterTasks: boolean } }) {
   const snackbar = useSnackbar()
   const readOnly = !canManage
-  /* (parity P-38, D-17) the module says where its records live, as Lead management's does — each opens with the way back here (REG-465) */
-  const here = withFrom(settingsHref('projects'), useSearchParams().get('from') ?? undefined)
   const [num, setNum] = useState<ProjectNumbering>(numbering)
   const [saved, setSaved] = useState<ProjectNumbering>(numbering)
   const [busy, setBusy] = useState(false)
@@ -72,14 +66,9 @@ export function ProjectsSettings({ numbering, numbers, studio, canManage, approv
   return (
     <section className={styles.panel} aria-labelledby="settings-projects-title" data-testid="settings-projects">
       <LeaveGuard dirty={!readOnly && dirty} what="the project numbers" onSave={save} onDiscard={() => setNum(saved)} />
-      {/* (parity P-38 · Q-23) the head, then one line under it: who sees a project is who sees its lead — one rule, kept under (pending modules S14) Roles & access */}
-      <div className={styles.sectionHead}>
-        <ModuleHead id="settings-projects-title" title="Projects" help={projectsModuleHelp(studio)} readOnly={readOnly}
-                    links={moduleLinks('projects', here)} />
-        <span className={styles.settingHelp} data-testid="projects-visibility-pointer">{PROJECTS_VISIBILITY_POINTER.lead}<HelpLink href={VISIBILITY_HREF} testId="projects-visibility-link">{PROJECTS_VISIBILITY_POINTER.link}</HelpLink>{PROJECTS_VISIBILITY_POINTER.end}</span>   {/* (pending modules S14) its one home moved */}
-        {/* (simplify S-15) the money rules' one home — a door for whoever still looks for them here */}
-        <span className={styles.settingHelp} data-testid="projects-money-pointer">{PROJECTS_MONEY_POINTER.lead}<HelpLink href="/settings?section=finance" testId="projects-money-link">{PROJECTS_MONEY_POINTER.link}</HelpLink>{PROJECTS_MONEY_POINTER.end}</span>
-      </div>
+      {/* (the calm UI build, 5-17) one help line; the two pointer lines — who sees a project (parity P-38 · Q-23: who sees its lead, kept under
+          Roles & access) and where the money rules are (simplify S-15) — are doors on the module's Related line, their sentences their tooltips */}
+      <ModuleHead id="settings-projects-title" title="Projects" help={projectsModuleHelp(studio)} readOnly={readOnly} />
       <ReadOnlyScope readOnly={readOnly}>
         <OwnerApprovals data={approvals} canManage={canManage} />   {/* (simplify S-20) at the top: every approval together */}
         <div className={styles.setting} data-testid="project-numbering">
@@ -99,7 +88,7 @@ export function ProjectsSettings({ numbering, numbers, studio, canManage, approv
           <div className={styles.example}><span className={styles.settingHelp}>Next project:</span> <span className={styles.exampleNo} data-testid="project-number-example">{example}</span></div>
           {readOnly ? null : <div className={styles.settingActions}>
             <Button variant="secondary" appearance="outlined" onPress={() => setNum(saved)} isDisabled={!dirty || busy}>Discard</Button>
-            <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save numbering'}</Button>
+            <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save'}</Button>
           </div>}
         </div>
         <StartRuleSetting startsWhen={startsWhen} canManage={canManage} />   {/* (S44R, C7) which signature starts a project — before its stages */}
@@ -108,6 +97,10 @@ export function ProjectsSettings({ numbering, numbers, studio, canManage, approv
         {tickets ? <TicketCategoriesSetting data={tickets} canManage={canManage} /> : null}   {/* (gaps build H, H-Q8) */}
         {gapsI ? <WorkloadComplianceSettings capacity={gapsI.capacity} starterTasks={gapsI.starterTasks} canManage={canManage} /> : null}   {/* (gaps build I) Workload · Compliance */}
       </ReadOnlyScope>
+      <ModuleRelated section="projects" doors={[
+        { key: 'visibility', label: RELATED_DOORS.projectVisibility.label, tip: RELATED_DOORS.projectVisibility.tip, href: VISIBILITY_HREF, testId: 'projects-visibility-link', pointer: { testId: 'projects-visibility-pointer' } },
+        { key: 'money', label: RELATED_DOORS.money.label, tip: RELATED_DOORS.money.tip, href: '/settings?section=finance', testId: 'projects-money-link', pointer: { testId: 'projects-money-pointer' } },
+      ]} />
     </section>
   )
 }

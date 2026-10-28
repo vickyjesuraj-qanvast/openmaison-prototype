@@ -13,7 +13,8 @@ async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 async function snack(page, text) { await page.getByText(text, { exact: false }).first().waitFor({ timeout: 6000 }) }
 const as = (id) => sql(`update members set is_you = case id when '${id}' then 1 else 0 end`)
-const reach = async (page, key) => page.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach')))
+const openRoles = async (p) => { if (!(await p.getByTestId('studio-roles-list').count())) { await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(500) } await p.getByTestId('studio-roles-role').getByRole('radio', { name: 'All roles' }).click(); await p.waitForTimeout(250) }   // (the calm UI build 2026-10-27, a deliberate change) Who may do what is Roles & access' drawer now (5-04)
+const reach = async (page, key) => { await openRoles(page); return page.getByTestId(`may-${key}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))) }
 const STUDIO0 = sql(`select value from settings where key='studio'`)
 
 ;(async () => {
@@ -29,13 +30,15 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     // REG-848 (Dane UAT 2.14) put the modules in the order the work runs
     // (pending modules S14, a deliberate change of this rule) the first module is named for what it holds — Roles & access (?section=studio)
     // (pending modules S23, a deliberate change of this rule) Meetings is a module of its own, after Lead management
-    ok('seven modules in the order the work runs', tabs.join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Notifications', tabs.join(' · '))
+    // (the calm UI build 2026-10-27, a deliberate change) 1-41: the last module reads "Studio notifications" (Your profile keeps Your notifications); its key and ?section=notifications stay
+    ok('seven modules in the order the work runs', tabs.join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Studio notifications', tabs.join(' · '))
     ok('Roles & access is the open tab', (await page.getByRole('tab', { name: 'Roles & access' }).getAttribute('aria-selected')) === 'true')
     // (one-home N-06, a deliberate change of this rule) Studio no longer copies Company: no Team or Issuing entities card — the module head's
     // Kept in Company: Members · Profile links open the records.
     ok('no Team or Issuing entities copy in Settings › Studio', (await page.getByTestId('studio-team').count()) === 0 && (await page.getByTestId('studio-entities').count()) === 0)
     const kept = await page.getByTestId('settings-studio').getByTestId('module-links').innerText()
     ok('Kept in Company: Members · Profile', /Members/.test(kept) && /Profile/.test(kept), kept)
+    await openRoles(page)
     ok('the role columns still count the active team', /Owner · 1/i.test(await page.getByRole('table', { name: 'Who may do what' }).getByRole('row').first().innerText())   /* the head is set in capitals — innerText reads them */)
     ok('settings are the Owners’ and Admins’', JSON.stringify(await reach(page, 'settings')) === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     ok('a quote is deleted by an Owner, an Admin or its creator', JSON.stringify(await reach(page, 'delete-quote')) === '["yes","yes","own","own","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
@@ -65,7 +68,7 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     /* (pending modules, a deliberate change of this rule) S05: the Stage movement card became Lead stages — the stages are its rows, How leads move inside it */
     ok('the stage movement card names the fixed stages', await (async () => { const t = await page.getByTestId('lead-stages').innerText(); return ['New', 'Contacted', 'Met', 'Quote Sent', 'Won', 'On Hold', 'Lost'].every((s) => t.includes(s)) && /How leads move/i.test(t) })())
     ok('the On Hold field reads well', (await page.getByLabel('Add an On Hold reason').count()) === 1)
-    ok('the reasons, saved equal to the defaults, say so', /These are the defaults\./.test(await page.getByTestId('lead-reasons').innerText()))
+    ok('the reasons, saved equal to the defaults, no longer say so', !/These are the defaults/.test(await page.getByTestId('lead-reasons').innerText()))   // (the calm UI build 2026-10-27, a deliberate change) W-406: “These are the defaults.” said nothing
     await shot('03-lead-management')
     // REG-921 (Projects round 1) made Settings › Projects live; the gaps build's money out (F1, REG-1261…) made Settings › Finance live
     await page.getByRole('tab', { name: 'Finance' }).click(); await page.waitForURL(/section=finance/)
@@ -89,10 +92,10 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     let gst = page.getByTestId('gst'); await gst.scrollIntoViewIfNeeded()
     ok('Settings keeps only the rate — no registration switch here', (await gst.locator('input[type="checkbox"]').count()) === 0)
     const registered = async (on) => {
-      await page.goto(`${BASE}/company/profile`); await page.getByTestId('entities').waitFor(); await ready(page)
+      await page.goto(`${BASE}/company/profile?tab=entities`); await page.getByTestId('entities').waitFor(); await ready(page)   // (the calm UI build 2026-10-27, a deliberate change) Profile's Bank & entities tab (5-36)
       const sw = page.getByTestId('studio-gst'); await sw.scrollIntoViewIfNeeded()
       if ((await sw.locator('input[type="checkbox"]').isChecked()) !== on) await sw.click()
-      await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+      await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // one Save (5-18)
       await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('settings-quotes').waitFor(); await ready(page)
       gst = page.getByTestId('gst'); await gst.scrollIntoViewIfNeeded()
     }
@@ -103,10 +106,10 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     await registered(true)
     ok('registration on again', sql(`select json_extract(value, '$.gstRegistered') from settings where key='studio'`) === '1')
     await gst.getByLabel('GST rate (%)').fill('8.5')   // a rate takes one decimal (the amount filter kept whole numbers — reader E, price book audit)
-    await gst.getByRole('button', { name: 'Save rate' }).click(); await snack(page, 'New lines start at 8.5% GST')
+    await gst.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'New lines start at 8.5% GST')   // (the calm UI build 2026-10-27, a deliberate change) one Save label (5-18)
     ok('the rate is saved', sql(`select json_extract(value, '$.gstPct') from settings where key='studio'`) === '8.5')
     await gst.getByLabel('GST rate (%)').fill('45')
-    ok('a rate past 30 is refused', /Between 0 and 30/.test(await gst.innerText()) && await gst.getByRole('button', { name: 'Save rate' }).isDisabled())
+    ok('a rate past 30 is refused', /Between 0 and 30/.test(await gst.innerText()) && await gst.getByRole('button', { name: 'Save', exact: true }).isDisabled())
     await shot('05-gst-rate')
   })
 
@@ -129,13 +132,13 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     ok('the line under the title', /Only Owners and Admins change these\./.test(await page.getByTestId('read-only-line').first().innerText()))
     /* (S42 B-12) the Lead stages card says it again in its own head — Manage Stages lands there (#lead-stages), past the module's line */
     ok('the Lead stages card says it too', (await page.getByTestId('lead-stages').getByTestId('read-only-line').count()) === 1)
-    ok('the stage movement choices are shown, disabled', await page.getByRole('radio', { name: /^Linear/ }).isDisabled())
+    ok('the stage movement choices are shown, disabled', await page.getByRole('radio', { name: /^One stage at a time/ }).isDisabled())   // (the calm UI build 2026-10-27, a deliberate change) W-240: Linear → One stage at a time
     ok('nothing to add or remove', (await page.getByLabel('Add a source').count()) === 0 && (await page.getByRole('button', { name: /^(Remove|Retire) / }).count()) === 0)
-    ok('the demo’s simulate button is not offered', (await page.getByRole('button', { name: /Simulate an enquiry/ }).count()) === 0)
+    ok('the demo’s simulate button is not offered', (await page.getByRole('button', { name: /Simulate an enquiry|^Try it$/ }).count()) === 0)   // (the calm UI build 2026-10-27, a deliberate change) W-377
     await shot('06-read-only-leads')
     await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('settings-quotes').waitFor(); await ready(page)
     ok('the GST rate is shown, disabled', await page.getByTestId('gst').getByLabel('GST rate (%)').isDisabled())   // (one-home N-13) the registration switch is Profile's now
-    ok('no Save rate or Save numbering', (await page.getByRole('button', { name: 'Save rate' }).count()) === 0 && (await page.getByRole('button', { name: 'Save numbering' }).count()) === 0)
+    ok('no Save on the rate or the numbering', (await page.getByTestId('gst').getByRole('button', { name: 'Save', exact: true }).count()) === 0 && (await page.getByTestId('numbering').getByRole('button', { name: 'Save', exact: true }).count()) === 0)   // (the calm UI build 2026-10-27, a deliberate change) one Save label (5-18)
     ok('the number pattern shows, disabled', await page.getByLabel('Prefix').isDisabled())
     ok('the trades show, nothing to press on them', (await page.getByTestId('trade').count()) > 0 && (await page.getByTestId('trade').getByRole('button').count()) === 0)
     await shot('07-read-only-quotes')
@@ -144,7 +147,7 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
   await step('Back from a Company page returns to the module, and on to where Settings was opened', async () => {
     await page.goto(`${BASE}/settings?section=leads&from=%2Fleads`); await page.getByTestId('settings-leads').waitFor(); await ready(page)
     ok('Settings opened from Leads says so', (await page.getByRole('link', { name: 'Leads' }).count()) >= 1)
-    await page.getByTestId('module-links').getByRole('button', { name: 'Integrations' }).click()
+    await page.getByTestId('module-links').getByRole('link', { name: 'Integrations' }).click()   // (the calm UI build 2026-10-27, a deliberate change) the Related line's doors are links (5-17)
     await page.waitForURL(/\/company\/integrations/); await ready(page)
     const crumb = page.locator('header').getByRole('link', { name: 'Settings', exact: true })
     ok('Company names Settings as the way back', (await crumb.count()) === 1)
@@ -164,6 +167,7 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
         ok(`${w}: ${sec} fits the width`, over <= 0, `${over}px over`)
       }
       await p.goto(`${BASE}/settings?section=studio`); await ready(p)
+      await p.getByTestId('studio-roles-open').click(); await p.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) the table is the drawer's, one role at a time (5-04; All roles scrolls inside its own box by design)
       for (const t of ['Who may do what']) {   // (one-home N-06) the Issuing entities table left Settings › Studio
         const clip = await p.getByRole('table', { name: t }).evaluate((e) => e.scrollWidth - e.clientWidth)
         ok(`${w}: ${t} shows every column`, clip <= 0, `${clip}px clipped`)

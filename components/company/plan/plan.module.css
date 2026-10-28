@@ -101,6 +101,11 @@
    tools; this keeps only its figures and the muted "No limit". */
 .amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .amount[data-none] { color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — 5-38) a member's limit as text, its ⋮ (the quick picks) at the cell's end */
+.limitCell { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); width: 100%; min-width: 0; }
+/* (5-38) the fold's chevron under By member, turned while the quiet members show */
+.foldChev { display: inline-flex; transition: transform var(--motion-toggle); }
+.foldChev[data-open] { transform: rotate(180deg); }
 .credit { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .credit[data-tone='in'] { color: var(--om-color-tertiary-green-default); }
 .credit[data-tone='zero'] { color: var(--om-color-on-surface-secondary); }

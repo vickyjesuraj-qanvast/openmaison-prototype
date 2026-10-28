@@ -95,6 +95,11 @@
 .barIcon > .barBadge { top: 4px; right: 4px; }
 .dockIcon > .dockBadge { top: -2px; right: -2px; }
 .sheetItem > .rowCount { position: static; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
+/* (the calm UI build 2026-10-27 — the audit's 1-04) a row's mark with no number: Tasks' red dot, Issues' grey dot; the dock's the same 8 dot */
+.sheetItem > .rowCount.rowDot { min-width: 8px; width: 8px; height: 8px; padding: 0; }
+.sheetItem > .rowCount.rowDot[data-look='quiet'] { background: var(--om-color-on-surface-secondary); }
+.dockIcon > .dockBadge.dockDot, .dockIcon > .dockBadge.dockQuiet { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 0; right: 0; }
+.dockIcon > .dockBadge.dockQuiet { background: var(--om-color-on-surface-secondary); }
 /* (UX audit V6) a row that isn't built yet: the Company panel's "Soon" tag */
 .soon { composes: soon from '../company/company-popover.module.css'; }
 .avatarBtn {
@@ -175,3 +180,15 @@
 .sheetLabel { flex: 1; min-width: 0; }
 .sheetMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* (REG-667) View as · the member being viewed */
 .sheetRule { height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }
+
+/* (the Dashboard redesigned 2026-10-26 — his marks P-01 · P-12 · lane D4; the Dashboard only) The docked Maison AI field is a field-shaped button
+   just above the dock on a phone, and it shrinks into a ✦ at the dock's end while the page scrolls down (components/maison-ai/dock/maison-dock.tsx
+   writes `body[data-om-dock-spark]` while it is shrunk): the dock makes room at its end — a sixth column, 64 wide, the drawn one — and gives it
+   back when the field comes out again. Nothing changes on any other page: nothing else writes the flag. */
+@media (max-width: 767px) {
+  .dock { transition: transform var(--motion-toggle), padding-right var(--motion-toggle); }
+  :global(body[data-om-dock-spark]) .dock { padding-right: calc(var(--om-spacing-2) + 64px + env(safe-area-inset-right, 0px)); }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .dock { transition: transform var(--motion-toggle); }   /* the room comes at once; the auto-hide's slide (REG-401) stays as it was */
+}

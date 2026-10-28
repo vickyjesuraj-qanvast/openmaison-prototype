@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button, TextArea } from '@/components/ds'
-import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Chips } from '@/components/om/chips'
@@ -85,8 +85,8 @@ export function Stars({ rating, size = 16 }: { rating: number; size?: number }) 
 }
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 const when = (iso: string | null) => (iso && !Number.isNaN(new Date(iso).getTime()) ? displayDate(new Date(iso)) : null)
-function SectionHead({ id, title, help }: { id: string; title: string; help?: string }) {
-  return <div className={styles.sectionHead}><div className={styles.sectionTitles}><h2 id={id} className={styles.sectionTitle}>{title}</h2>{help ? <p className={styles.sectionHelp}>{help}</p> : null}</div></div>
+function SectionHead({ id, title, help, extra }: { id: string; title: string; help?: string; /** (the calm UI build 2026-10-27, 2-42) a "?" beside the title */ extra?: ReactNode }) {
+  return <div className={styles.sectionHead}><div className={styles.sectionTitles}><h2 id={id} className={styles.sectionTitle}>{title}{extra}</h2>{help ? <p className={styles.sectionHelp}>{help}</p> : null}</div></div>
 }
 function Ext({ href, children, testId }: { href: string; children: string; testId?: string }) {
   return <a className={`${styles.link} ${styles.ext}`} href={href} target="_blank" rel="noopener noreferrer" data-testid={testId}>{children}<Icon name="open_in_new" size={16} /></a>
@@ -104,8 +104,8 @@ function ReviewsList({ d, onAsk }: { d: ReviewsPage; onAsk: () => void }) {
   const [stars, setStars] = useState<number | null>(null)
   const [sort, setSort] = useState<ReviewSort>('recent')
   const [count, setCount] = useState(PAGE)
-  const [menu, setMenu] = useState<'stars' | 'sort' | null>(null)
-  const starsRef = useRef<HTMLButtonElement>(null), sortRef = useRef<HTMLButtonElement>(null)
+  const [menu, setMenu] = useState<'sort' | null>(null)
+  const sortRef = useRef<HTMLButtonElement>(null)
   const all = d.list.reviews
   const shown = useMemo(() => shownReviews(all, { stars, show, sort }), [all, stars, show, sort])
   const waiting = all.filter((r) => !r.response).length
@@ -144,7 +144,7 @@ function ReviewsList({ d, onAsk }: { d: ReviewsPage; onAsk: () => void }) {
     return (
       <div className={styles.columns}>
         <EmptyState icon="star" tone="plain" testId="reviews-empty" kb={false} title="No reviews on Qanvast yet"
-                    help="When a homeowner reviews the studio on Qanvast, it shows here — and you can reply to it from here."
+                    help="When a client reviews the studio on Qanvast, it shows here — and you can reply to it from here."
                     primary={{ label: W.request, onPress: onAsk, icon: 'send' }} />
         {overview}
       </div>
@@ -158,18 +158,18 @@ function ReviewsList({ d, onAsk }: { d: ReviewsPage; onAsk: () => void }) {
             <Chips label="Show" testId="reviews-show" value={show} onChange={(v) => { setShow(v as ReviewShow); setCount(PAGE) }}
                    options={[{ value: 'all', label: 'All' }, { value: 'waiting', label: waiting ? `Waiting for a reply · ${waiting}` : 'Waiting for a reply' }, { value: 'answered', label: 'Replied' }]} />
           </ChipRail>
+          {/* (the calm UI build 2026-10-27, 2-10 · T-10) one chip row filters; the order and the rating fold into one Sort menu — every order and
+              every rating inside it, each group under its own title. The rating's handle (reviews-stars-filter) rides the same trigger. */}
           <div className={styles.filterTools}>
-            <span className={styles.menuWrap}>
-              <SelectTrigger ref={starsRef} label="Rating" value={stars === null ? 'All ratings' : plural(stars, 'star')} open={menu === 'stars'} onClick={() => setMenu((m) => (m === 'stars' ? null : 'stars'))} data-testid="reviews-stars-filter" />
-              <PortalMenu open={menu === 'stars'} anchor={starsRef} onClose={() => setMenu(null)} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle="Rating">
+            <span className={styles.menuWrap} data-testid="reviews-stars-filter">
+              <SelectTrigger ref={sortRef} label="Sort" value={`${SORTS.find((s) => s.value === sort)!.label}${stars === null ? '' : ` · ${plural(stars, 'star')}`}`} open={menu === 'sort'} onClick={() => setMenu((m) => (m === 'sort' ? null : 'sort'))} data-testid="reviews-sort" />
+              <PortalMenu open={menu === 'sort'} anchor={sortRef} onClose={() => setMenu(null)} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle="Sort">
+                <DropdownLabel>Order</DropdownLabel>
+                {SORTS.map((s) => <DropdownItem key={s.value} role="menuitemradio" checked={sort === s.value} onSelect={() => { setMenu(null); setSort(s.value) }}>{s.label}</DropdownItem>)}
+                <DropdownDivider />
+                <DropdownLabel>Rating</DropdownLabel>
                 <DropdownItem role="menuitemradio" checked={stars === null} onSelect={() => { setMenu(null); setStars(null); setCount(PAGE) }}>All ratings</DropdownItem>
                 {STARS.map((s) => <DropdownItem key={s} role="menuitemradio" checked={stars === s} meta={String(d.list.stars[s])} onSelect={() => { setMenu(null); setStars(s); setCount(PAGE) }}>{plural(s, 'star')}</DropdownItem>)}
-              </PortalMenu>
-            </span>
-            <span className={styles.menuWrap}>
-              <SelectTrigger ref={sortRef} label="Sort" value={SORTS.find((s) => s.value === sort)!.label} open={menu === 'sort'} onClick={() => setMenu((m) => (m === 'sort' ? null : 'sort'))} data-testid="reviews-sort" />
-              <PortalMenu open={menu === 'sort'} anchor={sortRef} onClose={() => setMenu(null)} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle="Sort">
-                {SORTS.map((s) => <DropdownItem key={s.value} role="menuitemradio" checked={sort === s.value} onSelect={() => { setMenu(null); setSort(s.value) }}>{s.label}</DropdownItem>)}
               </PortalMenu>
             </span>
           </div>
@@ -212,7 +212,7 @@ function ReviewCard({ r }: { r: Review }) {
       if ('error' in res) { snackbar({ message: couldnt(editing ? 'save your reply' : 'post your reply', refusalOf(res.error)) }); return }
       setOpen(false)
       router.refresh()
-      snackbar({ key: 'qanvast-review-reply', message: res.posted ? (editing ? `Reply changed on Qanvast — ${r.reviewer} and every homeowner reading it see the new one` : `Reply posted on Qanvast — ${r.reviewer} and every homeowner reading it see it`) : 'Reply kept here — on this prototype it isn’t posted to Qanvast' })
+      snackbar({ key: 'qanvast-review-reply', message: res.posted ? (editing ? `Reply changed on Qanvast — ${r.reviewer} and everyone reading it see the new one` : `Reply posted on Qanvast — ${r.reviewer} and everyone reading it see it`) : 'Reply kept here — on this prototype it isn’t posted to Qanvast' })
     } catch { snackbar({ message: couldnt(editing ? 'save your reply' : 'post your reply') }) } finally { setBusy(false) }
   }
   const keys = (e: KeyboardEvent<HTMLElement>) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void post() } }
@@ -326,21 +326,20 @@ function Ranking({ d }: { d: RankingPage }) {
       </section>
 
       <section className={styles.section} aria-labelledby="ranking-factors">
-        <SectionHead id="ranking-factors" title={W.factors} help={W.factorsHelp} />
+        {/* (the calm UI build 2026-10-27, 2-42 · T-05) the two footnotes' marks (* ^) leave the tiles; what they said is one "?" by the title, and
+            SuperTrust's page is a link among the tips */}
+        <SectionHead id="ranking-factors" title={W.factors} help={W.factorsHelp}
+          extra={<Tooltip label={`SuperTrust ${yr + 1} will be based on these numbers. This year’s reviews are counted by when the project was finished in ${yr}, not when the review was written.`}><IconButton icon="help" label="How these are counted" data-testid="ranking-how" /></Tooltip>} />
         <StatTiles testId="ranking-factors">
-          <StatTile label="Reviews" value={r.reviews.count} help={`Written by homeowners · in ${yr}: ${r.reviews.year}*^`} testId="factor-reviews" />
-          <StatTile label="Rating" value={<span className={styles.ratingValue}>{r.rating.average.toFixed(1)}<span data-on=""><Icon name="star" size={20} fill /></span></span>} help={`The average of those reviews · in ${yr}: ${r.rating.year.toFixed(1)}*^`} testId="factor-rating" />
-          <StatTile label="Projects" value={r.projects.count} help={`Published on Qanvast · in ${yr}: ${r.projects.year}*`} testId="factor-projects" />
-          <StatTile label="Board pins" value={r.pins.count.toLocaleString('en-SG')} help={`Project photos homeowners saved · in ${yr}: ${r.pins.year.toLocaleString('en-SG')}*`} testId="factor-pins" />
+          <StatTile label="Reviews" value={r.reviews.count} help={`Written by clients · in ${yr}: ${r.reviews.year}`} testId="factor-reviews" />
+          <StatTile label="Rating" value={<span className={styles.ratingValue}>{r.rating.average.toFixed(1)}<span data-on=""><Icon name="star" size={20} fill /></span></span>} help={`The average of those reviews · in ${yr}: ${r.rating.year.toFixed(1)}`} testId="factor-rating" />
+          <StatTile label="Projects" value={r.projects.count} help={`Published on Qanvast · in ${yr}: ${r.projects.year}`} testId="factor-projects" />
+          <StatTile label="Board pins" value={r.pins.count.toLocaleString('en-SG')} help={`Project photos clients saved · in ${yr}: ${r.pins.year.toLocaleString('en-SG')}`} testId="factor-pins" />
         </StatTiles>
-        <p className={styles.foot}>
-          {`* SuperTrust ${yr + 1} will be based on these numbers. `}
-          {d.links.supertrust ? <a className={styles.footLink} href={d.links.supertrust} target="_blank" rel="noopener noreferrer">Find out more</a> : null}
-        </p>
-        <p className={styles.foot}>{`^ This year’s reviews are counted by when the project was finished in ${yr}, not when the review was written.`}</p>
         <div className={styles.tips}>
           <button type="button" className={styles.textButton} onClick={() => router.push(`${QANVAST_REVIEWS_HREF}?request=1`)} data-testid="ranking-ask">{W.askHomeowners}</button>
           <span className={styles.foot}>{'Publishing more of your work helps your rank — '}<Link className={styles.footLink} href={withFrom('/profile#public', `${QANVAST_REVIEWS_HREF}/ranking`)} data-testid="ranking-work">add it on Your public profile</Link></span>
+          {d.links.supertrust ? <a className={styles.footLink} href={d.links.supertrust} target="_blank" rel="noopener noreferrer">About SuperTrust</a> : null}
         </div>
       </section>
 
@@ -361,7 +360,7 @@ function Ranking({ d }: { d: RankingPage }) {
           <StatTile label="Meeting experience" value={enough && r.feedback.experience !== null ? `${r.feedback.experience.toFixed(1)} / 10` : '–'} help="How the meeting went" testId="told-experience" />
         </StatTiles>
         <p className={styles.note} data-testid="ranking-told-note">
-          <span className={styles.noteText}>{enough ? `${plural(r.feedback.responses, 'homeowner')} answered Qanvast in the last 30 days.` : `${r.feedback.responses ? `Only ${plural(r.feedback.responses, 'homeowner')} answered` : 'No homeowner answered'} Qanvast in the last 30 days — it takes ${ENOUGH_ANSWERS} answers to show anything.`}</span>
+          <span className={styles.noteText}>{enough ? `${plural(r.feedback.responses, 'client')} answered Qanvast in the last 30 days.` : `${r.feedback.responses ? `Only ${plural(r.feedback.responses, 'client')} answered` : 'No client answered'} Qanvast in the last 30 days — it takes ${ENOUGH_ANSWERS} answers to show anything.`}</span>
           <Link className={styles.link} href={`${QANVAST_REVIEWS_HREF}/feedback`} data-testid="ranking-feedback-link">See the feedback</Link>
         </p>
       </section>
@@ -405,7 +404,7 @@ function FbCard({ id, title, average, value, unit, parts, reasons, reasonsTitle,
       {reasons && (!enough || shownReasons.length) ? (
         <div className={styles.reasons}>
           <h4 className={styles.reasonsTitle}>{reasonsTitle}</h4>
-          <p className={styles.sectionHelp}>A homeowner can give more than one reason, so these can add up to more than 100%.</p>
+          <p className={styles.sectionHelp}>A client can give more than one reason, so these can add up to more than 100%.</p>
           <Legend items={enough ? shownReasons : reasons} enough={enough} dots={false} />
         </div>
       ) : null}
@@ -430,9 +429,9 @@ function FeedbackView({ d }: { d: FeedbackPage }) {
       </div>
       <p className={styles.note} data-testid="feedback-summary">
         <span className={styles.noteText}>{f.enough
-          ? `In ${period}, ${f.responses} of the ${plural(f.leads, 'homeowner')} Qanvast sent you answered its check-in. This is what they said.`
-          : !f.leads ? `Qanvast sent you no leads in ${period}, so no homeowner had anything to tell it yet.`
-          : `${f.responses ? `Only ${f.responses}` : 'None'} of the ${plural(f.leads, 'homeowner')} Qanvast sent you in ${period} answered its check-in — it takes ${ENOUGH_ANSWERS} answers to show anything.`}</span>
+          ? `In ${period}, ${f.responses} of the ${plural(f.leads, 'client')} Qanvast sent you answered its check-in. This is what they said.`
+          : !f.leads ? `Qanvast sent you no leads in ${period}, so no client had anything to tell it yet.`
+          : `${f.responses ? `Only ${f.responses}` : 'None'} of the ${plural(f.leads, 'client')} Qanvast sent you in ${period} answered its check-in — it takes ${ENOUGH_ANSWERS} answers to show anything.`}</span>
       </p>
       <div className={styles.cards}>
         <FbCard id="contact" title="Contact rate" average={f.contact.average !== null ? `${f.contact.average}%` : null} value={`${f.contact.value}%`} parts={f.contact.parts} enough={f.enough} />
@@ -463,7 +462,7 @@ function suggestions(d: ReviewsPage | RankingPage | FeedbackPage | null): Maison
     return [{ label: 'How do we rank on Qanvast?', answer: { title: `#${d.ranking.rank} of ${d.ranking.firms.toLocaleString('en-SG')} firms`, text: `${plural(d.ranking.reviews.count, 'review')} averaging ${d.ranking.rating.average.toFixed(1)} ★ over the last 12 months, ${plural(d.ranking.projects.count, 'project')} published and ${d.ranking.pins.count.toLocaleString('en-SG')} board pins.`, link: { label: W.askHomeowners, href: `${QANVAST_REVIEWS_HREF}?request=1` } } }]
   }
   const f = d.feedback
-  return [{ label: 'What did homeowners tell Qanvast?', answer: f.enough
+  return [{ label: 'What did clients tell Qanvast?', answer: f.enough
     ? { title: `${f.responses} of ${f.leads} answered`, text: `${f.contact.value}% were contacted within a week and ${f.meeting.value}% have met a designer${f.experience.value !== null ? `; they rated the meeting ${f.experience.value.toFixed(1)} / 10` : ''}.` }
-    : { title: 'Too few answers yet', text: `${f.responses ? `Only ${plural(f.responses, 'homeowner')}` : 'No homeowner'} answered in the last ${f.days} days — try a longer period.` } }]
+    : { title: 'Too few answers yet', text: `${f.responses ? `Only ${plural(f.responses, 'client')}` : 'No client'} answered in the last ${f.days} days — try a longer period.` } }]
 }

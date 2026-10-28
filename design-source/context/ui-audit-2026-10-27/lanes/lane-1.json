@@ -1,0 +1,1006 @@
+[
+ {
+  "id": "1-01",
+  "area": "Dashboard › Needs you",
+  "route": "/dashboard",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Needs you is one 51-row inbox with ~26 different verbs; \"Show all\" unrolls it in place",
+  "now": "Card head \"Needs you 51\" with text tabs \"All · To approve 8 · Clients 8 · Late 7\"; five rows at rest, \"Show all 51\" expands every row inside the card (page grows to 4,300px). The 51 rows mix decisions (Approve a bill, Agree to more time) with standing reminders that are not decisions: \"11 compliance items to do · Design\", \"16 compliance items to do · Execution\", \"Save the brief of the meeting with Kevin\", \"Write up the meeting with Priya\", \"Start the project · When work begins on site\", \"Contract · The signed agreement · Add\", \"Invite the client\", \"Electrical & plumbing waits on the plumber · Open\". Row verbs seen: Publish, Review, Approve, Agree, Answer, Start, Pay, Send, Remind, Record the refund, Confirm, Change it, Reply, Open, Revise, Call, Assign, Mark done, Write up, Move the schedule, Add a contractor, Mark delivered, Draft it, Share, Add, Invite. The chip counts (8 + 8 + 7 = 23) never add up to the head's 51, so \"All\" holds 28 rows no chip names.",
+  "why": "A studio owner opening the app sees \"51 things need you\" — a wall. The few real decisions (approve a bill, answer a client) are buried among project housekeeping that belongs on each project. Twenty-six verbs mean every row has to be read before it can be acted on.",
+  "proposal": "Rename the card \"Needs your attention\" (see 1-02). Keep ONLY decisions and people waiting on the studio: Approvals (bills, POs, claims, more-time asks, quotes, price-book items), Clients waiting (messages, marks, declines), Overdue money. Move the standing project checklist rows (compliance items, \"Save the brief\", \"Write up the meeting\", \"Start the project\", \"Contract · Add\", \"Invite the client\", contractor gaps, schedule shares) to each project's own Needs you — the Dashboard shows one roll-up row per project (\"HDB 5-Room — Benjamin Han · 6 things to set up · Open\"). Show 5 rows; \"See all 23\" opens the full list in the house Drawer (the Review pane's frame) instead of growing the card. Chips become \"All · Approvals · Clients · Overdue\" and only appear when there are 8+ rows.",
+  "effort": "L",
+  "shots": [
+   "1-dashboard.png",
+   "1-dash-showall.png",
+   "1-dash-chip-clients.png"
+  ],
+  "code": [
+   "components/dashboard/inbox/needs-inbox.tsx:116-153",
+   "lib/dashboard/inbox.ts:150",
+   "lib/dashboard/inbox-queries.ts:185-281",
+   "lib/projects/needs-you.ts:132",
+   "lib/dashboard/inbox-queries.ts:480"
+  ]
+ },
+ {
+  "id": "1-02",
+  "area": "Cross-app › \"what needs me\"",
+  "route": "/dashboard · /projects · /projects/[id] · /company/finance · /tickets",
+  "kind": "copy",
+  "severity": "high",
+  "title": "One idea, eight names: Needs you / need you / Needs attention / Needs my review / To do / To approve / Needs your OK / Waiting on you",
+  "now": "Dashboard card \"Needs you 51\" and greeting \"51 things need you\" (lib/dashboard/frame.ts:59,67); project Overview \"Needs you\" + group \"Needs your OK\"; Projects listing tile and scope \"Needs attention\" (components/projects/scopes.ts, rail aria \"Projects (3 need attention)\"); Projects listing \"Needs my review\" (lib/projects/queries.ts:43); Company › Finance lands on \"To do\" with a \"To approve\" group; Dashboard chip \"To approve\"; Company panel \"4 to approve\" / \"1 awaiting\" / \"1 proposed\"; tickets \"Waiting on you\"; empty \"Nothing waits on you\" / \"You’re all caught up\".",
+  "why": "The owner's own example. A studio learns one word for \"this is waiting for me\" and should find it on every page. Today each module invented its own, and \"Needs you 51\" reads as a fragment, not a heading.",
+  "proposal": "One vocabulary: the heading is \"Needs your attention\" (Dashboard card, project Overview card, Finance landing tab — rename \"To do\"), the scope pill on Projects stays \"Needs attention\" (same root); the approval group is \"Approvals\" everywhere (Dashboard chip, Finance group, Company panel pill \"4 to approve\" → \"4 approvals\"; \"1 awaiting\" → \"1 approval\"; \"1 proposed\" → \"1 approval\"); \"Needs my review\" → \"Approvals\"; \"Needs your OK\" → \"Approvals\"; the greeting's \"51 things need you\" is dropped (see 1-18); the empty state everywhere \"You’re all caught up\".",
+  "effort": "M",
+  "shots": [
+   "1-dashboard.png",
+   "1-company.png",
+   "1-head-projects.png"
+  ],
+  "code": [
+   "lib/dashboard/frame.ts:59",
+   "lib/dashboard/frame.ts:67",
+   "lib/dashboard/inbox.ts:150",
+   "components/company/company-popover.tsx:41-44",
+   "lib/projects/queries.ts:43",
+   "components/projects/scopes.ts"
+  ]
+ },
+ {
+  "id": "1-03",
+  "area": "Shell › approvals counted everywhere",
+  "route": "/dashboard · /tasks · rail · Company panel · bell",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "The same approvals show in six places with three different numbers (8, 6, 1+1+4)",
+  "now": "Dashboard chip \"To approve 8\"; Tasks page banner \"8 approvals wait for you on the Dashboard · Open Dashboard\" (components/tasks/approvals-line.tsx:19); the rail's Company item wears a red \"6\"; the Company panel rows say \"1 awaiting\" (Templates), \"1 proposed\" (Price book), \"4 to approve\" (Finance); the bell's Notices repeat each approval with its own Approve / Send back buttons (\"Bright Spark Electrical’s bill EL-2207 needs your OK before it is paid · Approve\"); the project tab strip carries its own red counts (Money 6).",
+  "why": "A count that differs between the rail (6) and the Dashboard (8) for the same work makes a user distrust both; acting on an approval from the bell, the Dashboard and Finance means three ways to do one thing and three places to check it is done.",
+  "proposal": "One home for approvals: the Dashboard's \"Approvals\" group. Remove the Tasks banner (Tasks is for tasks). The rail's Company item drops its badge; the Company panel rows keep a grey count only (\"4 approvals\"). Bell rows for approvals keep their sentence but lose their inline buttons — a press opens the Dashboard's Review pane on that row (`?review=<key>`). Finance › To do lists the same rows (already the same source).",
+  "effort": "M",
+  "shots": [
+   "1-dashboard.png",
+   "1-tasks.png",
+   "1-company.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "components/tasks/approvals-line.tsx:19",
+   "components/shell/app-rail.tsx:140-146",
+   "components/company/company-popover.tsx:41-44",
+   "components/shell/notifications-panel.tsx:128"
+  ]
+ },
+ {
+  "id": "1-04",
+  "area": "Shell › rail",
+  "route": "every page (rail)",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Six red number badges on the rail at rest, each meaning something different",
+  "now": "At rest the collapsed rail shows red badges on Tasks \"1\" (my overdue), Projects \"3\" (need attention), Leads \"2\" (unseen new), Company \"6\" (approvals), Messages \"1\" (unread), Notifications \"16\" (unread) — plus the AI-credits ring. Same red, same size, six meanings.",
+  "why": "Red badges everywhere train people to ignore them. Only the bell's count is truly \"unread\"; the rest repeat the Dashboard's Needs you, which is the front door.",
+  "proposal": "Keep a red count only on Notifications (unread) and Messages (unread client messages). Tasks keeps its count only when something of mine is overdue — as a red dot, no number. Drop the Projects, Leads and Company badges (they are the Dashboard's rows). Same rule on the phone dock and More sheet (`badgeHref` / `countOf`).",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-rail-expanded.png",
+   "1-phone-more.png"
+  ],
+  "code": [
+   "components/shell/app-rail.tsx:36-49",
+   "components/shell/app-rail.tsx:57-74",
+   "components/shell/mobile-nav.tsx:107-110"
+  ]
+ },
+ {
+  "id": "1-05",
+  "area": "Cross-app › money format",
+  "route": "/dashboard · Review pane · bell · Maison AI answers",
+  "kind": "inconsistency",
+  "severity": "high",
+  "title": "An approval row shows a different amount than its own pane: \"S$ 39\" vs \"S$38.50\", \"S$ 5,530\" vs \"S$5,529.57\"",
+  "now": "Dashboard rows round to the dollar with a space (\"S$ 5,530\", \"S$ 39\", \"S$ 6,104\", \"−S$ 545\") via moneyCard; the Review pane for the same PO says \"Amount S$5,529.57\"; the bell says \"Germaine logged an expense of S$38.50\" for the row the Dashboard shows as \"S$ 39\"; Pulse says \"S$ 34.8K … S$ 34.2K past due · 2 invoices\" while Maison AI's answer to \"How much do clients owe us?\" says \"Owed to you · S$34,802.98 / 3 invoices not paid in full · S$34,154.98 overdue\". Four formats (S$ 39 · S$38.50 · S$ 34.8K · −S$ 545) on one page.",
+  "why": "Approving money is the one place an owner checks the figure to the cent. Seeing S$ 39 on the row and S$38.50 elsewhere looks like an error. \"2 invoices\" vs \"3 invoices\" for the same debt reads as a wrong number.",
+  "proposal": "One money rule: anything you approve, pay or confirm shows the exact amount \"S$5,529.57\" (no space, cents) — rows, pane, bell alike; only Pulse figures abbreviate (\"S$34.8K\"). Negative as \"–S$545.00 credit\" is wrong for a VO that takes money off: say \"S$545.00 less\" or show it unsigned under \"Saves\". Pulse and the answer card use one count (\"3 invoices · S$34,154.98 overdue\").",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-dash-review.png",
+   "1-dash-dock-answer.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "lib/format.ts:323",
+   "components/dashboard/inbox/inbox-row.tsx:21-22",
+   "lib/dashboard/pulse-queries.ts:190-195"
+  ]
+ },
+ {
+  "id": "1-06",
+  "area": "Tasks › toolbar",
+  "route": "/tasks",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Tasks shows nine controls and a purple banner before the first task",
+  "now": "Header: filled \"Add Task\" + ⋮. Then a purple banner \"8 approvals wait for you on the Dashboard · Open Dashboard\". Then: scope pill \"All Tasks (48) ▾\" (All Tasks · My Tasks · Unassigned · Studio Tasks), a segmented \"All · Leads · Projects\", three outlined to-do chips \"Overdue · 6\", \"Due today · 6\", \"Unassigned · 15\", a search box, Filters and Column settings. \"Unassigned\" is both a scope in the pill and a chip — the page-checklist rule (REG-297) says never both for one dimension. Under My Tasks the third chip silently swaps to \"Upcoming · 13\".",
+  "why": "The page's job is \"what do I do next\". Nine controls, two of which filter the same thing, make the list feel like a database. A chip that changes meaning with the scope is a trap.",
+  "proposal": "Remove the banner (1-03). Scope pill: \"All tasks · My tasks · General tasks\" (drop Unassigned — the chip keeps it). Fold \"All · Leads · Projects\" into Filters (its Lead / Project tabs already exist). Keep the same three chips in every scope: \"Overdue 6 · Today 6 · Unassigned 15\". After: [All tasks (48) ▾] [Overdue 6] [Today 6] [Unassigned 15] ……… [Search] [Filters] [Columns].",
+  "effort": "M",
+  "shots": [
+   "1-tasks.png",
+   "1-tasks-mine.png",
+   "1-tasks-scope.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-toolbar.tsx:130-188",
+   "components/leads/tasks/lead-tasks.tsx:73-87",
+   "lib/leads/task-filters.ts:10",
+   "components/tasks/approvals-line.tsx:19"
+  ]
+ },
+ {
+  "id": "1-07",
+  "area": "Tasks › table rows",
+  "route": "/tasks",
+  "kind": "noise",
+  "severity": "high",
+  "title": "Every task row repeats \"OPEN\", \"+ Add Tags\" and \"Assign\" — 63 purple text actions on one screen",
+  "now": "Each row: an outlined \"OPEN\" tag (every row on an open list), a purple \"+ Add Tags\" link in the last column, a purple \"Assign\" link with an icon on unassigned rows, avatar \"+\" buttons, an underlined due date; hover adds \"Edit\" + ⋮ over the date (\"Thu, 10 Sep ’26 [Edit] ⋮\" hides the time). The measure counts 63 purple text actions and 22 uppercase tags in the first screen. At 1440 the Tags column is cut at the edge — \"+ Ad\". From the lead-tasks mock (Status Tag Outlined Blue \"OPEN\", \"+ Add Tags\").",
+  "why": "The row says the same three things 15 times. The one thing that matters per row — what, for whom, when — is drowned by placeholders and purple verbs. The cut \"+ Ad\" reads as broken.",
+  "proposal": "On an open list hide the Status column (the ring already says done; show \"Completed\" only in a Completed view). Tags: show the tags when a task has them, else an empty cell; \"Add tags\" moves to the row ⋮ and the panel. Unassigned: a grey dashed avatar \"+\" (as the Members cell already uses), not purple \"Assign\". Due date plain text, red only when late. Hover keeps Edit in the ⋮ (no floating Edit over the date). Default columns at 1440 must fit without cutting: Title · For · Members · Due.",
+  "effort": "M",
+  "shots": [
+   "1-tasks.png",
+   "1-rail-expanded.png",
+   "1-tasks-scrolled-right.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-table.tsx:102-113",
+   "components/leads/tasks/tasks-table.tsx:404",
+   "components/leads/tasks/tasks-table.tsx:498",
+   "components/leads/tasks/tasks-table.tsx:709-716"
+  ]
+ },
+ {
+  "id": "1-08",
+  "area": "Dashboard › Needs you row words",
+  "route": "/dashboard",
+  "kind": "copy",
+  "severity": "high",
+  "title": "Row titles read like system events, not sentences a studio owner would say",
+  "now": "Verbatim: \"OM-10008’s price ended 29 Sep while Vivien has it\" · \"VO-2 has waited on Ryan for 11 days\" · \"VO-1 adds 3 days — move what follows?\" · \"Michelle asks for 5% of what the client pays · Answer\" · \"More time on Carpentry fabrication · Michelle asks for 1 week more · Agree\" · \"Germaine’s claim — “Grab to site — tile selection with Benjamin”\" · \"No Painting contractor on Painting\" · \"Tell Ryan about this week · Draft it\" · \"4 schedule changes Benjamin hasn’t seen · Share\" · \"Contract · The signed agreement · Add\" · \"1 lead has no member yet · Assign\" · \"Rahul Menon · new lead, no contact yet\" · \"Skirting, PVC 80 mm — proposed for the Price book\" · \"Ryan says they paid for INV-2026-002 · Confirm\" · \"S$1,090.00 to refund on CN-2026-002 · Record the refund\".",
+  "why": "Record numbers lead the sentence (OM-10008, VO-2, CN-2026-002); \"price ended\" for an expired quote, \"claim\" for an expense, \"5% of what the client pays\" for commission, \"member\" for the person in charge — the owner has to translate each line.",
+  "proposal": "Lead with the person and the thing, numbers last: \"Vivien’s quote expired on 29 Sep (OM-10008)\" · \"Ryan hasn’t answered variation order VO-2 — 11 days\" · \"VO-1 adds 3 days — update the schedule?\" · \"Michelle asks for 5% commission on Executive Condo · Review\" · \"Michelle asks for 1 more week on Carpentry fabrication · Approve\" · \"Germaine’s expense: Grab to site · S$38.50\" · \"No painter booked for Painting\" · \"Send Ryan this week’s update · Write\" · \"Share 4 schedule changes with Benjamin\" · \"Add the signed contract\" · \"1 lead isn’t assigned · Assign\" · \"Call Rahul Menon — new lead\" · \"Sarah wants “Skirting, PVC 80 mm” in the Price book\" · \"Ryan says he paid INV-2026-002 · Confirm\" · \"Refund S$1,090.00 to Benjamin (CN-2026-002)\". Full list in lane-1-words.json.",
+  "effort": "M",
+  "shots": [
+   "1-dash-showall.png",
+   "1-dash-chip-clients.png"
+  ],
+  "code": [
+   "lib/dashboard/inbox-queries.ts:552",
+   "lib/projects/money-needs.ts:95",
+   "lib/projects/needs-you.ts:158",
+   "lib/projects/needs-you.ts:248",
+   "lib/projects/needs-you.ts:271",
+   "lib/projects/needs-you.ts:279",
+   "lib/dashboard/inbox-queries.ts:131-133",
+   "lib/dashboard/inbox-queries.ts:409",
+   "lib/dashboard/inbox-queries.ts:470",
+   "lib/dashboard/inbox-queries.ts:480"
+  ]
+ },
+ {
+  "id": "1-09",
+  "area": "Dashboard › row verbs",
+  "route": "/dashboard",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The same kind of decision has different verbs: Approve / Agree / Answer / Publish / Review",
+  "now": "A bill is \"Approve\", a more-time ask is \"Agree\", a commission ask is \"Answer\", a site update is \"Publish\", a PO is \"Review\" (its pane then says \"Approve and send\"), a declined choice is \"Open\", a quote price ended is \"Revise\", a bill change is \"Change it\", an update is \"Draft it\", a refund is \"Record the refund\".",
+  "why": "A verb should tell the owner what happens on press. Five words for \"say yes\" make each row a new puzzle.",
+  "proposal": "A short verb set for the whole inbox: Approve (any yes/no ask — bills, POs, claims, more time, commission, price-book items, site updates before they go to the client), Reply (a client message / mark), Call, Remind, Confirm (a payment), Pay, Open (everything else). The pane's filled button repeats the row's verb (\"Approve\"; with \"Approve and send\" only when it also sends).",
+  "effort": "S",
+  "shots": [
+   "1-dash-showall.png",
+   "1-dash-review.png"
+  ],
+  "code": [
+   "lib/dashboard/inbox-queries.ts:214-355",
+   "lib/projects/money-needs.ts:81",
+   "lib/projects/money-needs.ts:91"
+  ]
+ },
+ {
+  "id": "1-10",
+  "area": "Shell › Tickets vs issues",
+  "route": "/tickets · bell · portal",
+  "kind": "copy",
+  "severity": "med",
+  "title": "The studio calls them Tickets, the bell calls them issues, the client sees Issues, the action is Escalate",
+  "now": "Rail and page: \"Tickets\", \"New ticket\", \"T-2026-004\"; the studio's own bell: \"Mei Ling Han reported an issue · T-2026-004 · Water stain…\"; the client portal tab: \"Issues\"; the drawer's second button \"Escalate\"; 1.0 called them Escalations (REG-2524 put Tickets on the rail).",
+  "why": "Two names on the studio side for one record. \"Ticket\" is helpdesk jargon; Singapore studios talk about \"defects\" or \"issues\" after handover.",
+  "proposal": "Pick one word for the studio and the client: \"Issues\" (rail item, page title, \"New issue\", \"I-2026-004\" or keep T- numbers out of the face). The bell already says \"reported an issue\". Drawer: \"Mark resolved\" stays; \"Escalate\" → \"Flag to the Owner\".",
+  "effort": "S",
+  "shots": [
+   "1-tickets.png",
+   "1-ticket-open.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "components/shell/app-rail.tsx:38",
+   "components/projects/tickets/studio-tickets.tsx:119",
+   "components/projects/tickets/ticket-parts.tsx:177-192"
+  ]
+ },
+ {
+  "id": "1-11",
+  "area": "Cross-app › create buttons",
+  "route": "/tasks · /tickets · /chat · /leads · /projects · /quotes",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Create verbs and looks differ page to page: Add Task, New ticket, New message ▾, Add Lead, New project, Create Quote",
+  "now": "Header filled: \"Add Task\" (Title Case, + a second \"+ Add Task\" link at the table foot and \"Add a task…\" on phone), \"New ticket\", \"New message ▾\", \"Add Lead\", \"New project\". Tools › Quotes has no header button — \"Create Quote\" is an OUTLINED button inside the toolbar beside \"All Quotes\". On the phone the header \"+\" is filled on Tasks and Tickets but outlined on Messages.",
+  "why": "The same action wears three verbs, two cases and two looks; a user can't rely on \"top-right purple button = make one\".",
+  "proposal": "One rule: the page header's one filled button \"New <thing>\" in sentence case — \"New task\", \"New lead\", \"New project\", \"New quote\", \"New ticket\"/\"New issue\", \"New message\". Tools › Quotes moves its create into the header. The phone's header \"+\" is always filled. Drop the duplicate \"+ Add Task\" table-foot link on the studio-wide list (keep Quick add on the phone).",
+  "effort": "S",
+  "shots": [
+   "1-head-leads.png",
+   "1-head-projects.png",
+   "1-head-tools-quotes.png",
+   "1-tasks.png",
+   "1-chat-390.png",
+   "1-tickets-390.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-toolbar.tsx:79",
+   "components/leads/tasks/tasks-table.tsx:226",
+   "components/leads/quotes/quotes-toolbar.tsx:99",
+   "components/projects/projects-workspace.tsx:309",
+   "components/projects/tickets/studio-tickets.tsx:119",
+   "components/projects/messages/new-conversation.tsx:47"
+  ]
+ },
+ {
+  "id": "1-12",
+  "area": "Shell › Tools popover",
+  "route": "rail › Tools",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Tools mixes the studio's Quotes and Contracts with AI gadgets, and has two 3D tools",
+  "now": "Tiles: Quotes · Quote X-Ray · Contracts · AI Visualizer · Floorplan to 3D Isometric (Beta) · Market Insights · Compliance Navigator · 3D Space Planner · Meeting Copilot. Quotes = \"Every quote in the studio — create one, or upload an existing quote\"; ⌘K labels them \"Tools · every quote in the studio\". \"Meeting Copilot\" help says \"the co-pilot in each\" (two spellings). Help lines show only on hover (none on a phone).",
+  "why": "Quotes and contracts are the studio's core documents, not tools — an owner looks for them in the rail. Two 3D tiles side by side (\"Floorplan to 3D Isometric\", \"3D Space Planner\") ask the user to know the difference. Product names (X-Ray, Copilot, Navigator, Isometric) need a hover to understand.",
+  "proposal": "Give Quotes and Contracts their own rail items (after Projects) and take them out of Tools. Merge the two 3D tiles into one \"3D\" tile that opens on two starts (\"From a floor-plan photo\" · \"Draw a layout\"). Plain names: \"Quote X-Ray\" → \"Compare quotes\", \"Meeting Copilot\" → \"Meeting notes\", \"Compliance Navigator\" → \"Rules & permits\", \"Floorplan to 3D Isometric\" → \"Floor plan to 3D\", \"Market Insights\" → \"Industry news\". Tools then holds six tiles.",
+  "effort": "M",
+  "shots": [
+   "1-tools.png",
+   "1-tools-help.png",
+   "1-phone-tools.png",
+   "1-search-empty.png"
+  ],
+  "code": [
+   "components/shell/tools-popover.tsx:25-35"
+  ]
+ },
+ {
+  "id": "1-13",
+  "area": "Shell › rail labels and grouping",
+  "route": "rail · phone More sheet",
+  "kind": "copy",
+  "severity": "med",
+  "title": "\"Qanvast Ops\" reads as Qanvast's internal console; Finance and Reports hide inside Company",
+  "now": "Rail: Dashboard · Tasks · Tickets · Projects · Leads · Marketplace · Company · Qanvast Ops | AI credits · Tools · Messages · Notifications · Settings. \"Qanvast Ops\" holds the studio's own Qanvast leads, Lead credits, Reviews and Hangouts — plus a \"Studios\" tab, and its table head is cut \"CREAT…\". Finance and Reports live only in Company › Operations (REG-1360/1361). Company holds Members while Settings holds Roles & access; Notifications are in Settings and in Your profile.",
+  "why": "\"Ops\" is insider language; a studio owner thinks \"my Qanvast account\". The two most-used owner places (money and reports) need two clicks through a panel titled Company. Config split across Company and Settings means guessing which.",
+  "proposal": "Rename \"Qanvast Ops\" → \"Qanvast\" (tabs Leads · Lead credits · Reviews · Hangouts; drop \"Studios\" from a studio's view). Rail order, work first: Dashboard · Leads · Projects · Quotes · Contracts · Tasks · Tickets · Messages | Finance · Reports · Tools · Marketplace | Company · Settings — Finance and Reports open their Company pages (one home kept, a second door). Longer term merge Settings into Company as one \"Studio settings\".",
+  "effort": "M",
+  "shots": [
+   "1-rail-expanded.png",
+   "1-qanvast-ops.png",
+   "1-company.png"
+  ],
+  "code": [
+   "components/shell/app-rail.tsx:35-49",
+   "lib/company/sections.ts:12-25"
+  ]
+ },
+ {
+  "id": "1-14",
+  "area": "Shell › rail vs phone dock order",
+  "route": "rail · phone dock",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Rail lists Projects before Leads; the phone dock lists Leads before Projects and hides Tasks in More",
+  "now": "Rail: Dashboard, Tasks, Tickets, Projects, Leads, … Phone dock: Dashboard · Leads · Tools · Projects · More; More: Tasks, Tickets, Marketplace, Company, Qanvast Ops, Settings, View as.",
+  "why": "Muscle memory breaks between desk and phone; the rail's order also runs against the studio's flow (a lead becomes a project).",
+  "proposal": "One order everywhere, following the work: Dashboard · Leads · Projects · Tasks … On the phone dock: Dashboard · Leads · Projects · Tasks · More (Tools into More, as the rail puts Tools in its lower group).",
+  "effort": "S",
+  "shots": [
+   "1-rail-expanded.png",
+   "1-phone-more.png",
+   "1-tasks-390-top.png"
+  ],
+  "code": [
+   "components/shell/app-rail.tsx:35-44",
+   "components/shell/mobile-nav.tsx:33-47"
+  ]
+ },
+ {
+  "id": "1-15",
+  "area": "Shell › Company panel",
+  "route": "rail › Company",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Every Company panel help line is cut off with \"…\"",
+  "now": "Panel title \"COMPANY\" then group eyebrow \"STUDIO\" (two stacked caps headings). Rows: \"Members · People, roles and who reports to w…\", \"Templates · Brand kit, quotes, co… · 1 awaiting\", \"Price book · My Items and My S… · 1 proposed\", \"Materials · Your own finishes for the AI Visualiz…\", \"Plan & AI credits · Your plan, the AI credits the team u…\", \"Client portal · The page your clients sign in to — it…\", \"Finance · Purchase orders, … · 4 to approve\", \"Reports · Leads, projects and money, for the …\", \"Integrations · Qanvast, the website form, Meta Le…\". The phone sheet cuts them too.",
+  "why": "A help line that is cut says nothing and adds a grey line of noise under every row. \"My Items and My Sections — what quote lines start from\" is insider anyway.",
+  "proposal": "Drop the help lines from the panel (the labels are clear; ⌘K keeps the words for search). One heading: \"Company\", groups \"Studio\" and \"Money & reports\" in the house group-title style. Counts in one word: \"4 approvals\", \"1 approval\".",
+  "effort": "S",
+  "shots": [
+   "1-company.png",
+   "1-phone-company.png"
+  ],
+  "code": [
+   "lib/company/sections.ts:12-25",
+   "components/company/company-popover.tsx:33-48"
+  ]
+ },
+ {
+  "id": "1-16",
+  "area": "Cross-app › the word \"Studio\"",
+  "route": "/dashboard · /tasks · /chat",
+  "kind": "copy",
+  "severity": "med",
+  "title": "\"Studio\" means the whole studio on the Dashboard, tasks with no lead on Tasks, and the all-hands chat in Messages",
+  "now": "Dashboard switch \"Studio / Mine\" (= everyone's work vs mine); Tasks scope \"Studio Tasks\" (= tasks with no lead or project, lib/leads/task-filters.ts:10) next to \"All Tasks\" and \"My Tasks\"; Messages tag \"STUDIO\" on \"Everyone at Demo Studio\"; the rail's block \"Demo Studio\".",
+  "why": "A user who picks \"Studio\" on the Dashboard to see everyone will expect \"Studio Tasks\" to be everyone's tasks — it is the opposite slice.",
+  "proposal": "Dashboard: \"Whole studio · Just me\". Tasks: \"Studio Tasks\" → \"General tasks\" (not on a lead or project). Messages: drop the STUDIO tag (the name \"Everyone at Demo Studio\" says it).",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-tasks-scope.png",
+   "1-chat.png"
+  ],
+  "code": [
+   "components/dashboard/frame/greeting.tsx:54-57",
+   "lib/leads/task-filters.ts:10",
+   "components/projects/messages/chat-inbox.tsx:33-38"
+  ]
+ },
+ {
+  "id": "1-17",
+  "area": "Dashboard › Pulse",
+  "route": "/dashboard",
+  "kind": "copy",
+  "severity": "med",
+  "title": "Pulse captions are CAPITALS, abbreviations and statistics words",
+  "now": "\"WON · 90 DAYS / S$ 121.1K / 2 of 30 leads · 7% win rate\"; \"OWED TO YOU / S$ 34.8K / S$ 34.2K past due · 2 invoices\"; \"PROFIT · OCTOBER / S$ 47.5K / on S$ 50.8K invoiced · costs not in yet on 2 projects\"; \"FIRST RESPONSE / 26.3h / Target 8h · median, 90 days\" (red). The ⋮ calls the strip \"Pulse\"; the tile opens \"Response time\". Uppercase labels via the tile's caption style.",
+  "why": "\"median\", \"26.3h\", \"costs not in yet\" and \"past due\" (the rest of the app says \"overdue\") are analyst words; capitals shout four labels that are not statuses.",
+  "proposal": "Sentence-case labels: \"Won in the last 90 days\", \"Owed to you\", \"Profit in October\", \"First reply to new leads\". Values: \"26 hours\" (not 26.3h), caption \"Usually 26 hours · aim for 8\". \"past due\" → \"overdue\". \"costs not in yet on 2 projects\" → \"2 projects still missing costs\". Menu label \"Pulse\" → \"Key numbers\". One name for the reply metric: \"First reply\" (tile, Reports, the lead's Response time line).",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-dash-pagemenu.png"
+  ],
+  "code": [
+   "lib/dashboard/pulse.ts:79-83",
+   "lib/dashboard/pulse-queries.ts:143-148",
+   "lib/dashboard/pulse-queries.ts:190-191",
+   "lib/dashboard/pulse-queries.ts:251",
+   "lib/dashboard/frame.ts:59"
+  ]
+ },
+ {
+  "id": "1-18",
+  "area": "Dashboard › greeting line",
+  "route": "/dashboard",
+  "kind": "noise",
+  "severity": "med",
+  "title": "The Needs-you count is said three times; in Mine an article title fills the greeting",
+  "now": "Greeting \"Tuesday 27 October · 51 things need you · 5 new since Saturday\", card head \"Needs you 51\", link \"Show all 51\". In Mine the greeting's link becomes \"New in Market Insights · Resale flats are reshaping the renovati…\" (cut). The Since popover mixes \"Aisha opened VO-1 · 3 times\", \"3 NEW LEADS · ALL FROM HANGOUT\" and a Market Insights article under CAPS eyebrows.",
+  "why": "Repeating a number doesn't make it more useful; an editorial article in the page's first line competes with real news (new leads).",
+  "proposal": "Greeting keeps \"Tuesday 27 October · 5 new since Saturday\"; the count lives once, in the card head. The Since link names only studio events (new leads, client opens); Market Insights articles stay in Tools. Since popover headings in sentence case (\"New since Saturday\", \"3 new leads, all from Hangout\").",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-dashboard-mine.png",
+   "1-dash-since.png"
+  ],
+  "code": [
+   "components/dashboard/frame/greeting.tsx:44-50",
+   "lib/dashboard/frame.ts:67",
+   "components/dashboard/frame/since-chips.tsx"
+  ]
+ },
+ {
+  "id": "1-19",
+  "area": "Shell › Maison AI entry points",
+  "route": "every page",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Maison AI has four different doors, and its spark also means \"AI credits\"",
+  "now": "Dashboard: a docked pill \"Ask Maison AI about your studio… ⌘J\"; every other page: a floating ✦ button opening a small sheet \"MAISON AI · Ask Maison AI · Answers from your records · [Keyboard shortcuts for this page] · Reset prototype to base\"; each Dashboard card head shows \"✦ Ask\" on hover; each Needs-you row ⋮ has \"Ask about this\". The rail's AI-credits slot uses the same spark inside a ring (\"11,610 AI credits\").",
+  "why": "One assistant should look and open the same way everywhere. A \"Keyboard shortcuts\" button inside the AI sheet is unrelated. The spark meaning both \"ask\" and \"credits balance\" muddles both.",
+  "proposal": "One door: the dock pill on every page in the shell (or the FAB on every page including the Dashboard) — same words \"Ask Maison AI…\", same sheet. Remove \"Keyboard shortcuts for this page\" from the AI sheet (it is the ? key and a ⌘K row). Card \"✦ Ask\" stays only in the row/card ⋮ as \"Ask Maison AI about this\". The credits slot uses a coin/diamond glyph, not the spark.",
+  "effort": "M",
+  "shots": [
+   "1-dashboard.png",
+   "1-maison-sheet.png",
+   "1-dash-card-hover.png",
+   "1-rail-expanded.png"
+  ],
+  "code": [
+   "components/shell/maison-ai.tsx:25",
+   "components/shell/maison-ai.tsx:169",
+   "components/maison-ai/dock/maison-dock.tsx:49-50",
+   "components/shell/rail-credits.tsx"
+  ]
+ },
+ {
+  "id": "1-20",
+  "area": "Shell › Notifications (bell)",
+  "route": "bell panel",
+  "kind": "noise",
+  "severity": "med",
+  "title": "The bell repeats the Dashboard's Your day and says every date twice",
+  "now": "Group \"DUE 14\" lists today's and overdue tasks and bills — the same rows as Your day and Tasks' Overdue / Due today chips. Each row repeats its date: \"Due today: Call Cheryl back about her budget / On Cheryl Lim / Due today\"; \"Kallang Co-Work Pte Ltd’s bill KC-1009 is due 28 Oct ’26 / S$2,180.00 to pay / Due Wed, 28 Oct ’26\"; \"Marcus Chen has had no contact yet / Arrived 49 days ago, nothing logged / Due Tue, 8 Sep ’26 · 49 days late\". Nearly every row ends \"· also by email and WhatsApp\". \"NOTICES 35\" below with inline Approve / Send back buttons.",
+  "why": "A third list of the same due items, each saying \"due today\" twice, makes the bell a chore; the delivery channel is not something the owner acts on.",
+  "proposal": "Drop the Due group from the bell (Your day and Tasks own it); keep events (\"Germaine sent an update\", \"New lead: Rahul Menon\"). One date per row, in the row's time column. Move \"also by email and WhatsApp\" into the row's ⋮ / details. Approval rows link to the Review pane (1-03). Group title \"Notices\" → none (or \"Earlier\" / \"Today\").",
+  "effort": "M",
+  "shots": [
+   "1-bell.png",
+   "1-phone-bell.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "components/shell/notifications-panel.tsx:126-128",
+   "components/shell/notifications-panel.tsx:281-296",
+   "lib/notifications/queries.ts"
+  ]
+ },
+ {
+  "id": "1-21",
+  "area": "Messages › inbox and thread",
+  "route": "/chat",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Messages tags every row in caps, names two rows the same, and explains itself twice",
+  "now": "Rows wear MetaChips \"STUDIO\", \"TEAM\", \"DIRECT\", \"GROUP\", \"CLIENT\"; a project's client conversation has NO tag while a lead's has \"CLIENT\"; two rows are titled \"HDB 5-Room — Benjamin Han\" (one TEAM, one the client's) and two \"Serena Koh\" (TEAM, CLIENT). Empty pane: \"Pick a conversation / Its messages open here. A client reads theirs on their page; Team, Direct, Group and Studio ones stay in the studio.\" The open thread says \"Benjamin Han and Mei Ling Han read this on their page\" in its head AND under the composer. Two filled buttons: \"New message ▾\" and \"Send\". ⌘K tags the same lead conversation \"LEAD\".",
+  "why": "Same title twice with a tiny tag is how a studio sends an internal remark to a client. The taxonomy (Direct/Group/Studio) is the system's, not the user's.",
+  "proposal": "Title rows by who reads them: \"Benjamin Han · client\" vs \"HDB 5-Room — team\"; one tag only, \"Team\", for internal threads (Direct/Group/Studio read from their names); a client thread gets a small \"Client sees this\" line in the composer only (drop the head copy). Empty pane: \"Pick a conversation\" alone. Header \"New message\" outlined; Send is the screen's filled button. ⌘K uses \"Client\" too.",
+  "effort": "M",
+  "shots": [
+   "1-chat.png",
+   "1-chat-thread.png",
+   "1-chat-390.png",
+   "1-search-ben.png"
+  ],
+  "code": [
+   "components/projects/messages/chat-inbox.tsx:33-38",
+   "components/projects/messages/chat-ghost.tsx:14-15",
+   "components/projects/messages/conversation.tsx:34",
+   "lib/projects/conversations.ts:85-106"
+  ]
+ },
+ {
+  "id": "1-22",
+  "area": "Tickets › list and drawer",
+  "route": "/tickets",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Ticket cards lead with record numbers and caps tags; \"Waiting on Benjamin\" sits under Germaine's avatar",
+  "now": "Chips \"Open (3) · Resolved and closed (1) · All (4)\". Card: \"T-2026-004  Water stain under the kitchen sink  IN PROGRESS / P-2026-002 · HDB 5-Room — Benjamin Han · Damage or breakage · Reported 18 Oct ’26 by Mei Ling Han / Germaine: Booked — … · 7d ago\" and at the right Germaine's avatar over \"Waiting on Benjamin\". Drawer: \"IN PROGRESS\" + \"DAMAGE OR BREAKAGE\" tags, \"From the portal · Reported…\", \"Looked after by\", filled \"Mark resolved\" plus filled \"Send\" (two filled), \"INTERNAL NOTE\" tag.",
+  "why": "Ticket and project numbers first make every card look the same; an avatar beside \"Waiting on Benjamin\" reads as \"Germaine is waiting on Benjamin\" — or the reverse.",
+  "proposal": "Card: title first, then \"HDB 5-Room — Benjamin Han · Damage · 18 Oct\", last message line, and at the right one plain status \"Your turn\" / \"Benjamin’s turn\" + the owner avatar with tooltip \"Looked after by Germaine\". Drop \"IN PROGRESS\" on the Open list (all are). Chips \"Open 3 · Closed 1 · All 4\" (no parentheses). Drawer: category as a fact row, not a caps tag; \"Mark resolved\" outlined, Send the one filled; \"INTERNAL NOTE\" → \"Note · team only\".",
+  "effort": "M",
+  "shots": [
+   "1-tickets.png",
+   "1-ticket-open.png",
+   "1-tickets-390.png"
+  ],
+  "code": [
+   "components/projects/tickets/project-tickets.tsx:24-26",
+   "components/projects/tickets/ticket-parts.tsx:27",
+   "components/projects/tickets/ticket-parts.tsx:160-192"
+  ]
+ },
+ {
+  "id": "1-23",
+  "area": "Tasks › task panel",
+  "route": "/tasks (panel)",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "The task panel labels a project \"Lead\", writes the due date twice, and mixes Title Case",
+  "now": "For a project task: \"Lead · Benjamin Han · P-2026-002\". Due date field \"27/10/2026, 10:00 AM\" with helper under it \"Tue, 27 Oct ’26 · 10:00 AM\" (two formats, same fact). \"Outside the studio · + Add a subcontractor or supplier\" (Finance calls them Vendors / Contractors). Buttons \"Mark as Completed\", \"Attach Files\", \"+ Add Tag\" in Title Case. A filled \"Mark as Completed\" while the page header's \"Add Task\" is also filled.",
+  "why": "Wrong label on the record's link, a doubled date and a third name for vendors erode trust in small ways on the most-used panel.",
+  "proposal": "Label \"Project\" (or \"For\") when the task is on a project. The field shows \"Tue, 27 Oct ’26 · 10:00 AM\" once, no helper. \"Add a vendor or contractor\". Sentence case: \"Mark as done\", \"Attach files\", \"Add tag\". While a Drawer is open its footer holds the one filled button (already); the header button is behind the scrim — fine.",
+  "effort": "S",
+  "shots": [
+   "1-tasks-panel.png"
+  ],
+  "code": [
+   "components/leads/tasks/task-panel.tsx:156",
+   "components/leads/tasks/task-panel.tsx:165",
+   "components/leads/tasks/task-panel.tsx:298",
+   "components/leads/tasks/outside-person.tsx:129-149"
+  ]
+ },
+ {
+  "id": "1-24",
+  "area": "Cross-app › dates and times",
+  "route": "/dashboard · /tasks · bell · /chat · /tickets",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Six date styles and two \"ago\" styles in one lane",
+  "now": "\"Tuesday 27 October\" (greeting) · \"Tue, 27 Oct ’26 · 10:00 AM\" (Tasks) · \"27/10/2026, 10:00 AM\" (task field) · \"Due Wed, 28 Oct ’26\" (bell) · \"18 Oct\" (Needs you) · \"Reported 18 Oct ’26\" (tickets) · \"Starts 5 Nov\" vs \"Resumes 29 Nov ’26\" (Projects card, one card) · \"yesterday\", \"2 days ago\" (Dashboard) vs \"1d ago\", \"7d ago\", \"14d ago\" (bell, Messages, Tickets).",
+  "why": "Inconsistent dates make a list hard to scan and look unfinished.",
+  "proposal": "One rule (lib/format): this year \"Tue 27 Oct\" (no year, no comma), other years \"27 Oct 2025\"; with a time \"Tue 27 Oct, 10:00 am\"; relative times spelled \"7 days ago\" / \"yesterday\" everywhere (no \"7d\"); the date field shows the same words.",
+  "effort": "M",
+  "shots": [
+   "1-tasks.png",
+   "1-bell.png",
+   "1-chat.png",
+   "1-tickets.png",
+   "1-tasks-panel.png"
+  ],
+  "code": [
+   "lib/format.ts",
+   "components/leads/tasks/task-panel.tsx:298",
+   "components/projects/tickets/ticket-parts.tsx:160"
+  ]
+ },
+ {
+  "id": "1-25",
+  "area": "Cross-app › counts",
+  "route": "/dashboard · /tasks · /tickets · Company panel · bell",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Counts are written five ways: \"Needs you 51\", \"Overdue · 6\", \"All Tasks (48)\", \"Open (3)\", \"4 to approve\"",
+  "now": "Dashboard head grey number after the title \"Needs you 51\" and tabs \"To approve 8\"; Tasks chips with a middle dot \"Overdue · 6\" and pill \"All Tasks (48)\" in parentheses; Tickets chips \"Open (3)\"; Company panel pills \"1 awaiting\"; bell eyebrow \"DUE 14\" with the number at the far right; Messages chips carry no counts (by design).",
+  "why": "A count format that changes per page is visual noise and makes the house look stitched together.",
+  "proposal": "One count style: the label then a grey number, no punctuation — \"Overdue 6\", \"All tasks 48\", \"Open 3\", \"Approvals 4\" (the Dashboard tabs' style). Use it in the house Chips, ScopePill and Tabs so every page inherits it.",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-tasks.png",
+   "1-tickets.png",
+   "1-company.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-toolbar.tsx:156-170",
+   "components/projects/tickets/project-tickets.tsx:24-26",
+   "components/dashboard/inbox/needs-inbox.tsx:118"
+  ]
+ },
+ {
+  "id": "1-26",
+  "area": "Cross-app › filter controls",
+  "route": "/dashboard · /tasks · /tickets · /chat",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "Four different looks for \"filter this list\": text tabs, segmented, outlined chips, bordered chips",
+  "now": "Dashboard Needs you: borderless text tabs with a tinted selected one; Dashboard Studio/Mine: grey-track SegmentedButton; Tasks: segmented \"All · Leads · Projects\" + outlined purple to-do chips with icons; Tickets: small bordered chips with bold 13px labels \"Open (3)\"; Messages: bordered chips \"All · Unread · Clients · Team\".",
+  "why": "The same job (narrow a list) is drawn four ways in one lane; the user can't learn one pattern.",
+  "proposal": "In-list filters are the house `Chips` everywhere (Tickets, Messages, Tasks to-do chips, Dashboard tabs) with one size; `SegmentedButton` only for view switches (Studio/Mine, table/board). Remove Tasks' Leads/Projects segment (1-06).",
+  "effort": "M",
+  "shots": [
+   "1-dashboard.png",
+   "1-tasks.png",
+   "1-tickets.png",
+   "1-chat.png"
+  ],
+  "code": [
+   "components/dashboard/inbox/needs-inbox.tsx:116-118",
+   "components/leads/tasks/tasks-toolbar.tsx:130-188",
+   "components/projects/tickets/project-tickets.tsx:24-26",
+   "components/projects/messages/chat-inbox.tsx:187"
+  ]
+ },
+ {
+  "id": "1-27",
+  "area": "Phone › Tasks",
+  "route": "/tasks @390",
+  "kind": "noise",
+  "severity": "med",
+  "title": "On a phone the to-do chips lose their words: just \"⏱ 6\", \"📅 6\", \"👤+ 15\"",
+  "now": "At 390 the chips are icon + number only (no labels, no tooltip on touch); the approvals banner takes the top 100px; 48 tasks render as tall cards (page height 10,104px).",
+  "why": "A clock and a number don't say \"overdue\" to someone who hasn't learned the icon.",
+  "proposal": "Keep the words in a ChipRail on the phone (\"Overdue 6 · Today 6 · Unassigned 15\"); drop the banner (1-06); open the phone list on My tasks with Overdue + Today first.",
+  "effort": "S",
+  "shots": [
+   "1-tasks-390-top.png",
+   "1-tasks-390.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-toolbar.tsx:130-155"
+  ]
+ },
+ {
+  "id": "1-28",
+  "area": "Phone › Dashboard",
+  "route": "/dashboard @390",
+  "kind": "noise",
+  "severity": "med",
+  "title": "On a phone every card and row has its own ⋮ and verb line; Studio/Mine takes a row",
+  "now": "Under the greeting a full row holds only \"Studio | Mine\" and the page ⋮; Needs you has a card ⋮ and every row a ⋮ plus a verb on a third line (\"Publish ⋮\", \"Review ⋮\"); 11 ⋮ in the first two screens; the floating \"Ask Maison AI…\" pill sits over the fourth row's verb at rest; Pulse moves below Needs you.",
+  "why": "Three-line rows and a ⋮ everywhere double the scroll on the phone, where the Dashboard is opened most.",
+  "proposal": "Phone: Studio/Mine moves into the page ⋮ (one ⋮ for the page). Row = title + caption, the verb at the row's right as on the desk; the row's other actions on long-press / its pane. Card ⋮ removed (hide cards from the page ⋮). Pad the list's end so the dock pill never covers a verb.",
+  "effort": "M",
+  "shots": [
+   "1-dashboard-390.png",
+   "1-dashboard-390-full.png"
+  ],
+  "code": [
+   "components/dashboard/frame/greeting.tsx:52-65",
+   "components/dashboard/inbox/inbox-row.tsx:101-115",
+   "components/dashboard/cards/card-frame.tsx"
+  ]
+ },
+ {
+  "id": "1-29",
+  "area": "Your profile",
+  "route": "/profile",
+  "kind": "noise",
+  "severity": "med",
+  "title": "Every card on Your profile opens with a two-line explanation",
+  "now": "\"Your name and photo show wherever you appear in the studio — on the leads you hold, the quotes you prepare and in the messages clients read.\" · \"It prints on the quotes and contracts you prepare, once you allow it. Draw it, type your name in the signature face, or upload a picture of it.\" · \"Where the studio pays you — a claim paid back, your commission. Finance shows it, with a copy button, when it pays you.\" · \"What reaches you, and how. Which notices go out at all is the studio’s choice, in Settings › Notifications.\" · \"What clients read about you — your card and your work — on their portal and your studio’s Hangout pages.\" · \"Whether you take new leads and the leads you prefer are on your row in Company › Members.\" Plus field helpers \"Printed as your email on the quotes you prepare\", \"A mobile signs you in and gets WhatsApp notices; clients see it on their portal\", \"You’re an Owner at Demo Studio. An Owner or an Admin sets roles on Company › Members.\", \"Off, the studio signature box stays blank and you sign by hand. You can change this any time.\"",
+  "why": "Nine explanatory sentences on a page that holds name, phone, signature, PayNow and notifications. The page reads like a manual.",
+  "proposal": "Keep one short helper only where it changes a decision: under the signature switch \"Off: you sign printed quotes by hand\". Card titles carry the rest: \"Your details\", \"Signature\", \"PayNow — for claims and commission\", \"Notifications\", \"Public profile\", \"New leads\". Drop the role sentence (show \"Owner\" as a chip by the name). \"Hangout pages\" → \"your studio’s public pages\".",
+  "effort": "S",
+  "shots": [
+   "1-profile-full.png",
+   "1-profile-390.png"
+  ],
+  "code": [
+   "lib/company/member-words.ts:10-12",
+   "components/profile/your-profile-ghost.tsx:16-19",
+   "components/profile/your-profile-view.tsx:167-174",
+   "lib/quotes/signature.ts:69-70",
+   "lib/notifications/personal.ts:126-138"
+  ]
+ },
+ {
+  "id": "1-30",
+  "area": "Cross-app › page headers (L1)",
+  "route": "/leads · /projects · /quotes · /tasks · /tickets · /settings",
+  "kind": "inconsistency",
+  "severity": "med",
+  "title": "L1 headers carry different kits: create + Insights + ⋮, create only, nothing, or create in the toolbar",
+  "now": "Leads: \"Add Lead\" filled + \"Insights\" outlined + ⋮. Projects: \"New project\" + \"Insights\" + ⋮, then a stat strip of four grey boxes and a fifth bare \"CONTRACT VALUE S$ 261.9K\" tile. Tools › Quotes: no header action; a second title \"All Quotes\" + \"Waiting on client · 3\" + outlined \"Create Quote\" + ⋮ in the toolbar. Tasks: \"Add Task\" + ⋮. Tickets: \"New ticket\" only. \"Insights\" opens Company › Reports (two names for one place).",
+  "why": "Where the create button and the page menu sit should never need hunting.",
+  "proposal": "Header anatomy for every L1: title · (one filled \"New …\") · ⋮; reports reached from the ⋮ or the rail (\"Reports\", not \"Insights\"). Tools › Quotes drops the second \"All Quotes\" title. The Projects stat strip uses one StatTile look for all five.",
+  "effort": "M",
+  "shots": [
+   "1-head-leads.png",
+   "1-head-projects.png",
+   "1-head-tools-quotes.png",
+   "1-tasks.png",
+   "1-tickets.png"
+  ],
+  "code": [
+   "components/projects/projects-workspace.tsx:309-316",
+   "components/leads/quotes/quotes-toolbar.tsx:99",
+   "components/meetings/meetings-workspace.tsx:34"
+  ]
+ },
+ {
+  "id": "1-31",
+  "area": "Dashboard › Projects card",
+  "route": "/dashboard",
+  "kind": "defect",
+  "severity": "low",
+  "title": "\"AquaFlow Plumbing Works’s bill\" — the possessive is built onto company names",
+  "now": "Projects card: \"43% · AquaFlow Plumbing Works’s bill AF-7781 14 days overdue\"; bell: \"Kallang Co-Work Pte Ltd’s bill KC-1009 is due 28 Oct ’26\", \"Woodcraft Carpentry Pte Ltd’s bill WC-2391 is overdue\", \"AquaFlow Plumbing Works’s bill AF-7781 is overdue\".",
+  "why": "\"Works’s\" is a grammar error a client-facing studio would notice; \"Pte Ltd’s\" reads awkwardly.",
+  "proposal": "Put the vendor after the record: \"Bill AF-7781 from AquaFlow Plumbing Works — 14 days overdue\".",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "lib/projects/money-needs.ts:102",
+   "lib/projects/money-needs.ts:110",
+   "lib/dashboard/health.ts:60"
+  ]
+ },
+ {
+  "id": "1-32",
+  "area": "Dashboard › Review pane",
+  "route": "/dashboard (Review)",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Review pane: two-line title, a margin phrase nobody says, and a different verb than the row",
+  "now": "Title \"Purchase order · Benjamin Han\" wraps to two lines; byline \"Germaine submitted it 18 Oct ’26 · leaves 23.8% against the quote\"; facts \"Project · Amount S$5,529.57\"; buttons \"Send back\" + filled \"Approve and send\"; the row's verb was \"Review\".",
+  "why": "\"leaves 23.8% against the quote\" is the margin — say margin.",
+  "proposal": "Title \"PO-2026-008 · Stone & Tile Masonry\" (one line); byline \"From Germaine · 18 Oct · margin left on this work 23.8%\"; row verb \"Approve\" opens the pane on that button.",
+  "effort": "S",
+  "shots": [
+   "1-dash-review.png",
+   "1-dash-review-390.png"
+  ],
+  "code": [
+   "lib/projects/money-needs.ts:90-91",
+   "components/dashboard/inbox/review-pane.tsx:50-67"
+  ]
+ },
+ {
+  "id": "1-33",
+  "area": "Dashboard › Team load",
+  "route": "/dashboard",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Team load speaks in fractions: \"projects / capacity\", \"Full\", \"2/3\", \"0/4\"",
+  "now": "Head legend \"projects / capacity\"; rows \"Michelle · 2 open leads · Full\", \"Germaine · 3 open leads · 2/3\", \"Dane · 10 open leads · 1/4\"; foot \"Contractors · 4 free this week · 1 over capacity · View\". \"open leads\" here means leads in progress, while \"Open to new leads\" elsewhere means accepting leads.",
+  "why": "Fractions and \"capacity\" need decoding; \"open\" means two different things a click apart.",
+  "proposal": "Title \"Team workload\"; row \"Germaine — 2 of 3 projects · 3 active leads\", \"Michelle — full (2 of 2)\"; drop the legend. Foot \"Contractors: 4 free this week, 1 overbooked · View\".",
+  "effort": "S",
+  "shots": [
+   "1-dashboard-full.png"
+  ],
+  "code": [
+   "components/dashboard/cards/team-card.tsx:12-27",
+   "lib/dashboard/cards-queries.ts:255"
+  ]
+ },
+ {
+  "id": "1-34",
+  "area": "Dashboard › Pipeline",
+  "route": "/dashboard",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "Pipeline writes \"Quote sent\" while the Leads listing's stage is \"Quote Sent\"",
+  "now": "Pipeline rows \"New · Contacted · Met · Quote sent · Won\"; the listing, the stage pill and the Move stage window say \"Quote Sent\".",
+  "why": "A stage name should read the same wherever it appears.",
+  "proposal": "Use the stage list's own labels (one constant) — whichever case Vicky keeps, both places.",
+  "effort": "S",
+  "shots": [
+   "1-dashboard.png"
+  ],
+  "code": [
+   "components/dashboard/cards/pipeline-card.tsx",
+   "lib/leads/enums.ts"
+  ]
+ },
+ {
+  "id": "1-35",
+  "area": "Dashboard › On site this week",
+  "route": "/dashboard",
+  "kind": "defect",
+  "severity": "low",
+  "title": "\"On site this week\" shows a mood board and a photo from last week",
+  "now": "Card shows a kitchen photo and a \"Kitchen mood board\" swatch image, captioned \"Kitchen cabinets are in · Benjamin Han · 22 Oct\" — 22 Oct is before this week (Mon 26 Oct); a mood board is not a site photo.",
+  "why": "The title promises this week's site progress.",
+  "proposal": "Only this week's site-update photos (not design boards); with none, hide the card. Title \"Site photos this week\".",
+  "effort": "S",
+  "shots": [
+   "1-dashboard-full.png"
+  ],
+  "code": [
+   "components/dashboard/cards/on-site-card.tsx:30"
+  ]
+ },
+ {
+  "id": "1-36",
+  "area": "Shell › keyboard shortcuts panel",
+  "route": "? panel",
+  "kind": "copy",
+  "severity": "low",
+  "title": "The shortcuts panel's switches are written in riddles",
+  "now": "\"Single-key shortcuts · Letters, numbers and ? — arrows, ↵, Esc and ⌘ keys always work\"; \"Tips while I work · A key, once the mouse has done the same three times\"; a meter \"You use 2 of 26 here\".",
+  "why": "Plain-language owners won't parse these; the usage meter is gamification noise.",
+  "proposal": "\"Use single keys (C, F, J, K…)\" — helper \"Arrows, Enter, Esc and ⌘ keys always work\". \"Show shortcut tips\" — helper \"After you do the same thing 3 times with the mouse\". Remove the meter.",
+  "effort": "S",
+  "shots": [
+   "1-shortcuts.png"
+  ],
+  "code": [
+   "components/shell/shortcuts/shortcuts-panel.tsx:71-91"
+  ]
+ },
+ {
+  "id": "1-37",
+  "area": "Shell › ⌘K search",
+  "route": "⌘K",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "⌘K files Quotes under \"Tools\", ranks folders above pages, and calls a client thread \"LEAD\"",
+  "now": "Empty: \"Quotes · Tools · every quote in the studio\", \"Contracts · Tools · every contract in the studio\", \"AI Visualizer · Tools · every design\". \"payments\" → four \"Payments · <client> · Folder\" files first, then \"Payments out · Company › Finance › Money out\", \"Client payments · Settings › Finance\", \"Money in\", \"Payment schedule templates\". \"money\" does not find a project's Money tab. A lead's conversation is tagged \"LEAD\" here and \"CLIENT\" in Messages. On a phone the placeholder is cut (\"Search leads, projects, quotes, contracts, ta\") and Go to offers \"Keyboard shortcuts\" on a device with no keyboard.",
+  "why": "Search should land the page a user means first, in the words of the page.",
+  "proposal": "Rank Go to pages above files; subtitles name the place (\"Quotes\", \"Company › Finance\"), not the rail group; add a row for a project's Money / Payments tab; tag client conversations \"Client\"; placeholder \"Search\" alone on a phone, and no Keyboard shortcuts row on touch.",
+  "effort": "S",
+  "shots": [
+   "1-search-empty.png",
+   "1-search-money.png",
+   "1-search-payments.png",
+   "1-search-ben.png",
+   "1-phone-search.png"
+  ],
+  "code": [
+   "lib/global-search/model.ts",
+   "lib/projects/conversations.ts:106"
+  ]
+ },
+ {
+  "id": "1-38",
+  "area": "Shell › studio block",
+  "route": "rail › studio block",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The studio block says \"Dane Bruce Lee\"; the member is \"Dane\" everywhere else",
+  "now": "Rail block: \"Demo Studio / Dane Bruce Lee\" (hard-coded DEMO_CHROME.owner); Your profile, View as, avatars and the greeting say \"Dane\".",
+  "why": "Two names for the signed-in person.",
+  "proposal": "Read the second line from the signed-in member's name (or the studio's role line: \"Dane · Owner\").",
+  "effort": "S",
+  "shots": [
+   "1-rail-expanded.png",
+   "1-view-as.png"
+  ],
+  "code": [
+   "lib/studios/model.ts:117",
+   "components/shell/app-rail.tsx:245-246"
+  ]
+ },
+ {
+  "id": "1-39",
+  "area": "Shell › \"Open to new leads\"",
+  "route": "studio block · You sheet · Members · Your profile",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "\"Open to new leads\" lives in three places, with a vague helper",
+  "now": "Switch in the studio block popover and the phone You sheet (\"Open to new leads · Suggested for new leads\"), on each member's row in Company › Members, and Your profile links to it (\"New leads and preferences · Whether you take new leads … are on your row in Company › Members\").",
+  "why": "Three homes for one switch; \"Suggested for new leads\" doesn't say what changes.",
+  "proposal": "One home: Your profile › New leads (the switch itself, not a link) and the Owner's Members row. Remove it from the studio block / You sheet. Helper: \"New leads can be assigned to you\".",
+  "effort": "S",
+  "shots": [
+   "1-view-as.png",
+   "1-phone-you.png",
+   "1-profile-full.png"
+  ],
+  "code": [
+   "components/shell/view-as-popover.tsx:245-251",
+   "components/profile/your-profile-ghost.tsx:17"
+  ]
+ },
+ {
+  "id": "1-40",
+  "area": "Shell › View as popover",
+  "route": "rail › studio block",
+  "kind": "noise",
+  "severity": "low",
+  "title": "The studio block's popover is 20 rows of demo tools mixed with your profile",
+  "now": "Your profile · Open to new leads · Sign out · VIEW AS (Demo only) + a 2-line paragraph + 9 members · STUDIO PLAN · DEMO ONLY with six states (\"Free · Upgrade in the rail · 30 AI credits a…\", \"Pro in its 14 days of grace\", \"Not counted yet · AI tools free for a month’s notice\") · Studios · demo only.",
+  "why": "In a demo it works, but it buries Sign out and Your profile among insider plan states.",
+  "proposal": "The block opens \"Your profile · Sign out\"; the demo tools (View as, Studio plan) sit in one \"Demo\" sub-menu at the bottom.",
+  "effort": "S",
+  "shots": [
+   "1-view-as.png",
+   "1-phone-you.png"
+  ],
+  "code": [
+   "components/shell/view-as-popover.tsx:34-39",
+   "components/shell/view-as-popover.tsx:161-280"
+  ]
+ },
+ {
+  "id": "1-41",
+  "area": "Cross-app › notices vs notifications",
+  "route": "/profile · bell · Settings",
+  "kind": "copy",
+  "severity": "low",
+  "title": "\"Notifications\" and \"notices\" used for the same thing; two \"notification settings\"",
+  "now": "Rail/bell/Settings say \"Notifications\"; Your profile says \"Which notices go out at all…\", \"Each email goes out with its notice in the bell\", \"Nothing muted — every notice the studio sends you reaches you\", \"WhatsApp notices\"; the bell group is \"Notices\". The bell's \"Notification settings\" opens Your profile, while Settings › Notifications is the studio's.",
+  "why": "Two words for one thing; two settings pages with the same name.",
+  "proposal": "\"notification(s)\" everywhere. Bell footer \"Your notification settings\"; Settings › Notifications titled \"Studio notifications\".",
+  "effort": "S",
+  "shots": [
+   "1-profile-full.png",
+   "1-bell-scrolled.png"
+  ],
+  "code": [
+   "lib/notifications/personal.ts:126-138",
+   "components/shell/notifications-panel.tsx:128",
+   "components/shell/notifications-panel.tsx:262"
+  ]
+ },
+ {
+  "id": "1-42",
+  "area": "Tasks › page ⋮",
+  "route": "/tasks",
+  "kind": "copy",
+  "severity": "low",
+  "title": "The studio-wide Tasks ⋮ offers \"Delete all\" and mixes cases",
+  "now": "Kebab: \"Save all as Template · Manage Templates · Export all as... · Delete all · Group by project\"; row ⋮: \"Mark as Completed · Rename · Save as Template · Duplicate · Delete\".",
+  "why": "\"Delete all\" on 48 studio tasks is a dangerous one-press neighbour of Export.",
+  "proposal": "Drop \"Delete all\" here (selection + bulk bar covers it). Sentence case: \"Save as a template\", \"Manage templates\", \"Export…\", \"Mark as done\".",
+  "effort": "S",
+  "shots": [
+   "1-tasks-kebab.png",
+   "1-tasks-rowmenu.png"
+  ],
+  "code": [
+   "components/leads/tasks/tasks-toolbar.tsx:110-123",
+   "components/leads/tasks/tasks-table.tsx:751-752"
+  ]
+ },
+ {
+  "id": "1-43",
+  "area": "Phone › FAB over content",
+  "route": "/tickets · /chat @390",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The Maison AI button covers list text at rest on the phone",
+  "now": "Tickets: the ✦ covers \"Waiting on Ryan\"; Messages list: it covers \"11d ago\"; an open conversation: it sits over the last message (\"Clear, so it stays invisible against the q…\").",
+  "why": "Content hidden under a floating button at rest.",
+  "proposal": "Lists end with `--fab-clearance`; inside an open conversation (which has its own composer) the FAB hides.",
+  "effort": "S",
+  "shots": [
+   "1-tickets-390.png",
+   "1-chat-390.png",
+   "1-chat-thread-390.png"
+  ],
+  "code": [
+   "components/shell/maison-fab.tsx",
+   "components/projects/messages/messages.module.css"
+  ]
+ },
+ {
+  "id": "1-44",
+  "area": "Cross-app › L2 header chips",
+  "route": "/leads/[id] · /projects/[id]",
+  "kind": "inconsistency",
+  "severity": "low",
+  "title": "L2 headers put meta in CAPITALS (\"HDB 4-ROOM\", \"INSTAGRAM\", \"WHOLE-HOME RENOVATION\")",
+  "now": "Lead L2: \"Tasks / Leads / Farah Ahmad  [9812 0443] [S$ 68K] [HDB 4-ROOM] [INSTAGRAM]\"; project L2: \"[P-2026-002] [WHOLE-HOME RENOVATION]\"; tab names \"Notes & Logs\" (lead) vs \"Files & notes\" (project).",
+  "why": "Capitals are for statuses; these are facts.",
+  "proposal": "Meta chips in sentence case (\"HDB 4-room · Instagram\"), one case for tab names (\"Notes & logs\").",
+  "effort": "S",
+  "shots": [
+   "1-head-l2-lead.png",
+   "1-head-l2-project.png"
+  ],
+  "code": [
+   "components/om/meta-chip.tsx",
+   "components/shell/page-header-l2.tsx"
+  ]
+ },
+ {
+  "id": "1-45",
+  "area": "Shell › ghosts",
+  "route": "/tickets (loading)",
+  "kind": "defect",
+  "severity": "low",
+  "title": "The Tickets ghost draws pill chips and four rows; the page has square chips and three",
+  "now": "Ghost: three fully rounded chip bones and four card bones; the page: 4px-radius chips and three cards. Dashboard, Tasks, Messages and Profile ghosts match their pages.",
+  "why": "The crossfade jumps a little (REG-708 asks one ghost of the page's own shape).",
+  "proposal": "Use the chips' own radius in the bones and the remembered row count (as the other ghosts do).",
+  "effort": "S",
+  "shots": [
+   "1-ghost-tickets.png",
+   "1-tickets.png"
+  ],
+  "code": [
+   "components/shell/list-ghosts.tsx"
+  ]
+ },
+ {
+  "id": "1-46",
+  "area": "Sign in",
+  "route": "/sign-in",
+  "kind": "copy",
+  "severity": "low",
+  "title": "Sign-in has four lines of small print under the form",
+  "now": "\"New to OpenMaison? Start your studio\" / \"Demo only — no text or email is sent: any six digits sign you in.\" / \"Dane, the studio’s Owner, signs in with dane@demostudio.sg.\" / \"By continuing you agree to OpenMaison’s Terms of Service and Privacy Policy.\" The field label says \"Mobile number or email\", the lead line \"mobile number or work email\".",
+  "why": "Mostly fine (one filled button, 67 words); the demo lines are needed in a demo.",
+  "proposal": "Group the two demo lines into one grey box \"Demo: any 6 digits work — try dane@demostudio.sg\"; label \"Mobile number or work email\".",
+  "effort": "S",
+  "shots": [
+   "1-sign-in.png",
+   "1-sign-in-390.png"
+  ],
+  "code": [
+   "app/sign-in/page.tsx:20-26",
+   "components/auth/studio-sign-in.tsx"
+  ]
+ }
+]

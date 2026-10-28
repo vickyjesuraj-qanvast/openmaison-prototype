@@ -20,3 +20,22 @@
   /* (fix-A, A-32) the fifth tile stays a figure on the canvas */
   .tiles > .valueTile, .valueTile > * { background: transparent; }
 }
+
+/* (the calm UI build 2026-10-27, 3-38 · T-06) the tiles are the Dashboard's card (StatTile look="card"), boxed on the listing's white page by a
+   hairline (the Dashboard's page is grey; here a borderless white card would vanish), the value at the card's own size; the fifth, the open
+   projects' value, is a boxed figure too (no longer bare). Doubled over the card's own fill and the old transparent rule. */
+.tiles.tiles { --stat-tile-pad: var(--om-spacing-4); }
+.tileBtn.tileBtn > *, .valueTile.valueTile > * { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
+.tileBtn.tileBtn:hover > * { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-secondary); }
+.tileBtn.tileBtn[aria-pressed='true'] > * { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+/* (the calm UI build 2026-10-27, 3-11) a phone's one line of doors under the pill — the body's secondary words, each door a 44 target */
+.phoneTiles { margin: 0; padding: 0 var(--om-spacing-4) var(--om-spacing-2); display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.phoneTile { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+.phoneDoor { min-height: 44px; padding: 0; border: 0; background: none; font: inherit; color: var(--om-color-on-surface-default); text-decoration: underline; text-decoration-color: var(--om-color-on-surface-border); text-underline-offset: 3px; cursor: pointer; }
+.phoneDoor[data-alert] { color: var(--om-color-tertiary-red-default); }
+.phoneDoor[aria-pressed='true'] { color: var(--om-color-primary-default); text-decoration-color: currentColor; }
+.phoneDoor:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* a menu row's own test mark takes no box (the ⋮'s Reports) */
+.menuRow { display: contents; }
+.tiles.tiles > [data-look='card'] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); }   /* the ghost's tiles, boxed as the page's */
+.workloadOf.workloadOf { align-self: flex-start; }   /* the switch hugs its words, as the Leads listing's view switch */

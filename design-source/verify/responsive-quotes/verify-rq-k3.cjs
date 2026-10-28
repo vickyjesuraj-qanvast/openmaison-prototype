@@ -94,7 +94,7 @@ const near = (a, b, tol = 2) => Math.abs(a - b) <= tol
     ok(await m.getByTestId('preview-more').count() === 1, 'the bar carries ⋮')
     ok(await m.getByRole('button', { name: /What your client sees|Copy link|Download PDF/ }).count() === 0 && await m.getByRole('switch', { name: 'Internal copy' }).count() === 0 && await m.getByTestId('preview-download').count() === 0, 'no desk button or switch in the bar; Download is the viewer’s (C-17)')
     const asPrinted = m.getByTestId('view-as-printed')
-    ok(await asPrinted.count() === 1 && /As printed/.test(await asPrinted.innerText()) && /\d+ lines/.test(await m.locator('[class*="readHead"]').innerText()), 'the cards’ head: the line count, and As printed')
+    ok(await asPrinted.count() === 1 && /as printed/i.test(await asPrinted.innerText()) && /\d+ items/.test(await m.locator('[class*="readHead"]').innerText()), 'the cards’ head: the line count, and As printed')
     const ab = await touchBox(m, asPrinted)
     ok(ab.above && ab.below, `As printed has a 44 box (${JSON.stringify(ab)})`)
     ok(await m.getByTestId('reading-cards').count() === 1 && await m.locator('[data-page]').count() === 0, 'the quote reads as cards; no paper is drawn')
@@ -220,7 +220,7 @@ const near = (a, b, tol = 2) => Math.abs(a - b) <= tol
     console.log('5 · Send from the foot; Back returns where you came from')
     await foot.getByTestId('quote-send').tap(); await settle(m, 900)
     const sendSheet = m.getByRole('menu', { name: 'Send' })
-    ok(await sendSheet.count() === 1 && await sendSheet.getByRole('menuitem', { name: /Send for confirmation/ }).count() === 1, 'Send ▾ opens the quote’s Send sheet — the same rows as the editor’s')
+    ok(await sendSheet.count() === 1 && await sendSheet.getByRole('menuitem', { name: /Ask to confirm/ }).count() === 1, 'Send ▾ opens the quote’s Send sheet — the same rows as the editor’s')   // (the calm UI build 2026-10-27, a deliberate change) W-358
     await shot(m, '07-send-390')
     await m.keyboard.press('Escape'); await settle(m, 600)
     await backBtn.tap(); await m.waitForURL(new RegExp(`/quotes/${DRAFT}(\\?|$)`), { timeout: 15000 }).catch(() => {})

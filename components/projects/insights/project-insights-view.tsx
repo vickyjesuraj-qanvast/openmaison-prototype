@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChipRail } from '@/components/om/chip-rail'
-import { Chips } from '@/components/om/chips'
+import { HowCounted, PickPill } from '@/components/company/reports/report-pill'   // (the calm UI build 2026-10-27, R-B3-1 · 5-19) Reports' one bar
+import ins from '@/components/leads/insights/insights-view.module.css'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Button } from '@/components/ds'
@@ -39,7 +39,7 @@ const COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'running', label: 'Running', track: 'minmax(176px, 176fr)' },
   { key: 'started', label: 'Started', track: 'minmax(104px, 104fr)' },
   { key: 'completed', label: 'Completed', track: 'minmax(120px, 120fr)' },
-  { key: 'duration', label: 'Start → Completed', track: 'minmax(176px, 176fr)' },   /* (parity P-32 · C-03) the tile's name, the span — it was "Median duration" */
+  { key: 'duration', label: 'Project length', track: 'minmax(176px, 176fr)' },   /* (the calm UI build 2026-10-27, 5-09) */   /* (parity P-32 · C-03) the tile's name, the span — it was "Median duration" */
   { key: 'late', label: 'Late milestones', track: 'minmax(160px, 160fr)' },
 ]
 
@@ -90,25 +90,27 @@ export function ProjectInsightsView({ data, initialRange = DEFAULT_RANGE }: { da
             </div>
           ) : (
             <>
-              <div className={styles.bar}>
-                <ChipRail label="Range">
-                  <Chips label="Range" testId="project-insights-range" options={INSIGHT_RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => setRange(v === 'all' ? null : (Number(v) as InsightsRange))} />
-                </ChipRail>
-                <span className={styles.barEnd}>
-                  {/* (parity P-31 · C-06) the lead's grammar — what the range filters on, then the count in range; a Manager's team scope stays a
-                      prefix. Invented copy. (It read "Every project in the studio · 4 running now", a count no chip moved.) */}
-                  <span className={styles.caption} data-testid="project-insights-scope">{`${data.scope === 'team' ? 'Your team’s projects · ' : ''}Filtering on start and completion dates · ${plural(report.inRange, 'project')} in range`}</span>
-                  {/* (parity Q-20) the house Export — Finance's reports' button */}
-                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="project-insights-export">Export</Button>
+              {/* (the calm UI build 2026-10-27 — R-B3-1 · 5-19, T-10 "one look per control") the same bar as Reports' other tabs: the house
+                  "Period: … ▾" pill (its menu of `menuitemradio` rows, a sheet on a phone), what it counts by in its tooltip (`data-tip`), Export
+                  at the end. (parity P-31 · C-06) the lead's grammar — what the range filters on, then the count in range; a Manager's team
+                  scope stays a prefix. Invented copy. */}
+              <div className={ins.pickBar}>
+                <span className={ins.picks}>
+                  <PickPill name="Period" testId="project-insights-range" scoped={range !== DEFAULT_RANGE}
+                            tip={{ testId: 'project-insights-scope', text: `${data.scope === 'team' ? 'Your team’s projects · ' : ''}Filtering on start and completion dates · ${plural(report.inRange, 'project')} in range` }}
+                            options={INSIGHT_RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => setRange(v === 'all' ? null : (Number(v) as InsightsRange))} />
                 </span>
+                {/* (parity Q-20) the house Export — Finance's reports' button */}
+                <span className={ins.pickEnd}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="project-insights-export">Export</Button></span>
               </div>
               {/* (parity P-30) the house tile row: one row from 1025, 3 + 2 on a tablet, two per row on a phone */}
               <StatTiles className={styles.tiles} testId="project-insights-tiles">
                 <StatTile testId="tile-started" label="Projects started" value={report.started} help={range === null ? 'Since the first project' : 'Started in this range'} />
                 <StatTile testId="tile-completed" label="Completed" value={report.completed} help={range === null ? 'Every completed project' : 'Completed in this range'} />
                 {/* (parity P-32 · C-03) named for its span, as Leads names its legs — it was "Average duration" over a median */}
-                <StatTile testId="tile-duration" label="Start → Completed" value={daysWords(report.duration.median)}
-                          help={report.duration.count ? `median · avg ${daysWords(report.duration.mean)} · ${plural(report.duration.count, 'project')}` : 'No project completed in this range'}>
+                {/* (the calm UI build 2026-10-27, 5-09 · T-09) plain words: "Project length", "Usually" — the average in the tooltip */}
+                <StatTile testId="tile-duration" label="Project length" value={<Tooltip label={report.duration.count ? `Average ${daysWords(report.duration.mean)}` : 'No project completed in this range'}><span>{daysWords(report.duration.median)}</span></Tooltip>} figure={daysWords(report.duration.median)}
+                          help={report.duration.count ? `Usually · ${plural(report.duration.count, 'project')}` : 'No project completed in this range'}>
                   <Delta d={report.duration.delta} />
                 </StatTile>
                 {/* (parity P-32 · P-34) milestones that FINISHED LATE in the range only, as Leads' tiles count completed legs — the overdue ones
@@ -116,8 +118,8 @@ export function ProjectInsightsView({ data, initialRange = DEFAULT_RANGE }: { da
                 <StatTile testId="tile-late" label="Late milestones" value={report.late.ended} grade={report.late.ended > 0 ? 'bad' : undefined}
                           help={report.late.due ? `Finished late, of ${report.late.due} finished in this range` : 'No milestone finished in this range'} />
                 {report.collection ? (
-                  <StatTile testId="tile-collection" label="Collection days" value={daysWords(report.collection.median)}
-                            help={report.collection.count ? `median, sent → paid in full · ${plural(report.collection.count, 'invoice')}` : 'No invoice paid in full in this range'}>
+                  <StatTile testId="tile-collection" label="Days to get paid" value={daysWords(report.collection.median)}
+                            help={report.collection.count ? `Usually, from sent to paid in full · ${plural(report.collection.count, 'invoice')}` : 'No invoice paid in full in this range'}>   {/* (the calm UI build 2026-10-27, 5-09 · W-145) */}
                     <Delta d={report.collection.delta} />
                   </StatTile>
                 ) : null}
@@ -129,10 +131,10 @@ export function ProjectInsightsView({ data, initialRange = DEFAULT_RANGE }: { da
                   <MetaChip color="red" icon="schedule">{`${plural(report.late.now, 'milestone')} overdue`}</MetaChip>
                 </div>
               ) : null}
-              <section className={styles.section} aria-label="By team member">
+              <section className={styles.section} aria-label="By member">
                 <div className={styles.sectionHead}>
                   <div>
-                    <span className={styles.sectionTitle}>By team member</span>
+                    <span className={styles.sectionTitle}>By member</span>   {/* (the calm UI build 2026-10-27, W-617 · §2) "Members" */}
                     <span className={styles.sectionHelp}>A project counts for everyone on its team · Running is against each person’s capacity</span>
                   </div>
                   {mobile ? null : (
@@ -144,7 +146,8 @@ export function ProjectInsightsView({ data, initialRange = DEFAULT_RANGE }: { da
                 {report.members.length === 0 ? <p className={styles.empty}>No one runs projects yet.</p> : <MembersTable rows={report.members} columns={columnPrefs.columns} onReorder={columnPrefs.reorder} />}
               </section>
               {/* (parity P-35 · C-13) the reports' one first sentence, then this page's own — (P-34) "finished late" and "overdue". Invented copy. */}
-              <p className={styles.foot}>{MEDIANS_NOTE} A milestone finished late when it was done after its planned last day; one still open past it is overdue.</p>
+              {/* (the calm UI build 2026-10-27, R-B3-1 · T-05) the method behind "How these are counted", as Reports' other tabs */}
+              <HowCounted testId="project-insights-foot">{`${MEDIANS_NOTE} A milestone finished late when it was done after its planned last day; one still open past it is overdue.`}</HowCounted>
             </>
           )}
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
@@ -179,7 +182,7 @@ function MembersTable({ rows, columns, onReorder }: { rows: MemberInsight[]; col
       case 'started': return cell(key, <span className={styles.num}>{r.started}</span>)
       case 'completed': return cell(key, <span className={styles.num}>{r.completed}</span>)
       /* (parity P-35 · C-11) the lead's cell: the figure, "median · avg" under it; an empty figure is the house "--" with no line under it */
-      case 'duration': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{daysWords(r.durationMedian)}</span>{r.durationMedian !== null ? <span className={styles.statHelp}>{`median · avg ${daysWords(r.durationMean)}`}</span> : null}</span>)
+      case 'duration': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{daysWords(r.durationMedian)}</span>{r.durationMedian !== null ? <span className={styles.statHelp}>{`usually · average ${daysWords(r.durationMean)}`}</span> : null}</span>)
       case 'late': return cell(key, r.late ? <MetaChip color="red">{String(r.late)}</MetaChip> : <span className={styles.num}>{BLANK}</span>)
       default: return cell(key, null)
     }

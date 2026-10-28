@@ -137,3 +137,7 @@
 
 /* (parity map, FB-103) An issuing entity's More details: the disclosure's press, then its fields in the card's two columns. */
 .more { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+
+/* (the calm UI build 2026-10-27 — 5-36) a tab's card kept mounted while another tab is open: in the flow when shown, gone when hidden */
+.pane { display: contents; }
+.pane[hidden] { display: none; }

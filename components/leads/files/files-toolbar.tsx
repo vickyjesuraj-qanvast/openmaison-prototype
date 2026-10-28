@@ -75,7 +75,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
        further: Choose files · New folder · Filters · Deleted Files, and inside a folder its own Move · Rename · Delete (one ⋮, never two).
        Inside a folder the title is the folder's name behind ← (up one level); the crumb's way to the top is the ← and All Files. */
     const parent = trail[trail.length - 2] ?? null
-    const backTo = parent ? parent.name : 'All Files'
+    const backTo = parent ? parent.name : 'All files'
     return (
       <div className={styles.bar} data-phone="">
         {folder ? (
@@ -85,11 +85,12 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             </Tooltip>
             <h2 className={styles.title} aria-current="page">{folder.name}</h2>
           </div>
-        ) : (views ?? <h2 className={styles.title}>All Files</h2>)}
+        ) : (views ?? <h2 className={styles.title}>All files</h2>)}
         <div className={styles.actions}>
           {bare || readOnly || !onPhoto ? null : (
+            /* (the calm UI build 2026-10-27 — T-03) the record page's one filled button is its header's: the camera is the toolbar's primary glyph */
             <Tooltip label="Take a photo">
-              <IconButton icon="photo_camera" label="Take a photo" variant="filled" data-kb="create" data-kb-label="Take a photo" onClick={onPhoto} data-testid="files-take-photo" />
+              <IconButton icon="photo_camera" label="Take a photo" variant="primary" data-kb="create" data-kb-label="Take a photo" onClick={onPhoto} data-testid="files-take-photo" />
             </Tooltip>
           )}
           {bare ? null : <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />}
@@ -99,11 +100,11 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
                 <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} data-testid="files-phone-more" />
               </Tooltip>
               {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
-              <PortalMenu open={menu === 'more'} anchor={moreAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder?.name ?? 'All Files'}>
+              <PortalMenu open={menu === 'more'} anchor={moreAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder?.name ?? 'All files'}>
                 {readOnly ? null : <DropdownItem onSelect={pick(() => onNew('local'))} help="From your phone’s photos or files">Choose files</DropdownItem>}
                 {readOnly ? null : <DropdownItem onSelect={pick(onNewFolder)}>New folder</DropdownItem>}
                 {bare ? null : <DropdownItem onSelect={pick(onFilter)} help={filterCount ? `${filterCount} on` : undefined}>Filters</DropdownItem>}
-                {readOnly ? null : <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Files</DropdownItem>}
+                {readOnly ? null : <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted files</DropdownItem>}
                 {folder && !readOnly ? (
                   <>
                     <DropdownDivider />
@@ -130,7 +131,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
            "New Folder"). */
         <>
           <div className={styles.crumbRow}>
-            <FolderCrumbs root="All Files" trail={trail} onGo={onGo} menuOpen={menu === 'folder'}
+            <FolderCrumbs root="All files" trail={trail} onGo={onGo} menuOpen={menu === 'folder'}
                           onMenu={readOnly ? undefined : (el) => { folderAnchor.current = el; setMenu((m) => (m === 'folder' ? null : 'folder')) }} />
           </div>
           <PortalMenu open={menu === 'folder'} anchor={folderAnchor} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder.name}>
@@ -141,35 +142,36 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             <DropdownItem tone="danger" onSelect={pick(() => onFolderMenu('delete'))} disabled={!!folder.system} title={folder.system ?? undefined}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
           </PortalMenu>
         </>
-      ) : (views ?? <h2 className={styles.title}>All Files</h2>)}
+      ) : (views ?? <h2 className={styles.title}>All files</h2>)}
       <div className={styles.actions}>
         {bare ? null : (<>
         {readOnly ? null : <>
-        <Tooltip label="New Folder">
-          <IconButton icon="create_new_folder" label="New Folder" className={styles.touchBtn} onClick={onNewFolder} />
+        <Tooltip label="New folder">
+          <IconButton icon="create_new_folder" label="New folder" className={styles.touchBtn} onClick={onNewFolder} />
         </Tooltip>
         <span className={styles.menuWrap}>
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
           {sheet ? (
-            <Tooltip shortcut="create" label="New File">
-              <IconButton icon="upload_file" label="New File" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New File"
+            <Tooltip shortcut="create" label="New file">
+              <IconButton icon="upload_file" label="New file" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New file"
                           onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined"
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New File"
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New file"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
-              New File
+              New file
             </Button>
           )}
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New File">
-            {/* New File menu 931:40128 (200×118) — verbatim order, less From Company Files (pending modules S05: no such library exists). */}
-            <DropdownItem onSelect={pick(() => onNew('local'))}>From Local Files</DropdownItem>
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New file">
+            {/* New File menu 931:40128 (200×118) — verbatim order, less From Company Files (pending modules S05: no such library exists).
+                (the calm UI build 2026-10-27 — T-10 · T-13 · W-564 · W-565) "New file ▾", and "From your computer" — never "local". */}
+            <DropdownItem onSelect={pick(() => onNew('local'))}>From your computer</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('drive'))}>From Google Drive</DropdownItem>
           </Dropdown>
         </span>
@@ -209,9 +211,9 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Files">
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All files">
             {/* Header kebab 931:40139 (200×46): the single item. */}
-            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Files</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted files</DropdownItem>
           </Dropdown>
         </span>}
       </div>

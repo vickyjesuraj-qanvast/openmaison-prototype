@@ -87,7 +87,7 @@ export const isVariationDoc = (values: Record<string, string>) => values[DOC_KIN
     order VO-1 — to contract OM-10009" — where the template's heading said "Sales Contract", "QUOTATION" or the quote's title. */
 export function variationHeading(written: string, values: Record<string, string>): string {
   const of = values[DOC_OF]
-  const title = `Variation order ${values.quote_number ?? ''}${of ? ` — to contract ${of}` : ''}`
+  const title = `Variation order ${values.quote_number ?? ''}${of ? ` to quotation ${of}` : ''}`   // (the calm UI build 2026-10-27, W-421) OM-10009 is the quote's number
   return written.trim() && written === written.toUpperCase() && /[A-Z]/.test(written) ? title.toUpperCase() : title
 }
 /** (fix-D, D-08) A totals line's words on a variation order: its total is the change to the contract, its subtotal the change before GST. */

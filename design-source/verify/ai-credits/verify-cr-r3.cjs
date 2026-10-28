@@ -54,8 +54,8 @@ const setBalance = (n) => {
   const go = page.getByTestId('viz-generate')
   ok((await go.getByTestId('viz-cost').innerText()).trim() === '10', 'Generate carries its cost: 10')
   ok(/Generate · .*10 AI credits/.test((await go.getAttribute('aria-label')) ?? ''), 'the button’s name says the price')
+  await page.getByTestId('viz-options-toggle').click()   // (the calm UI build 2026-10-27, a deliberate change) — 6-04 · W-248: the line heads the switches behind the tune button
   ok((await page.getByTestId('viz-options').innerText()).includes(`Makes 1 version · Fast · 10 AI credits · ${fmt(b0 - 10)} left after`), '“Makes 1 version · Fast · 10 AI credits · N left after”')
-  await page.getByTestId('viz-options-toggle').click()
   ok(await page.getByRole('radio', { name: 'Fast · 10' }).isVisible() && await page.getByRole('radio', { name: 'High · 20' }).isVisible(), 'Quality says the price per version: Fast · 10 · High · 20')
   await page.getByRole('radio', { name: '2', exact: true }).click(); await page.waitForTimeout(200)
   ok((await go.getByTestId('viz-cost').innerText()).trim() === '20', 'two versions: 20')
@@ -130,15 +130,15 @@ const setBalance = (n) => {
   const lead = q(`SELECT id FROM leads WHERE name = 'Farah Ahmad'`)
   await page.goto(`${BASE}/leads/${lead}/quotes`, { waitUntil: 'networkidle' })
   // REG-737: Farah has no quote yet, so the toolbar's Create Quote steps back and the empty card's From Template opens Create Quote
-  await page.getByRole('button', { name: 'Create Quote', exact: true }).or(page.getByTestId('quotes-empty').getByRole('button', { name: 'From Template' })).first().click()
+  await page.getByRole('button', { name: /* (the calm UI build 2026-10-27, a deliberate change) */ /* 1-11 · 2-23: "New quote"; the empty card's "From a template" */ 'New quote', exact: true }).or(page.getByTestId('quotes-empty').getByRole('button', { name: 'From a template' })).first().click()
   const cq = page.getByTestId('create-quote')
   await cq.waitFor()
   /* (pending modules S04, a deliberate change of this rule) the chip names what truly reads; the price stays. (S42 B·4 · E-05) a PDF is read
      from its own words now, so the chip reads "XLSX · CSV · PDF · 5 AI credits" */
-  ok((await cq.getByTestId('upload-quote-row').innerText()).toLowerCase().includes('xlsx · csv · pdf · 5 ai credits'), 'the tile says 5 AI credits')
+  ok((await cq.getByTestId('upload-quote-row').innerText()).toLowerCase().includes('spreadsheet or pdf · 5 credits'), 'the tile says 5 AI credits')   // (the calm UI build 2026-10-27, a deliberate change) W-016: "Spreadsheet or PDF · 5 credits"
   const b2 = balance()
   await cq.getByTestId('upload-quote-file').setInputFiles(`${REPO}/public/uat-files/gerald-tan-old-quote.xlsx`)
-  await cq.getByText(/lines? read from/).waitFor({ timeout: 10000 })
+  await cq.getByText(/items? read from/).waitFor({ timeout: 10000 })   // (the calm UI build 2026-10-27, a deliberate change) T-01: a quote's lines read as items
   ok(balance() === b2 - 5, 'charged 5 at the read')
   const qref = q(`SELECT ref_id FROM credit_ledger WHERE action_key='quote_digitize' AND reason='spend' ORDER BY created_at DESC, rowid DESC LIMIT 1`)
   ok(/^quote:[0-9a-f-]{36}$/.test(qref), `keyed quote:<id> (${qref})`)
@@ -147,7 +147,7 @@ const setBalance = (n) => {
   ok(page.url().includes(qref.slice(6)), 'the quote was created under the id its read was charged to')
   await page.goBack({ waitUntil: 'networkidle' })
   fs.writeFileSync(`${S}/empty.csv`, '')
-  await page.getByRole('button', { name: 'Create Quote' }).first().click()
+  await page.getByRole('button', { name: 'New quote' }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) 1-11: "New quote"
   await cq.waitFor()
   const b3 = balance()
   await cq.getByTestId('upload-quote-file').setInputFiles(`${S}/empty.csv`)

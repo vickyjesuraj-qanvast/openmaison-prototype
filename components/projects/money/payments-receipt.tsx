@@ -92,7 +92,7 @@ export function ReceiptPaper({ d }: { d: ReceiptPaperData }) {
         <dl className={styles.totals} data-testid="receipt-totals">
           <dt>Invoice total</dt><dd>{money2(f.invoiceTotal)}</dd>
           {L.showBalance ? <><dt>Paid to date</dt><dd>{money2(f.paidToDate)}</dd>
-          <dt className={styles.grand}>Still owed</dt><dd className={styles.grand}>{money2(f.outstanding)}</dd></> : null}
+          <dt className={styles.grand}>Balance due</dt>   {/* (the calm UI build 2026-10-27, 3-03 · W-385) the client's word, as the invoice */}<dd className={styles.grand}>{money2(f.outstanding)}</dd></> : null}
         </dl>
         {L.footer ? <p className={styles.note} data-testid="receipt-footer-note">{L.footer}</p> : null}
         <p className={styles.payNote}>{p.reversed ? `This payment was reversed${p.reversed.at ? ` on ${displayDate(new Date(p.reversed.at))}` : ''} and no longer counts toward the invoice.` : d.extra ? `Thank you — ${h.name} received ${money2(p.amountMinor + d.extra.amountMinor)}.` : `Thank you — ${h.name} received this payment.`}</p>

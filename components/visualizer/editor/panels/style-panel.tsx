@@ -57,8 +57,9 @@ export function StylePanel({ pending, onStyle, leadName, leadStyle, onAddRef, on
   }, [t.refs.length])
   return (
     <Panel title="Style" sub="A whole-room look — or leave None and change only what you pick" testId="viz-style">
+      {/* (the calm UI build 2026-10-27, 6-35 · W-224) said as a person says it — "Kevin likes Contemporary — Modern is the closest look." */}
       {suggested && leadName ? (
-        <div className={styles.lead}><Icon name="person" size={20} weight={300} /><span><b>{leadName.split(' ')[0]}’s style: {leadStyle}</b> — {suggested.name === leadStyle ? 'first below' : `${suggested.name} is the nearest, first below`}.</span></div>
+        <div className={styles.lead}><Icon name="person" size={20} weight={300} /><span><b>{leadName.split(' ')[0]} likes {leadStyle}</b> — {suggested.name === leadStyle ? 'it’s first below' : `${suggested.name} is the closest look`}.</span></div>
       ) : null}
       {picked && baseEdited ? <span className={styles.hint} data-testid="viz-style-edited">A style repaints every surface of this version in its own finishes — the furniture changes stay.</span> : null}
       {/* (F169) one Tab stop — the arrows move along the cards and pick the one reached */}
@@ -79,7 +80,7 @@ export function StylePanel({ pending, onStyle, leadName, leadStyle, onAddRef, on
                 <span className={styles.palette} aria-hidden data-thin={pic ? '' : undefined}>{s.colorPalette.map((c, i) => <span key={i} style={{ background: c }} />)}</span>
               </span>
               {/* (new:fresh-desktop:'Grace’s pick' on the nearest) the tag claims the client's pick only when it is theirs */}
-              {suggested?.name === s.name && leadName ? <span className={styles.cardTag}>{suggested.name === leadStyle ? `${leadName.split(' ')[0]}’s pick` : 'Closest match'}</span> : null}
+              {suggested?.name === s.name && leadName ? <span className={styles.cardTag}>{suggested.name === leadStyle ? `${leadName.split(' ')[0]}’s pick` : 'Closest look'}</span> : null}
               {on ? <span className={styles.cardCheck}><Icon name="done" size={14} /></span> : null}
               <span className={styles.cardName}>{s.name}</span><span className={styles.cardHelp}>{s.description}</span>
               {/* (F015 · F069) the materials sit at the card's foot, one to a line beside its own chip and named in full — the words

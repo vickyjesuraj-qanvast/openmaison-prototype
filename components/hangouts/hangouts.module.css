@@ -32,7 +32,7 @@
 .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-3) var(--om-spacing-4); margin: 0; min-width: 0; }
 .facts[data-three] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.factLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.factLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }   /* (the calm UI build 2026-10-27, 2-26 · T-06) a label, not a status — sentence case */
 .factValue { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .factLink { composes: link from '../om/text-link.module.css'; display: inline-flex; align-items: flex-start; gap: var(--om-spacing-1); }
 .factGlyph { display: inline-flex; flex-shrink: 0; padding-top: 1px; }

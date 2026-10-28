@@ -29,7 +29,7 @@ const noticeText = (r: SignInReason) => { const n = SIGN_IN_NOTICE[r]; return n.
 /* (REG-708) the demo's who-to-try line is the studio's data: the page tells this browser's ghosts its words, so the loader that paints before
    the page wraps it as the page will; before any visit, the base demo's own line */
 const HINT_KEY = 'om.ghost.sign-in.hint'
-const BASE_HINT = 'Dane, the studio’s Owner, signs in with dane@demostudio.sg.'
+const BASE_HINT = 'dane@demostudio.sg'   // (the calm UI build 2026-10-27, 1-46) what to type, in the demo box
 const noStore = () => () => {}
 const readHint = () => { try { return localStorage.getItem(HINT_KEY) ?? BASE_HINT } catch { return BASE_HINT } }
 /** Only digits and spaces so far: a mobile number — it shows grouped ("9123 4567") after its +65. */
@@ -139,7 +139,7 @@ export function StudioSignIn({ next, notice, hint, demo, signUps = 'open' }: {
 
           {step === 'contact' ? (
             <form ref={form} className={portal.form} onSubmit={(e) => { e.preventDefault(); void ask() }} noValidate>
-              <TextField label="Mobile number or email" value={typingNumber(raw) ? phoneTyped(digitsOnly(raw).slice(0, 8)) : raw}
+              <TextField label={SIGN_IN.contactLabel} value={typingNumber(raw) ? phoneTyped(digitsOnly(raw).slice(0, 8)) : raw}
                          onChange={(v) => { setRaw(typingNumber(v) ? digitsOnly(v).slice(0, 8) : v.slice(0, 120)); setContactError(null); setNoAccount(false) }}
                          leading={raw && typingNumber(raw) ? '+65' : undefined} autoComplete="username" error={contactError ?? undefined} />
               <button type="submit" className={portal.go} disabled={busy} data-testid="sign-in-send">{busy ? 'Sending…' : 'Send me a code'}</button>
@@ -161,8 +161,8 @@ export function StudioSignIn({ next, notice, hint, demo, signUps = 'open' }: {
             {step === 'code' ? <p className={portal.line}><button type="button" className={portal.link} onClick={back} data-testid="sign-in-back">Use another number or email</button></p>
               : noAccount ? <p className={portal.line} data-testid="sign-in-no-account">{SIGN_IN.noAccountHelp}</p> : null}
             {step === 'contact' ? door : null}
-            {demo ? <p className={styles.fine} data-testid="sign-in-demo">{SIGN_IN.demo}</p> : null}
-            {demo && hint && step === 'contact' ? <p className={styles.fine} data-testid="sign-in-hint">{hint}</p> : null}
+            {/* (the calm UI build 2026-10-27 — the audit's 1-46, T-05) the demo's two lines as one quiet box: what any code is, and who to try */}
+            {demo ? <p className={styles.demoBox} data-testid="sign-in-demo">{SIGN_IN.demoBox}{hint && step === 'contact' ? <> — try <span data-testid="sign-in-hint">{hint}</span></> : null}</p> : null}
             <TermsLine testId="sign-in-terms" />
           </div>
         </div>
@@ -190,7 +190,7 @@ export function StudioSignInGhost({ demo = true, hint, signUps = 'open' }: { dem
           {/* (S31) the way to sign up, then the demo's two lines: the stand-in's own words, then who to try */}
           <div className={styles.foot}>
             {signUps === 'open' ? <Words as="p" className={portal.line}>{`${SIGN_UP.door} ${SIGN_UP.doorLink}`}</Words> : null}
-            {demo ? <Words as="p" className={styles.fine}>{SIGN_IN.demo}</Words> : null}{demo && line ? <Words as="p" className={styles.fine}>{line}</Words> : null}
+            {demo ? <Words as="p" className={styles.demoBox}>{line ? `${SIGN_IN.demoBox} — try ${line}` : SIGN_IN.demoBox}</Words> : null}
             <TermsLineGhost />
           </div>
         </div>

@@ -142,7 +142,9 @@ export function useWritingHelp({ label, subject, kind, sources, read, apply, res
                         apply(p.after, part)
                         setOpen(null)
                         const before = o.snap.html
-                        snackbar({ message: doneWords(p.action, part && part.key !== 'whole' ? capital(partWords(part)) : label, blank), actionLabel: 'Undo',
+                        /* (calm-build regression fix F — S42 B-20) the whole of a titled block (Terms, Notes) is named by its title, "Added to Additional notes" */
+                        const titled = !(part && part.key !== 'whole') && (kind === 'terms' || kind === 'notes')
+                        snackbar({ message: doneWords(p.action, part && part.key !== 'whole' ? capital(partWords(part)) : label, blank, titled), actionLabel: 'Undo',
                                    onAction: () => { if (restore) restore(before); else apply(before, null) } })
                       }} />
     ),

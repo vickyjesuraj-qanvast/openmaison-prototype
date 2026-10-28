@@ -68,7 +68,7 @@ export function CardEmpty({ illustration, width, height, title, body, actions, g
         <img src={illustration} width={width} height={height} alt="" className={styles.emptyArt} />
         <div className={styles.emptyText}>
           <p className={styles.emptyTitle}>{title}</p>
-          <p className={styles.emptyBody}>{body}</p>
+          {body ? <p className={styles.emptyBody}>{body}</p> : null}   {/* (the calm UI build) a title alone says it ("No tasks yet") */}
         </div>
         {actions ? <div className={styles.emptyActions}>{actions}</div> : null}
       </div>

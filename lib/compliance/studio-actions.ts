@@ -3,12 +3,15 @@
  * Renovation Contractors, CaseTrust, bizSAFE, BCA licensed contractors and ACRA BizFile+. `{LegalName}` and `{UEN}` are filled from Company ›
  * Profile when shown. Data only — pure and client-safe. 1.0's Tailwind colours are left out (2.0 draws them with its own chips).
  * (one-home N-07) Which are done is the studio's one record of registrations, set on Company › Profile (below).
+ * (the calm UI build 2026-10-27, 6-02 · W-493 · W-495 · T-13) The titles and the portal buttons in sentence case, named as a studio owner says them
+ * (1.0's were "Check / Apply as HDB Renovation Contractor", "CaseTrust Accreditation for Renovation", "bizSAFE Enterprise Certification",
+ * "BCA Licensed Contractors Verification", "ACRA Business Profile (BizFile+)"); the ids, the steps and the record are 1.0's.
  */
 export type StudioAction = { id: string; title: string; subtitle: string; organisation: string; short: string; about: string; need: string[]; steps: string[]; links: { label: string; url: string }[]; primary: { label: string; url: string } }
 
 export const STUDIO_ACTIONS: readonly StudioAction[] = [
   {
-    id: "HDB_DRC", title: "Check / Apply as HDB Renovation Contractor",
+    id: "HDB_DRC", title: "HDB renovation contractor listing",
     subtitle: "Get listed in HDB's Directory of Renovation Contractors",
     organisation: "Housing & Development Board", short: "HDB",
     about: "The HDB Directory of Renovation Contractors (DRC) lists approved firms that homeowners can engage for HDB flat renovations. Being listed significantly expands your client base and builds trust with homeowners looking for licensed contractors.",
@@ -30,10 +33,10 @@ export const STUDIO_ACTIONS: readonly StudioAction[] = [
       "HDB will review your application and notify you within 4–6 weeks via email.",
     ],
     links: [{ label: "HDB DRC Contractor Search", url: "https://services2.hdb.gov.sg/webapp/BN31AWERRCMobile/BN31PListingContractor.jsp" }],
-    primary: { label: "Open HDB Portal", url: "https://services2.hdb.gov.sg/webapp/BN31AWERRCMobile/BN31PListingContractor.jsp" },
+    primary: { label: "Open HDB portal", url: "https://services2.hdb.gov.sg/webapp/BN31AWERRCMobile/BN31PListingContractor.jsp" },
   },
   {
-    id: "CASETRUST_RENOVATION", title: "CaseTrust Accreditation for Renovation",
+    id: "CASETRUST_RENOVATION", title: "CaseTrust accreditation",
     subtitle: "Earn Singapore's trusted renovation accreditation badge",
     organisation: "Consumers Association of Singapore", short: "CaseTrust",
     about: "CaseTrust accreditation for renovation businesses signals to homeowners that your studio follows fair dealing practices, maintains transparent pricing, and has a structured complaints resolution process. Many clients actively filter for CaseTrust-accredited contractors.",
@@ -56,10 +59,10 @@ export const STUDIO_ACTIONS: readonly StudioAction[] = [
       "Once approved, display the CaseTrust badge on your studio profile and marketing materials.",
     ],
     links: [{ label: "CaseTrust Renovation Overview", url: "https://www.case.org.sg/casetrust/renovation/" }, { label: "Accreditation Scheme Details", url: "https://www.case.org.sg/casetrust/casetrust-accreditation-for-renovation-businesses/" }],
-    primary: { label: "Open CaseTrust Portal", url: "https://www.case.org.sg/casetrust/renovation/" },
+    primary: { label: "Open CaseTrust portal", url: "https://www.case.org.sg/casetrust/renovation/" },
   },
   {
-    id: "BIZSAFE_ENTERPRISE", title: "bizSAFE Enterprise Certification",
+    id: "BIZSAFE_ENTERPRISE", title: "bizSAFE certificate",
     subtitle: "Demonstrate workplace safety & health commitment",
     organisation: "Workplace Safety & Health Council", short: "WSH Council",
     about: "bizSAFE Enterprise certification from the WSH Council demonstrates that your studio has implemented a structured Workplace Safety & Health management system. This is a key prerequisite for HDB contractor listing and is required by many corporate and government clients.",
@@ -81,10 +84,10 @@ export const STUDIO_ACTIONS: readonly StudioAction[] = [
       "Upon passing the audit, your studio is certified bizSAFE Enterprise — valid for 3 years.",
     ],
     links: [{ label: "Apply for bizSAFE", url: "https://www.tal.sg/wshc/programmes/bizsafe/apply-for-bizsafe" }, { label: "bizSAFE Enterprise Details", url: "https://www.tal.sg/wshc/programmes/bizsafe/apply-for-bizsafe/bizsafe-enterprise" }],
-    primary: { label: "Open WSH Council Portal", url: "https://www.tal.sg/wshc/programmes/bizsafe/apply-for-bizsafe" },
+    primary: { label: "Open WSH Council portal", url: "https://www.tal.sg/wshc/programmes/bizsafe/apply-for-bizsafe" },
   },
   {
-    id: "BCA_CONTRACTORS", title: "BCA Licensed Contractors Verification",
+    id: "BCA_CONTRACTORS", title: "BCA licence check",
     subtitle: "Verify your sub-contractors' licensing for structural works",
     organisation: "Building & Construction Authority", short: "BCA",
     about: "For renovation projects involving structural, electrical, or major civil works, verifying that your sub-contractors hold valid BCA licences protects your studio and clients from legal and safety liabilities. Use the official dataset to check any contractor before signing sub-contracts.",
@@ -102,10 +105,10 @@ export const STUDIO_ACTIONS: readonly StudioAction[] = [
       "Re-verify sub-contractor licenses at the start of each new project, as licenses may expire.",
     ],
     links: [{ label: "BCA Licensed Builders Dataset", url: "https://data.gov.sg/datasets/d_19573c579879be15623f2e1e3854926d/view" }],
-    primary: { label: "Open BCA Dataset", url: "https://data.gov.sg/datasets/d_19573c579879be15623f2e1e3854926d/view" },
+    primary: { label: "Open BCA dataset", url: "https://data.gov.sg/datasets/d_19573c579879be15623f2e1e3854926d/view" },
   },
   {
-    id: "ACRA_BIZFILE", title: "ACRA Business Profile (BizFile+)",
+    id: "ACRA_BIZFILE", title: "ACRA business profile",
     subtitle: "Download and verify your official business registration",
     organisation: "Accounting & Corporate Regulatory Authority", short: "ACRA",
     about: "Your ACRA business profile is the official government record of your studio. It is required for most regulatory applications (HDB, CaseTrust, bizSAFE), client due diligence, and government tenders. Keep it up to date before starting any accreditation process.",

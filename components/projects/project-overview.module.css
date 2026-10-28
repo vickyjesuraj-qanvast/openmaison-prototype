@@ -117,3 +117,11 @@
   .activityFold[data-folded] > section > :not(:first-child) { display: none; }
   .activityFold[data-folded] > section > :first-child { padding-bottom: var(--om-spacing-5); }
 }
+
+/* (the calm UI build 2026-10-27, T-02 · 3-05 · 3-06) a row's ⋮ after its one verb — the house icon button held to the row's line; a menu row's own
+   test mark takes no box */
+.rowMore { display: inline-flex; flex-shrink: 0; align-items: center; margin: calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-2)) 0; }
+.menuRow { display: contents; }
+/* (3-06) the title takes the row's room first: the amount, the verb and the ⋮ sit at its end and take their own line only when the title would
+   fall under ~60% of the row */
+:is(.grid [data-card='needs'], [data-card='money-needs']) .row.row[data-two] > .label, :is(.grid [data-card='needs'], [data-card='money-needs']) .row.row[data-two] > .rowMain { flex: 1 1 60%; }   /* the Needs rows only — the Dashboard's rows keep theirs */

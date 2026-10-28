@@ -27,8 +27,11 @@
 @media (max-width: 767px) {
   .primary { flex: 1 1 auto; min-width: 0; }
   .primary button { width: 100%; }
-  /* A long next step ("Review the ask for more time") ends in an ellipsis instead of being cut at both ends by the centred label. */
-  .primaryLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* (the calm UI build 2026-10-27, 3-09 · T-12) a long next step ("Review the ask for more time") wraps to a second line — never cut */
+  .primaryLabel { min-width: 0; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+  .primary.primary button { height: auto; min-height: 44px; }
+  /* …and on the Overview the brief leads with it (the page's first card on a phone) — the header draws no second door */
+  .primary.primary[data-on-overview] { display: none; }
 }
 
 /* (simplify Q-04 · P2 §6.4, the owner's "build everything" 2026-10-09) The phone's site bar while the work runs — Photos · Done · Note · Message —

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Bone, EmptyCardGhost } from '@/components/shell/skeleton'
-import { GhostTable, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
+import { GhostTable, Line, Slot, Words, cycle, phoneOnly } from '@/components/shell/ghost-kit'
 import { GhostFolderGroup } from '@/components/company/templates/library-gallery.skeleton'
 import { useFirstRunShape, useViewerShape } from '@/lib/ghost-shape'   // (pending modules S06) Accounting's Files ghost
 import { usePathname } from 'next/navigation'   // (S42 audit C-19)
@@ -43,7 +43,7 @@ function Bar({ bar, title, words, head, children }: { bar: string | undefined; t
 const TASK_W = [180, 140, 210, 160, 190, 120]
 /** (T5 · T4) The /tasks to-do chips as the demo studio's All Tasks draws them: "Overdue · n" · "Due today · n" · "Unassigned · n" — after
     (REG-1359, the gaps build's C-16) the "Whose tasks" switch All · Leads · Projects, 211 at a desk, in the scope's sheet on a phone. */
-const TODO_W = [137, 149, 167]
+const TODO_W = [138, 122, 167]   // (the calm UI build 2026-10-27) "Overdue · n" · "Today · nn" · "Unassigned · nn", as the demo's /tasks draws them 
 
 /** The lead's Tasks tab — or (`studio`) the rail's Tasks page body: the scope chip in the title's place, no Add Task (it is the header's), and
     the Lead column after the title (REG-466). (UX audit 2026-09-30, T5 · T4) the page's to-do chips after the scope chip — Overdue · Due today ·
@@ -53,17 +53,19 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
   return (
     <>
       {studio ? (
-        <div className={tasksBar.bar}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={148} />{sources ? <Slot kind="btn" w={211} desk /> : null}<span className={tasksBar.todos}>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
-      ) : <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Tasks" head={title}><Slot kind="btnFold" w={119} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>}
-      <GhostTable className={tasksTable.ghostDesk} head={56} row={48} rows={rows} foot={53} cols={[
+        /* (the calm UI build) the Leads · Projects switch rides in the scope's menu now — no slot of its own (`sources` kept for the callers) */
+        <div className={tasksBar.bar} data-sources={sources || undefined}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={145} /><span className={tasksBar.todos}>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
+      ) : <Bar bar={tasksBar.bar} title={tasksBar.title} words="All tasks" head={title}><Slot kind="btnFold" w={119} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>}
+      {/* (the calm UI build 2026-10-27 — 1-07 · 2-19) no foot "+ Add Task" row; Status rests in Column settings; /tasks opens on Title · For ·
+          Members · Due (Creator and Tags in Column settings) */}
+      <GhostTable className={tasksTable.ghostDesk} head={56} row={48} rows={rows} cols={[
         { basis: 56, head: null, cell: { slot: 'check' } },
         { basis: 450, grow: 1, head: 32, cell: (r) => ({ node: <><Bone w={18} h={18} r="50%" /><Line w={cycle(TASK_W, r)} lh={20} h={12} /></> }) },
         ...(studio ? [{ basis: 200, head: 36, cell: (r: number) => cycle([88, 72, 96, 80, 104], r) }] : []),
         { basis: 160, head: 56, cell: { slot: 'avatar' } },
-        { basis: 160, head: 52, cell: { node: <><Slot kind="avatar" /><Line w={40} lh={20} h={12} /></> } },
+        ...(studio ? [] : [{ basis: 160, head: 52, cell: { node: <><Slot kind="avatar" /><Line w={40} lh={20} h={12} /></> } }]),
         { basis: 240, head: 60, cell: 64 },   /* (Dane UAT 5.13) the Due column's day and time (tasks-table TASK_COLUMN_DEFS) */
-        { basis: 118, head: 48, cell: { slot: 'chip', w: 44 } },
-        { basis: 191, head: 36, cell: 72 },
+        ...(studio ? [] : [{ basis: 191, head: 36, cell: 72 }]),
       ]} />
       {/* (Leads on the move, L4 — C-07) a touch tablet: Title · (For) · Members · Due date · (Status) and the frozen ⋮, the quick add at the foot */}
       <GhostTable className={tasksTable.ghostTablet} head={56} row={48} rows={rows} cols={[
@@ -72,7 +74,6 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
         ...(studio ? [{ basis: 160, head: 24, cell: (r: number) => cycle([88, 72, 96, 80, 104], r) }] : []),
         { basis: 104, head: 56, cell: { slot: 'avatar' } },
         { basis: 176, head: 60, cell: 112 },
-        ...(studio ? [] : [{ basis: 116, head: 48, cell: { slot: 'chip' as const, w: 44 } }]),
         { basis: 48, head: null, cell: null },
       ]} />
       {/* (L4 — P-10) a phone: the cards — the 44 ring, the name, the due line — then the quick add */}
@@ -102,10 +103,13 @@ export function QuotesTabGhost({ studio = false, rows = 3 }: { studio?: boolean;
   const todos = [approval ? QUOTE_TODO_W.approval : 0, waiting ? QUOTE_TODO_W.waiting : 0, expiring ? QUOTE_TODO_W.expiring : 0].filter(Boolean)
   return (
     <>
+      {/* (the calm UI build 2026-10-27 — B4's request) the lead's tab: "All quotes" and "New quote" (105, was Create Quote's 122). Tools › Quotes
+          (`studio`): the page header carries New quote at a desk and a tablet (list-ghosts' QuotesListGhost) — the toolbar keeps an empty title slot
+          and only a phone's glyph, as quotes-toolbar.tsx `createInHeader` draws it */}
       <div className={quotesBar.bar}>
-        <Words as="h2" className={quotesBar.title}>All Quotes</Words>
+        {studio ? <span className={quotesBar.title} /> : <Words as="h2" className={quotesBar.title}>All quotes</Words>}
         {todos.length ? <span className={quotesBar.todos}>{todos.map((w, i) => <Slot key={i} kind="btn" w={w} />)}</span> : null}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="btnFold" w={122} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{studio ? <Slot kind="icon" className={phoneOnly} /> : <Slot kind="btnFold" w={105} />}<Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></span>
       </div>
       <GhostTable head={56} row={64} rows={rows} phone={{ card: 104, lines: 2 }} cols={[   /* (Quotes on the move, K4 — P-06) the phone card: name · number line · chip line, 104 tall — (W6, W5-33) the title and two lines, as the card's three (it drew four) */
         { basis: 40, head: null, cell: { slot: 'check' } },
@@ -127,7 +131,7 @@ export function QuotesTabGhost({ studio = false, rows = 3 }: { studio?: boolean;
 export function ContractsTabGhost({ studio = false, rows = 3 }: { studio?: boolean; rows?: number }) {
   return (
     <>
-      <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Contracts"><Slot kind="btnFold" w={149} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>
+      <Bar bar={tasksBar.bar} title={tasksBar.title} words="All contracts"><Slot kind="btnFold" w={149} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>
       <GhostTable head={48} row={68} rows={rows} phone={{ card: 104, lines: 2 }} cols={[   /* (Contracts on the move, C4 — P-07) the phone card: the name and the amount · the signs line · the chip line, 104 tall — the Quotes card's */
         { basis: 555, grow: 1, head: 33, cell: (r) => cycle([196, 168, 210], r) },
         ...(studio ? [{ basis: 180, head: 32, cell: (r: number) => cycle([84, 96, 72, 88], r) }] : []),
@@ -147,7 +151,7 @@ export function FilesTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
       <div className={filesBar.bar}>
-        {title ?? <Words as="h2" className={filesBar.title}>All Files</Words>}
+        {title ?? <Words as="h2" className={filesBar.title}>All files</Words>}
         <span className={filesBar.actions}>{reader ? <><Slot kind="search" /><Slot kind="iconTouch" /><Slot kind="btn" w={71} desk /></>
           : <><Slot kind="iconTouch" className={filesBar.ghostDesk} /><Slot kind="btnFold" w={114} className={filesBar.ghostDesk} /><Slot kind="iconTouch" className={filesBar.ghostPhone} /><Slot kind="search" /><Slot kind="iconTouch" className={filesBar.ghostDesk} /><Slot kind="btn" w={71} desk /><Slot kind="iconTouch" /></>}</span>   {/* (L4 — P-11) a phone: Take a photo · Search · ⋮ */}
       </div>
@@ -173,10 +177,10 @@ export function NotesTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
       <div className={notesBar.bar}>
-        {title ?? <Words as="h2" className={notesBar.title}>All Notes &amp; Logs</Words>}
-        <span className={notesBar.right}><Slot kind="btnFold" w={86} /><Slot kind="search" /></span>
+        {title ?? <Words as="h2" className={notesBar.title}>All notes &amp; logs</Words>}
+        <span className={notesBar.right}><Slot kind="btnFold" w={122} /><Slot kind="search" /></span>   {/* (the calm UI build) "New note ▾" */}
       </div>
-      <div className={notes.card} data-composer="">
+      <div className={notes.card}>   {/* (the calm UI build — 2-46) the phone's composer is closed at rest: no composer in the ghost */}
         <div className={notes.list}>
           <div className={notesList.column}>
             <div className={notesList.head}><span className={notesList.chips}>{[39, 74, 111].map((w, i) => <Slot key={i} kind="pill" w={w} style={{ height: 36 }} />)}</span></div>
@@ -196,7 +200,6 @@ export function NotesTabGhost({ title }: { title?: ReactNode } = {}) {
             </div>
           </div>
         </div>
-        <div className={notes.composer}><div style={{ height: 80, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}><Line w={120} lh={20} h={12} /><Line w="70%" lh={20} h={10} /></div><div style={{ height: 61, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><Line w={96} lh={24} h={16} /><Slot kind="btn" w={64} /></div></div>
       </div>
     </>
   )
@@ -205,7 +208,7 @@ export function NotesTabGhost({ title }: { title?: ReactNode } = {}) {
 export function QuestionnaireTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
-      <div className={quest.bar}>{title ?? <Words as="h2" className={quest.title}>All Questions</Words>}<Slot kind="btn" w={101} /></div>
+      <div className={quest.bar}>{title ?? <Words as="h2" className={quest.title}>All questions</Words>}<Slot kind="btn" w={101} /></div>
       <div className={quest.layout}>
         {/* (L4 — P-12) "4 to answer · 7 answered" and the two chips, where the page reads first */}
         <div className={`${quest.readFirst} ${quest.ghostReadFirst}`}><Line w={188} lh={24} h={14} /><span className={chipRow.chips}><Slot kind="pill" w={120} /><Slot kind="pill" w={116} /></span></div>
@@ -236,10 +239,10 @@ export function ActivityTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
       {/* the house tab toolbar's search — the 280 box, its glyph at ≤1024 — as the tab draws it (the classes it named were gone) */}
-      <div className={activity.bar}>{title ?? <Words as="h2" className={activity.title}>All Activities</Words>}<span className={activity.actions}><Slot kind="search" /></span></div>
+      <div className={activity.bar}>{title ?? <Words as="h2" className={activity.title}>All activities</Words>}<span className={activity.actions}><Slot kind="search" /></span></div>
       {/* (UX audit 2026-09-30, T10) the chips above the timeline — All · Tasks · Files · Notes · Stage (house Chips, 32 tall, 12 apart) */}
       {/* (parity P-15) the chips ride the house ChipRail — one row that never wraps, as the tab draws them */}
-      <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[41, 60, 53, 60, 60].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div></div>   {/* the page's own nesting: a plain div holds the rail, so the rail's flex: 1 never stretches the row */}
+      <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[41, 60, 53, 60, 68, 60].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div></div>   {/* (the calm UI build — 2-50) + Quotes */}   {/* the page's own nesting: a plain div holds the rail, so the rail's flex: 1 never stretches the row */}
       {/* (L4 — P-12 · C-12) by day where the page groups it: the day's words over a card of rows — (activity by date 2026-10-24) the type glyph,
           the time, the sentence */}
       <div className={`${activity.days} ${activity.ghostDays}`}>
@@ -280,7 +283,7 @@ export function MeetingsTabGhost({ studio = false, rows = 4, title, first = fals
   const key = (seg[1] === 'leads' || seg[1] === 'projects') && seg[2] ? `lead.${seg[2]}.meetings` : 'meetings'
   const save = useFirstRunShape(`${key}.save`), write = useFirstRunShape(`${key}.write`)
   const todos = [save ? TODO_MEETING_W.save : 0, write ? TODO_MEETING_W.write : 0].filter(Boolean)
-  const bar = <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Meetings" head={title}>{first ? <Slot kind="icon" /> : <>{todos.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}{studio ? null : <Slot kind="btnFold" w={150} />}<Slot kind="search" /><Slot kind="icon" desk /><Slot kind="icon" /></>}</Bar>
+  const bar = <Bar bar={tasksBar.bar} title={tasksBar.title} words="All meetings" head={title}>{first ? <Slot kind="icon" /> : <>{todos.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}{studio ? null : <Slot kind="btnFold" w={150} />}<Slot kind="search" /><Slot kind="icon" desk /><Slot kind="icon" /></>}</Bar>
   if (first) return (<>{bar}<MeetingsFirstGhost /></>)
   return (
     <>
@@ -300,23 +303,22 @@ export function MeetingsTabGhost({ studio = false, rows = 4, title, first = fals
         { basis: 180, head: 44, cell: 72 },
         { basis: 120, head: 48, cell: { slot: 'avatar' } },
         { basis: 168, head: 46, cell: (r) => (cycle([1, 0, 1, 0], r) ? [cycle([32, 60], r), 128] : cycle([60, 32, 64], r)) },
-        { basis: 128, head: 76, cell: (r) => cycle([64, 16, 56, 16], r) },
-        { basis: ACTIONS_TRAIL.pair, head: null, cell: null },   // (S42 audit C-19) the row's parked actions (meetings-table.tsx's trail) — the Meeting column keeps its own width
+        { basis: ACTIONS_TRAIL.kebab, head: null, cell: null },   // (S42 audit C-19) the row's parked ⋮ — (the calm UI build — 2-20) Deal score rests in Column settings, no Open beside the ⋮
       ]} />
     </>
   )
 }
 /** (S42 audit C-19) The to-do chips' widths at a desk, as the page draws them (a count alone below 1025, `todoGhost`). */
-const TODO_MEETING_W = { save: 172, write: 196 }
-/** (responsive audit 2026-10-23, W6 — W5-33) The Quotes to-do pills' widths as the page draws them (lib/leads/quote-filters.ts QUOTE_TODOS'
-    words: "Waiting for my approval · n" · "Waiting on client · n" · "Expiring this week · n", a one-figure count). */
-const QUOTE_TODO_W = { approval: 241, waiting: 193, expiring: 201 }
+const TODO_MEETING_W = { save: 190, write: 150 }   // (the calm UI build) "Summaries to save · n" · "Needs notes · n" 
+/** (responsive audit 2026-10-23, W6 — W5-33) The Quotes to-do pills' widths as the page draws them (lib/quotes/status-words.ts QUOTE_TODO_LABEL's
+    words — the calm UI build 2026-10-27, 4-04 — "1 approval" · "With client · n" · "Expiring this week · n", a one-figure count). */
+const QUOTE_TODO_W = { approval: 130, waiting: 150, expiring: 201 }
 function MeetingsFirstGhost() {
   return (
     <div className={emptyStyles.empty} data-tone="first" aria-hidden>
       <span className={emptyStyles.glyph}><Bone w={40} h={40} r="50%" /></span>
-      <Words as="h3" className={emptyStyles.title}>Meet with the co-pilot beside you</Words>
-      <Words as="p" className={emptyStyles.help}>Plan the meeting, and in it the co-pilot keeps the checklist, the tips and the rough estimate — then makes the brief: what they want, the next steps and the message to send.</Words>
+      <Words as="h3" className={emptyStyles.title}>No meetings yet</Words>
+      <Words as="p" className={emptyStyles.help}>Plan one and Meeting Copilot keeps the notes.</Words>
       <span className={emptyStyles.actions}><Bone w={158} h={36} r={4} /><Bone w={190} h={36} r={4} /><Bone w={178} h={36} r={4} /></span>
     </div>
   )
@@ -325,10 +327,10 @@ function MeetingsFirstGhost() {
 /** (UX audit build · REG-737) A list tab with nothing in it: its toolbar's title and ⋮ only (the create twin, search and Filters step back),
     then the tab's empty card — what the tab opens on while it holds nothing (lib/ghost-shape.tsx says which). */
 const FIRST: Record<string, { words: string; buttons: number[]; /** the card's buttons stack on a phone */ stack?: boolean }> = {
-  tasks: { words: 'All Tasks', buttons: [132, 170] },
-  quotes: { words: 'All Quotes', buttons: [122, 132, 118], stack: true },   // (S46A — M4) From Scratch · From Template · Upload a quote
-  contracts: { words: 'All Contracts', buttons: [210, 132], stack: true },
-  files: { words: 'All Files', buttons: [150, 140] },
+  tasks: { words: 'All tasks', buttons: [132, 110] },   // (the calm UI build) From a template · Add a task
+  quotes: { words: 'All quotes', buttons: [122, 132, 118], stack: true },   // (S46A — M4) From Scratch · From Template · Upload a quote
+  contracts: { words: 'All contracts', buttons: [210, 132], stack: true },
+  files: { words: 'All files', buttons: [128, 112] },   // (the calm UI build) Upload files · Create folder
 }
 export const FIRST_RUN_TABS = Object.keys(FIRST)
 export function FirstRunTabGhost({ tab, title }: { tab: string; title?: ReactNode }) {

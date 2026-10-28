@@ -23,7 +23,7 @@ export function FileInfoPanel({ file, folder, me, onClose, origin = null, headle
   /** (Leads on the move, L4 — C-23) Inside a phone's sheet, whose head is the sheet's own: the rows only. */
   headless?: boolean }) {
   const rows: [string, ReactNode][] = [
-    ['Owner', file.owner ? (file.owner.id === me.id ? 'You' : file.owner.name) : '--'],   /* no owner is not mocked → the list's "--" */
+    ...(file.owner ? [['Owner', file.owner.id === me.id ? 'You' : file.owner.name] as [string, ReactNode]] : []),   /* (the calm UI build 2026-10-27 — T-08) no owner: the row is left out, never a "--" */
     ['Uploaded', displayDate(file.createdAt)],
     ['Modified', displayDate(file.updatedAt ?? file.createdAt)],
     ['File type', fileTypeLabel(file)],

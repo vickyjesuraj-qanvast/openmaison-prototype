@@ -54,7 +54,7 @@ const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAl
     ok('b-newquotes the sample starts on the template’s split — the studio default 10/30/30/30, not a fixed 10/40/40/10', /10%/.test(pay0) && (pay0.match(/30%/g) || []).length === 3 && !/40%/.test(pay0), pay0.replace(/\s+/g, ' ').slice(0, 120))
     ok('b-newquotes the sample’s Terms read the template’s validity (30 days)', /valid for 30 days/.test(await canvasText(page)))
     ok('b-newquotes GST prints while the switch is on', /gst/i.test(await blockText(page, 'Totals')))
-    await tab(page, 'New quotes')
+    await tab(page, 'Quote settings')   // (the calm UI build 2026-10-27, a deliberate change) W-274: the New quotes tab reads Quote settings
     ok('b-newquotes the New quotes tab names the Page tab (REG-569)', /Items table on the Page tab/.test(await left(page).innerText()) && !/Structure tab/.test(await left(page).innerText()))
     await choose(left(page), 'Payment schedule', '50/50')
     const pay1 = await blockText(page, 'Payment schedule')
@@ -181,6 +181,7 @@ const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAl
   /* ── g-arrows · the column order buttons point across the page ── */
   await step('g-arrows', async () => {
     const card = right(page).getByTestId('column-card').nth(1)
+    await card.getByTestId('column-card-open').click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) 4-23: a column's controls are one press in, under its chevron
     const l = await card.getByRole('button', { name: /left$/ }).innerText(), r = await card.getByRole('button', { name: /right$/ }).innerText()
     ok('g-arrows left / right arrows on the column cards', l.includes('arrow_back') && r.includes('arrow_forward'), `${l} · ${r}`)
     await card.scrollIntoViewIfNeeded(); await shot(page, 'g-arrows-columns', { x: 1120, y: 56, width: 320, height: 968 })
@@ -224,7 +225,7 @@ const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAl
   /* ── b-approve · one place to decide ── */
   await step('b-approve', async () => {
     await openEditor(page, SHOWFLAT)
-    const primary = page.locator('header').getByRole('button', { name: 'Awaiting approval' })
+    const primary = page.locator('header').getByRole('button', { name: 'Waiting for approval' })   // (the calm UI build 2026-10-27, a deliberate change) T-01
     ok('b-approve the top bar’s primary steps back to a disabled “Awaiting approval”', (await primary.count()) === 1 && (await primary.isDisabled()))
     ok('b-approve “Approve and publish” appears once — in the review bar', (await page.getByRole('button', { name: 'Approve and publish' }).count()) === 1 && (await page.getByTestId('review-bar').getByRole('button', { name: 'Approve and publish' }).count()) === 1 && (await page.getByTestId('review-bar').getByRole('button', { name: 'Request changes' }).count()) === 1)
     await shot(page, 'b-approve-review-bar', { x: 0, y: 0, width: 1440, height: 200 })

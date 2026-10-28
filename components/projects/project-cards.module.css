@@ -13,3 +13,7 @@
 .menuWrap { position: relative; display: inline-flex; margin-right: calc(-1 * var(--om-spacing-2)); }
 /* (REG-914) the reasons it needs attention: the red of an overdue task, the info line's type */
 .why { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+
+/* (the calm UI build 2026-10-27, 3-11) "+n more" after the card's top reason: the card's own secondary words, a 44 target on touch */
+.whyMore { margin-left: var(--om-spacing-2); padding: 0; border: 0; background: none; font: inherit; color: var(--om-color-on-surface-secondary); cursor: pointer; }
+@media (hover: none) { .whyMore { min-height: 44px; } }

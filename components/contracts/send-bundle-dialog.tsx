@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { MessageField, RecipientFields } from './editor/dialogs'
 import { useCopy } from '@/components/om/use-copy'
 import { digitsOnly, isSgPhone } from '@/lib/format'
 import { newId } from '@/lib/uid'
 import { bundleSigningLink, signCodeLine } from '@/lib/contracts/model'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import { useSignCodeDemo } from './use-sign-code-demo'   // (S42 B-03)
 import { SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
 import { MSG } from '@/lib/forms'
@@ -78,13 +80,15 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
   const ready = nameOk && enough && phoneOk
   return (
     <Dialog open={open} onClose={onClose} title="Send together for signature" size="modal" width={600}
-            subtitle={`One link, every document: your client reads each one and signs once at the end. ${signCodeLine(codeDemo)}`}   /* (S42 B-03) */
+            /* (the calm UI build 2026-10-27, 4-20 · T-05) one line in the head; the code's words (S42 B-03's demo note) under "How signing works" */
+            subtitle="One link, every document: your client reads each one and signs once at the end." 
             footer={<>
               <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} isDisabled={!link || !nameOk || !enough}
                       onPress={() => { setTouched(true); if (!ready) return; void copy(); void onShare?.({ bundleId, contractIds: picked, templateIds: pickedStd, name: name.trim(), phone: digitsOnly(phone) }) }}>{copied ? 'Copied' : 'Copy link'}</Button>
-              <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk || !enough} onPress={() => { setTouched(true); if (!ready) return; void onSend({ bundleId, contractIds: picked, templateIds: pickedStd, name: name.trim(), phone: digitsOnly(phone), message, link }) }}>Send via WhatsApp</Button>
+              <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk || !enough} onPress={() => { setTouched(true); if (!ready) return; void onSend({ bundleId, contractIds: picked, templateIds: pickedStd, name: name.trim(), phone: digitsOnly(phone), message, link }) }}>Send on WhatsApp</Button>
             </>}>
       <div className={styles.sendFields}>
+        <span className={styles.howTip} data-testid="send-how"><Tooltip label={signCodeLine(codeDemo)}><Button appearance="text" iconStart={<Icon name="help" size={18} />}>How signing works</Button></Tooltip></span>
         <div className={own.list} role="group" aria-label="Documents to send">
           <span className={own.listHead}>{picked.length + pickedStd.length} of {sendable.length + standard.length} {sendable.length + standard.length === 1 ? 'document' : 'documents'}{enough ? ' — the client reads them in the order ticked' : ' — pick at least two'}</span>
           {contracts.map((c) => {
@@ -93,7 +97,7 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
               <label key={c.id} className={own.row} data-blocked={why ? '' : undefined}>
                 <Checkbox isSelected={picked.includes(c.id)} isDisabled={!!why} onChange={(on: boolean) => toggle(c.id, on)} aria-label={c.title} />
                 <span className={own.rowTitle}>{picked.includes(c.id) ? <span className={own.rowOrder}>{picked.indexOf(c.id) + 1}</span> : null}{c.title}</span>
-                <span className={own.rowMeta}>{why ?? c.status}</span>
+                <span className={own.rowMeta}>{why ?? contractStatusLabel(c.status)}</span>
               </label>
             )
           })}
@@ -110,7 +114,8 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
         {/* (UX audit C12) the Send dialog's own recipient and message pieces */}
         <RecipientFields name={name} phone={phone} onName={setName} onPhone={setPhone} nameError={touched && !nameOk ? MSG.required : undefined} phoneError={err} />
         <MessageField value={message} onChange={(v) => setText(v)} onReset={() => setText(null)} canReset={text !== null && text !== auto} names={[name]} fold />   {/* (C4 — A-15) three lines and Show all on a phone: the tools row stays in view under the documents */}
-        <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div>
+        {/* (4-20 · T-04) the link row only when the message doesn't already carry it — the foot's Copy link copies it either way */}
+        {link && !message.includes(link) ? <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div> : null}
       </div>
     </Dialog>
   )

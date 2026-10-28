@@ -5,6 +5,7 @@
  * signed copy. `linkState`'s facts and `awaitingLine`'s words (lib/contracts/model.ts) give the sentence; everything else lives behind ⋮.
  */
 import { ago } from '@/lib/templates/ago'
+import { contractStatusLabel } from './status-words'
 import { linkLife } from './link'
 import { displayDate } from '@/lib/format'
 
@@ -63,8 +64,8 @@ export function contractNextStep(f: ContractFacts, now: number): ContractNext {
   if (f.status === 'Draft') {
     if (f.blocker) return { primary: 'send', label: 'Send', lead: 'Next', icon: 'edit', text: `${lower(f.blocker)}.`, more: null }
     if (f.toRead) return { primary: 'send', label: 'Send', lead: 'Next', icon: 'send', text: `send the letter to ${first} — they read and keep it; there is nothing to sign.`, more: null }
-    if (f.uploaded) return { primary: 'send', label: 'Send', lead: 'Next', icon: 'send', text: `send the PDF to ${first} for signature — they read it on the link and sign under it.`, more: `Copy signing link sends it too: the contract is Sent to Client once the link is on your clipboard.` }
-    return { primary: 'send', label: 'Send', lead: 'Next', icon: 'send', text: `send it to ${first} for signature — the client signature box is in place.`, more: `Copy signing link sends it too: the contract is Sent to Client once the link is on your clipboard.` }
+    if (f.uploaded) return { primary: 'send', label: 'Send', lead: 'Next', icon: 'send', text: `send the PDF to ${first} for signature — they read it on the link and sign under it.`, more: `Copy signing link sends it too: the contract waits for a signature once the link is on your clipboard.` }
+    return { primary: 'send', label: 'Send', lead: 'Next', icon: 'send', text: `send it to ${first} for signature — the client signature box is in place.`, more: `Copy signing link sends it too: the contract waits for a signature once the link is on your clipboard.` }
   }
   if (f.status === 'Sent to Client') {
     const seen = f.viewedAt ? `opened ${ago(f.viewedAt, now)}` : 'not opened yet'
@@ -82,18 +83,18 @@ export function contractNextStep(f: ContractFacts, now: number): ContractNext {
     const who = f.signedBy ? `by ${f.signedBy} online` : '· marked by the studio'   // (landing) "Signed 2d ago · marked by the studio" — a day and a hand need the house separator; "Signed on 22 Sep ’26 by Ryan online" reads on its own
     const open = f.leadStage && f.leadStage !== 'Won' && f.leadStage !== 'Lost'
     const bits = [`Signed${when(f.signedAt, now)} ${who}`, f.quoteNumber ? `${f.quoteNumber} is signed through it` : null, open ? `the lead is still in ${f.leadStage}` : null].filter(Boolean)
-    const more = f.signedBy ? 'This is the copy they signed, kept as it was — it stays signed; duplicate it to change the terms.' : 'This is the copy kept at that moment; an Owner or an Admin can move it back from the status.'
+    const more = f.signedBy ? 'This is the copy they signed, kept as it was — it stays signed; duplicate it to change the terms.' : 'This copy is locked. An Owner or Admin can undo the signing from the status menu.'   /* (the calm UI build 2026-10-27, 4-51) */
     if (open) return { primary: 'won', label: 'Move to Won', lead: null, icon: 'lock', text: `${bits.join(' · ')}.`, more }
     return { primary: 'download', label: 'Download signed copy', lead: null, icon: 'lock', text: `${bits.join(' · ')}.`, more }
   }
-  return { primary: null, label: null, lead: null, icon: 'info', text: `${f.status}.`, more: null }
+  return { primary: null, label: null, lead: null, icon: 'info', text: `${contractStatusLabel(f.status)}.`, more: null }
 }
 
 /** The Contract screen's Activity fold: what the record itself holds, newest first — honest data, no event log read (lib/leads/activity.ts stays the lead's). */
 export type ContractMoment = { at: number; text: string }
-export function contractTimeline(c: { createdAt: number | null; createdByName: string | null; sentAt: number | null; sentByName?: string | null; recipient: string; viewedAt: number | null; acceptedAt: number | null; signedAt: number | null; signedBy: string | null; markedByName?: string | null; caseTrustAt?: number | null; toRead: boolean }): ContractMoment[] {
+export function contractTimeline(c: { createdAt: number | null; createdByName: string | null; sentAt: number | null; sentByName?: string | null; recipient: string; viewedAt: number | null; acceptedAt: number | null; signedAt: number | null; signedBy: string | null; markedByName?: string | null; caseTrustAt?: number | null; toRead: boolean; /** (the calm UI build 2026-10-27, 4-11) the header's "From template" tag left; the record's first line says it */ fromTemplate?: boolean }): ContractMoment[] {
   const out: ContractMoment[] = []
-  if (c.createdAt) out.push({ at: c.createdAt, text: c.createdByName ? `Created by ${c.createdByName}` : 'Created' })
+  if (c.createdAt) out.push({ at: c.createdAt, text: `${c.createdByName ? `Created by ${c.createdByName}` : 'Created'}${c.fromTemplate ? ' from a template' : ''}` })
   if (c.sentAt) out.push({ at: c.sentAt, text: `${c.toRead ? 'Sent' : 'Sent for signature'} to ${c.recipient}${c.sentByName ? ` by ${c.sentByName}` : ''}` })
   if (c.viewedAt) out.push({ at: c.viewedAt, text: `${c.recipient} opened the link` })
   if (c.caseTrustAt) out.push({ at: c.caseTrustAt, text: `${c.recipient} ticked the CaseTrust disclosure` })

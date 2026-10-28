@@ -1,0 +1,1145 @@
+[
+  {
+    "id": "3-01",
+    "area": "Projects › a project (every tab)",
+    "route": "/projects/[id] · /projects/[id]/schedule · /projects/[id]/money",
+    "kind": "noise",
+    "severity": "high",
+    "title": "The same next step is drawn 3–5 times on one project page",
+    "now": "Ryan’s project: the header’s filled “Review the ask for more time”; the Maison AI brief’s outlined “Review the ask for more time”; the Overview’s Needs you row “More time on Carpentry fabrication · Approve · Decline”; a second Needs you row “Carpentry fabrication · Was due Wed 21 Oct · 6 days late · Mark done”; the Schedule tab’s purple banner “Michelle asks for more time on Carpentry fabrication. Open it”; and the milestone panel’s own “Approve · Decline” band. Marcus (Setting up): “Start the project” in the header (filled), in the brief (outlined) and as “Start the project · Start” in Before work starts. Aisha (On hold): “Resume” in the header, the brief and the Needs you row “On hold since 15 Oct ’26 · Resume · Change”.",
+    "why": "A studio owner reads the same instruction three times and can’t tell whether they are three different jobs. The page looks busier than the work is, and the eye has no single place to start.",
+    "proposal": "One door per step. Keep the header’s filled button (the page’s one primary) and the Needs you row. The brief stops repeating it: `pair(f.top, …)` in lib/projects/briefs.ts drops `f.top` whenever it equals the header’s label, so the brief offers only the other help (“Draft an update about this week”) — or no buttons at all; the brief is a sentence. Remove the Schedule tab’s ask banner (the row already shows “More time asked” and the panel carries Approve · Decline). Merge the two Carpentry rows into one (“Carpentry is 6 days late — Michelle asks for Wed 28 Oct · Approve”).",
+    "effort": "S",
+    "shots": [
+      "3-p-overview-full.png",
+      "3-p-needs-more.png",
+      "3-p-schedule.png",
+      "3-p-setup-overview-full.png",
+      "3-p-hold-overview.png"
+    ],
+    "code": [
+      "lib/projects/briefs.ts:97",
+      "components/projects/project-frame.tsx:418",
+      "components/projects/schedule/project-schedule.tsx:652",
+      "lib/projects/needs-you.ts:192"
+    ]
+  },
+  {
+    "id": "3-02",
+    "area": "Projects › Money tab (and the portal’s Money)",
+    "route": "/projects/[id]/money · /my/[slug]/money",
+    "kind": "copy",
+    "severity": "high",
+    "title": "“Money” names a tab that mixes client payments, supplier costs and profit",
+    "now": "Tab “Money” → page title “Money”, then “Needs you 4”, tiles “TO COLLECT · TO PAY · PROFIT”, then four regions “Billing” (All · Invoices · Payments · Credit notes), “Changes to the contract” (a table whose head says “VARIATION ORDER”, link “Deleted variation orders”), “Where costs go”, “Costs” (All · Purchase orders · Bills · Expenses). The phone adds a “Billing · Costs” switch above the four billing chips. The client’s portal tab is also “Money”. Company › Finance calls the same two halves “Money in” and “Money out”.",
+    "why": "Studios say “payments” (from the client) and “costs” (to suppliers). “Money” is vague, “Billing” and “Changes to the contract” are accountant words, and the same records have three sets of names across Projects, Finance and the portal.",
+    "proposal": "Rename the tab “Payments” (the owner’s word) and the page title with it; inside, two regions named as studios say them: “Client payments” (was Billing — the stages, invoices, receipts, credit notes) and “Costs” (purchase orders, bills, expenses). “Changes to the contract” → “Variation orders” (the head and the link already say it). Keep Profit as the one tile Owners see. Portal tab “Money” → “Payments”. Finance’s “Money in / Money out” → “Client payments / Costs” so one record has one name in every module.",
+    "effort": "M",
+    "shots": [
+      "3-p-money-full.png",
+      "3-p-money-390-full.png",
+      "3-portal-money.png"
+    ],
+    "code": [
+      "lib/projects/tabs.ts:21",
+      "lib/projects/tabs.ts:56",
+      "components/projects/money/project-money.tsx:59",
+      "components/projects/money/billing-section.tsx:252",
+      "components/projects/money/billing-section.tsx:258",
+      "lib/portal/model.ts:127",
+      "lib/finance/sections.ts:27",
+      "lib/finance/sections.ts:29"
+    ]
+  },
+  {
+    "id": "3-03",
+    "area": "Projects › Overview · Money · invoice papers · Dashboard · Finance",
+    "route": "/projects/[id] · /projects/[id]/money · /invoice/[token] · /receipt/[token] · /dashboard · /company/finance/todo",
+    "kind": "inconsistency",
+    "severity": "high",
+    "title": "One figure — what the client still owes — has six names",
+    "now": "For Ryan, S$14,018.04 is “To collect” on the Money tile (project-money.tsx:258) and in Finance › To do, “Outstanding” on the Overview’s Money card (money-card.tsx:50), “Owed to you” on the Dashboard’s Pulse, “Balance due” on the invoice paper, “Still owed” on the receipt, and “To pay” in the invoice panel’s totals (invoice-panel.tsx:88). What the studio owes suppliers is “To pay” (Money tile) and “You owe” (Dashboard). Collected is “Collected” (studio) and “Paid so far” (portal). The Overview’s caption “22% · work 29%” and the Money tile’s “Cash so far S$4,750.86” add two more unexplained figures.",
+    "why": "An owner comparing the Dashboard with a project cannot tell these are the same number; “To pay” means “the client still has to pay” in one panel and “we still have to pay” on the tile next to it.",
+    "proposal": "One studio word each, everywhere: “To collect” (client → studio) and “To pay” (studio → suppliers); “Collected” for money in. Overview card: “Outstanding” → “To collect”. Dashboard Pulse: “Owed to you” → “To collect”, “You owe” → “To pay”. Invoice panel totals: “To pay” → “To collect”. Client papers keep the client’s words (“Balance due”, “Paid so far”) — and the receipt’s “Still owed” → “Balance due” to match the invoice. “work 29%” → “29% of the work done”; “Cash so far” → “Cash in hand (collected − paid out)” with the sum in the tooltip.",
+    "effort": "S",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-money.png",
+      "3-invoice-token-full.png",
+      "3-receipt-token.png",
+      "3-p-money-invoice-panel.png"
+    ],
+    "code": [
+      "components/projects/overview/money-card.tsx:48",
+      "components/projects/overview/money-card.tsx:50",
+      "components/projects/money/project-money.tsx:258",
+      "components/projects/money/project-money.tsx:269",
+      "components/projects/money/invoice-panel.tsx:88",
+      "components/finance/books/project-profit.tsx:29",
+      "lib/dashboard/pulse.ts:79",
+      "components/projects/money/invoice-paper.tsx:144",
+      "lib/finance/todo.ts:133"
+    ]
+  },
+  {
+    "id": "3-04",
+    "area": "Projects › a project · the portal",
+    "route": "/projects/[id] · /projects/[id]/money · /my/[slug] · /my/[slug]/schedule",
+    "kind": "copy",
+    "severity": "high",
+    "title": "“Stage” means three different things on one project",
+    "now": "The header’s “Stage: In progress ▾” (the project’s lifecycle: Setting up · In progress · Completed); the Money tab’s “STAGE” column and the Overview’s “Payment stages · 4” (Deposit · Commencement · Mid-Project · Completion); and the client’s portal calls the milestones “stages”: “2 of 7 stages done”, “Electrical is paused”, “the stages ahead and when each is planned”, while the studio’s Schedule says “2 of 7 milestones”.",
+    "why": "A studio owner telling a client “we’re at the Mid-Project stage” and the client reading “stage 3 of 7” are talking about different things. Three meanings of one word on one record invites wrong answers on the phone.",
+    "proposal": "Keep “Stage” for the project’s lifecycle only (Setting up · In progress · Completed). Payment parts become “Payments” (“Payment stages · 4” → “Payments · 4”; the Billing column head “Stage” → “Payment”). The portal says what the studio says: “2 of 7 milestones done” — or, if milestones reads too technical for homeowners, use “steps” on BOTH sides (studio Schedule “2 of 7 steps”). One word per thing.",
+    "effort": "M",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-money.png",
+      "3-portal-home-390-full.png",
+      "3-portal-schedule-390-full.png",
+      "3-portal-bell-390.png"
+    ],
+    "code": [
+      "components/projects/stage-menu.tsx:88",
+      "components/projects/overview/money-card.tsx:62",
+      "components/projects/money/billing-section.tsx:252",
+      "lib/portal/schedule-model.ts:280",
+      "components/portal/project/home-cards.tsx:13"
+    ]
+  },
+  {
+    "id": "3-05",
+    "area": "Projects › Money tab",
+    "route": "/projects/[id]/money",
+    "kind": "noise",
+    "severity": "high",
+    "title": "Money tab: four filled buttons, up to three verbs a row, “Open” beside every ⋮",
+    "now": "At 1440 the first screen has four filled buttons: the header’s “Review the ask for more time”, and “Pay”, “Confirm”, “Change it” on the Needs you banners. The banner rows carry “Open · Pay”, “See the bank’s confirmation · Not received · Confirm”, “Open · Change it”. In Billing, Changes to the contract and Costs every row ends with a purple “Open” (or “Record a payment”, “Pay back”, “Change it”, “Pay”) AND a ⋮, though the row’s name already opens the same panel. On a phone each billing card carries a “Next step · Open ⋮” line.",
+    "why": "Thirty-odd purple words and four filled buttons on one screen: nothing stands out, so nothing gets done first. “Open” next to a name that opens is pure repetition.",
+    "proposal": "House rule for rows: ONE verb, the rest in ⋮ (PortalMenu + DropdownItem). Needs you banners: the verb as the DS outlined button, not filled (needs-list.tsx:209) — “See the bank’s confirmation” and “Not received” move into the row’s ⋮; “Open” goes (the title opens it). Tables: drop the “Open” fallback in `inv.nextStep` (billing-section.tsx:96) — a row shows a verb only when a real next step exists (Record a payment, Pay, Pay back). The phone card loses the “Next step ·” label (the verb sits in the card foot beside ⋮). The page keeps one filled button: the header’s.",
+    "effort": "M",
+    "shots": [
+      "3-p-money-full.png",
+      "3-p-money-390-full.png"
+    ],
+    "code": [
+      "components/projects/money/needs-list.tsx:208",
+      "components/projects/money/needs-list.tsx:209",
+      "components/projects/money/billing-section.tsx:96",
+      "components/projects/money/billing-section.tsx:159"
+    ]
+  },
+  {
+    "id": "3-06",
+    "area": "Projects › Overview",
+    "route": "/projects/[id]",
+    "kind": "defect",
+    "severity": "high",
+    "title": "Overview text is squeezed into narrow columns at 1440",
+    "now": "Needs you row “Ryan says they paid for INV-2026-002” breaks over seven lines (“Ryan says they / paid for INV- / 2026-002 / Commencement · / paid 16 Oct · / reference INV-2026- / 002”) because the amount “S$ 13,370”, “Confirm” and “See the bank’s confirmation” take the rest of the row. Recent activity gives the date (“Mon, 19 Oct ’26”) half of the card, so each sentence runs 8–12 lines in a ~130px column (Ryan, Marcus, Shalini). “Bright Spark Electrical asked for changes to PO-2026- / 007” breaks the PO number.",
+    "why": "The Overview is the screen studios open most; at desktop width it looks broken, and a payment reference split across lines is easy to misread.",
+    "proposal": "Needs you rows (overview/row.tsx): the title column takes the space first — the amount and the ONE verb sit right; a second verb goes to ⋮ (see 3-05). A row never shrinks its title below ~60% of the row; if both don’t fit, the actions wrap under the caption. Recent activity in a narrow card: the date goes above the sentence as a 12px caption (or a day heading as on the Activity tab), the sentence takes the full width, and long quotes clamp to two lines with the record one press away.",
+    "effort": "S",
+    "shots": [
+      "3-p-overview-full.png",
+      "3-p-setup-overview-full.png",
+      "3-p-done-overview-full.png"
+    ],
+    "code": [
+      "components/projects/overview/row.tsx:34",
+      "components/leads/detail/activity-card.tsx:31",
+      "components/om/timeline.tsx"
+    ]
+  },
+  {
+    "id": "3-07",
+    "area": "Projects › Overview · Money tab",
+    "route": "/projects/[id] · /projects/[id]/money",
+    "kind": "copy",
+    "severity": "high",
+    "title": "“Needs you · 12” — a heading that doesn’t say what it is, a list that never ends",
+    "now": "Overview card “NEEDS YOU · 12” with a purple sub-group “Needs your OK · 1”, then 4 rows and “Show 6 more”; expanded, 12 rows with 13 purple verbs (Approve · Decline · Pay · Confirm · See the bank’s confirmation · Change it · Open · Open · Mark done · Start · Move the schedule · Add a contractor · Mark delivered · Draft it) and three red titles. The Money tab’s list says “Needs you 4” (no dot). Painting appears twice (“Painting · Was to start Sat 24 Oct · Start” and “No Painting contractor on Painting · Add a contractor”). Setting up, the same card is “BEFORE WORK STARTS · 3”.",
+    "why": "The owner’s own example: “Needs you 51” should read “Needs your attention”. Twelve rows of mixed jobs with a verb each is a to-do list nobody finishes; two rows per milestone inflate the count.",
+    "proposal": "Heading “Needs your attention” (Overview, Money tab and the Dashboard, one count format “· 12”); the sub-group “Needs your OK” → “Waiting for your approval”. Show 3 rows (one verb each) + “See all 12” that opens a Review list (the Dashboard’s Review pane is the house piece). Merge rows about one milestone (Painting: “Painting should have started Sat 24 Oct — no painter yet · Add a contractor”). Red only for the ONE most overdue row (REG-1445’s “red only for ours-and-late” — today three rows are red).",
+    "effort": "M",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-needs-more.png",
+      "3-p-money.png"
+    ],
+    "code": [
+      "components/projects/overview/needs-card.tsx:77",
+      "components/projects/overview/needs-card.tsx:83",
+      "components/projects/money/needs-list.tsx:218",
+      "components/projects/money/needs-list.tsx:219",
+      "lib/projects/needs-you.ts:18"
+    ]
+  },
+  {
+    "id": "3-08",
+    "area": "Projects › a project (Client, Design, Tasks, Files & notes, Money)",
+    "route": "/projects/[id]/updates · /projects/[id]/messages · /projects/[id]/tickets · /projects/[id]/choices · /projects/[id]/floor-plan · /projects/[id]/compliance · /projects/[id]/activity · /projects/[id]/money (phone)",
+    "kind": "noise",
+    "severity": "high",
+    "title": "Two and three rows of identical-looking chips stacked on every grouped tab",
+    "now": "The views switch is a row of chips (Updates · Messages · Tickets · Meetings · Questionnaire), and right under it come more chips that filter: Messages “Client · Team”; Tickets “Open (1) · Resolved and closed (0) · All (1)”; Choices “Choices · 1 · Floor plan · Designs” then “By room · By milestone”; Compliance “All tasks · Compliance” then “Design · all answered · Execution · 4 to do · Handover · 3 to do”; Floor plan views, then “Unit layout · Main”, then “Both · Studio · Ryan”, then trade chips “Carpentry 2 · Electrical 1 · Lighting 2 ›”; Activity views, then FOURTEEN type chips (All · Schedule · Updates · Money · Choices · Tasks · Files · Notes · Floor plan · 3D layouts · Tickets · Messages · Compliance · Stage). The phone’s Money adds “Billing · Costs” above “All · Invoices · Payments · Credit notes”.",
+    "why": "Navigation and filtering look exactly the same, so a press might change the page or narrow the list — the owner can’t tell. Fourteen chips on Activity is a wall.",
+    "proposal": "Views (where you are) as the house `Tabs` in their small, underlined form under the main strip, or a segmented control — never chips. Filters as ONE scope pill per list (`components/om/scope-pill.tsx`): Activity “Show: All ▾”, Tickets “Open ▾”, Choices “Group: By room ▾”, Floor plan “Marks: Both ▾” with the trades inside the pill’s menu. Messages’ Client · Team: see 3-13. Phone Money: one switch, not two rows.",
+    "effort": "M",
+    "shots": [
+      "3-p-updates.png",
+      "3-p-messages.png",
+      "3-p-tickets.png",
+      "3-p-choices.png",
+      "3-p-compliance.png",
+      "3-p-floor-plan.png",
+      "3-p-activity.png",
+      "3-p-money-390-full.png"
+    ],
+    "code": [
+      "components/projects/project-views.tsx",
+      "lib/projects/tabs.ts:85",
+      "components/projects/money/project-money.tsx:323",
+      "components/projects/money/billing-section.tsx:88"
+    ]
+  },
+  {
+    "id": "3-09",
+    "area": "Projects › a project on a phone",
+    "route": "/projects/[id] (390 touch)",
+    "kind": "noise",
+    "severity": "high",
+    "title": "Phone: the first screen is the header, a truncated button and the AI brief",
+    "now": "At 390: title “Executive Condo — Ryan …” cut, the filled primary cut to “Review the ask fo…”, the tab strip, “Ryan D’Souza · 9755 1246 · View Client Info”, then the brief with two stacked buttons “Review the ask for more time” / “Draft an update about this week”. Needs you starts at ~600px and the Maison AI button sits on its “Decline”. The header’s cut button repeats on every tab (Schedule, Messages, Money …).",
+    "why": "On site, with one hand, the owner sees the same ask twice — once cut off — before any of the project’s state. The key verb truncated is unreadable.",
+    "proposal": "On ≤767 the header’s primary leaves the title row: it becomes the brief’s single button (or the Needs you top row’s), never truncated. The brief folds to its first sentence. The FAB keeps clear of rows (it already slides away on scroll; start it hidden on project pages, as on /dashboard).",
+    "effort": "S",
+    "shots": [
+      "3-p-overview-390.png",
+      "3-p-overview-390-full.png",
+      "3-p-schedule-390-full.png",
+      "3-p-messages-390.png"
+    ],
+    "code": [
+      "components/projects/project-frame.tsx:418",
+      "components/shell/maison-fab.tsx"
+    ]
+  },
+  {
+    "id": "3-10",
+    "area": "Client portal › Home",
+    "route": "/my/[slug]",
+    "kind": "defect",
+    "severity": "high",
+    "title": "Portal home says “Electrical is under way” above a card that says “Electrical is paused”",
+    "now": "Ryan’s home: lede “Your home at Bishan Loft. Electrical is under way; handover is planned for Fri 13 Nov.”; the next card’s heading “Electrical is paused”; the desk list marks Electrical “13 Sep – 1 Oct · Paused”; the Schedule tab “Paused · Resuming around 27 Oct”.",
+    "why": "The client page contradicts itself in its first two lines — exactly the kind of thing that makes a homeowner call the designer.",
+    "proposal": "`homeLede` reads the same state as the card: a blocked (paused) current milestone says “Electrical is paused — resuming around 27 Oct; handover is planned for Fri 13 Nov.” (or the lede drops the milestone and says only the handover, since the card under it names it).",
+    "effort": "S",
+    "shots": [
+      "3-portal-home-390-full.png",
+      "3-portal-home.png"
+    ],
+    "code": [
+      "components/portal/portal-home.tsx:112",
+      "components/portal/project/home-cards.tsx:14"
+    ]
+  },
+  {
+    "id": "3-11",
+    "area": "Projects › listing on a phone",
+    "route": "/projects (390 touch)",
+    "kind": "noise",
+    "severity": "high",
+    "title": "Phone listing: five tiles fill the screen; a card prints every alert in red",
+    "now": "At 390 the five tiles (IN PROGRESS 3 · NEEDS ATTENTION 3 · WAITING ON CLIENT 3 · COMPLETING THIS MONTH 0 · CONTRACT VALUE S$ 261.9K) take the first ~400px; the scope pill is cut “Open projects…”. Ryan’s card then prints six reasons in red: “2 milestones overdue · Waiting on the plumber for 29 days · More time asked on Carpentry fabrication · Ryan said no to Bathroom tiles · Bright Spark Electrical asked for changes to PO-2026-007 · No update for 26 days”. The card’s top-right shows an unlabeled age (“12d ago”, “15 Sep ’26”).",
+    "why": "The list a studio scans on site starts below the fold, and a card in six lines of red reads as an emergency even when it is a normal week.",
+    "proposal": "Phone: tiles fold into one line under the pill (“3 need attention · 3 wait on clients”), each a door to its scope. The card shows the top reason in red plus “+5 more” in grey (`project-cards.tsx:51` joins them all). Drop the unlabeled age (or label it “Started 21 Aug”).",
+    "effort": "S",
+    "shots": [
+      "3-projects-390-full.png"
+    ],
+    "code": [
+      "components/projects/project-cards.tsx:36",
+      "components/projects/project-cards.tsx:51",
+      "components/projects/projects-workspace.tsx:338"
+    ]
+  },
+  {
+    "id": "3-12",
+    "area": "Projects › every tab toolbar",
+    "route": "/projects/[id]/tasks · /schedule · /updates · /tickets · /meetings · /questionnaire · /choices · /floor-plan · /files · /notes · /money",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Eleven ways to say “create” on one project — Title Case, sentence case, filled, outlined",
+    "now": "“Add Task ▾” · “Add milestone” · “Post an update” · “New ticket” (FILLED — the only filled create) · “New Meeting ▾” · “Ask Client” · “Add a choice” · “Add a plan” · “New File ▾” (+ a folder icon) · “New ▾” (Notes) · “New ▾” (Money). The phone ⋮’s Create group says “Task · Note · Contact Log · Meeting · Update · Variation order”.",
+    "why": "Same job, same place, eleven words and two weights: the owner has to read each one; “New ticket” filled competes with the header’s primary.",
+    "proposal": "One grammar, sentence case, the DS outlined button in the same slot: “New task ▾ · New milestone · New update · New ticket · New meeting ▾ · Ask the client · New choice · New plan · New file ▾ · New note ▾ · New ▾ (Payments)”. “New ticket” becomes outlined (project-tickets.tsx:91). The lead tabs share these toolbars, so the change lands on Leads too.",
+    "effort": "S",
+    "shots": [
+      "3-p-tasks.png",
+      "3-p-schedule.png",
+      "3-p-updates.png",
+      "3-p-tickets.png",
+      "3-p-meetings.png",
+      "3-p-questionnaire.png",
+      "3-p-choices.png",
+      "3-p-floor-plan.png",
+      "3-p-files.png",
+      "3-p-notes.png",
+      "3-p-kebab-390.png"
+    ],
+    "code": [
+      "components/leads/tasks/tasks-toolbar.tsx:79",
+      "components/projects/schedule/project-schedule.tsx:684",
+      "components/projects/updates/project-updates.tsx:225",
+      "components/projects/tickets/project-tickets.tsx:91",
+      "components/leads/questionnaire/lead-questionnaire.tsx:114",
+      "components/projects/choices/project-choices.tsx:175",
+      "components/leads/files/files-toolbar.tsx:155",
+      "components/leads/detail/quick-links.tsx:78"
+    ]
+  },
+  {
+    "id": "3-13",
+    "area": "Projects › Client › Messages",
+    "route": "/projects/[id]/messages",
+    "kind": "copy",
+    "severity": "med",
+    "title": "The “Client” tab holds the team’s private chat; “Client” is written three times",
+    "now": "Tab “Client” → view “Messages” → chips “Client · Team”; each of Ryan’s messages carries a grey “CLIENT” tag; the info column also has “Team chat: Only the team reads it · Messages”. The phone puts “All conversations” beside the views.",
+    "why": "A private team conversation filed under “Client” is one slip from being sent to the client. The tag on every message tells the owner what the tab already said.",
+    "proposal": "Messages under Client shows the client conversation only (drop the Client · Team chips). The team’s conversation opens from the info column’s “Team chat” link (already there) and from /chat. Remove the per-message “CLIENT” tag in a client-only thread (keep it only in /chat, where threads mix).",
+    "effort": "S",
+    "shots": [
+      "3-p-messages.png",
+      "3-p-messages-390.png"
+    ],
+    "code": [
+      "components/projects/messages/send-render.tsx:63",
+      "components/leads/detail/info-column.tsx:122",
+      "lib/projects/tabs.ts:53"
+    ]
+  },
+  {
+    "id": "3-14",
+    "area": "Projects › Client › Meetings",
+    "route": "/projects/[id]/meetings",
+    "kind": "copy",
+    "severity": "med",
+    "title": "A running project’s meetings speak sales: “Logged at Met”, “Deal score”",
+    "now": "Columns MEETING · WHEN · WHERE · PEOPLE · STATUS · DEAL SCORE; the one row “Meeting / Logged at Met” · “Thu, 30 Jul ’26 · 12:00 PM” · “In person” · “--” · “Held” · “--”.",
+    "why": "“Met” is a lead stage and “Deal score” a sales measure — neither means anything once the contract is signed; two “--” cells add nothing.",
+    "proposal": "On a project: hide Deal score (and People when empty) by default; the row’s name says what it was — “First meeting with Ryan” — caption “From the lead, before the project began”.",
+    "effort": "S",
+    "shots": [
+      "3-p-meetings.png"
+    ],
+    "code": [
+      "components/meetings/meetings-table.tsx:41",
+      "components/meetings/meetings-table.tsx:50"
+    ]
+  },
+  {
+    "id": "3-15",
+    "area": "Projects › Workload (members and contractors)",
+    "route": "/projects?view=workload · /projects?view=workload&of=contractors",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Workload views: insider sentences, nine tiles, a verb on every row",
+    "now": "Members: “Counting 4 running projects the list shows · a person can run 4 unless set otherwise”, “1 of 4 · studio default”, tags “FULL · ROOM FOR 1 MORE · ROOM FOR 3 MORE”, and “Insights” twice (header + row) beside “Set capacity”. Contractors: the five project tiles PLUS four contractor tiles (FREE THIS WEEK · FREE WITHIN 7 DAYS · OVER CAPACITY · NO CONTRACTOR YET), “7 contractors · every running site counts”, “Window: This week ▾ · By contractor · By site · Vendors”, a filled “Add a contractor” beside the header’s filled “New project”, “Put on a site” on six rows, trade codes “Fittings · CV”, “Painting · CP”, names cut (“ClearView Glass & Alu…”, “AquaFlow Plumbing Wo…”), and in the drawer “Leader checked by Hui Min”.",
+    "why": "Words like “studio default”, “every running site counts” and “Leader checked” are the build’s, not the studio’s; nine tiles and six identical verbs bury the one contractor who is double-booked.",
+    "proposal": "Members: one line “Each person runs up to 4 projects · Set capacity”; the tag says “Full” / “1 free slot” (sentence case, no CAPS); drop the row’s second Insights. Contractors: hide the project tiles in this view (they describe projects, not crews); keep the four crew tiles. “Put on a site” moves into the row’s ⋮, shown as a verb only on the row that needs it; “Add a contractor” outlined; drop the two-letter codes; names wrap to two lines. “Leader checked” → “Checked by Hui Min”.",
+    "effort": "M",
+    "shots": [
+      "3-projects-workload.png",
+      "3-projects-contractors-full.png",
+      "3-p-crew.png"
+    ],
+    "code": [
+      "components/projects/workload/workload-view.tsx:39",
+      "components/projects/contractors/contractors-view.tsx:81",
+      "components/projects/contractors/contractors-view.tsx:83",
+      "components/projects/contractors/contractors-view.tsx:162",
+      "components/projects/contractors/crew-list.tsx:50"
+    ]
+  },
+  {
+    "id": "3-16",
+    "area": "Projects › a completed project · Complete handover",
+    "route": "/projects/[id] (Completed) · Complete handover sheet",
+    "kind": "copy",
+    "severity": "med",
+    "title": "A finished project gives three different “how long” figures and a nonsense margin line",
+    "now": "Shalini: brief tag “COMPLETED · TOOK 293 DAYS”; Progress “Setting up 243 days · In progress 50 days”; Closing summary “Days · 2 more than the 48 planned · 50 days”; “Margin · Margin 79% — 79 points over the expected 0%” in red; truncated “Variation orders · 1 appro… · +S$1,853”, “Costs · Committed — POs, bills a… · S$ 9,044”. Ryan’s handover sheet: “Margin 66.6% — 42.6 points over the expected 24%”.",
+    "why": "An owner reading “took 293 days” for a 50-day job thinks the project ran ten months late. “Points over the expected 0%” is accounting jargon and, at 0%, meaningless; a healthy margin drawn in red looks like a loss.",
+    "proposal": "Brief tag: “Completed · 50 days on site”. Progress keeps its stage durations. Margin warning only when the expected margin exists and is above 0, worded “Margin 79% — the quote planned 24%”, in the warning tone only when the margin is BELOW plan. Closing rows: the caption wraps instead of truncating.",
+    "effort": "S",
+    "shots": [
+      "3-p-done-overview-full.png",
+      "3-p-handover-sheet.png"
+    ],
+    "code": [
+      "lib/projects/briefs.ts:107",
+      "lib/projects/briefs.ts:116",
+      "lib/finance/profit.ts:215",
+      "lib/projects/handover-model.ts:422"
+    ]
+  },
+  {
+    "id": "3-17",
+    "area": "Projects › Complete handover",
+    "route": "/projects/[id] → ⋮ › Complete handover",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Handover sheet: “Defer” on every row, up to four purple verbs a row",
+    "now": "A paragraph, then a CHECKLIST card whose rows carry “Defer · Open the schedule”, “Defer · Remind”, “Defer · Send the Completion invoice · Open Money”, “Defer · Open Costs”, and the compliance row “Defer · Mark “Monitor 12-month defects…” done · Mark “Arrange MCST…” done · Open Compliance”; then a margin line, a CLOSING SUMMARY card, and the filled “Complete anyway”.",
+    "why": "“Defer” is not a word studios use, and four verbs per row turn a checklist into a control panel. The one decision — hand over or not — is buried.",
+    "proposal": "Each row: its state + ONE verb (the fix: Remind · Send the invoice · Open). “Defer” → a quiet checkbox “Leave for after handover” (or the row’s ⋮ › “Leave for later”). The two compliance marks collapse into “2 items left · Open Compliance”. Cut the paragraph to one line: “Completing locks the schedule, choices and money. An Owner or Admin can reopen it.”",
+    "effort": "M",
+    "shots": [
+      "3-p-handover-sheet.png"
+    ],
+    "code": [
+      "components/projects/ending/handover-dialog.tsx:257",
+      "components/projects/ending/handover-dialog.tsx:219"
+    ]
+  },
+  {
+    "id": "3-18",
+    "area": "Projects › Overview info column (and the lead’s)",
+    "route": "/projects/[id] · /leads/[id]",
+    "kind": "copy",
+    "severity": "med",
+    "title": "“Collaborators · Owner Michelle · Members Michelle” — the role word “Owner” means someone else here",
+    "now": "Section “Collaborators” (with “Add”) → “Owner · Michelle”, “Members · [M] Michelle ⋮”, “Team chat · Only the team reads it · Messages”. Michelle is a Designer; Dane is the studio’s Owner. The listing’s column is “Members”; Workload says “Members · Contractors”; the portal says “Team”.",
+    "why": "“Owner” is the studio’s top role everywhere else (Settings › Roles & access); seeing “Owner: Michelle” on a project makes a Designer look like the owner. The same name twice adds a row of reading.",
+    "proposal": "Section title “Members” (the word the listing uses). Rows: “In charge · Michelle” (the lead owner) and the Members row only when there is someone besides them. “Team chat” stays as the one link.",
+    "effort": "S",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-setup-overview-full.png"
+    ],
+    "code": [
+      "components/leads/detail/info-column.tsx:66",
+      "components/leads/detail/info-column.tsx:297",
+      "components/leads/detail/info-column.tsx:298"
+    ]
+  },
+  {
+    "id": "3-19",
+    "area": "Projects › Schedule · Compliance · Tasks",
+    "route": "/projects/[id]/schedule · /projects/[id]/compliance · /projects/[id]/tasks",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "“Mark done” looks different in each place on the same project",
+    "now": "Schedule at 1440: purple outlined “Mark done” on the two running milestones only. Schedule at 390: a small purple “Done” on EVERY unfinished row, including Cleaning and Handover that haven’t started. Compliance: a grey outlined small “✓ Mark done”. Tasks: a circle to tick. The Needs you row: a purple text “Mark done”.",
+    "why": "Four looks for one action makes each list feel like a different app, and offering Done on a milestone that hasn’t started invites a slip.",
+    "proposal": "One pattern: the row’s leading circle ticks it (as Tasks) wherever an item can be done, opening the Mark done sheet for milestones; no separate button. If a button is kept, it is the DS outlined “Mark done” in every list, shown only on rows that are running.",
+    "effort": "S",
+    "shots": [
+      "3-p-schedule.png",
+      "3-p-schedule-390-full.png",
+      "3-p-compliance.png",
+      "3-p-tasks.png"
+    ],
+    "code": [
+      "components/projects/schedule/schedule-phone.tsx:67",
+      "components/projects/compliance/item-row.tsx:65",
+      "components/projects/schedule/mark-done-sheet.tsx:29"
+    ]
+  },
+  {
+    "id": "3-20",
+    "area": "Projects (all tabs) · portal",
+    "route": "/projects/[id] · /projects/[id]/tasks · /projects/[id]/meetings · /projects/[id]/notes · /projects/[id]/schedule?done= · Start sheet · /my/[slug]",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Seven date formats on one project",
+    "now": "“21 Aug ’26” (info column) · “Wed 28 Oct” (Needs you) · “Mon, 19 Oct ’26” (activity) · “Tue, 3 Nov ’26 · 10:00 AM” (Tasks, underlined) · “Thu, 30 Jul ’26 · 12:00 PM” (Meetings) · “30 Jul ’26, 12:00 PM” (Notes) · “27/10/2026”, “5/11/2026”, “27/9/2026” (the date fields in Mark done, Start the project, the milestone panel) · relative “12d ago” (Messages) and “27 days ago” (With Ryan) · listing “Sun, 29 Nov ’26” inside “On hold till:”.",
+    "why": "Every format change is a re-read; “5/11/2026” is ambiguous to anyone used to the app’s “5 Nov”.",
+    "proposal": "One rule from lib/format.ts: day-month in rows (“28 Oct”, the year only when not this year), weekday only where the day matters (“Wed 28 Oct”), time as “· 10:00 AM”, never a comma before the time; the house DateField shows its value the same way (“5 Nov 2026”) — the picker still edits it. Relative time only for under a day (“2 hours ago”), else the date.",
+    "effort": "M",
+    "shots": [
+      "3-p-overview-full.png",
+      "3-p-tasks.png",
+      "3-p-meetings.png",
+      "3-p-notes.png",
+      "3-p-mark-done.png",
+      "3-p-start-sheet.png"
+    ],
+    "code": [
+      "lib/format.ts",
+      "components/om/date-field.tsx",
+      "components/projects/project-columns.tsx:53"
+    ]
+  },
+  {
+    "id": "3-21",
+    "area": "Projects › listing · Overview · Money tab",
+    "route": "/projects · /projects/[id] · /projects/[id]/money",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Money is written four ways — the same S$13,370.04 shows as “S$ 13,370” and “S$13,370.04”",
+    "now": "Listing “S$48,600” (no space); Overview cards “S$ 81,355” (a space, no cents — moneyCard); Money tab “S$14,018.04” (cents); listing tile “S$ 261.9K”; Needs you on the Overview “S$ 13,370” and the same row on the Money tab “S$13,370.04”; Choices “+S$420 + GST” (studio) vs “Adds S$457.80” (portal, GST in).",
+    "why": "Two different-looking numbers for one payment make an owner double-check; a space after S$ in some places and not others looks careless on a demo.",
+    "proposal": "One money style for the screen: “S$13,370.04” (no space) in rows and panels; whole dollars “S$81,355” only on summary cards; compact “S$262K” only on tiles. Choices show the same figure to both sides (“+S$457.80 incl. GST”).",
+    "effort": "S",
+    "shots": [
+      "3-projects.png",
+      "3-p-overview.png",
+      "3-p-money.png",
+      "3-p-choices.png"
+    ],
+    "code": [
+      "lib/format.ts",
+      "components/projects/project-columns.tsx:93",
+      "components/projects/overview/money-card.tsx:44"
+    ]
+  },
+  {
+    "id": "3-22",
+    "area": "Projects › Overview vs Money tab",
+    "route": "/projects/[id] · /projects/[id]/money",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "The same money step is a plain row on the Overview and a pink banner with a filled button on Money",
+    "now": "Woodcraft’s overdue bill: on the Overview a row with a red title and a purple text “Pay”; on the Money tab a pink alert banner with “Open” and a filled “Pay”. Ryan’s payment to confirm: text links “Confirm · See the bank’s confirmation” vs a grey banner with “See the bank’s confirmation · Not received” and a filled “Confirm”.",
+    "why": "Two drawings of one item ask the owner to learn two patterns, and the louder one sits a tab away from the summary.",
+    "proposal": "One Needs-you row component for both pages (the Overview’s row, one outlined verb, ⋮ for the rest); the Money tab’s list is that row filtered to money.",
+    "effort": "S",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-money.png"
+    ],
+    "code": [
+      "components/projects/overview/needs-card.tsx:84",
+      "components/projects/money/needs-list.tsx:200"
+    ]
+  },
+  {
+    "id": "3-23",
+    "area": "Projects › Schedule",
+    "route": "/projects/[id]/schedule",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Schedule: a red summary, a purple banner, eight toolbar controls and a legend paragraph",
+    "now": "Red headline “2 milestones are late. Handover is set for Fri 13 Nov.” + a two-line paragraph + three figures (“Done 2 of 7 · To handover 17 days · Next payment 30% · payment to confirm”); a purple banner “Michelle asks for more time… Open it”; toolbar “Weeks · Months · Today · ⛶ · +3 days from changes · Contractors · 2 · Ryan sees this schedule. Last shared 13 Oct. · Add milestone · ⋮”; payment pills in CAPS “30% · 21 AUG”; row statuses cut (“Blocked · waiting on the plumbe…”, “More time asked, to Wed 28 Oct · was due Wed…”, “Should have started Sat 24 Oct · No Painting co…”); and under the chart “The line marks today, Tue 27 Oct. Shaded columns are weekends. A diamond is a payment from the quote’s schedule. A line joins a milestone to what it waits on — red when it started before that one allows.”",
+    "why": "The timeline is the point; it starts halfway down the screen. “Next payment 30% · payment to confirm” doesn’t say how much or what to do; the legend paragraph explains the chart instead of the chart explaining itself.",
+    "proposal": "Fold the paragraph into the headline; move “+3 days from changes” and “Ryan sees this schedule…” into the summary card as one line; drop the banner (3-01); the legend becomes a “?” Tooltip on the chart head. Payment pills sentence case (“30% · 21 Aug”) or the diamond alone with a tooltip. Next payment: “S$13,370 to confirm”. Status lines wrap to two lines instead of “…”.",
+    "effort": "M",
+    "shots": [
+      "3-p-schedule.png"
+    ],
+    "code": [
+      "components/projects/schedule/project-schedule.tsx:543",
+      "components/projects/schedule/project-schedule.tsx:581",
+      "components/projects/schedule/project-schedule.tsx:628",
+      "components/projects/schedule/project-schedule.tsx:675",
+      "lib/projects/schedule-model.ts:462"
+    ]
+  },
+  {
+    "id": "3-24",
+    "area": "Projects › listing scope menu",
+    "route": "/projects",
+    "kind": "noise",
+    "severity": "med",
+    "title": "The scope menu carries paragraphs under its rows",
+    "now": "“Needs attention — Overdue tasks, milestones, choices or payments; a client who says something is not right; a long wait; no recent update; a set-up that stalled” (6 lines); “Waiting on client — A quote, contract, variation order, invoice, stage or choice for them to answer; questions, designs or the portal invite not opened; a milestone that waits on them” (7 lines); “Needs my review — Updates, invoices, handovers, schedule asks, purchase orders and expenses waiting for your approval, and payments to confirm” (6 lines). Groups “TO DO · ACTIVE · INACTIVE” in caps.",
+    "why": "A menu is for picking; paragraphs make the owner read three essays to find “Completed”.",
+    "proposal": "One-line help at most (“Late, stuck or quiet”, “Waiting for the client”, “Waiting for your OK”) — the full list in the row’s Tooltip. Group labels sentence case.",
+    "effort": "S",
+    "shots": [
+      "3-projects-scope.png"
+    ],
+    "code": [
+      "components/projects/scopes.ts:23",
+      "components/projects/scopes.ts:24",
+      "components/projects/scopes.ts:28"
+    ]
+  },
+  {
+    "id": "3-25",
+    "area": "Projects › Invite to Portal panel",
+    "route": "/projects/[id] → ⋮ › Invite to Portal",
+    "kind": "copy",
+    "severity": "med",
+    "title": "“Invite to Portal” names the panel even after the client has opened it; summaries cut off",
+    "now": "Title “Invite to Portal” for Ryan, whose chip reads “OPENED 9 MINUTES AGO”; the row also says “Invited 9 Aug by Michelle” (Marcus: chip “NOT INVITED” + text “Not invited yet” — the same fact twice). “Their page localhost:3303/my/demo-studio Copy”. “What Ryan can see”: “Choices · 1 said no to” (dangling), “Files · None of 10 shown”. Company calls it “Client portal”; the With Ryan card says “Portal opened 16 Oct”.",
+    "why": "Inviting someone who is already in reads like a mistake; “1 said no to” is a broken sentence on a page meant to reassure.",
+    "proposal": "Title “Client portal” (Company’s name) — the ⋮ row “Client portal…”; the button stays “Invite on WhatsApp” / “Send the link on WhatsApp”. One state per person: the chip OR the caption, not both. “1 said no to” → “1 turned down”; “None of 10 shown” → “10 files, none shared yet”.",
+    "effort": "S",
+    "shots": [
+      "3-p-access-panel.png",
+      "3-p-access-panel-ryan.png"
+    ],
+    "code": [
+      "components/portal/client-access-panel.tsx:125",
+      "components/portal/client-access-panel.tsx:222",
+      "lib/portal/needs.ts:273",
+      "components/projects/project-menu.tsx:85"
+    ]
+  },
+  {
+    "id": "3-26",
+    "area": "Projects › Money › New ▾",
+    "route": "/projects/[id]/money",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Money’s New ▾ is nine rows, each with a two-line explanation",
+    "now": "BILL RYAN: “Variation order”, “Variation order from a contractor’s quote”, “One-off invoice”, “Record an invoice made elsewhere”; COSTS: “Purchase order”, “Order from the quote”, “Record a PO made elsewhere”, “Supplier bill”, “Expense” — every row with a 2-line helper (“One raised in your accounting system or on paper — it counts in the costs”).",
+    "why": "Nine near-twins (two VO rows, two “made elsewhere” rows, two PO rows) and eighteen lines of help make a simple “add” a reading task; “PO” is jargon for small studios.",
+    "proposal": "Five rows: “Variation order”, “Invoice”, “Purchase order”, “Supplier bill”, “Expense”. The variants (“from a contractor’s quote”, “made elsewhere”, “from the quote’s lines”) become the first choice inside each dialog. Helpers go (the dialog explains).",
+    "effort": "M",
+    "shots": [
+      "3-p-money-new.png"
+    ],
+    "code": [
+      "components/projects/money/project-money.tsx:214"
+    ]
+  },
+  {
+    "id": "3-27",
+    "area": "Projects › Design › Choices",
+    "route": "/projects/[id]/choices",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Choices card: three tags (one repeats the heading), truncated option names, two buttons",
+    "now": "Group heading “Common bathroom · 1”, then the card’s tags “COMMON BATHROOM · NEEDED BY THU 29 OCT · IN 2 DAYS · OTHER OPTIONS ASKED”; options cut to “Charcoal matte, 3…” and “Slate grey terrazz…”; the banner’s filled “Share again” + grey “Choose with Ryan”; prices “No change” / “+S$420 + GST”.",
+    "why": "The option name IS the decision and it is cut; the room is said twice; a filled button adds a second primary to the page.",
+    "proposal": "Drop the room tag (the group says it); “Needed by Thu 29 Oct” as plain caption text; one status tag. Option names wrap to two lines under the swatch. “Share again” outlined; “Choose with Ryan” into the card’s ⋮.",
+    "effort": "S",
+    "shots": [
+      "3-p-choices.png"
+    ],
+    "code": [
+      "components/projects/choices/choice-card.tsx",
+      "components/projects/choices/project-choices.tsx:175"
+    ]
+  },
+  {
+    "id": "3-28",
+    "area": "Projects › Design › Floor plan",
+    "route": "/projects/[id]/floor-plan",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Floor plan view has ~60 controls on its first screen",
+    "now": "Views chips; “Unit layout · Main” chip; “☆ MAIN PLAN” tag; “Add a plan · ⬇ · ⋮”; a grey banner; tools “Select · Pen · Box · Arrow · Text · Pin · Photo · Zone · Cloud · ›” + colour ▾ + “General ▾” + undo + full screen; side: “Both · Studio · Ryan”, a switch “Show resolved marks”, trade chips “Carpentry 2 · Electrical 1 · Lighting 2 ›”, “6 marks”, a POINTS card, then a card per mark (“Pin 1 · Ryan D’Souza · Client requests · 25 Aug ’26”).",
+    "why": "Marking up a plan with a client needs the plan and three tools; this screen asks the owner to scan five control rows first.",
+    "proposal": "Tools as one icon toolbar on the canvas edge (labels in tooltips, Select · Pin · Pen · Text visible, the rest under “More tools”). The side’s filters collapse to one “Show: Both · All trades ▾” pill. Drop the MAIN PLAN tag when there is one plan.",
+    "effort": "M",
+    "shots": [
+      "3-p-floor-plan.png",
+      "3-portal-floor-plan-390-full.png"
+    ],
+    "code": [
+      "components/projects/floor-plan/plan-toolbar.tsx:22",
+      "components/projects/floor-plan/project-floor-plan.tsx:387"
+    ]
+  },
+  {
+    "id": "3-29",
+    "area": "Projects › Tasks › Compliance",
+    "route": "/projects/[id]/compliance",
+    "kind": "copy",
+    "severity": "med",
+    "title": "Compliance: a summary line nobody can parse, a table head that names nothing",
+    "now": "“Condo · 4 items to do this phase” (the home is an Executive Condo); “6 of 10 items answered · 4 mandatory items still to do · While the works run on site · the phase this project is in”; every section is a bordered table with a grey “ITEM” head over a single column; each row has a purple “Details ▾”, a tag (DONE / NOT NEEDED / MANDATORY) and an authority (“MCST / NEA”).",
+    "why": "“answered” for a checklist, “the phase this project is in” and an empty table head are filler; a box per section with a one-word head is boxes inside boxes.",
+    "proposal": "One line: “Execution (now): 4 of 6 done · 4 required left”. Sections as plain headed lists (no table head, no card per section). “Details ▾” → the row opens on press. “Condo” → the property type the record has.",
+    "effort": "S",
+    "shots": [
+      "3-p-compliance.png"
+    ],
+    "code": [
+      "components/projects/compliance/project-compliance.tsx:120",
+      "components/projects/compliance/item-row.tsx:56",
+      "components/projects/compliance/item-row.tsx:102"
+    ]
+  },
+  {
+    "id": "3-30",
+    "area": "Projects › Overview › Maison AI brief",
+    "route": "/projects/[id]",
+    "kind": "copy",
+    "severity": "med",
+    "title": "The AI brief states a past date as current and repeats the milestone",
+    "now": "“Carpentry fabrication runs to 21 Oct ’26. Carpentry fabrication is the last one running.” on 27 Oct, for a milestone 6 days late (with Electrical blocked). Tag “THIS WEEK” in orange caps; heading “MAISON AI BRIEF”.",
+    "why": "The brief is meant to be the smart summary; a stale date and a doubled name read as a machine template and undermine trust in every other line.",
+    "proposal": "When the running milestone is late, say so: “Carpentry is 6 days late — Michelle asks to finish Wed 28 Oct.” Never repeat the title in one brief. Drop the orange tag (the brief is always this week) or make it a grey caption.",
+    "effort": "S",
+    "shots": [
+      "3-p-overview.png"
+    ],
+    "code": [
+      "lib/projects/briefs.ts:84",
+      "lib/projects/briefs.ts:92",
+      "lib/projects/briefs.ts:95"
+    ]
+  },
+  {
+    "id": "3-31",
+    "area": "Projects › a project header + Overview",
+    "route": "/projects/[id]",
+    "kind": "noise",
+    "severity": "med",
+    "title": "The same fact appears four or five times on the Overview",
+    "now": "Header chips “P-2026-001” and “WHOLE-HOME RENOVATION” repeat Project info’s “Number” and “Project type”. Marcus’s “Setting up” is in the stage button, the brief tag “SETTING UP”, the card meta “Setting up for 12 days”, Progress “Setting up · current · 12 days” and Project info “Stage · Setting up”. Aisha’s hold: “On hold since 15 Oct ’26” in the brief, Needs you and Progress, with the reason quoted twice.",
+    "why": "Repeating facts doubles the reading and makes the page feel longer than the project is.",
+    "proposal": "Header keeps the title + stage button; the number and type live in Project info only. A state is said once on the page (the stage button), plus where it adds a number (Progress’s days). The hold reason appears once (the Needs you row).",
+    "effort": "S",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-setup-overview-full.png",
+      "3-p-hold-overview.png"
+    ],
+    "code": [
+      "components/projects/project-frame.tsx:405",
+      "components/projects/project-frame.tsx:406",
+      "components/projects/overview/needs-card.tsx:78"
+    ]
+  },
+  {
+    "id": "3-32",
+    "area": "Projects › Overview info column",
+    "route": "/projects/[id]",
+    "kind": "noise",
+    "severity": "med",
+    "title": "“--” repeated down the info column",
+    "now": "Ryan: District --, Area size (sq ft) --, Remarks --. Marcus: Target end --, Contract --, Condition --, Key collection --, Remarks --. Shalini: Scope --, Contract --, Condition --, Style --, Area size --, Key collection --, Remarks --.",
+    "why": "Seven dashes are seven rows to read past; they look like errors on a demo.",
+    "proposal": "Hide empty rows; at the foot of each section one link “Add district, area, remarks…” that opens Edit details at that field (the house LeadFormModal).",
+    "effort": "S",
+    "shots": [
+      "3-p-overview-full.png",
+      "3-p-done-overview-full.png"
+    ],
+    "code": [
+      "components/leads/detail/info-column.tsx:363",
+      "components/leads/detail/info-column.tsx:366",
+      "components/leads/detail/info-column.tsx:381"
+    ]
+  },
+  {
+    "id": "3-33",
+    "area": "Projects › Client › Questionnaire",
+    "route": "/projects/[id]/questionnaire",
+    "kind": "copy",
+    "severity": "med",
+    "title": "Questionnaire: a disabled “Ask Client” with no reason, a filled button, “question bank”",
+    "now": "Toolbar “Ask Client” greyed out (no tooltip); empty state “No questions yet · The studio’s question bank has 11 questions ready for this project. · [Add the studio’s questions]” (filled).",
+    "why": "A greyed button that won’t say why breaks the “say why” rule; “question bank” is our word, not the studio’s.",
+    "proposal": "Hide “Ask the client” until a question exists (or keep it with the house Tooltip “Add a question first”). Empty state: “Your studio has 11 questions ready · Add them”, the button outlined (the page’s filled button is the header’s).",
+    "effort": "S",
+    "shots": [
+      "3-p-questionnaire.png"
+    ],
+    "code": [
+      "components/leads/questionnaire/lead-questionnaire.tsx:114",
+      "components/leads/questionnaire/questionnaire-empty.tsx:23"
+    ]
+  },
+  {
+    "id": "3-34",
+    "area": "Projects › Start the project",
+    "route": "/projects/[id] (Setting up) → Start the project",
+    "kind": "noise",
+    "severity": "med",
+    "title": "Start the project: five source cards with paragraphs, two of them disabled",
+    "now": "“Milestones come from”: “A quote — No quote on this project yet — make one, or upload a contractor’s quote below.” (disabled), “Drafted by Maison AI — Maison AI drafts from a quote’s lines — make a quote for this project first.” (disabled), “A schedule template — From Company › Templates › Schedules — the ready-made ones for each kind of home are there too.”, “An uploaded quote — … Reading it uses 5 AI credits, given back if it can’t be read.”, “Not now — Set it up later — the Schedule tab keeps its Start card.” Then “Picked for a Condo 3-bedder — the ready-made Condo schedule. Pick another if the job differs.”; date field “5/11/2026”.",
+    "why": "Starting a job should be a date and a confirm; the owner reads ten lines about options they can’t use.",
+    "proposal": "Show only the sources that work today; the disabled ones collapse to one grey line “Make a quote first to build from it”. Each card: a title and at most one short line. The template picker’s helper goes (the preview on the right shows the result).",
+    "effort": "S",
+    "shots": [
+      "3-p-start-sheet.png"
+    ],
+    "code": [
+      "components/projects/schedule/source-picker.tsx:154",
+      "components/projects/schedule/source-picker.tsx:135"
+    ]
+  },
+  {
+    "id": "3-35",
+    "area": "Client portal › notifications",
+    "route": "/my/[slug] → bell",
+    "kind": "copy",
+    "severity": "med",
+    "title": "Portal bell rows stay as asks after the client answered them",
+    "now": "“A change to your contract to approve · VO-2 · Study lighting · +S$1,133.60 · 16 Oct ’26” — Ryan declined VO-2 on 18 Oct; “A change to your contract to approve · VO-1 …” — approved 22 Sep. “Your schedule is ready — The stages ahead and when each is planned”.",
+    "why": "A homeowner sees two things to approve that are already done and taps them to find nothing to do.",
+    "proposal": "Once acted on, the row’s title says the outcome: “You approved VO-1 · +S$3,455.30”, “You declined VO-2”. (The rows already know `seen: d.done`.)",
+    "effort": "S",
+    "shots": [
+      "3-portal-bell-390.png"
+    ],
+    "code": [
+      "lib/portal/notifications-model.ts:159",
+      "lib/portal/notifications-model.ts:161"
+    ]
+  },
+  {
+    "id": "3-36",
+    "area": "Client portal › navigation",
+    "route": "/my/[slug] (1440)",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Portal at a desk shows eleven top tabs; the phone shows five and More",
+    "now": "Desk bar: Home · Schedule · Updates · Money · Choices · Designs · Floor plan · Messages · Issues · About · Files + bell + name + Sign out. Phone: Home · Schedule · Updates · Money · More (Choices · Designs · Floor plan · Messages · Issues · About · Files · Sign out).",
+    "why": "Eleven tabs is the busiest bar in the product, for the least technical user; the two widths teach different maps.",
+    "proposal": "Desk = the phone’s five + “More ▾” (the same list, a PortalMenu). Hide a section with nothing in it (Designs “No designs yet”).",
+    "effort": "S",
+    "shots": [
+      "3-portal-home.png",
+      "3-portal-more-390.png"
+    ],
+    "code": [
+      "lib/portal/model.ts:122",
+      "components/portal/portal-frame.tsx"
+    ]
+  },
+  {
+    "id": "3-37",
+    "area": "Projects ↔ portal ↔ Activity",
+    "route": "/projects/[id]/tickets · /my/[slug]/issues · /projects/[id]/activity · /tickets",
+    "kind": "copy",
+    "severity": "med",
+    "title": "One record, two names: Tickets (studio) and Issues (client) — and Activity mixes them",
+    "now": "Studio tab and rail “Tickets”, “New ticket”, “T-2026-002”; the client’s “Issues”, “Report an issue”; the studio’s Activity: “Shalini Menon reported an issue on their portal: T-2026-003”. Status “IN PROGRESS” on a ticket reuses the project stage word. On the portal dock, Updates uses a chat-bubble icon while Messages (in More) uses another bubble.",
+    "why": "When a client says “I raised an issue”, the owner has to translate; “In progress” on a ticket inside an “In progress” project blurs two states.",
+    "proposal": "Pick one word for both sides — “Issues” reads plainer for homeowners and studios (rail “Issues”, “New issue”, “I-2026-002”); or keep Tickets studio-side but say “ticket” in Activity too. Ticket status “Being fixed” instead of “In progress”. Portal: Updates gets a newspaper/notes icon, Messages keeps the bubble. (REG H-Q2 decided the two names — flagging the cost.)",
+    "effort": "M",
+    "shots": [
+      "3-p-tickets.png",
+      "3-portal-issues-390.png",
+      "3-p-done-overview-full.png"
+    ],
+    "code": [
+      "lib/projects/tabs.ts:26",
+      "lib/portal/model.ts:135",
+      "lib/portal/model.ts:125",
+      "lib/leads/activity.ts"
+    ]
+  },
+  {
+    "id": "3-38",
+    "area": "Projects › listing tiles vs Dashboard",
+    "route": "/projects · /projects?scope=completed · /dashboard",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Listing tiles: grey CAPS tiles that ignore the scope, unlike the Dashboard’s calm cards",
+    "now": "Four grey tiles with CAPS labels + a fifth “CONTRACT VALUE S$ 261.9K · Open projects” with no box; the same tiles stay on Workload, Contractors (with four more) and on “Completed (1)”, where they still count open projects. The Dashboard’s Pulse (calm pass, REG-3017…) draws the same StatTile as white cards with one caption.",
+    "why": "Same piece, two looks; tiles that don’t follow the list they sit on mislead (Completed shows “In progress 3”).",
+    "proposal": "One StatTile look across modules (the Dashboard’s `look=\"card\"`), all five boxed; tiles hide on Workload / Contractors and on a stage scope where they don’t apply (or recount for the scope).",
+    "effort": "S",
+    "shots": [
+      "3-projects.png",
+      "3-projects-completed.png",
+      "3-projects-workload.png"
+    ],
+    "code": [
+      "components/projects/projects-workspace.tsx:338",
+      "components/projects/projects-workspace.tsx:342",
+      "components/om/stat-tile.tsx"
+    ]
+  },
+  {
+    "id": "3-39",
+    "area": "Projects (listing, tabs, portal)",
+    "route": "/projects · /projects/[id] · /my/[slug]",
+    "kind": "inconsistency",
+    "severity": "med",
+    "title": "Five count formats on the same pages",
+    "now": "“Open projects (4)”, “Open (1) · Resolved and closed (0) · All (1)”, “All (7) · Payments (3)” (portal) · “Needs you · 12”, “Choices · 1”, “Contractors · 2”, “Payment stages · 4”, “Upcoming · 1” · “Needs you 4” (no separator) · red badges on tabs “Schedule 2 · Design 1 · Money 4” · “Carpentry 2” (trade chips).",
+    "why": "Inconsistent counts look unfinished and some — “(0)” — are pure noise.",
+    "proposal": "One format: a muted “· 4” after the label; never a zero (“Resolved and closed (0)” → “Resolved and closed”); red badges only on the rail and the tab strip for things waiting on you (as now).",
+    "effort": "S",
+    "shots": [
+      "3-projects.png",
+      "3-p-tickets.png",
+      "3-p-money.png",
+      "3-portal-schedule-390-full.png"
+    ],
+    "code": [
+      "components/projects/projects-toolbar.tsx",
+      "components/projects/tickets/project-tickets.tsx",
+      "components/projects/money/needs-list.tsx:219"
+    ]
+  },
+  {
+    "id": "3-40",
+    "area": "Projects (menus, dialogs, toolbars)",
+    "route": "/projects · /projects/[id]",
+    "kind": "copy",
+    "severity": "med",
+    "title": "Title Case and sentence case alternate on the same menus",
+    "now": "Projects ⋮: “Export all as… · Deleted Projects · Projects Settings”; project ⋮: “Edit details · Open the lead’s record · … · Duplicate project · Copy Link · Complete handover · Delete”; Filters “Clear All · Done”; Deleted Projects “Empty Trash · Restore · Delete Forever”; “Invite to Portal”, “Contact Log”, “Add Task”, “New File”, “New Meeting”, “Ask Client”, “View Client Info”.",
+    "why": "Mixed case on adjacent rows looks sloppy and slows scanning; the house rule elsewhere is sentence case.",
+    "proposal": "Sentence case everywhere: “Deleted projects”, “Project settings”, “Copy link”, “Clear all”, “Empty trash” (better “Delete all forever”), “Delete forever”, “Contact log”, “View client info”. (Several come from the Leads mocks — Vicky’s call to update them together.)",
+    "effort": "S",
+    "shots": [
+      "3-projects-kebab.png",
+      "3-p-kebab.png",
+      "3-projects-filters.png",
+      "3-projects-deleted.png"
+    ],
+    "code": [
+      "components/projects/projects-workspace.tsx:324",
+      "components/projects/project-menu.tsx:92",
+      "components/projects/deleted-projects-sheet.tsx:77",
+      "components/leads/quotes/deleted-quotes-sheet.tsx:69",
+      "components/leads/quotes/deleted-quotes-sheet.tsx:96"
+    ]
+  },
+  {
+    "id": "3-41",
+    "area": "Projects (header, cards, tags)",
+    "route": "/projects/[id] · /projects",
+    "kind": "noise",
+    "severity": "low",
+    "title": "CAPITALS on tags and card heads that aren’t statuses",
+    "now": "Header “WHOLE-HOME RENOVATION”; card heads “NEEDS YOU · MY TASKS · WITH RYAN · COMING UP · PROGRESS · MONEY · RECENT ACTIVITY · MAISON AI BRIEF”; Choices “COMMON BATHROOM · NEEDED BY THU 29 OCT · IN 2 DAYS”; Workload “ROOM FOR 3 MORE”; stage menu “ACTIVE · INACTIVE”; payment pills “30% · 21 AUG”; Compliance “ITEM”. (The DS Tag and the lead card title 858:24893 uppercase by design.)",
+    "why": "Capitals shout; when everything shouts the statuses (PAID, OVERDUE) stop standing out.",
+    "proposal": "Caps only for status tags. Non-status tags (room, needed-by, project type, capacity) become plain 12px captions; card titles sentence case semibold. Vicky’s call — it changes the mocked card head.",
+    "effort": "M",
+    "shots": [
+      "3-p-overview.png",
+      "3-p-choices.png",
+      "3-projects-workload.png"
+    ],
+    "code": [
+      "components/om/meta-chip.module.css:12",
+      "components/leads/detail/card.module.css:19"
+    ]
+  },
+  {
+    "id": "3-42",
+    "area": "Projects › Files & notes › Notes & Logs",
+    "route": "/projects/[id]/notes",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Notes: “Added during stage movement — view only”, mixed “Contact Log” / “Contact log”",
+    "now": "Read-only note head “🔒 Added during stage movement — view only”; chips “All · Notes · Contact Log”; list title “Contact log”, “Meeting log”; field “Date & Time”.",
+    "why": "“Stage movement” is the build’s name for the Move stage window.",
+    "proposal": "“From the lead’s Met step — read only”; “Contact log” everywhere; “Date and time”.",
+    "effort": "S",
+    "shots": [
+      "3-p-notes.png"
+    ],
+    "code": [
+      "components/leads/notes/lead-notes.tsx:582",
+      "components/leads/detail/quick-links.tsx:61",
+      "components/leads/notes/contact-editor.tsx:101"
+    ]
+  },
+  {
+    "id": "3-43",
+    "area": "Projects › Notes & Logs vs Meetings",
+    "route": "/projects/[id]/notes · /projects/[id]/meetings",
+    "kind": "defect",
+    "severity": "low",
+    "title": "One meeting shows two times: 2:00 PM in the list, 12:00 PM in the log and Meetings",
+    "now": "Notes list: “Meeting log · In person · 30 Jul ’26 · 2:00 PM”; the same log open: “Date & Time · 30 Jul ’26, 12:00 PM”; Meetings tab: “Thu, 30 Jul ’26 · 12:00 PM”.",
+    "why": "Two times for one meeting — the list seems to show when it was logged, the log when it happened, unlabelled.",
+    "proposal": "The list shows the meeting’s own time (12:00 PM); if the log time matters, caption it “logged 2:00 PM”.",
+    "effort": "S",
+    "shots": [
+      "3-p-notes.png",
+      "3-p-meetings.png"
+    ],
+    "code": [
+      "components/leads/notes/lead-notes.tsx:90"
+    ]
+  },
+  {
+    "id": "3-44",
+    "area": "Projects › Money › invoice panel",
+    "route": "/projects/[id]/money → an invoice",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Invoice panel: “Copy the no-login link”, “None — Issue a credit note takes money off it.”",
+    "now": "Links “Open the invoice · Download PDF · Copy the no-login link”; empty Credit notes “None — Issue a credit note takes money off it.”; totals “Amount · incl. GST · Paid · To confirm · To pay”.",
+    "why": "“No-login” is a technical description; the credit-note sentence doesn’t parse.",
+    "proposal": "“Copy the client’s link”; “No credit notes. Issue one to take money off this invoice.”; totals “To pay” → “To collect” (3-03).",
+    "effort": "S",
+    "shots": [
+      "3-p-money-invoice-panel.png"
+    ],
+    "code": [
+      "components/projects/money/invoice-panel.tsx:99",
+      "components/projects/money/invoice-panel.tsx:121",
+      "components/projects/money/invoice-panel.tsx:88"
+    ]
+  },
+  {
+    "id": "3-45",
+    "area": "Projects › Files & notes › Activity",
+    "route": "/projects/[id]/activity",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Activity: “System” as a person, a commission ask in riddle form",
+    "now": "“System uploaded the file “Transfer to Demo Studio, 3 Oct.png”.”; “Michelle asked for 5% of what the client pays on the project — “Two variation orders and extra site visits on this one”.”",
+    "why": "“System” is our word; the commission line takes a re-read to understand.",
+    "proposal": "“Ryan’s bank slip was added: Transfer to Demo Studio, 3 Oct.png” (name who caused it); “Michelle asked for a 5% commission on this project — …”.",
+    "effort": "S",
+    "shots": [
+      "3-p-activity.png"
+    ],
+    "code": [
+      "lib/leads/activity.ts:174",
+      "lib/leads/activity.ts:211"
+    ]
+  },
+  {
+    "id": "3-46",
+    "area": "Projects › Schedule › milestone panel",
+    "route": "/projects/[id]/schedule?open=<milestone>",
+    "kind": "noise",
+    "severity": "low",
+    "title": "Milestone panel: nine colour chips, two filled buttons, numeric dates",
+    "now": "An ask band with a filled “Approve” + “Decline”, status segmented “Not started · In progress · Blocked · Done”, “Ask Maison AI about this”, Description, “Starts 27/9/2026 · Ends 21/10/2026”, “25 days. Push it later by 1 day · 3 days · 1 week”, “Moves with”, “If electrical moves, carpentry moves by the same number of days.”, “It waits for another milestone too”, “Bar colour: By status · Blue · Green · Amber · Brown · Navy · Pink · Teal · Purple”, Tasks “Add a task · Suggest tasks”, foot “Delete milestone · Cancel · Save” (filled).",
+    "why": "Bar colour is a rare setting taking two rows; two filled buttons in one panel compete.",
+    "proposal": "Bar colour under a “More options” fold; the ask band’s Approve outlined (Save is the panel’s primary). Dates as “27 Sep 2026”.",
+    "effort": "S",
+    "shots": [
+      "3-p-review-ask.png"
+    ],
+    "code": [
+      "components/projects/schedule/milestone-panel.tsx:369",
+      "components/projects/schedule/milestone-panel.tsx:389"
+    ]
+  },
+  {
+    "id": "3-47",
+    "area": "Projects › Deleted Projects",
+    "route": "/projects → ⋮ › Deleted Projects",
+    "kind": "noise",
+    "severity": "low",
+    "title": "Deleted Projects: a banner and a paragraph saying the same thing",
+    "now": "Yellow banner “Deleted projects stay here until they are deleted forever.” and a foot note “Note: Deleted projects are hidden from the list and reports. Restore puts one back with its schedule, updates and money — a project made by hand brings its client’s details back with it. Only Owners and Admins restore or delete a project.”; “Empty Trash”, “Restore · Delete Forever” on each row; the Client column repeats the name already in the project title.",
+    "why": "Two notices and a duplicated column on a one-row table.",
+    "proposal": "Keep one line under the title: “Restore brings back its schedule, updates and money. Only Owners and Admins can restore or delete.”; drop the banner; drop the Client column (the name has it); Restore as the row verb, Delete forever in the row’s ⋮.",
+    "effort": "S",
+    "shots": [
+      "3-projects-deleted.png"
+    ],
+    "code": [
+      "components/projects/deleted-projects-sheet.tsx:82",
+      "components/projects/deleted-projects-sheet.tsx:77"
+    ]
+  },
+  {
+    "id": "3-48",
+    "area": "Client portal › Choices",
+    "route": "/my/[slug]/choices",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Portal Choices: “Demo Studio has your answers” while the client is still waiting",
+    "now": "Lede “Demo Studio has your answers.”; section “With your designer” and the card’s tag “WITH YOUR DESIGNER”; at the foot “You asked for other options on 16 Oct … Your designer will come back to you with other options.”",
+    "why": "The lede reads as “all done” while the page says the opposite; the heading and tag repeat each other.",
+    "proposal": "Lede “Your designer is finding other options for the bathroom tiles.”; drop the tag under a section that already says it.",
+    "effort": "S",
+    "shots": [
+      "3-portal-choices-390-full.png"
+    ],
+    "code": [
+      "components/portal/choices/portal-choices.tsx:88",
+      "components/portal/choices/portal-choices.tsx:100",
+      "components/portal/choices/choice-board.tsx:93"
+    ]
+  },
+  {
+    "id": "3-49",
+    "area": "Projects › Money · portal Money",
+    "route": "/projects/[id]/money · /my/[slug]/money",
+    "kind": "inconsistency",
+    "severity": "low",
+    "title": "A payment stage is “Mid-Project” to the studio and “Mid-project” to the client",
+    "now": "Studio Billing “Mid-Project” (from the Won step’s split: “Mid-Project · 50% completion”); the portal sentence-cases it to “Mid-project · 30% · 50% completion”.",
+    "why": "Small, but it is the same line a studio reads aloud to the client.",
+    "proposal": "One spelling: sentence case at the source (lib/leads/stage-data.ts) so both sides say “Mid-project”.",
+    "effort": "S",
+    "shots": [
+      "3-p-money.png",
+      "3-portal-money.png"
+    ],
+    "code": [
+      "lib/leads/stage-data.ts:79",
+      "lib/portal/model.ts:220"
+    ]
+  },
+  {
+    "id": "3-50",
+    "area": "Client portal › Files",
+    "route": "/my/[slug]/files",
+    "kind": "noise",
+    "severity": "low",
+    "title": "Portal Files: “Open” on every row, CAPS group heads, “Agreements” for the contract",
+    "now": "Groups “QUOTES · AGREEMENTS · VARIATION ORDERS · PAYMENT RECEIPTS · SELECTION RECEIPTS”, each row with a purple “Open”; the studio calls the agreement “Contract” and its folder “Contract & VOs”.",
+    "why": "Six identical verbs where the row itself could open; a second name for the contract.",
+    "proposal": "The whole row opens (chevron); group heads sentence case; “Agreements” → “Contract” (or the studio side says “Agreement” — one word).",
+    "effort": "S",
+    "shots": [
+      "3-portal-files-390.png"
+    ],
+    "code": [
+      "components/portal/portal-files.tsx"
+    ]
+  },
+  {
+    "id": "3-51",
+    "area": "Projects › Put on hold",
+    "route": "/projects/[id] → Stage › On hold",
+    "kind": "inconsistency",
+    "severity": "low",
+    "title": "Project hold offers “No date yet” chips the lead’s On Hold doesn’t",
+    "now": "Project: “Resumes · No date yet · 1 month · 3 months · 6 months · Custom” + “No resume date — resume it when the client is ready.” + “Tell Ryan on WhatsApp”. Lead On Hold (REG-453): “1 month · 3 months · 6 months · Custom”.",
+    "why": "Same dialog, two sets of choices — a studio that learnt one is surprised by the other.",
+    "proposal": "One chip set for both (add “No date yet” to the lead’s, or drop it here and let an empty Custom mean no date).",
+    "effort": "S",
+    "shots": [
+      "3-p-hold-dialog.png"
+    ],
+    "code": [
+      "components/projects/project-record-dialogs.tsx:36",
+      "components/leads/move-stage/dialogs.tsx:149"
+    ]
+  },
+  {
+    "id": "3-52",
+    "area": "Client portal › Schedule",
+    "route": "/my/[slug]/schedule",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Portal schedule: “YOU ARE HERE” on the paused milestone; invoices mixed into the steps",
+    "now": "Electrical (Paused) carries the “YOU ARE HERE” flag while Carpentry is “Under way”; rows “Invoice INV-2026-001 sent · Sat 8 Aug · Deposit · S$7,790.01 · Paid” sit between milestones; chips “All (7) · Payments (3) · Under way (1) · Pa…” clipped.",
+    "why": "Two current steps, one flagged “you are here”, confuse where the job actually is.",
+    "proposal": "Flag the milestone that is under way (or none when two run); show invoices only under the Payments chip; counts per 3-39.",
+    "effort": "S",
+    "shots": [
+      "3-portal-schedule-390-full.png"
+    ],
+    "code": [
+      "components/portal/project/portal-schedule.tsx:208",
+      "components/portal/project/portal-schedule.tsx:129"
+    ]
+  },
+  {
+    "id": "3-53",
+    "area": "Projects › Stage menu",
+    "route": "/projects/[id] → Stage ▾",
+    "kind": "copy",
+    "severity": "low",
+    "title": "Stage menu: “Setting up · Started 21 Aug ’26” reads as the setting-up start",
+    "now": "Groups “● ACTIVE · ● INACTIVE”; “Setting up ✓ · Started 21 Aug ’26”, “In progress · current”, “Completed”, “On hold”.",
+    "why": "“Started” under Setting up means the works started (the move to In progress) — it reads the other way.",
+    "proposal": "“Setting up · done 21 Aug”; “In progress · since 21 Aug”; group labels sentence case, or drop them (four rows need no groups).",
+    "effort": "S",
+    "shots": [
+      "3-p-stage-menu.png"
+    ],
+    "code": [
+      "components/projects/stage-menu.tsx:17"
+    ]
+  }
+]

@@ -2,11 +2,11 @@
 
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Link } from '@/components/ds'
+import { Button, Link, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { MetaChip } from '@/components/om/meta-chip'
-import { Chips } from '@/components/om/chips'
 import { StatTile, StatTiles } from '@/components/om/stat-tile'
 import { EmptyState } from '@/components/om/empty-state'
 import { ScopePill } from '@/components/om/scope-pill'
@@ -19,7 +19,7 @@ import { withFrom } from '@/lib/nav'
 import { dayMonth, dayOf, plural } from '@/lib/projects/schedule-model'
 import type { CrewBoardData } from '@/lib/projects/contractors'
 import {
-  CREW_STATUS_LABEL, CREW_TONE, CREW_WINDOWS, LOOK_AHEAD_DAYS, boardOf, windowWordsOf, jobOf, sameTrade, shortVendor, siteRuns, startWords, tradesLine, tradesOfTitle, windowWords,
+  CREW_STATUS_LABEL, CREW_WINDOWS, LOOK_AHEAD_DAYS, boardOf, windowWordsOf, jobOf, sameTrade, shortVendor, siteRuns, startWords, tradesLine, tradesOfTitle, windowWords,
   type ContractorLine, type CrewJob, type Site, type Unstaffed,
 } from '@/lib/projects/contractors-model'
 import { useCrewActions } from './use-crew'
@@ -78,13 +78,19 @@ export function ContractorsView({ board, shown, query, here }: { board: CrewBoar
   return (
     <div className={wl.view} data-testid="contractors-view">
       <div className={wl.caption} data-testid="contractors-caption">   {/* a div, not the Members view's <p>: the By chips are a radiogroup (a <div>), never inside a paragraph */}
-        <span>{`${plural(b.lines.length, 'contractor')} · every running site counts`}</span>
+        {/* (the calm UI build 2026-10-27, 3-15 · W-469) how many — the window pill beside it says over when */}
+        <span>{plural(b.lines.length, 'contractor')}</span>
         <span className={wl.captionActions}>
           <ScopePill ref={windowRef} label={`Window: ${CREW_WINDOWS.find((w) => w.days === days)?.label ?? 'This week'}`} short={CREW_WINDOWS.find((w) => w.days === days)?.label} open={windowOpen} scoped={days !== LOOK_AHEAD_DAYS} onClick={() => setWindowOpen((o) => !o)} />
           <PortalMenu open={windowOpen} anchor={windowRef} onClose={() => setWindowOpen(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Window">
             {CREW_WINDOWS.map((w) => <DropdownItem key={w.days} role="menuitemradio" checked={days === w.days} onSelect={() => { setDays(w.days); setWindowOpen(false) }}>{w.label}</DropdownItem>)}
           </PortalMenu>
-          <Chips label="Show contractors" options={[{ value: 'contractor', label: 'By contractor' }, { value: 'site', label: 'By site' }]} value={bySite ? 'site' : 'contractor'} onChange={(v) => setBySite(v === 'site')} testId="contractors-by" />
+          {/* (the calm UI build 2026-10-27, 3-08 · T-10) a view switch, not chips */}
+          <SegmentedButton aria-label="Show contractors" selectedKeys={[bySite ? 'site' : 'contractor']} data-testid="contractors-by"
+                           onSelectionChange={(keys) => { const v = String([...keys][0] ?? ''); if (v) setBySite(v === 'site') }}>
+            <SegmentedButtonItem id="contractor">By contractor</SegmentedButtonItem>
+            <SegmentedButtonItem id="site">By site</SegmentedButtonItem>
+          </SegmentedButton>
           <Button variant="primary" appearance="text" iconStart={<Icon name="storefront" size={20} />} onPress={() => router.push(withFrom('/company/finance/vendors?show=contractors', here))} data-testid="contractors-vendors">Vendors</Button>
         </span>
       </div>
@@ -100,7 +106,8 @@ export function ContractorsView({ board, shown, query, here }: { board: CrewBoar
         : (
           <div className={wl.card} role="list" aria-label="Contractors" data-testid="contractor-lines">
             {lines.length === 0 ? <div className={wl.empty}>{q ? 'No contractor matches.' : 'No contractor is in this state now.'}</div> : null}
-            {lines.map((l) => <Line key={l.contractor.id} line={l} places={places} onAssign={() => actions.assign({ vendorId: l.contractor.id })} onOpen={(j) => openSite(j.site)} onVendor={() => openVendor(l.contractor.id)} />)}
+            {lines.map((l) => <Line key={l.contractor.id} line={l} places={places} needed={gaps.some((g) => l.contractor.trades.some((t) => sameTrade(t, g.trade)))}
+                                    onAssign={() => actions.assign({ vendorId: l.contractor.id })} onOpen={(j) => openSite(j.site)} onVendor={() => openVendor(l.contractor.id)} />)}
           </div>
         )}
       {actions.dialog}
@@ -119,7 +126,8 @@ function GapCard({ gaps, today, onAssign, onOpen }: { gaps: Unstaffed[]; today: 
             <span className={styles.gapName}>{g.milestone.title}</span>
             <span className={styles.gapLine}>{[sameTrade(g.trade, g.milestone.title) ? null : g.trade, g.site.name, startWords(g, today)].filter(Boolean).join(' · ')}</span>
           </span>
-          {g.site.mayAssign ? <Button size="sm" onPress={() => onAssign(g)} data-testid="contractor-gap-add">Add a contractor</Button>
+          {/* (the calm UI build 2026-10-27, 3-15 · T-03) outlined — the page's one filled button is the header's */}
+          {g.site.mayAssign ? <Button size="sm" variant="primary" appearance="outlined" onPress={() => onAssign(g)} data-testid="contractor-gap-add">Add a contractor</Button>
             : <Button size="sm" variant="secondary" appearance="outlined" onPress={() => onOpen(g)}>Open</Button>}
         </div>
       ))}
@@ -127,7 +135,13 @@ function GapCard({ gaps, today, onAssign, onOpen }: { gaps: Unstaffed[]; today: 
   )
 }
 
-function Line({ line: l, places, onAssign, onOpen, onVendor }: { line: ContractorLine; places: boolean; onAssign: () => void; onOpen: (j: CrewJob) => void; onVendor: () => void }) {
+function Line({ line: l, places, needed, onAssign, onOpen, onVendor }: { line: ContractorLine; places: boolean
+  /** (the calm UI build 2026-10-27, 3-15) work of its trade starts with nobody on it — its row shows the verb; every other row keeps it in its ⋮ */
+  needed: boolean
+  onAssign: () => void; onOpen: (j: CrewJob) => void; onVendor: () => void }) {
+  const [menu, setMenu] = useState(false)
+  const menuRef = useRef<HTMLSpanElement>(null)
+  const free = l.state === 'free' || l.state === 'room'
   const cap = Math.max(1, l.contractor.capacity)
   const slots = Math.max(cap, l.jobs.length)
   return (
@@ -136,7 +150,8 @@ function Line({ line: l, places, onAssign, onOpen, onVendor }: { line: Contracto
         <span className={wl.nobody}><Icon name="handyman" size={20} /></span>
         <span className={wl.whoText}>
           <Tooltip label={`Open ${l.contractor.name} in Finance › Vendors`}><button type="button" className={styles.whoName} onClick={onVendor} data-testid="contractor-open">{shortVendor(l.contractor.name)}</button></Tooltip>
-          <span className={wl.role}>{`${tradesLine(l.contractor)}${l.contractor.code ? ` · ${l.contractor.code}` : ''}`}</span>
+          {/* (the calm UI build 2026-10-27, 3-15 · W-521) the trades alone — the two-letter code stays on the vendor's record (and search still finds it) */}
+          <span className={wl.role}>{tradesLine(l.contractor)}</span>
         </span>
       </span>
       <span className={wl.bar} style={{ '--slots': slots } as CSSProperties} aria-label={`${l.contractor.name}: ${l.peak} of ${cap}`}>
@@ -157,10 +172,22 @@ function Line({ line: l, places, onAssign, onOpen, onVendor }: { line: Contracto
         })}
       </span>
       <span className={wl.state}>
-        <MetaChip color={CREW_TONE[l.state]}>{l.words}</MetaChip>
+        {/* (the calm UI build 2026-10-27, 3-15 · T-06) the load as words in its tone, not a capitals tag */}
+        <span className={styles.stateTop}>
+          <span className={wl.loadWord} data-tone={l.state} data-testid="contractor-load">{l.words}</span>
+          <span ref={menuRef} className={styles.rowMenu}>
+            <Tooltip label="More for this contractor" disabled={menu}><IconButton icon="more_vert" label={`More for ${l.contractor.name}`} variant="bare" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((o) => !o)} data-testid="contractor-menu" /></Tooltip>
+          </span>
+        </span>
         <span className={wl.count}>{l.detail}</span>
-        {places && (l.state === 'free' || l.state === 'room') ? <span className={styles.assign}><Link variant="primary" onPress={onAssign} data-testid="contractor-assign">Put on a site</Link></span> : null}
+        {/* (the calm UI build 2026-10-27, 3-15 · T-02 · W-594) "Assign to a project" (was Put on a site): the verb shows on the row whose trade has work
+            starting with nobody on it; on every other free row it is in the row's ⋮, with Open in Vendors */}
+        {places && free && needed ? <span className={styles.assign}><Link variant="primary" onPress={onAssign} data-testid="contractor-assign">Assign to a project</Link></span> : null}
       </span>
+      <PortalMenu open={menu} anchor={menuRef} onClose={() => setMenu(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={shortVendor(l.contractor.name)}>
+        {places && free && !needed ? <span className={styles.menuRow} data-testid="contractor-assign"><DropdownItem onSelect={() => { setMenu(false); onAssign() }} help="Put them on a milestone or their own dates">Assign to a project</DropdownItem></span> : null}
+        <DropdownItem onSelect={() => { setMenu(false); onVendor() }}>Open in Finance › Vendors</DropdownItem>
+      </PortalMenu>
     </div>
   )
 }

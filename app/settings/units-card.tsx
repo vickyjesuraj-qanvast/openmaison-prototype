@@ -26,7 +26,7 @@ export function UnitsCard({ units: initial, managed: initialManaged, canManage }
   const snackbar = useSnackbar()
   const readOnly = !canManage
   const [list, setList] = useState<string[]>(initial)
-  const [managed, setManaged] = useState(initialManaged)
+  const [, setManaged] = useState(initialManaged)
   const [typed, setTyped] = useState('')
   const [edit, setEdit] = useState<{ unit: string; name: string; position: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +77,7 @@ export function UnitsCard({ units: initial, managed: initialManaged, canManage }
     <div className={styles.setting} id="units" data-testid="units">
       <div className={styles.settingHead}>
         <span className={styles.settingTitle}>Units</span>
-        <span className={styles.settingHelp}>The units every quote line and price book item is priced by — the Unit menu offers these and narrows as you type. Press a unit to rename or move it; a line already using one keeps it when it is removed. {managed ? '' : 'Not set yet — these are the units every quote has offered.'}</span>
+        <span className={styles.settingHelp}>The units every quote line and price book item is priced by — the Unit menu offers these and narrows as you type. Press a unit to rename or move it; a line already using one keeps it when it is removed.</span>   {/* (the calm UI build, W-574) “Not set yet — …” read as an error */}
       </div>
       <ul className={styles.trades} aria-label="Units">
         {list.map((u, i) => (

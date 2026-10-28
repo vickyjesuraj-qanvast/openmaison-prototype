@@ -1,15 +1,15 @@
 'use client'
 
-import { GhostChips, GhostTable, HelpLines, Line, Slot, Words } from '@/components/shell/ghost-kit'
+import { GhostTable, HelpLines, Line, Slot, Words } from '@/components/shell/ghost-kit'
+import { GhostHowCounted, GhostPill } from '@/components/company/reports/report-pill'   // (the calm UI build 2026-10-27, R-B3-1) the page's bar
+import ins from '@/components/leads/insights/insights-view.module.css'
 import { StatTiles } from '@/components/om/stat-tile'
 import { MEMBER_GHOST_CELL } from '@/components/leads/insights/insights-ghost'
-import { MEDIANS_NOTE } from '@/lib/leads/tat'
-import { INSIGHT_RANGES } from '@/lib/projects/insights-model'
 import { useFlagPref } from '@/lib/prefs'
 import tile from '@/components/om/stat-tile.module.css'
 import styles from './insights.module.css'
 
-const TILES = ['Projects started', 'Completed', 'Start → Completed', 'Late milestones', 'Collection days'] as const
+const TILES = ['Projects started', 'Completed', 'Project length', 'Late milestones', 'Days to get paid'] as const   // (the calm UI build 2026-10-27, 5-09) the page's tile words
 
 /**
  * (REG-708, gaps build I) Projects › Insights' own ghost — the page's layout on its own classes: the L2 header (Projects / Insights), the
@@ -26,9 +26,10 @@ export function ProjectInsightsGhost({ money }: { money?: boolean }) {
   const tiles = withMoney ? TILES : TILES.slice(0, 4)
   return (
       <>
-        <div className={styles.bar}>
-          <GhostChips labels={INSIGHT_RANGES.map((r) => r.label)} rail />   {/* (pending modules S17) the chips' own widths: they wrapped to two rows on a phone */}
-          <span className={styles.barEnd}><Line w={300} lh={16} h={10} /><Slot kind="btn" w={104} /></span>
+        {/* (the calm UI build 2026-10-27, R-B3-1) Reports' one bar: "Period: Last 90 days ▾" and Export at its end */}
+        <div className={ins.pickBar}>
+          <span className={ins.picks}><GhostPill name="Period" value="Last 90 days" /></span>
+          <span className={ins.pickEnd}><Slot kind="btn" w={104} /></span>
         </div>
         <StatTiles className={styles.tiles}>
           {tiles.map((l, i) => (
@@ -42,7 +43,7 @@ export function ProjectInsightsGhost({ money }: { money?: boolean }) {
         {waiting ? <div className={styles.awaiting}><Slot kind="chip" w={150} /></div> : null}
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <div><Words className={styles.sectionTitle}>By team member</Words><Words className={styles.sectionHelp}>A project counts for everyone on its team · Running is against each person’s capacity</Words></div>
+            <div><Words className={styles.sectionTitle}>By member</Words><Words className={styles.sectionHelp}>A project counts for everyone on its team · Running is against each person’s capacity</Words></div>
             <Slot kind="icon" desk />
           </div>
           <GhostTable head={56} row={64} rows={4} phone={{ card: 210, lines: 5 }}   /* (pending modules S39) 210: the card as it stands since the row rule left the cards */ cols={[
@@ -54,7 +55,7 @@ export function ProjectInsightsGhost({ money }: { money?: boolean }) {
             { basis: 160, grow: 160, head: 100, cell: 16 },
           ]} />
         </section>
-        <Words as="p" className={styles.foot}>{`${MEDIANS_NOTE} A milestone finished late when it was done after its planned last day; one still open past it is overdue.`}</Words>
+        <GhostHowCounted />   {/* (the calm UI build 2026-10-27, R-B3-1) the method behind "How these are counted" */}
       </>
   )
 }

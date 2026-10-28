@@ -8,6 +8,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs, type CrumbItem } from '@/components/om/crumbs'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { contractStatusLabel } from '@/lib/contracts/status-words'
 import styles from '@/components/quotes/editor/editor-header.module.css'
 import own from './contract-editor.module.css'
 
@@ -56,7 +57,7 @@ export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, c
                 {siblings!.map((s) => (
                   <DropdownItem key={s.id} role="menuitemradio" checked={s.id === currentId} onSelect={() => { setOpen(null); if (s.id !== currentId) onSwitch!(s.id) }}>
                     <span className={styles.menuTitle}>{s.title}</span>
-                    {s.status ? <span className={styles.menuSub}>{s.status}</span> : null}
+                    {s.status ? <span className={styles.menuSub}>{contractStatusLabel(s.status)}</span> : null}
                     {s.id === currentId ? <span className={styles.menuCurrent}>current</span> : null}
                   </DropdownItem>
                 ))}

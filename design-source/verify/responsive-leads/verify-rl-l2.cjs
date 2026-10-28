@@ -112,7 +112,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   const radio = (p, group, name) => p.getByTestId(group).getByRole('radio', { name, exact: true })
   /* (2026-10-23, his call: the lead's page stays the page with its tab strip — the Lead screen was reverted) the log sheet is reached as on the
      page: Notes › New › Contact Log, the channel then set in the sheet; the move is the header's one filled button; a stage, the LEAD STAGES card */
-  const CHANNEL = { call: 'Call', whatsapp: 'WhatsApp', visit: 'Site visit', note: 'Note' }
+  const CHANNEL = { call: 'Call', whatsapp: 'WhatsApp', visit: 'Visit', note: 'Note' }   // (the calm UI build 2026-10-27, a deliberate change — 2-08: one word for the visit, the chip's)
   const openLog = async (p, lead, which) => {
     await go(p, `/leads/${lead}/notes`)
     await tapEl(p, p.getByRole('button', { name: /^New/ }).locator('visible=true')); await settle(p, 600)
@@ -194,7 +194,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(fileRows === 1, `the photo is kept with the log (${fileRows} row)`)
     await shot(m, '05-m390-visit')
     await tapEl(m, save)
-    ok(await waitSnack(m, /Site visit logged — Farah is in Met\./), `Save: "${await snackText(m)}"`)
+    ok(await waitSnack(m, /Visit logged — Farah is in Met\./), `Save: "${await snackText(m)}"`)
     const fMet = lastLog(L.farah, 'Met')
     ok(stageOf(L.farah) === 'Met' && fMet?.meetings?.length === 1 && fMet.meetings[0].where === 'In person' && fMet.meetings[0].fileIds?.length === 1, 'Farah is in Met; the Met step’s meeting log holds the visit and its photo')
     await openLog(m, L.gerald, 'note')
@@ -223,8 +223,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await tapEl(m, m.getByRole('menuitem', { name: /Contact Log/i })); await sheet(m).waitFor({ timeout: 8000 }); await settle(m, 800)
     ok(await m.getByRole('dialog', { name: 'How did the call with Chloe go?' }).isVisible(), 'New › Contact Log opens the log sheet')
     const top = (name) => m.evaluate((n) => { const d = [...document.querySelectorAll('[role="dialog"]')].find((el) => (el.getAttribute('aria-label') || '').includes(n)); if (!d) return 'no dialog'; const r = d.getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height / 2, 120)); return hit && d.contains(hit) ? 'on top' : 'under' }, name)
-    await tapEl(m, m.getByRole('button', { name: /Auto Fill/ }).locator('visible=true')); await settle(m, 800)
-    ok(await top('Auto Fill') === 'on top', 'Auto Fill opens above the sheet (REG-2656’s layer)')
+    await tapEl(m, m.getByRole('button', { name: /Auto fill/i }).locator('visible=true')); await settle(m, 800)   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
+    ok(await top('Auto fill') === 'on top', 'Auto fill opens above the sheet (REG-2656’s layer)')   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
     await tapEl(m, m.getByRole('dialog', { name: 'Auto Fill' }).getByRole('button', { name: 'Cancel' })); await settle(m, 600)
     await tapEl(m, m.getByTestId('log-from-files')); await settle(m, 1200)
     ok(await top('Attach files') === 'on top', '“From Chloe’s files” opens the lead’s files above the sheet')
@@ -409,8 +409,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await d.keyboard.press('Escape'); await settle(d, 600)
     await go(d, `/leads/${L.marcus}`)
     await d.locator('[data-testid="header-primary"] button').click(); await settle(d, 1200)
-    const attachLabel = await d.getByRole('dialog', { name: 'Move stage' }).getByText(/^Attach screenshots of your call attempts/).first().innerText()
-    ok(attachLabel === 'Attach screenshots of your call attempts (optional)', `Q-02 at every width: "${attachLabel}" (no *)`)
+    const attachLabel = await d.getByRole('dialog', { name: 'Move stage' }).getByText(/^Add a screenshot/).first().innerText()   // (the calm UI build 2026-10-27, a deliberate change) — W-486
+    ok(attachLabel === 'Add a screenshot (optional)', `Q-02 at every width: "${attachLabel}" (no *)`)
     await d.keyboard.press('Escape'); await settle(d, 600)
     await go(d, `/leads/${L.marcus}/notes`)
     await d.getByRole('button', { name: /^New/ }).first().click(); await settle(d, 500)

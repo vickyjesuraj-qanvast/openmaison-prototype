@@ -1,0 +1,1116 @@
+[
+ {
+  "now": "Qanvast Ops",
+  "proposed": "Qanvast",
+  "where": [
+   "rail",
+   "/qanvast-ops title",
+   "components/shell/app-rail.tsx:43",
+   "components/qanvast/qanvast-leads.tsx:167"
+  ],
+  "why": "“Ops” is insider; the mock read “Qanvast” (REG-77 renamed it on request)",
+  "kind": "name"
+ },
+ {
+  "now": "Collaborators",
+  "proposed": "Members",
+  "where": [
+   "/leads/[id] info column",
+   "/projects/[id] info column",
+   "components/leads/detail/info-column.tsx:66",
+   "components/leads/detail/info-column.tsx:295"
+  ],
+  "why": "The listing column, Settings and REG-290 say Members",
+  "kind": "heading",
+  "note": "Also named “People” (Meetings column, lead form section) and “Designer” (Hangout report)"
+ },
+ {
+  "now": "People",
+  "proposed": "Members",
+  "where": [
+   "/meetings column",
+   "components/meetings/meetings-table.tsx:39"
+  ],
+  "why": "Same studio people as Members elsewhere",
+  "kind": "label"
+ },
+ {
+  "now": "By designer · Designer",
+  "proposed": "By member · Member",
+  "where": [
+   "/qanvast-ops/hangouts/[id] How it went"
+  ],
+  "why": "One word for studio people",
+  "kind": "heading"
+ },
+ {
+  "now": "Assign Member",
+  "proposed": "Assign members",
+  "where": [
+   "/leads/[id] info column",
+   "Assign popover title",
+   "components/leads/detail/info-column.tsx:315",
+   "components/leads/assign-popover.tsx:120"
+  ],
+  "why": "Multi-select; sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Owner You / Members Dane",
+  "proposed": "Dane (you) · Owner",
+  "where": [
+   "/leads/[id] info column"
+  ],
+  "why": "Same person named twice",
+  "kind": "label"
+ },
+ {
+  "now": "Unseen",
+  "proposed": "Not opened yet",
+  "where": [
+   "/leads scope menu",
+   "lib/leads/filters.ts:20"
+  ],
+  "why": "Software word; the Dashboard says “new lead”",
+  "kind": "label"
+ },
+ {
+  "now": "NEW (tag on a phone card)",
+  "proposed": "(remove — the left band says it) or “Not opened”",
+  "where": [
+   "/leads 390",
+   "components/leads/lead-cards.tsx:83"
+  ],
+  "why": "Collides with the stage “New” shown below it",
+  "kind": "status"
+ },
+ {
+  "now": "Condition: New",
+  "proposed": "Condition: New (never lived in)",
+  "where": [
+   "/leads/[id] Property info"
+  ],
+  "why": "Third meaning of “New” on the page",
+  "kind": "label"
+ },
+ {
+  "now": "Insights",
+  "proposed": "Reports",
+  "where": [
+   "/leads header",
+   "/meetings header",
+   "/qanvast-ops header",
+   "app/leads/workspace.tsx:511-533"
+  ],
+  "why": "The page it opens is Company › Reports",
+  "kind": "name"
+ },
+ {
+  "now": "Leads Settings",
+  "proposed": "Lead settings",
+  "where": [
+   "/leads ⋮",
+   "app/leads/workspace.tsx:486"
+  ],
+  "why": "Opens Settings › Lead management; sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Notes & Logs",
+  "proposed": "Notes & logs",
+  "where": [
+   "/leads/[id] tab",
+   "lib/leads/stage-policy.ts:208"
+  ],
+  "why": "Sentence case (kept as one tab name with the project’s Files & notes)",
+  "kind": "name"
+ },
+ {
+  "now": "Contact Log (chip, menu row) / Contact log (title)",
+  "proposed": "Contact log",
+  "where": [
+   "/leads/[id]/notes",
+   "components/leads/notes/*"
+  ],
+  "why": "One spelling",
+  "kind": "label"
+ },
+ {
+  "now": "Meeting Copilot / co-pilot",
+  "proposed": "Meeting Copilot / Copilot",
+  "where": [
+   "/meetings",
+   "/meetings/[id]",
+   "lib/meetings/model.ts:110-113"
+  ],
+  "why": "One spelling of the tool",
+  "kind": "name"
+ },
+ {
+  "now": "Deal score · Cool / Warm / Hot / Cold",
+  "proposed": "Chance · Likely / Maybe / Unlikely",
+  "where": [
+   "/meetings column",
+   "/meetings/[id] card",
+   "lib/meetings/model.ts:89-94"
+  ],
+  "why": "Temperature words need decoding",
+  "kind": "label"
+ },
+ {
+  "now": "Brief / Briefs to save",
+  "proposed": "Summary / Summaries to save",
+  "where": [
+   "/meetings toolbar",
+   "components/meetings/meetings-toolbar.tsx:42"
+  ],
+  "why": "“Brief” also names the Maison AI brief on the lead",
+  "kind": "label"
+ },
+ {
+  "now": "Notes to write up",
+  "proposed": "Needs notes",
+  "where": [
+   "/meetings toolbar",
+   "components/meetings/meetings-toolbar.tsx:43"
+  ],
+  "why": "Shorter, says the state",
+  "kind": "label"
+ },
+ {
+  "now": "To write up — Its planned time has passed",
+  "proposed": "Needs notes",
+  "where": [
+   "/meetings Status",
+   "components/meetings/meetings-table.tsx:59"
+  ],
+  "why": "One status, no explanation line",
+  "kind": "status"
+ },
+ {
+  "now": "Logged at Met",
+  "proposed": "From the Met step",
+  "where": [
+   "/meetings Meeting caption",
+   "components/meetings/meetings-table.tsx:50"
+  ],
+  "why": "Insider",
+  "kind": "label"
+ },
+ {
+  "now": "Made from the notes, by rule.",
+  "proposed": "(remove) or “From your notes”",
+  "where": [
+   "/meetings/[id] Summary",
+   "components/meetings/room/meeting-room.tsx:516"
+  ],
+  "why": "“by rule” is system talk",
+  "kind": "helper"
+ },
+ {
+  "now": "Demo Studio Pte Ltd’s answer",
+  "proposed": "Our answer",
+  "where": [
+   "/meetings/[id] Concerns",
+   "components/meetings/room/room-parts.tsx:49"
+  ],
+  "why": "The studio reading it is the studio",
+  "kind": "label"
+ },
+ {
+  "now": "Objection answers (Settings › Meetings › Objection answers)",
+  "proposed": "Answers to concerns",
+  "where": [
+   "components/meetings/room/room-parts.tsx:229"
+  ],
+  "why": "The card calls them Concerns",
+  "kind": "name"
+ },
+ {
+  "now": "Lead credits › On the way back",
+  "proposed": "Credits to come back",
+  "where": [
+   "/qanvast-ops/credits",
+   "components/qanvast/account/words.ts:26"
+  ],
+  "why": "Clever phrasing",
+  "kind": "label"
+ },
+ {
+  "now": "Closures",
+  "proposed": "Won",
+  "where": [
+   "/qanvast-ops/credits table",
+   "components/qanvast/account/lead-credits.tsx:82"
+  ],
+  "why": "The app says Won everywhere else",
+  "kind": "label"
+ },
+ {
+  "now": "Ask homeowners for a review",
+  "proposed": "Ask for reviews",
+  "where": [
+   "/qanvast-ops/reviews",
+   "components/qanvast/account/words.ts:45"
+  ],
+  "why": "Same act as the header’s “Request reviews”",
+  "kind": "label",
+  "note": "Qanvast pages say “homeowners”, OpenMaison says “clients”"
+ },
+ {
+  "now": "Request reviews",
+  "proposed": "Ask for reviews",
+  "where": [
+   "/qanvast-ops/reviews header",
+   "components/qanvast/account/words.ts:46"
+  ],
+  "why": "One verb with the side link",
+  "kind": "label"
+ },
+ {
+  "now": "OpenMaison’s switches",
+  "proposed": "(hide from studios) / “Paused by OpenMaison”",
+  "where": [
+   "/qanvast-ops/studios",
+   "components/qanvast/qanvast-studios.tsx:109"
+  ],
+  "why": "Operator page shown to a studio",
+  "kind": "heading"
+ },
+ {
+  "now": "Return window: Expired (30 days)",
+  "proposed": "(blank once expired) · “12 days left” while open",
+  "where": [
+   "/qanvast-ops Leads",
+   "lib/leads/return-model.ts:46"
+  ],
+  "why": "Same value on every row",
+  "kind": "label"
+ },
+ {
+  "now": "Fits you 80%",
+  "proposed": "Good match",
+  "where": [
+   "/qanvast-ops/hangouts/[id] Chats",
+   "components/hangouts/chat-words.ts:27"
+  ],
+  "why": "Score talk",
+  "kind": "label"
+ },
+ {
+  "now": "BOOKED ON YOUR PAGE",
+  "proposed": "(remove; show only “Walk-in”)",
+  "where": [
+   "/qanvast-ops/hangouts/[id] Chats",
+   "components/hangouts/chat-words.ts:24"
+  ],
+  "why": "Same line on every card",
+  "kind": "label"
+ },
+ {
+  "now": "MAISON AI BRIEF",
+  "proposed": "Maison AI",
+  "where": [
+   "/leads/[id] Overview",
+   "components/leads/detail/ai-brief.tsx:43"
+  ],
+  "why": "Once, sentence case",
+  "kind": "heading"
+ },
+ {
+  "now": "FRESH LEAD · RESPOND FAST / FOLLOW UP · DAY 3 / QUOTE WINDOW · 5 DAYS / PARKED · SET A NUDGE / LEARN FROM THE LOSS / THE PROJECT",
+  "proposed": "(remove the tag) or the record’s own fact in grey sentence case, e.g. “50 days waiting”",
+  "where": [
+   "lib/leads/briefs.ts:64-265"
+  ],
+  "why": "Stale, uppercase, jargon (“nudge”, “window”)",
+  "kind": "status"
+ },
+ {
+  "now": "Auto-schedule first meet",
+  "proposed": "Book the first meeting",
+  "where": [
+   "lib/leads/briefs.ts:85"
+  ],
+  "why": "“meet” is slang; the press makes a task, not a booking",
+  "kind": "label"
+ },
+ {
+  "now": "Set a 6-month revisit",
+  "proposed": "Remind me in 6 months",
+  "where": [
+   "lib/leads/briefs.ts:262"
+  ],
+  "why": "Plain verb",
+  "kind": "label"
+ },
+ {
+  "now": "MY TASKS",
+  "proposed": "Open tasks",
+  "where": [
+   "/leads/[id] Overview card",
+   "components/leads/detail/my-work-card.tsx:61"
+  ],
+  "why": "It lists every open task, not mine",
+  "kind": "heading"
+ },
+ {
+  "now": "Total questions answered 7 / 11 · Client answered: 0 · Studio answered: 7",
+  "proposed": "7 of 11 answered · none by Olivia yet",
+  "where": [
+   "/leads/[id] Overview + Questionnaire summary",
+   "components/leads/questionnaire/summary-card.tsx:23-30",
+   "components/leads/detail/questionnaire-card.tsx:37-44"
+  ],
+  "why": "One line",
+  "kind": "helper"
+ },
+ {
+  "now": "Ask Client",
+  "proposed": "Ask Olivia",
+  "where": [
+   "/leads/[id]/questionnaire",
+   "components/leads/questionnaire/lead-questionnaire.tsx:114"
+  ],
+  "why": "Name the person; sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "By Studio / By Client",
+  "proposed": "Answered by the studio / Answered by Olivia",
+  "where": [
+   "components/leads/questionnaire/question-card.tsx:71"
+  ],
+  "why": "Tag reads as a status",
+  "kind": "status"
+ },
+ {
+  "now": "Q: … / A: …",
+  "proposed": "(remove prefixes)",
+  "where": [
+   "components/leads/questionnaire/question-card.tsx:67"
+  ],
+  "why": "Noise",
+  "kind": "label"
+ },
+ {
+  "now": "View Client Info",
+  "proposed": "View details",
+  "where": [
+   "/leads/[id] 390",
+   "components/leads/detail/info-column.tsx:392"
+  ],
+  "why": "The page calls her a lead; sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Team chat · Only the team reads it · Messages",
+  "proposed": "Team chat · Open",
+  "where": [
+   "components/leads/detail/info-column.tsx:122-123"
+  ],
+  "why": "Shorter; one link word",
+  "kind": "label"
+ },
+ {
+  "now": "Portal · Opened 18 Oct ’26 · Client messages",
+  "proposed": "Client chat · Open",
+  "where": [
+   "components/leads/detail/info-column.tsx:348-351"
+  ],
+  "why": "Pair with Team chat",
+  "kind": "label"
+ },
+ {
+  "now": "Private / Shared (quote)",
+  "proposed": "Only your studio sees it / Olivia can see it",
+  "where": [
+   "/leads/[id] QUOTES card",
+   "/leads/[id]/quotes",
+   "app/leads/quotes-actions.ts:112"
+  ],
+  "why": "“Private” from whom?",
+  "kind": "status"
+ },
+ {
+  "now": "Draft · Sent for Approval · Approved · Sent to Client · Confirmed · Signed (track labels)",
+  "proposed": "One line: “Approved — not sent to Vivien yet”",
+  "where": [
+   "components/leads/detail/quote-card.tsx:33"
+  ],
+  "why": "Six labels for one state",
+  "kind": "helper"
+ },
+ {
+  "now": "50 days in pipeline / current · 50 days",
+  "proposed": "In New for 50 days",
+  "where": [
+   "components/leads/detail/stages-card.tsx:96"
+  ],
+  "why": "“pipeline” is sales jargon",
+  "kind": "helper"
+ },
+ {
+  "now": "Response time: Assigned — 50 days running · First contact in 28h · Won — 49 days running",
+  "proposed": "Not assigned for 50 days · first reply in about a day",
+  "where": [
+   "lib/leads/tat.ts:114-117"
+  ],
+  "why": "Reads as Won; decimal hours",
+  "kind": "helper"
+ },
+ {
+  "now": "First contact in 24.8h",
+  "proposed": "First reply in about a day",
+  "where": [
+   "lib/leads/tat.ts:117"
+  ],
+  "why": "Stopwatch numbers",
+  "kind": "helper"
+ },
+ {
+  "now": "Next follow-up · None set · --",
+  "proposed": "(hide the row) or “No follow-up — Add one”",
+  "where": [
+   "/leads/[id] LEAD STAGES"
+  ],
+  "why": "Placeholder",
+  "kind": "empty"
+ },
+ {
+  "now": "Convert to Project (locked, pre-Won)",
+  "proposed": "(remove from header; Won row in Stage ▾ says why)",
+  "where": [
+   "app/leads/[id]/overview.tsx:624-626"
+  ],
+  "why": "A control that can’t act",
+  "kind": "label"
+ },
+ {
+  "now": "Move to Contacted (unowned lead)",
+  "proposed": "Assign a member",
+  "where": [
+   "app/leads/[id]/overview.tsx:321"
+  ],
+  "why": "The real next step",
+  "kind": "label"
+ },
+ {
+  "now": "Assign a member first (×4 on phone stage rows)",
+  "proposed": "One line: “Assign a member to move Olivia on”",
+  "where": [
+   "lib/leads/stage-policy.ts:48"
+  ],
+  "why": "Repetition",
+  "kind": "error"
+ },
+ {
+  "now": "Complete Contacted first (×3)",
+  "proposed": "One line under the list",
+  "where": [
+   "phone stage sheet",
+   "lib/leads/stage-policy.ts"
+  ],
+  "why": "Repetition",
+  "kind": "error"
+ },
+ {
+  "now": "Add Lead ▾ / Create New Lead / Create",
+  "proposed": "New lead ▾ / New lead / Add lead",
+  "where": [
+   "/leads header",
+   "app/leads/workspace.tsx:472-529",
+   "components/leads/lead-form.tsx"
+  ],
+  "why": "One create verb",
+  "kind": "label"
+ },
+ {
+  "now": "Add Task ▾ / Create New Task / + Add Task / + Add task / Add a task…",
+  "proposed": "New task ▾ (rows “Blank task” · “From a template”)",
+  "where": [
+   "/leads/[id]/tasks",
+   "components/leads/tasks/tasks-empty.tsx:25",
+   "components/leads/table.tsx:389",
+   "components/leads/lead-cards.tsx:128"
+  ],
+  "why": "Five spellings for one act",
+  "kind": "label"
+ },
+ {
+  "now": "Create Quote",
+  "proposed": "New quote",
+  "where": [
+   "/leads/[id]/quotes"
+  ],
+  "why": "One create verb",
+  "kind": "label"
+ },
+ {
+  "now": "New Contract ▾ (From the studio agreement · From Template · Import from File)",
+  "proposed": "New contract ▾ (Studio agreement · From a template · Upload a contract)",
+  "where": [
+   "/leads/[id]/contracts"
+  ],
+  "why": "Sentence case, parallel rows",
+  "kind": "label"
+ },
+ {
+  "now": "New File ▾ (From Local Files · From Google Drive)",
+  "proposed": "New file ▾ (From your computer · From Google Drive)",
+  "where": [
+   "/leads/[id]/files"
+  ],
+  "why": "“Local” is jargon",
+  "kind": "label"
+ },
+ {
+  "now": "New Meeting ▾",
+  "proposed": "New meeting ▾",
+  "where": [
+   "/meetings"
+  ],
+  "why": "Sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Use Template / Save all as Template / Manage Templates / Export all as...",
+  "proposed": "From a template / Save as a template / Templates / Export all…",
+  "where": [
+   "/leads/[id]/tasks ⋮"
+  ],
+  "why": "Sentence case; one ellipsis",
+  "kind": "label"
+ },
+ {
+  "now": "Import from File / Import Leads / Upload / Lead Import History",
+  "proposed": "Import leads / Import history",
+  "where": [
+   "/leads menu",
+   "wizard title",
+   "/leads/imports header",
+   "app/leads/workspace.tsx:474-483"
+  ],
+  "why": "Four names for one act",
+  "kind": "name"
+ },
+ {
+  "now": "Link to Email · Link to Zapier · Connect to Ads",
+  "proposed": "Get leads automatically…",
+  "where": [
+   "/leads Add Lead ▾",
+   "app/leads/workspace.tsx:476-478"
+  ],
+  "why": "Set-up jargon in a daily menu",
+  "kind": "label"
+ },
+ {
+  "now": "Copy Link",
+  "proposed": "Copy link",
+  "where": [
+   "/leads/[id] ⋮",
+   "app/leads/[id]/overview.tsx:659"
+  ],
+  "why": "Sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Invite to Portal",
+  "proposed": "Invite to the client portal",
+  "where": [
+   "/leads/[id] ⋮"
+  ],
+  "why": "Sentence case; “Portal” alone is unclear (REG-1360 settled the words — ask Vicky)",
+  "kind": "label"
+ },
+ {
+  "now": "Return Lead",
+  "proposed": "Return to Qanvast",
+  "where": [
+   "/leads ⋮, /leads/[id] ⋮"
+  ],
+  "why": "Says where it goes",
+  "kind": "label"
+ },
+ {
+  "now": "Approve All Clean (13)",
+  "proposed": "Approve 13 (no duplicates)",
+  "where": [
+   "components/leads/review-sheet.tsx:165"
+  ],
+  "why": "“Clean” is jargon",
+  "kind": "label"
+ },
+ {
+  "now": "View & Merge / Reject New / Keep Both / Merge into Existing",
+  "proposed": "Compare / Discard new / Keep both / Merge",
+  "where": [
+   "components/leads/review-sheet.tsx:300"
+  ],
+  "why": "Shorter, sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "PENDING (tag on every import card)",
+  "proposed": "(remove; only “Duplicate” shows)",
+  "where": [
+   "components/leads/review-sheet.tsx:194"
+  ],
+  "why": "Default state needs no tag",
+  "kind": "status"
+ },
+ {
+  "now": "Empty Trash",
+  "proposed": "Delete all forever",
+  "where": [
+   "/leads Deleted Leads",
+   "components/leads/quotes/deleted-quotes-sheet.tsx:67"
+  ],
+  "why": "The sheet is called Deleted, not Trash",
+  "kind": "label"
+ },
+ {
+  "now": "Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.",
+  "proposed": "(remove)",
+  "where": [
+   "components/leads/deleted-sheet.tsx:298"
+  ],
+  "why": "Second explanation; “board”",
+  "kind": "helper"
+ },
+ {
+  "now": "Deleted leads are permanently removed after 30 days.",
+  "proposed": "Deleted leads are removed for good after 30 days.",
+  "where": [
+   "components/leads/deleted-sheet.tsx:203"
+  ],
+  "why": "Plainer",
+  "kind": "helper"
+ },
+ {
+  "now": "Tips on Importing / Important Reminders / Every lead must have a lead Name",
+  "proposed": "Before you import / Each lead needs a name",
+  "where": [
+   "components/leads/import-wizard.tsx:347-356"
+  ],
+  "why": "Shorter",
+  "kind": "heading"
+ },
+ {
+  "now": "Upload local file",
+  "proposed": "Your file",
+  "where": [
+   "components/leads/import-wizard.tsx:371"
+  ],
+  "why": "“local”",
+  "kind": "heading"
+ },
+ {
+  "now": "Supports: CSV, XLSX, PDF (a Homematch lead sheet)",
+  "proposed": "CSV, Excel or a PDF lead sheet",
+  "where": [
+   "components/leads/import-wizard.tsx:405"
+  ],
+  "why": "Insider name",
+  "kind": "helper"
+ },
+ {
+  "now": "Download Skipped Records / 1 error detected across 1 skipped lead",
+  "proposed": "Download skipped / 1 lead skipped",
+  "where": [
+   "app/leads/imports/imports-view.tsx:169"
+  ],
+  "why": "Shorter",
+  "kind": "label"
+ },
+ {
+  "now": "TOTAL ROWS / ROWS IMPORTED (cut to “TOTAL RO…”, “ROWS IMPORT…”)",
+  "proposed": "Rows / Added",
+  "where": [
+   "/leads/imports heads"
+  ],
+  "why": "Heads truncated",
+  "kind": "label"
+ },
+ {
+  "now": "Lead name* / Lead phone number* / Lead source",
+  "proposed": "Name* / Mobile number* / Source",
+  "where": [
+   "components/leads/lead-form.tsx"
+  ],
+  "why": "The dialog says it is a lead",
+  "kind": "label"
+ },
+ {
+  "now": "Property address — Client project address.",
+  "proposed": "Property address",
+  "where": [
+   "components/leads/lead-form.tsx"
+  ],
+  "why": "Helper repeats the label with a third noun",
+  "kind": "helper"
+ },
+ {
+  "now": "A lead with this phone already exists",
+  "proposed": "Already in your leads",
+  "where": [
+   "lead form duplicate dialog"
+  ],
+  "why": "Fits the 400 head on one line",
+  "kind": "heading"
+ },
+ {
+  "now": "Suggested · Sarah — Prefers HDB 4-Room (must match) leads.",
+  "proposed": "Suggested: Sarah — she takes HDB 4-Room leads.",
+  "where": [
+   "Assign popover",
+   "lib/leads/suggest.ts:5"
+  ],
+  "why": "Engine word “must match”",
+  "kind": "helper"
+ },
+ {
+  "now": "Clear All",
+  "proposed": "Clear",
+  "where": [
+   "Filters modal",
+   "Assign popover"
+  ],
+  "why": "Sentence case",
+  "kind": "label"
+ },
+ {
+  "now": "Move stage — Moving to Lost",
+  "proposed": "Mark as lost",
+  "where": [
+   "components/leads/move-stage/dialogs.tsx:363"
+  ],
+  "why": "Twin of “Put on hold”",
+  "kind": "heading"
+ },
+ {
+  "now": "Put on hold — Moving to On Hold",
+  "proposed": "Put on hold",
+  "where": [
+   "components/leads/move-stage/dialogs.tsx:228-244"
+  ],
+  "why": "Subtitle repeats the title",
+  "kind": "heading"
+ },
+ {
+  "now": "Save & Move",
+  "proposed": "Put on hold / Mark as lost",
+  "where": [
+   "components/leads/move-stage/dialogs.tsx"
+  ],
+  "why": "Say what happens",
+  "kind": "label"
+ },
+ {
+  "now": "Next follow up date will be 26 Nov ’26",
+  "proposed": "We’ll remind you on 26 Nov ’26.",
+  "where": [
+   "On Hold dialog"
+  ],
+  "why": "Plainer",
+  "kind": "helper"
+ },
+ {
+  "now": "This log is saved under Lead Details › Notes & Logs › Contact Log.",
+  "proposed": "Saved to Notes & logs.",
+  "where": [
+   "components/leads/move-stage/panels.tsx:195"
+  ],
+  "why": "“Lead Details” isn’t a name on screen",
+  "kind": "helper"
+ },
+ {
+  "now": "Schedule a call/meeting (optional) — If you wish to be reminded, a task will be created.",
+  "proposed": "Call back (optional) — we’ll add a task to remind you.",
+  "where": [
+   "lib/leads/enums.ts:65"
+  ],
+  "why": "Plainer",
+  "kind": "helper"
+ },
+ {
+  "now": "Preferred mode",
+  "proposed": "Call back by",
+  "where": [
+   "components/leads/move-stage/panels.tsx:218",
+   "components/leads/notes/contact-editor.tsx:76"
+  ],
+  "why": "System word",
+  "kind": "label"
+ },
+ {
+  "now": "Contacted via* / Outcome* (desk)",
+  "proposed": "How / How it went (the phone sheet’s words)",
+  "where": [
+   "components/leads/notes/contact-editor.tsx:56"
+  ],
+  "why": "One vocabulary for one record",
+  "kind": "label"
+ },
+ {
+  "now": "In person (desk) / Site visit (phone)",
+  "proposed": "Visit",
+  "where": [
+   "contact log channels"
+  ],
+  "why": "Same channel, two names",
+  "kind": "label"
+ },
+ {
+  "now": "Save (desk contact log) / Save log (phone)",
+  "proposed": "Save log",
+  "where": [
+   "contact log"
+  ],
+  "why": "One verb",
+  "kind": "label"
+ },
+ {
+  "now": "Attach screenshots of your call attempts",
+  "proposed": "Add a screenshot (optional)",
+  "where": [
+   "/leads/[id]/notes contact log"
+  ],
+  "why": "Shorter",
+  "kind": "label"
+ },
+ {
+  "now": "Create quotes and share it with your clients",
+  "proposed": "No quote yet — make one from a template or upload your own.",
+  "where": [
+   "components/leads/quotes/quotes-empty.tsx:23",
+   "components/leads/detail/quote-card.tsx:122"
+  ],
+  "why": "Grammar",
+  "kind": "empty"
+ },
+ {
+  "now": "Create contracts and share it with your clients",
+  "proposed": "No contract yet.",
+  "where": [
+   "components/leads/contracts/contracts-empty.tsx:27"
+  ],
+  "why": "Grammar",
+  "kind": "empty"
+ },
+ {
+  "now": "Create folders and upload files from your local.",
+  "proposed": "No files yet — upload photos, plans or documents.",
+  "where": [
+   "components/leads/files/files-empty.tsx:47",
+   "components/leads/detail/files-card.tsx:88"
+  ],
+  "why": "“from your local”",
+  "kind": "empty"
+ },
+ {
+  "now": "Upload from your local files",
+  "proposed": "Upload from your computer",
+  "where": [
+   "components/leads/tasks/attach-files-modal.tsx:236"
+  ],
+  "why": "“local”",
+  "kind": "label"
+ },
+ {
+  "now": "Stay organised — track, prioritise, and complete everything from one place.",
+  "proposed": "No tasks yet.",
+  "where": [
+   "components/leads/tasks/tasks-empty.tsx:21",
+   "components/leads/detail/my-work-card.tsx:80"
+  ],
+  "why": "Marketing line",
+  "kind": "empty"
+ },
+ {
+  "now": "Create New Task (empty state button)",
+  "proposed": "Add a task",
+  "where": [
+   "components/leads/tasks/tasks-empty.tsx:25"
+  ],
+  "why": "Sentence case; matches “New task” toolbar",
+  "kind": "label"
+ },
+ {
+  "now": "Questions are set up by your studio’s admins and will appear here.",
+  "proposed": "No questions yet — set them up in Company › Questionnaire.",
+  "where": [
+   "components/leads/detail/questionnaire-card.tsx:57",
+   "components/leads/questionnaire/questionnaire-empty.tsx:23"
+  ],
+  "why": "Dead end; say where",
+  "kind": "empty"
+ },
+ {
+  "now": "Meet with the co-pilot beside you — Plan the meeting, and in it the co-pilot keeps the checklist, the tips and the rough estimate — then makes the brief: what they want, the next steps and the message to send.",
+  "proposed": "No meetings yet — plan one and Meeting Copilot keeps the notes.",
+  "where": [
+   "components/meetings/lead-meetings.tsx:233"
+  ],
+  "why": "Three-line feature list",
+  "kind": "empty"
+ },
+ {
+  "now": "Successfully Created",
+  "proposed": "{Name} added · Open",
+  "where": [
+   "app/leads/workspace.tsx:890",
+   "components/qanvast/qanvast-leads.tsx:298"
+  ],
+  "why": "Says nothing; Title Case",
+  "kind": "status"
+ },
+ {
+  "now": "Successfully Updated",
+  "proposed": "Changes saved",
+  "where": [
+   "app/leads/workspace.tsx:899"
+  ],
+  "why": "Same",
+  "kind": "status"
+ },
+ {
+  "now": "Lead returned successfully",
+  "proposed": "Returned to Qanvast",
+  "where": [
+   "app/leads/workspace.tsx:779",
+   "app/leads/[id]/overview.tsx:1022"
+  ],
+  "why": "Plainer",
+  "kind": "status"
+ },
+ {
+  "now": "Simulated on this prototype — the credits follow your Qanvast leads … a reply is kept here, not posted to Qanvast.",
+  "proposed": "(remove; a shell-level “Demo data” chip if needed)",
+  "where": [
+   "lib/services/registry.ts:274-277",
+   "components/qanvast/account/account-frame.tsx:83"
+  ],
+  "why": "Prototype talk to studios",
+  "kind": "helper"
+ },
+ {
+  "now": "Sample Hangouts written for the demo — Qanvast’s own events come through its feed.",
+  "proposed": "(remove)",
+  "where": [
+   "components/hangouts/hangouts-home.tsx:110"
+  ],
+  "why": "Prototype talk",
+  "kind": "helper"
+ },
+ {
+  "now": "Listening isn’t connected in this prototype — type what’s said, or paste a transcript. The co-pilot reads it as you go.",
+  "proposed": "Type or paste what’s said — Copilot reads it as you go.",
+  "where": [
+   "lib/meetings/model.ts:113"
+  ],
+  "why": "Prototype talk",
+  "kind": "helper"
+ },
+ {
+  "now": "The co-pilot uses 25 AI credits for each 10 minutes, and asks before each next 10.",
+  "proposed": "25 credits per 10 minutes — it asks before going on.",
+  "where": [
+   "components/meetings/room/meeting-room.tsx:192"
+  ],
+  "why": "Shorter",
+  "kind": "helper"
+ },
+ {
+  "now": "You set the payment schedule of the quote “OM-10001” to 10/30/30/30.",
+  "proposed": "You set OM-10001’s payments: 10% deposit, then 30 / 30 / 30.",
+  "where": [
+   "lib/leads/activity.ts"
+  ],
+  "why": "Shorthand",
+  "kind": "label"
+ },
+ {
+  "now": "FROM A TEMPLATE · 3 SAVED",
+  "proposed": "Templates · 3",
+  "where": [
+   "components/quotes/create-quote-modal.tsx"
+  ],
+  "why": "Caps eyebrow",
+  "kind": "heading"
+ },
+ {
+  "now": "Blank Quote — The default template’s settings, an empty table",
+  "proposed": "Blank quote — start with an empty list",
+  "where": [
+   "components/quotes/create-quote-modal.tsx"
+  ],
+  "why": "Software words",
+  "kind": "helper"
+ },
+ {
+  "now": "XLSX · CSV · PDF · 5 AI CREDITS",
+  "proposed": "Spreadsheet or PDF · 5 credits",
+  "where": [
+   "components/quotes/create-quote-modal.tsx"
+  ],
+  "why": "Caps tag",
+  "kind": "label"
+ },
+ {
+  "now": "categorized",
+  "proposed": "by category",
+  "where": [
+   "components/quotes/create-quote-modal.tsx"
+  ],
+  "why": "UK/SG spelling elsewhere",
+  "kind": "helper"
+ },
+ {
+  "now": "Lead Name / Property Type / Budget (S$)",
+  "proposed": "Lead name / Property type / Budget (S$)",
+  "where": [
+   "components/leads/table.tsx:27-34"
+  ],
+  "why": "Sentence case like In stage / Last contact",
+  "kind": "label"
+ },
+ {
+  "now": "Toggle columns you want to see. Drag columns up or down to reorder them. / PINNED (3 COLUMNS MAX)",
+  "proposed": "(tooltip on the title) / Pinned · up to 3",
+  "where": [
+   "components/om/column-settings.tsx"
+  ],
+  "why": "Paragraph on the drawer",
+  "kind": "helper"
+ },
+ {
+  "now": "Review imported leads (14) · 1 DUPLICATE (docked bar)",
+  "proposed": "To review · 14 (a TO DO row in the scope pill)",
+  "where": [
+   "components/leads/review-banner.tsx:45-47"
+  ],
+  "why": "Permanent bar; caps tag",
+  "kind": "label"
+ },
+ {
+  "now": "All Leads (31)",
+  "proposed": "All leads · 31",
+  "where": [
+   "app/leads/workspace.tsx:551"
+  ],
+  "why": "One count format",
+  "kind": "label"
+ },
+ {
+  "now": "Updated 2d ago / 2d ago / 22d ago",
+  "proposed": "Updated 2 days ago / Added 2 days ago",
+  "where": [
+   "components/leads/kanban/board.tsx:281",
+   "components/leads/lead-cards.tsx:87",
+   "review sheet"
+  ],
+  "why": "Name the clock; no “d” abbreviation",
+  "kind": "label"
+ }
+]

@@ -14,6 +14,9 @@ import { isSignatureKind, signatureFileProblem, SIGNATURE_IMAGE_ACCEPT, SIGNATUR
 import { SectionCard } from '../section-card'
 import styles from './signature-section.module.css'
 
+/** The client's first name for the box's sentence ("Olivia signs here…"). */
+const firstOf = (name: string) => name.trim().split(/\s+/)[0] || 'The client'
+
 export type Signature = MemberSignature | null
 /** What Signature Settings edits: the kind, the name, and the drawing's path or (Dane UAT 6.23) the picture's data URL ('' = none yet). */
 export type SignatureDraft = { kind: SignatureKind; name: string; data: string }
@@ -107,11 +110,11 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
         <div className={styles.pane}>
           <div className={styles.clientBox} data-required={required || undefined}>
             <span className={styles.clientTitle}>{required ? 'Client signs online' : 'Client signs on paper'}</span>   {/* (sweep S1) the title follows the switch */}
-            <span className={styles.clientMeta}>{required ? 'Requested when you send · signed on approval' : 'Not requested — the client signs on paper'}</span>
+            <span className={styles.clientMeta}>{required ? `${firstOf(seed.clientName)} signs here when they accept the quote online.` : 'Not requested — the client signs on paper'}</span>   {/* (the calm UI build 2026-10-27, 4-30 · W-140) */}
           </div>
           <div className={styles.who}>
             <span className={styles.name}>{seed.clientName}</span>
-            <span className={styles.meta}><span className={styles.metaLabel}>NRIC:</span> {nricShown ? nricShown : <em className={styles.pending}>Requested when you send</em>}</span>
+            <span className={styles.meta}><span className={styles.metaLabel}>NRIC:</span> {nricShown ? nricShown : <em className={styles.pending}>Asked when you send</em>}</span>
           </div>
         </div>
       </div>
@@ -176,7 +179,7 @@ export function SignatureSettings({ open, value, onChange, onClose, onSave, busy
   }
   const choose = () => file.current?.click()
   return (
-    <Dialog open={open} onClose={onClose} title="Signature Settings" size="modal" width={800}
+    <Dialog open={open} onClose={onClose} title="Signature settings" size="modal" width={800}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={onSave} isDisabled={!canSave}>Save</Button></>}>
       <div className={styles.settings}>
       <TextField label="Designer Name" required value={v.name} onChange={(name) => onChange({ ...v, name })} autoFocus />

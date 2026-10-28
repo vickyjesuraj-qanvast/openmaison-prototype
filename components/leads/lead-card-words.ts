@@ -4,6 +4,7 @@
  * and any other card read the same sentences (the Quotes card's `quote-card-words.ts`, the Contracts card's `contract-card-words.ts`).
  */
 import type { LeadRow } from '@/lib/leads/queries'
+import { channelLabel } from '@/lib/leads/enums'
 import { dayWords, displayDayShortMonth, displayTime, dueDistance, hasTime, isOverdue, phoneDigits, startOfDay } from '@/lib/format'
 
 const DAY = 86_400_000
@@ -53,7 +54,7 @@ export function cardLines(row: Pick<LeadRow, 'stage' | 'lastContact' | 'tasks' |
     return [{ label: 'Lost', text: [when.replace(/^Lost /, ''), why, to].filter(Boolean).join(' · ') }]
   }
   const c = row.lastContact
-  const last: CardLine = { label: 'Last', text: c ? [c.channel, c.outcome, pastWhen(c.at, now)].filter(Boolean).join(' · ') : 'Not contacted yet' }
+  const last: CardLine = { label: 'Last', text: c ? [channelLabel(c.channel), c.outcome, pastWhen(c.at, now)].filter(Boolean).join(' · ') : 'Not contacted yet' }
   if (row.stage === 'On Hold') {
     const f = row.onHoldFollowUp ? new Date(row.onHoldFollowUp) : null
     return f && !Number.isNaN(f.getTime()) ? [last, { label: 'Next', text: isOverdue(f, now) ? `Follow up on ${displayDayShortMonth(f)} · ${dueDistance(f, now)}` : `Follow up on ${displayDayShortMonth(f)}`, late: isOverdue(f, now) }] : [last]

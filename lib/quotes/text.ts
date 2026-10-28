@@ -12,9 +12,9 @@ import { dueLabel, type PaymentRow } from './payments'
 export const TEXT_KINDS = ['terms', 'notes'] as const
 export type TextKind = (typeof TEXT_KINDS)[number]
 export const isTextKind = (s: string): s is TextKind => (TEXT_KINDS as readonly string[]).includes(s)
-export const TEXT_LABEL: Record<TextKind, string> = { terms: 'Terms and Conditions', notes: 'Additional Notes' }
+export const TEXT_LABEL: Record<TextKind, string> = { terms: 'Terms and conditions', notes: 'Additional notes' }   // (the calm UI build 2026-10-27, W-200 · T-13) sentence case, as the tabs
 /** The empty body's invitation (1263:36260 · 1263:36271). */
-export const TEXT_PLACEHOLDER: Record<TextKind, string> = { terms: 'Add your Terms and Conditions', notes: 'Add any additional notes to include in the quote' }
+export const TEXT_PLACEHOLDER: Record<TextKind, string> = { terms: 'Add your terms and conditions', notes: 'Add any additional notes to include in the quote' }
 
 export const TOKENS = [
   { key: 'client', label: 'Client Full Name' },

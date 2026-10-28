@@ -8,3 +8,9 @@
 .fits.fits.fits { max-height: calc(100dvh - 2 * var(--om-spacing-2)); overflow-y: auto; }
 /* (pending modules S16) the DS switch as the Open to new leads row's mark — the row takes the press; the switch keeps its own box */
 .switchMark { display: inline-flex; flex-shrink: 0; pointer-events: none; }
+
+/* (the calm UI build 2026-10-27 — the audit's 1-40) the Demo fold's content: View as, the plan and the studios as they were, under the row */
+.demo { display: contents; }
+/* (the calm UI build 2026-10-27 — a fix at landing) a row's second line: the Company panel's `.help` it borrowed went with that panel's help lines
+   (now tooltips), so View as keeps the same rule here — the role line, a studio's line, the Demo row's line */
+.helpLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

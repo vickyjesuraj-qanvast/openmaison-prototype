@@ -11,7 +11,9 @@ import { money2 } from '@/lib/quotes/math'
 import type { BillView, ExpenseView, PoView } from '@/lib/finance/costs'
 import { BILL_STATE_LABEL, BILL_STATE_TONE, EXPENSE_STATE_LABEL, EXPENSE_STATE_TONE, PO_STATE_LABEL, PO_STATE_TONE } from '@/lib/finance/model'
 import type { ProjectCostsData } from '@/lib/finance/queries'
-import { RowMenu, poStatusWords, tagOf, type Next, type RowAction } from './cost-tables'
+import { RowMenu, poStatusWords, recordLink, tagOf, type Next, type RowAction } from './cost-tables'
+import { Tooltip } from '@/components/om/tooltip'
+import fin from './finance.module.css'
 import { useCosts } from './use-costs'
 import { WhereCostsGo } from './where-costs-go'
 import money from '@/components/projects/money/money.module.css'
@@ -47,7 +49,10 @@ const DEFS: readonly TableColumnDef[] = [
   { key: 'next', label: 'Next step', track: 'minmax(160px, 170fr)' },
 ]
 const KINDS = [{ value: 'all', label: 'All' }, { value: 'po', label: 'Purchase orders' }, { value: 'bill', label: 'Bills' }, { value: 'expense', label: 'Expenses' }]
-const day = (ms: number | null | undefined) => (ms ? displayDate(new Date(ms)) : '--')
+const day = (ms: number | null | undefined) => (ms ? displayDate(new Date(ms)) : '—')
+/* (the calm UI build 2026-10-27 — 5-12 · 5-25 · T-08) Finance's one grammar here too: the record's name in the page's ink, the facts wrap instead of
+   "…", an empty cell is "—" */
+const wrap = `${money.sub} ${fin.wrapLine}`
 
 /** (S-07) The Costs list — the tab's second list, under Billing at a desk; one of the two behind the phone's switch (Q-06). */
 export function CostsSection({ h, onOrder }: { h: ReturnType<typeof useProjectCosts>; onOrder: () => void }) {
@@ -78,16 +83,16 @@ export function CostsSection({ h, onOrder }: { h: ReturnType<typeof useProjectCo
   )
   const paidCell = (paid: number, overdue: number, balance: number) => (paid
     ? <span className={money.stack}><span className={money.num}>{money2(paid)}</span><span className={money.sub} data-tone={overdue ? 'alert' : undefined}>{overdue ? `${money2(overdue)} overdue` : balance ? `${money2(balance)} to pay` : 'Nothing to pay'}</span></span>
-    : overdue ? <span className={money.stack}><span className={money.none}>--</span><span className={money.sub} data-tone="alert">{money2(overdue)} overdue</span></span> : <span className={money.none}>--</span>)
+    : overdue ? <span className={money.stack}><span className={money.none}>—</span><span className={money.sub} data-tone="alert">{money2(overdue)} overdue</span></span> : <span className={money.none}>—</span>)
   const cell = (r: Row, key: string): ReactNode => {
     if (r.kind === 'po') {
       const p = r.p
       switch (key) {
-        case 'what': { const sub = poSub(p); return <span className={money.stack}><button type="button" className={money.nameLink} onClick={() => c.openPo(p)} data-testid="po-open">{p.number} · {vendor(p.vendorId)}</button>{sub ? <span className={money.sub} title={typeof sub === 'string' ? sub : undefined}>{sub}</span> : null}</span> }
+        case 'what': { const sub = poSub(p); return <span className={money.stack}><button type="button" className={`${recordLink} ${fin.wrapLine}`} onClick={() => c.openPo(p)} data-testid="po-open">{p.number} · {vendor(p.vendorId)}</button>{sub ? <span className={wrap}>{sub}</span> : null}</span> }
         case 'kind': return <span className={money.text}>PO</span>
         case 'amount': return <span className={money.stack}><span className={money.num}>{money2(p.totalMinor)}</span>{p.advanceMinor ? <span className={money.sub}>{money2(p.advanceMinor)} advance</span> : p.gstMinor ? <span className={money.sub}>incl. {money2(p.gstMinor)} GST</span> : null}</span>
         case 'paid': return paidCell(p.paidMinor, p.overdueMinor, p.balanceMinor)
-        case 'status': { const sub = poStatus(p); return <span className={money.tagStack}>{tagOf(PO_STATE_LABEL[p.state], PO_STATE_TONE[p.state])}{sub ? <span className={money.sub} data-tone={p.state === 'declined' ? 'alert' : undefined} title={sub}>{sub}</span> : null}</span> }
+        case 'status': { const sub = poStatus(p); return <span className={money.tagStack}>{tagOf(PO_STATE_LABEL[p.state], PO_STATE_TONE[p.state])}{sub ? <span className={wrap} data-tone={p.state === 'declined' ? 'alert' : undefined}>{sub}</span> : null}</span> }
         case 'next': return nextCell(c.poNext(p), c.poMenu(p), `More actions for ${p.number}`, p.number)
         default: return null
       }
@@ -95,7 +100,7 @@ export function CostsSection({ h, onOrder }: { h: ReturnType<typeof useProjectCo
     if (r.kind === 'bill') {
       const b = r.b
       switch (key) {
-        case 'what': return <span className={money.stack}><button type="button" className={money.nameLink} onClick={() => c.openBill(b)} data-testid="bill-open">{vendor(b.vendorId)}</button><span className={money.sub}>Bill {b.reference}{b.poId ? ` · on ${s.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : ''}{b.docId ? ' · with its file' : ''}</span></span>
+        case 'what': return <span className={money.stack}><button type="button" className={`${recordLink} ${fin.wrapLine}`} onClick={() => c.openBill(b)} data-testid="bill-open">{vendor(b.vendorId)}</button><span className={money.sub}>Bill {b.reference}{b.poId ? ` · on ${s.pos.find((p) => p.id === b.poId)?.number ?? 'its PO'}` : ''}{b.docId ? ' · with its file' : ''}</span></span>
         case 'kind': return <span className={money.text}>Bill</span>
         case 'amount': return <span className={money.stack}><span className={money.num}>{money2(b.totalMinor)}</span><span className={money.sub}>Due {day(b.dueOn)}</span></span>
         case 'paid': return paidCell(b.paidMinor, b.overdueMinor, b.balanceMinor)
@@ -106,12 +111,12 @@ export function CostsSection({ h, onOrder }: { h: ReturnType<typeof useProjectCo
     }
     const e = r.e
     switch (key) {
-      case 'what': return <span className={money.stack}><button type="button" className={money.nameLink} onClick={() => c.openExpense(e)} data-testid="expense-open" title={e.description}>{e.description}</button><span className={money.sub}>{e.category}{e.series?.live && e.series.every ? <span data-testid="expense-repeat-words">{` · ${repeatLabel(e.series.every)}`}</span> : null}{e.paidBy === 'member' ? ` · ${c.personName(e.claimantId)}’s claim` : ''}{e.receipts.length ? ` · ${e.receipts.length} receipt${e.receipts.length === 1 ? '' : 's'}` : ''}</span></span>
+      case 'what': return <span className={money.stack}><button type="button" className={`${recordLink} ${fin.wrapLine}`} onClick={() => c.openExpense(e)} data-testid="expense-open">{e.description}</button><span className={money.sub}>{e.category}{e.series?.live && e.series.every ? <span data-testid="expense-repeat-words">{` · ${repeatLabel(e.series.every)}`}</span> : null}{e.paidBy === 'member' ? ` · ${c.personName(e.claimantId)}’s claim` : ''}{e.receipts.length ? ` · ${e.receipts.length} receipt${e.receipts.length === 1 ? '' : 's'}` : ''}</span></span>
       case 'kind': return <span className={money.text}>Expense</span>
       case 'amount': return <span className={money.stack}><span className={money.num}>{money2(e.amountMinor)}</span><span className={money.sub}>{day(e.spentOn)}{e.gstMinor ? ` · incl. ${money2(e.gstMinor)} GST` : ''}</span></span>
       case 'paid': return e.paidBy === 'member' ? paidCell(e.paidBackMinor, 0, e.owedMinor) : <span className={money.stack}><span className={money.text}>The studio</span><span className={money.sub}>Logged by {c.personName(e.createdBy)}</span></span>
       case 'status': { const sub = e.state === 'sent_back' && e.reviewNote ? `“${e.reviewNote}”` : e.state === 'pending' ? 'An Owner or an Admin approves it' : null
-        return <span className={money.tagStack}>{tagOf(EXPENSE_STATE_LABEL[e.state], EXPENSE_STATE_TONE[e.state])}{sub ? <span className={money.sub} title={sub}>{sub}</span> : null}</span> }
+        return <span className={money.tagStack}>{tagOf(EXPENSE_STATE_LABEL[e.state], EXPENSE_STATE_TONE[e.state])}{sub ? <span className={wrap}>{sub}</span> : null}</span> }
       case 'next': return nextCell(c.expenseNext(e), c.expenseMenu(e), `More actions for ${e.description}`, e.description)
       default: return null
     }
@@ -132,11 +137,12 @@ export function CostsSection({ h, onOrder }: { h: ReturnType<typeof useProjectCo
     <section id="costs" className={money.list} aria-label="Costs" data-testid="project-costs" data-list="costs">
       {/* (parity map, MO-087 · FB-031) the Costs half opens with where the committed money goes — for whoever sees the figures; none with no costs */}
       {data.viewer.seesFigures ? <WhereCostsGo rows={s.byCategory} /> : null}
-      <CreditsTable table="project-costs-list" title="Costs" testId="costs-list" defs={DEFS} rows={rows} rowKey={(r) => r.id} cell={cell}
-                    help={`What the project costs the studio — purchase orders, bills and the team’s expenses.${data.viewer.seesFigures ? '' : ' The totals are for Owners and Admins.'}${data.rules.poApproval ? ` Over ${money2(data.rules.poLimitMinor)}, or with an advance, a PO waits for an Owner or an Admin.` : ''}`}
+      {/* (the calm UI build, W-644) one sentence of help; the PO rule behind How this works and on the row that waits */}
+      <div className={fin.grows}><CreditsTable table="project-costs-list" title="Costs" testId="costs-list" defs={DEFS} rows={rows} rowKey={(r) => r.id} cell={cell}
+                    help={<>{`Purchase orders, bills and the team’s expenses.${data.viewer.seesFigures ? '' : ' The totals are for Owners and Admins.'}`}{data.rules.poApproval ? <> <Tooltip label={`Over ${money2(data.rules.poLimitMinor)}, or with an advance, a PO waits for an Owner or an Admin — its row says so while it waits.`}><button type="button" className={fin.how} data-testid="costs-how">How this works</button></Tooltip></> : null}</>}
                     actions={all.length ? <Chips label="Kind" options={KINDS} value={kind} onChange={(v) => setKind(v as Kind)} testId="costs-kind" /> : undefined}
                     rowAttrs={(r) => ({ [`data-${r.kind}`]: r.id, 'data-focus': c.focus === r.id ? '' : undefined })}
-                    empty={empty} />
+                    empty={empty} /></div>
       {c.dialogs}
     </section>
   )

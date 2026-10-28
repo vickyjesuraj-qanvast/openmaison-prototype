@@ -49,11 +49,14 @@ export const onLeads = (role: string | null | undefined): boolean => !isAccounti
     sections. Accounting opens the books only (`opensPath`); (S44O — C6) Marketing the leads only — so neither takes an AI tools seat. */
 export const opensWorkspace = (role: string | null | undefined): boolean => !isAccounting(role) && !isMarketing(role)
 
-/** Where an Accounting member lands — Company › Finance › To do (1.0 landed them on Finance, FR-040). */
+/** Accounting's own place — Company › Finance › To do (1.0 landed them on Finance, FR-040): the house gate's door, a project's crumb for them.
+    (the Dashboard redesigned, Q-08) Their front door is the Dashboard now (`homeOfRole`); this stays the books' home. */
 export const ACCOUNTING_HOME = '/company/finance'
-/** (S44O — C6) Where a member lands when an address isn't theirs, and where View as takes them: Accounting's Finance, everyone else's
-    Dashboard (Marketing's is the leads' own). */
-export const homeOfRole = (role: string | null | undefined): string => (isAccounting(role) ? ACCOUNTING_HOME : '/dashboard')
+/** (S44O — C6) Where a member lands when an address isn't theirs, and where View as takes them: every role's Dashboard (Marketing's is the
+    leads' own). (the Dashboard redesigned, 2026-10-26 — his Q-08: "Accounting's front door: the Dashboard, in its money layout") Accounting's
+    too now — its page is the books' (Owed to you · Coming in · You owe · GST, Finance's To do as Needs you, the week's money in and out); the
+    Finance › To do door stays in their rail (Company › Finance). */
+export const homeOfRole = (_role: string | null | undefined): string => '/dashboard'
 /** (S44O — C6) What the house gate says of a role that may not open an address — its sentence and its one press. *(invented copy)* */
 export function roleGate(role: string | null | undefined): { help: string; label: string; href: string } {
   if (isMarketing(role)) return { help: 'Marketing looks after the studio’s leads — Leads, Reports › Leads, Settings › Lead management and Company › Integrations. An Owner or an Admin sets roles in Company › Members.', label: 'Go to Leads', href: '/leads' }

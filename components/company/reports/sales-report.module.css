@@ -35,6 +35,8 @@
 /* the house chart's card sits in the page's flow (Studio health's rule): its article margin gives way to the section's own gap */
 .chart { min-width: 0; }
 .chart > figure { margin: 0; }
+/* (the calm UI build 2026-10-27 — 5-21) a fold's text button in the ghost, where the page's stands (report-pill.module.css `.fold`) */
+.foldGhost { display: flex; }
 /* the ghost's plot: the house chart's line plot is 240 tall, 200 under 480 wide (article-chart.tsx LinePlot) — a phone */
 .plotGhost { display: block; height: 240px !important; }   /* over the bone's own inline height */
 @media (max-width: 543px) { .plotGhost { height: 200px !important; } }

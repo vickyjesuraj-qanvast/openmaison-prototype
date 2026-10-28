@@ -23,16 +23,16 @@ export function readiness(d: DocData, design: TemplateDesign, view: ClientView):
   if (!d.items.some((i) => i.kind === 'item' && !i.optional && i.status !== 'Declined' && i.change !== 'removed')) issues.push({ key: 'items', label: 'No items to price', detail: 'The quote has no line items yet — the table prints empty.', section: 'items', blocking: true })
   else if (d.quote.kind === 'variation' ? t.totalMinor === 0 : t.totalMinor <= 0) issues.push({ key: 'total', label: 'The total is S$0', detail: 'Every line is free or the discount clears the total.', section: 'items', blocking: false })
   if (!d.client.name.trim()) issues.push({ key: 'client', label: 'No client name', detail: 'The lead has no name to address the quote to.', section: 'general', blocking: true })
-  if (!d.quote.validUntil) issues.push({ key: 'valid', label: 'No valid-until date', detail: `General Info › ${variation ? 'Valid until' : 'Quote Valid Until'} is empty.`, section: 'general', blocking: false })
-  if (!d.preparedBy.name) issues.push({ key: 'prepared', label: 'Nobody is named as Prepared by', detail: 'General Info › Prepared by is empty.', section: 'general', blocking: false })
+  if (!d.quote.validUntil) issues.push({ key: 'valid', label: 'No valid-until date', detail: 'General info › Valid until is empty.'   /* (the calm UI build 2026-10-27, W-055 · W-200) the field's one name, the section's sentence case */, section: 'general', blocking: false })
+  if (!d.preparedBy.name) issues.push({ key: 'prepared', label: 'Nobody is named as Prepared by', detail: 'General info › Prepared by is empty.', section: 'general', blocking: false })
   if (!d.quote.siteAddress.trim() && design.blocks.some((b) => JSON.stringify(b).includes('{site_address}'))) issues.push({ key: 'address', label: 'No site address', detail: 'The template prints the site address and the quote has none.', section: 'general', blocking: false })
   if (has('payments') && view.paymentSchedule && d.quote.kind !== 'variation') {   /* (Projects round 5) a variation order has no schedule of its own */
     if (!pays.length) issues.push({ key: 'payments', label: 'No payment schedule', detail: 'The template prints a schedule and the quote has none.', section: 'payments', blocking: false })
-    else if (Math.abs(sumPct(pays) - 100) > 0.01) issues.push({ key: 'payments-sum', label: 'Payment schedule doesn’t add up to 100%', detail: `The milestones add up to ${sumPct(pays)}%.`, section: 'payments', blocking: true })
+    else if (Math.abs(sumPct(pays) - 100) > 0.01) issues.push({ key: 'payments-sum', label: 'Payment schedule doesn’t add up to 100%', detail: `The payments add up to ${sumPct(pays)}%.`, section: 'payments', blocking: true })
   }
   /* (fix-D, D-24) a variation order carries the contract's terms — its own T&Cs and notes are not asked for */
-  if (!variation && has('terms') && view.terms && !d.quote.termsHtml.replace(/<[^>]*>|&nbsp;/g, '').trim()) issues.push({ key: 'terms', label: 'Terms and Conditions are empty', detail: 'The template prints them; add a template or write them in the editor.', section: 'terms', blocking: false })
-  if (!variation && has('notes') && view.notes && !d.quote.notesHtml.replace(/<[^>]*>|&nbsp;/g, '').trim()) issues.push({ key: 'notes', label: 'Additional Notes are empty', detail: 'The template prints a notes block; it will be left out.', section: 'notes', blocking: false })
+  if (!variation && has('terms') && view.terms && !d.quote.termsHtml.replace(/<[^>]*>|&nbsp;/g, '').trim()) issues.push({ key: 'terms', label: 'Terms and conditions are empty', detail: 'The template prints them; add a template or write them in the editor.', section: 'terms', blocking: false })
+  if (!variation && has('notes') && view.notes && !d.quote.notesHtml.replace(/<[^>]*>|&nbsp;/g, '').trim()) issues.push({ key: 'notes', label: 'Additional notes are empty', detail: 'The template prints a notes block; it will be left out.', section: 'notes', blocking: false })
   /* (UX audit S1) The template prints a Bank details block and the issuing entity has none: the block prints nothing for the client, so say
      it here, with the way to Company › Profile where the entity's bank details are kept. */
   const entity = docEntity(d)

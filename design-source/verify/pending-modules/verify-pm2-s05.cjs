@@ -128,8 +128,8 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
     if (want(1)) {
       console.log('1 · Manage Stages: Settings › Lead management › Lead stages')
       await go(p, '/leads')
-      await p.getByRole('button', { name: /^All Leads/ }).first().click(); await settle(p, 400)
-      await p.getByRole('menuitem', { name: /Manage Stages/ }).click()
+      await p.getByRole('button', { name: /^All leads/ }).first().click(); await settle(p, 400)   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
+      await p.getByRole('menuitem', { name: /Manage stages/ }).click()
       await p.waitForURL(/\/settings\?section=leads/, { timeout: 15000 }).catch(() => {}); await settle(p, 1500)
       const u = new URL(p.url())
       ok(u.searchParams.get('section') === 'leads' && u.hash === '#lead-stages' && (u.searchParams.get('from') || '').startsWith('/leads'), 'Manage Stages opens Settings › Lead management at #lead-stages, with the way back to the listing')
@@ -147,7 +147,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       await card.locator('label').filter({ hasText: 'Ask for the next call or meeting’s date' }).click(); await settle(p, 1200)
       ok(/"contactNextStep":true/.test(sql(`select value from settings where key = 'lead_stage_rules'`)) && /"wonContract":true/.test(sql(`select value from settings where key = 'lead_stage_rules'`)), 'Contacted’s next step can be asked for; Won’s contract is back on')
       await p.locator('[data-testid="lead-stage-contacted"] a').click(); await p.waitForURL(/\/leads\?scope=contacted/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
-      ok(/All Leads|Contacted/.test(await p.getByRole('button', { name: /^Contacted \(/ }).first().innerText().catch(() => '')), 'a stage’s count opens the listing on that stage')
+      ok(/All leads|Contacted/.test(await p.getByRole('button', { name: /^Contacted · / }).first().innerText().catch(() => '')), 'a stage’s count opens the listing on that stage')   // (the calm UI build 2026-10-27, a deliberate change) — "Label · n" 
       /* a Designer reads it, never changes it */
       as('germaine')
       await go(p, '/settings?section=leads')
@@ -157,10 +157,12 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       await go(p, `/leads/${NUR}?move=contacted`); await settle(p, 1500)
       const w = dialog(p, 'Move stage')
       ok(await w.isVisible(), 'the Move stage window opens at Contacted')
-      ok(await w.getByText('Schedule a call/meeting', { exact: true }).count() === 0, 'before an outcome, no schedule block')
-      await w.getByRole('button', { name: 'WhatsApp', exact: true }).first().click().catch(() => {})
-      await pick(p, w.getByLabel('Outcome'), 'Connected')
-      ok(await w.getByText('Schedule a call/meeting', { exact: true }).count() === 1, 'with the studio’s ask, the schedule loses its “(optional)”')
+      /* (the calm UI build 2026-10-27, a deliberate change — 2-08 · 2-30) the log sheet's words at every width: "How it went" as chips, the
+         schedule block is "Call back (optional)" — with the studio's ask, "Call back" */
+      ok(await w.getByText(/^Call back/).count() === 0, 'before an outcome, no schedule block')
+      await w.getByRole('radio', { name: 'WhatsApp', exact: true }).first().click().catch(() => {})
+      await w.getByRole('radiogroup', { name: 'How it went' }).getByRole('radio', { name: 'Connected', exact: true }).first().click(); await settle(p, 300)
+      ok(await w.getByText('Call back', { exact: true }).count() === 1, 'with the studio’s ask, the schedule loses its “(optional)”')
       await w.getByRole('button', { name: 'Save', exact: true }).click(); await settle(p, 600)
       ok(await w.locator('[aria-invalid="true"]').count() >= 2 && /required/i.test(await w.innerText()), 'Save asks for the next call or meeting (and the proof of contact)')
       await shot(p, '02-contacted-asks-next-step-1440')
@@ -193,7 +195,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       console.log('2 · A commercial client’s company and UEN; a second client on the lead')
       await go(p, `/leads/${MARCUS}`)
       await p.getByRole('button', { name: 'Edit lead' }).first().click(); await settle(p, 600)
-      let f = dialog(p, 'Edit Lead')
+      let f = dialog(p, 'Edit lead')
       ok(await f.locator('[data-testid="lead-company"]').count() === 0, 'a home’s lead asks for no company')
       await pick(p, f.getByLabel('Property type'), 'Commercial — Office')
       ok(await f.locator('[data-testid="lead-company"]').count() === 1 && await f.getByLabel('UEN').count() === 1, 'an office asks for the company and its UEN')
@@ -206,7 +208,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       /* L-4 */
       await go(p, `/leads/${OLIVIA}`)
       await p.getByRole('button', { name: 'Edit lead' }).first().click(); await settle(p, 600)
-      f = dialog(p, 'Edit Lead')
+      f = dialog(p, 'Edit lead')
       await f.getByRole('button', { name: 'Add a second client' }).click(); await settle(p, 300)
       await f.getByLabel('Mobile (second client)').fill('12345678')
       await f.getByRole('button', { name: 'Save', exact: true }).click(); await settle(p, 500)
@@ -218,14 +220,14 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       ok(/Daniel Martinez · 9111 0000/.test(await p.locator('[data-testid="lead-second-client"]').first().innerText().catch(() => '')), 'the info column names the second client and their mobile')
       /* a new quote starts with them */
       await go(p, `/leads/${OLIVIA}/quotes?new=1`); await settle(p, 1200)
-      await p.locator('[data-testid="create-quote"]').getByRole('button', { name: /^Blank Quote/ }).first().click()
+      await p.locator('[data-testid="create-quote"]').getByRole('button', { name: /^Blank quote/ }).first().click()   // (the calm UI build 2026-10-27, a deliberate change) 2-51 · T-13: "Blank quote", sentence case
       await p.waitForURL(/\/quotes\/[0-9a-f-]{36}/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
       const qid = (/\/quotes\/([0-9a-f-]{36})/.exec(p.url()) || [])[1]
       ok(!!qid && sql(`select client2_name || '|' || client2_nric from quotes where id = '${qid}'`) === 'Daniel Martinez|S1234567D', 'a new quote starts with the lead’s second client (REG-588’s)')
       /* Client access offers them for the household */
       await go(p, `/leads/${OLIVIA}`)
       await p.getByRole('button', { name: 'More options' }).first().click(); await settle(p, 300)
-      await p.getByRole('menuitem', { name: 'Invite to Portal' }).click(); await settle(p, 1500)
+      await p.getByRole('menuitem', { name: /^(Client portal|Invite to the client portal|Invite to Portal)$/ }).click(); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) — the lead's ⋮ names the place as the project's ⋮ does: "Client portal"
       const co = p.locator('[data-testid="household-co-owner"]')
       ok(await co.count() === 1 && /Second client on the lead · 9111 0000/.test(await co.innerText()), 'Client access offers the second client for the household')
       await co.getByRole('button', { name: /^Add Daniel/ }).click(); await settle(p, 500)
@@ -234,7 +236,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       await p.keyboard.press('Escape'); await settle(p, 300); await p.keyboard.press('Escape'); await settle(p, 300)
       await go(p, `/leads/${BENJAMIN}`)
       await p.getByRole('button', { name: 'More options' }).first().click(); await settle(p, 300)
-      await p.getByRole('menuitem', { name: 'Invite to Portal' }).click().catch(() => {}); await settle(p, 1500)
+      await p.getByRole('menuitem', { name: /^(Client portal|Invite to the client portal|Invite to Portal)$/ }).click().catch(() => {}); await settle(p, 1500)   // (the calm UI build 2026-10-27, a deliberate change) — the lead's ⋮ names the place as the project's ⋮ does: "Client portal"
       ok(await p.locator('[data-testid="household-co-owner"]').count() === 0, 'a second client already on the household (Benjamin’s Mei Ling) is not offered twice')
       await p.keyboard.press('Escape'); await settle(p, 300)
     }
@@ -249,8 +251,8 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       ok(await a.locator('[data-testid="maison-row"]').filter({ hasText: 'Add Mrs Chua as a lead' }).count() === 1, 'the answer offers the lead, filled from the question')
       ok(await a.locator('[data-testid="maison-row"]').filter({ hasText: /Open .* — |This number is already a lead/ }).count() >= 1, '…and the lead that number already belongs to, first')
       await a.locator('[data-testid="maison-row"]').filter({ hasText: 'Add Mrs Chua as a lead' }).click(); await settle(p, 2200)
-      const cf = dialog(p, 'Create New Lead')
-      ok(await cf.isVisible() && await cf.getByLabel('Lead name').inputValue() === 'Mrs Chua' && await cf.getByLabel('Lead phone number').inputValue() === '9123 4567', 'Create New Lead opens filled — the name and the mobile')
+      const cf = dialog(p, 'New lead')   // (the calm UI build 2026-10-27, a deliberate change) — "New lead", its fields without "Lead"
+      ok(await cf.isVisible() && await cf.getByLabel(/^Name\*?$/).inputValue() === 'Mrs Chua' && await cf.getByLabel(/^Mobile number\*?$/).inputValue() === '9123 4567', 'New lead opens filled — the name and the mobile')
       ok(/HDB 4-Room/.test(await cf.innerText()) && /Instagram/.test(await cf.innerText()), '…the property type and the source')
       ok(!/new=1/.test(p.url()), 'the address keeps nothing of the landing')
       await shot(p, '05-maison-add-lead-1440')
@@ -270,7 +272,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       await fab(p)
       a = await ask(p, 'Change Olivia Martinez’s budget')
       await a.locator('[data-testid="maison-row"]').filter({ hasText: /Edit Olivia Martinez’s budget/ }).click(); await settle(p, 2500)
-      const ef = dialog(p, 'Edit Lead')
+      const ef = dialog(p, 'Edit lead')
       ok(await ef.isVisible() && await p.evaluate(() => document.activeElement?.closest('[data-field]')?.getAttribute('data-field')) === 'budget', '“Change …’s budget” opens Edit Lead on the budget')
       await ef.getByRole('button', { name: 'Cancel' }).click(); await settle(p, 400)
       /* the listing's three suggestions answer from its rows */
@@ -304,7 +306,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       await w.getByRole('button', { name: 'Attach' }).first().click(); await settle(p, 600)
       const am = dialog(p, 'Attach files')
       await am.locator('input[type="file"]').first().setInputFiles(png2Path); await settle(p, 2500)
-      await am.getByRole('button', { name: /^Attach 1 File/ }).click(); await settle(p, 600)
+      await am.getByRole('button', { name: /^Attach 1 file/i }).click(); await settle(p, 600)
       ok(await w.getByText('probe-s05-site.png').count() === 1, 'Attach meeting documents takes the lead’s own file (uploaded in the modal)')
       await shot(p, '07-quote-sent-upload-1440')
       await w.getByRole('button', { name: 'Save', exact: true }).click(); await settle(p, 3000)
@@ -352,7 +354,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       console.log('5 · Export: Quote status · Project type · Company · UEN · Second client')
       await go(p, '/leads')
       await p.getByRole('button', { name: 'More options' }).first().click(); await settle(p, 300)
-      await p.getByRole('menuitem', { name: 'Export all as…' }).click(); await settle(p, 600)
+      await p.getByRole('menuitem', { name: 'Export all…' }).click(); await settle(p, 600)   // (the calm UI build 2026-10-27, a deliberate change) — W-636's "Export all…"
       const ed = p.locator('[role="dialog"]').filter({ hasText: 'Export Leads' }).last()
       await pick(p, ed.getByLabel('Columns'), 'Everything')
       await pick(p, ed.getByLabel('Choose file format'), 'CSV')
@@ -377,7 +379,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       ok((await aw.getByLabel('Select a reason').innerText()).includes('Lead not contactable') && await aw.locator('[data-testid="return-attachment"]').count() >= 1, 'the return as it was sent: its reason (an older one read as Lead not contactable), its files')
       await aw.getByText('View all', { exact: true }).click(); await settle(p, 300)
       ok(await aw.locator('[data-testid="return-tips"] li').count() === 10 && /Need help\?/.test(await aw.innerText()), 'Tips › View all shows 1.0’s other conversion tips, and the help line')
-      await aw.getByRole('button', { name: 'Qanvast’s return policy' }).click(); await settle(p, 600)
+      await aw.getByText('Rules', { exact: true }).first().click(); await settle(p, 600)   // (the calm UI build 2026-10-27, a deliberate change) — 2-38: on this step the body's "Rules" link opens the policy; the head's (i) waits for the steps without one
       const pol = p.locator('[data-testid="return-policy"]')
       ok(await pol.isVisible() && /7 days after the lead arrived, until 30 days after/.test(await pol.innerText()) && /up to 2 times/.test(await pol.innerText()), 'the info control opens Qanvast’s return policy, from the rules the wizard reads')
       await shot(p, '08-return-policy-1440')
@@ -436,7 +438,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       ok(await p.getByRole('button', { name: 'Filter imports' }).count() === 0, 'Imports has no Filters that answered Coming soon')
       await go(p, `/leads/${OLIVIA}/files`)
       await p.getByRole('button', { name: 'New File' }).click(); await settle(p, 300)
-      ok(await p.getByRole('menuitem', { name: 'From Local Files' }).count() === 1 && await p.getByRole('menuitem', { name: 'From Company Files' }).count() === 0, 'Files › New has no From Company Files (no such library)')
+      ok(await p.getByRole('menuitem', { name: 'From your computer' }).count() === 1 && await p.getByRole('menuitem', { name: 'From Company Files' }).count() === 0, 'Files › New has no From Company Files (no such library)')
       await p.keyboard.press('Escape'); await settle(p, 300)
     }
 
@@ -480,7 +482,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       const am = dialog(p, 'Attach files')
       await am.locator('[data-testid="attach-type"]').click(); await settle(p, 300)
       await p.getByRole('menuitemradio', { name: 'PDF' }).click(); await settle(p, 400)
-      ok(/File Type: PDF/.test(await am.locator('[data-testid="attach-type"]').innerText()), 'File Type narrows to a kind and names it')
+      ok(/File type: PDF/i.test(await am.locator('[data-testid="attach-type"]').innerText()), 'File Type narrows to a kind and names it')
       const shown = await am.locator('[class*="tile"] [class*="tileName"]').allInnerTexts()
       ok(shown.length > 0 && shown.every((n) => /\.pdf$/i.test(n) || !/\.(png|jpe?g)$/i.test(n)), '…only PDFs are listed')
       await am.locator('[data-testid="attach-type"]').click(); await settle(p, 300)
@@ -503,7 +505,7 @@ const today = (() => { const d = new Date(); return `${d.getDate()}/${d.getMonth
       const n = Number(sql(`select count(*) from lead_files where lead_id = '${BENJAMIN}' and deleted_at is null and kind != 'folder' and parent_id = (select id from lead_files where lead_id = '${BENJAMIN}' and kind = 'folder' and name = 'Quotes & BOQ' and deleted_at is null and parent_id is null)`))
       await full.locator('button[aria-label$="actions"]').click(); await settle(p, 300)
       await p.getByRole('menuitem', { name: /^Tick its/ }).click(); await settle(p, 300)
-      ok(n > 0 && new RegExp(`Attach ${n} File`).test(await am.innerText()), `a folder’s ⋮ ticks every file inside it (${n})`)
+      ok(n > 0 && new RegExp(`Attach ${n} files?\\b`).test(await am.innerText()), `a folder’s ⋮ ticks every file inside it (${n})`)   // (the calm UI build 2026-10-27, a deliberate change) — "Attach n files", sentence case
       await full.click(); await settle(p, 400)
       ok((await am.locator('[data-testid="folder-crumbs"]').innerText()).includes('Quotes & BOQ') && await am.locator('[data-selected]').count() >= 1, 'a folder opens on a press — its files ticked')
       await am.getByRole('button', { name: 'Cancel' }).click(); await settle(p, 300)

@@ -47,6 +47,9 @@ export function RoomsPanel({ plan, sel, library, readOnly, drawing, onDraw, onAd
   const anchor = useRef<HTMLSpanElement>(null)
   const [traceMenu, setTraceMenu] = useState(false)
   const traceAnchor = useRef<HTMLSpanElement>(null)
+  /* (the calm UI build, 6-16) the floor plan's own ⋮ — Remove floor plan, the card's one destructive press, out of the card's line */
+  const [planMenu, setPlanMenu] = useState(false)
+  const planAnchor = useRef<HTMLButtonElement | null>(null)
   const indoor = plan.rooms.filter((r) => !OUTDOOR.includes(r.kind)).reduce((n, r) => n + r.w * r.d, 0)
   const u = plan.underlay
   const lv = levels.find((l) => l.id === level) ?? levels[0]
@@ -98,15 +101,27 @@ export function RoomsPanel({ plan, sel, library, readOnly, drawing, onDraw, onAd
           })}
         </ul>
       ) : null}
-      {/* (J-Q18) the project's floor plan under the drawing, at its true size */}
+      {/* (J-Q18) the project's floor plan under the drawing, at its true size — (the calm UI build 2026-10-27, 6-16 · W-417 · W-266 · W-133 · W-396)
+          said plainly: "Floor plan underneath" over its name, "Line up the floor plan", "Set its size…", and Remove floor plan in the card's ⋮ */}
       {u ? (
         <div className={styles.card} data-testid="planner-underlay">
-          <span className={styles.cardHead}><Icon name="layers" size={20} weight={300} /><span className={styles.cardTitle}>{`Under it: ${u.name || 'the floor plan'}`}</span></span>
+          <span className={styles.cardHead}>
+            <Icon name="layers" size={20} weight={300} />
+            <span className={styles.cardHeadText}><span className={styles.cardTitle}>Floor plan underneath</span>{u.name ? <span className={styles.cardText}>{u.name}</span> : null}</span>
+            {!readOnly ? (
+              <Tooltip label="More actions" disabled={planMenu}>
+                <IconButton icon="more_vert" label="More actions for the floor plan" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={planMenu}
+                            onClick={(e) => { planAnchor.current = e.currentTarget; setPlanMenu((o) => !o) }} data-testid="planner-underlay-menu" />
+              </Tooltip>
+            ) : null}
+          </span>
+          <PortalMenu open={planMenu} anchor={planAnchor} onClose={() => setPlanMenu(false)} role="menu" align="right" width={220} sheetTitle="Floor plan underneath">
+            <DropdownItem tone="danger" onSelect={() => { setPlanMenu(false); onUnderlay({ remove: true }) }}><span data-testid="planner-underlay-remove">Remove floor plan</span></DropdownItem>
+          </PortalMenu>
           <label className={styles.switchRow}><Switch size="sm" isSelected={u.visible} isDisabled={readOnly} onChange={(v: boolean) => onUnderlay({ visible: v })} aria-label="Show the floor plan" /><span>Show the floor plan</span></label>
           <Chips label="How strong" options={[{ value: '0.25', label: 'Faint' }, { value: '0.5', label: 'Half' }, { value: '0.8', label: 'Strong' }]} value={u.opacity <= 0.3 ? '0.25' : u.opacity >= 0.7 ? '0.8' : '0.5'} onChange={(v) => onUnderlay({ opacity: Number(v) })} disabled={readOnly || !u.visible} />
-          {!readOnly ? <label className={styles.switchRow}><Switch size="sm" isSelected={moveUnderlay} isDisabled={!u.visible} onChange={(v: boolean) => onMoveUnderlay(v)} aria-label="Move the floor plan" /><span>Move the floor plan to line it up</span></label> : null}
-          {!readOnly && onResize ? <button type="button" className={styles.link} onClick={onResize} data-testid="planner-resize">Change its size…</button> : null}   {/* (pending modules S28) */}
-          {!readOnly ? <button type="button" className={styles.link} onClick={() => onUnderlay({ remove: true })}>Take it away</button> : null}
+          {!readOnly ? <label className={styles.switchRow}><Switch size="sm" isSelected={moveUnderlay} isDisabled={!u.visible} onChange={(v: boolean) => onMoveUnderlay(v)} aria-label="Move the floor plan" /><span>Line up the floor plan</span></label> : null}
+          {!readOnly && onResize ? <button type="button" className={styles.link} onClick={onResize} data-testid="planner-resize">Set its size…</button> : null}   {/* (pending modules S28) */}
         </div>
       ) : plans.length && !readOnly ? (
         <div className={styles.card}>
@@ -190,8 +205,10 @@ export function FurniturePanel({ readOnly, onPlace, onPlaceDescribed, count }: {
 }
 
 /* ── Finishes (J-Q10) ─────────────────────────────────────────────────────────────────────────────────────────────────────────── */
-export function FinishesPanel({ plan, roomId, onRoom, library, readOnly, onFinish, onEveryRoom }: {
+export function FinishesPanel({ plan, roomId, onRoom, library, readOnly, onFinish, onEveryRoom, roomsOnStage = false }: {
   plan: PlanDoc; roomId: string | null; onRoom: (id: string) => void; library: LibraryMaterial[]; readOnly: boolean
+  /** (the calm UI build 2026-10-27, 6-31) in 3D and Walk beside the stage the rooms are the stage's strip — one place, not two; the panel's sub names the room */
+  roomsOnStage?: boolean
   onFinish: (roomId: string, surface: 'floor' | 'wall', id: string | null) => void
   onEveryRoom: (surface: 'floor' | 'wall', id: string | null) => void
 }) {
@@ -203,7 +220,7 @@ export function FinishesPanel({ plan, roomId, onRoom, library, readOnly, onFinis
   const pick = surface === 'floor' ? room.floor : room.wall
   return (
     <Panel title="Finishes" sub={`${room.name} · ${surface === 'floor' ? 'Floor' : 'Walls'}: ${look.name ?? 'the template’s colour'}`} testId="planner-finishes-panel">
-      <Chips label="Room" options={plan.rooms.map((r) => ({ value: r.id, label: r.name, swatch: (surface === 'floor' ? floorLook(r, library) : wallLook(r, library)).hex }))} value={room.id} onChange={onRoom} className={styles.roomChips} />
+      {roomsOnStage ? null : <Chips label="Room" options={plan.rooms.map((r) => ({ value: r.id, label: r.name, swatch: (surface === 'floor' ? floorLook(r, library) : wallLook(r, library)).hex }))} value={room.id} onChange={onRoom} className={styles.roomChips} />}
       <div className={styles.surfaceRow}>
         <Chips label="Surface" options={[{ value: 'floor', label: 'Floor' }, { value: 'wall', label: 'Walls' }]} value={surface} onChange={(v) => setSurface(v === 'wall' ? 'wall' : 'floor')} testId="planner-surface" />
         {!readOnly && plan.rooms.length > 1 ? <button type="button" className={styles.link} onClick={() => onEveryRoom(surface, pick)} data-testid="planner-every-room">{`Use on every room`}</button> : null}

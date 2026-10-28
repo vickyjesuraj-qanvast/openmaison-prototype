@@ -129,7 +129,7 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
       </Tooltip>
       {/* (REG-728) the standard 200 (a phone draws it as a sheet) */}
       <PortalMenu open={menu} anchor={moreRef} onClose={() => setMenu(false)} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle={label}>
-        <DropdownItem onSelect={() => { setMenu(false); setModal(true) }}>My Templates</DropdownItem>
+        <DropdownItem onSelect={() => { setMenu(false); setModal(true) }}>Templates</DropdownItem>
         <DropdownItem role="menuitemcheckbox" checked={visible} onSelect={() => { setMenu(false); toggleVisible(!visible) }}>
           <span className={styles.menuIcon} data-on={visible || undefined}><Icon name={visible ? 'check_box' : 'check_box_outline_blank'} size={20} /></span>Show in client view
         </DropdownItem>
@@ -137,7 +137,7 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
     </span>
   ) : (
     <div className={styles.actions}>
-      <button type="button" className={styles.link} onClick={() => setModal(true)}>My Templates</button>
+      <button type="button" className={styles.link} onClick={() => setModal(true)}>Templates</button>   {/* (the calm UI build 2026-10-27, W-270) the studio's library, not "My" */}
       <label className={styles.switchRow}>Show in client view <Switch size="sm" isSelected={visible} onChange={toggleVisible} aria-label="Show in client view" /></label>
     </div>
   )

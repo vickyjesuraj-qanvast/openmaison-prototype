@@ -7,7 +7,6 @@ import { Dialog } from '@/components/om/dialog'
 import { Chips } from '@/components/om/chips'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -122,8 +121,7 @@ export function ScheduleTemplateEditor({ data, from }: { data: ScheduleTemplateE
   return (
     <PageReveal skeleton={<ScheduleTemplateGhost />}>
       <div className={page.page} data-testid="schedule-template-editor">
-        <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Schedules', href: '/company/templates/schedules' }]} title={name.trim() || 'Untitled schedule'}
-                       chips={<><MetaChip>{plural(items.length, 'milestone')}</MetaChip>{template.usedBy ? <MetaChip>{plural(template.usedBy, 'schedule')} started from it</MetaChip> : null}</>}
+        <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Project schedules', href: '/company/templates/schedules' }]} title={name.trim() || 'Untitled schedule'}   /* (the calm UI build 2026-10-27, the UI audit's 4-06 · 4-11) the tab's name; no tags — the count is the meta row's, the usage the gallery card's */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateScheduleTemplate(template.id)).then((r) => { if (typeof r !== 'string') { snackbar({ message: couldnt('duplicate the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template duplicated' }); router.push(`/templates/schedules/${r}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
@@ -139,7 +137,7 @@ export function ScheduleTemplateEditor({ data, from }: { data: ScheduleTemplateE
           {readOnly ? <ReadOnlyNote text={`${readOnly.replace(/renames or deletes it$/, 'changes it')}.`} /> : null}
           <ReadOnlyScope readOnly={!!readOnly}>
           <div className={lib.card}>
-            <div className={lib.cardHead}><span className={lib.cardTitle}>Milestones</span><span className={lib.cardHelp}>Each one starts its gap in days after the one before ends; a negative gap overlaps them.</span></div>
+            <div className={lib.cardHead}><span className={lib.cardTitle}>Milestones</span><span className={lib.cardHelp}>Gap = days between one milestone and the next. Use a minus number to overlap.</span></div>
             <div className={lib.cardBody}>
               <div className={styles.items} role="table" aria-label="Milestones">
                 <span className={styles.head} /><span className={styles.head}>Milestone</span><span className={styles.head}>Days</span><span className={styles.head}>Gap (days)</span><span className={styles.head}>Client confirms</span><span className={styles.head} />
@@ -179,7 +177,7 @@ export function ScheduleTemplateEditor({ data, from }: { data: ScheduleTemplateE
           </ReadOnlyScope>
         </div>
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this schedule'}?`} confirmLabel="Delete" tone="danger"
-                       message="Schedules that started from it keep their milestones. You can restore it from Deleted Templates."
+                       message="Schedules that started from it keep their milestones. You can restore it from Deleted templates."
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteScheduleTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/schedules') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <ItemDetailsDialog open={details !== null} index={details ?? 0} items={items} readOnly={!!readOnly} onClose={() => setDetails(null)}
                            onSave={(p) => { if (details !== null) patch(details, p); setDetails(null) }} />

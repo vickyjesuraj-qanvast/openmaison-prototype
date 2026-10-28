@@ -295,13 +295,13 @@ const changedTables = (a, b) => [...new Set([...a.keys(), ...b.keys()])].filter(
     const menuOf = async (p, shotName) => { await p.getByRole('button', { name: 'More options' }).first().click(); await settle(p, 500); const t = (await p.locator('[role="menu"]').last().innerText().catch(() => '')).replace(/\s+/g, ' '); if (shotName) await shot(p, shotName); await p.keyboard.press('Escape'); await settle(p, 300); return t }
     await go(d, `/leads/${OLIVIA}/files/${FILE}`)
     const daneMenu = await menuOf(d, 'dane-file-menu-1440')
-    ok(/Open in AI Visualizer|Open this version in AI Visualizer/.test(daneMenu) && /Make a 3D picture/.test(daneMenu), 'Dane: a picture offers Open in AI Visualizer, a floor plan Make a 3D picture')
+    ok(/Open in AI Visualizer|Open this version in AI Visualizer/.test(daneMenu) && /Trace a floor-plan photo/.test(daneMenu) /* (the calm UI build 2026-10-27, a deliberate change) 6-06 */, 'Dane: a picture offers Open in AI Visualizer, a floor plan Make a 3D picture')
     await D.close()
     as('nurul')
     const M = await desk(); const m = await page(M, 'nurul-1440')
     await go(m, `/leads/${OLIVIA}/files/${FILE}`)
     const nurulMenu = await menuOf(m, 'marketing-file-menu-1440')
-    ok(nurulMenu.length > 0 && !/AI Visualizer/.test(nurulMenu) && !/Make a 3D picture/.test(nurulMenu) && /Show to client|Stop showing/.test(nurulMenu), 'Nurul (Marketing): the same menu without the two tools — the rest as it was')
+    ok(nurulMenu.length > 0 && !/AI Visualizer/.test(nurulMenu) && !/Trace a floor-plan photo/.test(nurulMenu) /* (the calm UI build 2026-10-27, a deliberate change) 6-06 */ && /Show to client|Stop showing/.test(nurulMenu), 'Nurul (Marketing): the same menu without the two tools — the rest as it was')
     await go(m, `/leads/${OLIVIA}/files`)
     ok(await m.locator('main').count() === 1 && !(await m.locator('main').innerText()).includes('You don’t have access'), 'Nurul: the lead’s Files open as before')
     /* the Move stage window still opens for Marketing (its reads are kept) */

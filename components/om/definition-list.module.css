@@ -6,9 +6,9 @@
 .col { composes: col from './card-table.module.css'; }   /* a switch, centred under its column name */
 .actionsHead { composes: actionsHead from './card-table.module.css'; }   /* the actions' blank head, gone on a phone */
 .actions { composes: actions from './card-table.module.css'; }   /* order · edit · delete at the row's end, a line of their own on a phone */
-.head, .row { grid-template-columns: minmax(240px, 1fr) 96px 96px 120px; }
+.head, .row { grid-template-columns: minmax(240px, 1fr) 96px 96px 56px; }   /* (the calm UI build 2026-10-27, 5-30) the tools are one ⋮ — was 120 for four */
 /* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
-@media (max-width: 1024px) { .head, .row { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
+@media (max-width: 1024px) { .head, .row { grid-template-columns: minmax(160px, 1fr) 80px 80px 56px; } }
 @media (max-width: 767px) { .head, .row { grid-template-columns: minmax(0, 1fr) 56px 56px; } }
 /* (responsive audit 2026-10-23, W6 — a bug fix, W4-17) On the narrowest phones (320 · 360) the two 56 switch columns and the handle left a
    question 52–92px: it broke one word a line, and at 320 the head's QUESTION ran into REQUIRED with 2px between them. There the name takes
@@ -38,6 +38,12 @@
 
 .text { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
 .name { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* (the calm UI build 2026-10-27, 5-30) the name is the row's press (Edit) — a quiet text button, the name as it was; doubled over the house reset */
+.nameBtn.nameBtn { all: unset; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); cursor: pointer; overflow-wrap: anywhere; }
+.nameBtn.nameBtn:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.nameBtn.nameBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.row:not([data-active]) .nameBtn.nameBtn { color: var(--om-color-on-surface-secondary); }
+.more { display: inline-flex; }
 .row:not([data-active]) .name { color: var(--om-color-on-surface-secondary); }   /* an inactive entry keeps its row, greyed */
 .meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .flag { display: inline-flex; align-items: center; cursor: pointer; }

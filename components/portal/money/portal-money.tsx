@@ -84,7 +84,7 @@ export function PortalMoneyView({ data, homes, methods }: { data: PortalData; ho
   return (
     <PageReveal skeleton={<PortalMoneyGhost />}>
       <PortalFrame look={data.look} slug={data.slug} tab="money" visitor={visitor} paused={data.paused} needs={data.needs}>
-        <div className={portal.hello}><h1 className={portal.h1}>Money</h1></div>
+        <div className={portal.hello}><h1 className={portal.h1}>Payments</h1></div>   {/* (the calm UI build 2026-10-27, 3-02 · W-046) the tab's own word */}
         {!homes.length ? (
           <EmptyState icon="payments" tone="plain" title="Nothing to pay yet" testId="portal-money-empty"
                       help={`Once your project with ${data.look.studio} begins, what you have paid and what is due show here, with how to pay.`} />

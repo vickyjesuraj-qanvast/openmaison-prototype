@@ -6,8 +6,8 @@ export type BookChangeKind = 'created' | 'imported' | 'edited' | 'approved' | 's
 export type ItemChange = { id: string; kind: BookChangeKind; changes: Record<string, [unknown, unknown]>; note: string | null; by: string | null; at: number }
 
 export const BOOK_FIELDS = [
-  { key: 'name', label: 'Name' }, { key: 'description', label: 'Description' }, { key: 'kind', label: 'Kind' }, { key: 'unit', label: 'Unit' },
-  { key: 'costMinor', label: 'Cost' }, { key: 'markupMinor', label: 'Markup' }, { key: 'category', label: 'Category' }, { key: 'vendor', label: 'Vendor' },
+  { key: 'name', label: 'Name' }, { key: 'description', label: 'Description' }, { key: 'kind', label: 'Type' }, { key: 'unit', label: 'Unit' },
+  { key: 'costMinor', label: 'Cost' }, { key: 'markupMinor', label: 'Markup' }, { key: 'category', label: 'Trade' }   /* (the calm UI build 2026-10-27, the UI audit's 4-01 · W-536) the item dialog's own names */, { key: 'vendor', label: 'Vendor' },
   /* (REG-653, price book parity Q-08) */ { key: 'link', label: 'Link' }, { key: 'thumb', label: 'Photo' },
   /* (pending modules S12) */ { key: 'wastePct', label: 'Waste' },
 ] as const

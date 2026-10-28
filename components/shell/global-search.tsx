@@ -1,7 +1,7 @@
 'use client'
 
 import { bringCardIntoView } from '@/components/company/use-hash-landing'
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -14,6 +14,7 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { useMediaQuery } from '@/lib/breakpoint'
 import { globalSearch } from '@/app/search/actions'
 import { withFrom } from '@/lib/nav'
 import { Keys } from '@/components/om/keys'
@@ -93,11 +94,24 @@ const Marked = ({ text, q }: { text: string; q: string }) => <>{marks(text, q).m
 /** (simplify S-14 · F1 §6.9.6) `member` — a Manager or a Designer: their empty search offers Log an expense · New purchase order · Record a
     supplier bill under Create (the shell knows who is signed in; the search does not ask).
     (parity map, FB-114) `accounting` — Accounting: the books' scopes, pages and Create rows only (the server reads the same rule). */
+/** (the calm UI build 2026-10-27) whether a real keyboard has pressed a key here — the key layer's `html[data-hw-keyboard]`, watched */
+function subscribeHwKeyboard(cb: () => void) {
+  const mo = new MutationObserver(cb)
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-hw-keyboard'] })
+  return () => mo.disconnect()
+}
+const hwKeyboardNow = () => document.documentElement.hasAttribute('data-hw-keyboard')
+
 export function GlobalSearch({ member = false, accounting = false, marketing = false, owner = false }: { member?: boolean; accounting?: boolean; /** (S44O — call C6) Marketing: the leads' scopes, pages and Create rows only (the server reads the same rule) */ marketing?: boolean; /** (pending modules S41b-5) the Owner's own pages (Qanvast Ops › Lead credits · Reviews) */ owner?: boolean } = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
   const sheet = useSheetLayout()
+  /* (the calm UI build 2026-10-27 — the audit's 1-37) no keyboard, no Keyboard shortcuts row: a touch screen's Go to leaves it out — until a
+     real keyboard has pressed a key there (the key layer's `html[data-hw-keyboard]`, the rule the list's own key foot follows) */
+  const touch = useMediaQuery('(hover: none)')
+  const hw = useSyncExternalStore(subscribeHwKeyboard, hwKeyboardNow, () => false)
+  const noKeys = (id: string) => !(touch && !hw && id === 'shortcuts')
   const snackbar = useSnackbar()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -186,7 +200,7 @@ export function GlobalSearch({ member = false, accounting = false, marketing = f
   /* What the list shows: typed → the groups (and "Show all" under All) then the pages; empty → recent searches, recently opened, Go to. */
   const q = query.trim()
   const shown = q && result ? result : null   // while a newer answer loads, the last one stays (dimmed)
-  const pages = useMemo(() => (q && scope === 'all' ? pageHits(q, { accounting, marketing, member, owner }).slice(0, 4) : []), [q, scope, accounting, marketing, member, owner])
+  const pages = useMemo(() => (q && scope === 'all' ? pageHits(q, { accounting, marketing, member, owner }).filter((h) => noKeys(h.id)).slice(0, 4) : []), [q, scope, accounting, marketing, member, owner, touch, hw])   // eslint-disable-line react-hooks/exhaustive-deps
   const creates = useMemo(() => (q && scope === 'all' ? createHits(q, { accounting, marketing, member }) : []), [q, scope, accounting, marketing, member])
   const sections: { key: string; label: string; count?: number; items: Item[] }[] = useMemo(() => {
     if (!q) {
@@ -195,7 +209,7 @@ export function GlobalSearch({ member = false, accounting = false, marketing = f
       /* (parity map, FB-114) what this browser opened before, only where Accounting may go */
       const reopen = accounting ? opened.filter((h) => accountingPage(h.href)) : marketing ? opened.filter((h) => marketingPage(h.href)) : opened   // (S44O — C6)
       if (reopen.length) out.push({ key: 'opened', label: 'Recently opened', items: reopen.map((hit) => ({ type: 'hit' as const, hit })) })
-      out.push({ key: 'go', label: 'Go to', items: (accounting ? ACCOUNTING_JUMP_TO : marketing ? MARKETING_JUMP_TO : JUMP_TO).map((id) => PAGES.find((p) => p.id === id)!).filter(Boolean).map((p) => ({ type: 'hit' as const, hit: { kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank: 0 } })) })
+      out.push({ key: 'go', label: 'Go to', items: (accounting ? ACCOUNTING_JUMP_TO : marketing ? MARKETING_JUMP_TO : JUMP_TO).filter(noKeys).map((id) => PAGES.find((p) => p.id === id)!).filter(Boolean).map((p) => ({ type: 'hit' as const, hit: { kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank: 0 } })) })
       out.push({ key: 'create', label: 'Create', items: createHits('', { member, accounting, marketing }).map((hit) => ({ type: 'hit' as const, hit })) })   // (UX audit V9)
       return out
     }
@@ -203,13 +217,21 @@ export function GlobalSearch({ member = false, accounting = false, marketing = f
       key: g.kind, label: g.label, count: g.total,
       items: [...g.hits.map((hit) => ({ type: 'hit' as const, hit })), ...(scope === 'all' && g.total > g.hits.length ? [{ type: 'more' as const, scope: scopeOf(g.kind), label: g.label, total: g.total }] : [])],
     }))
-    /* (UX audit V9) Go to and Create close the list — whichever holds the better answer first (a name before a line under it) */
+    /* (UX audit V9) Go to and Create close the list — whichever holds the better answer first (a name before a line under it).
+       (the calm UI build 2026-10-27 — the audit's 1-37) …except that a page that answers the words as well as a record does reads first: Go to
+       rises above every group whose best answer is no better than its own ("payments" finds the Payments places before a folder called so) */
     const tail = [
       ...(pages.length ? [{ key: 'page', label: 'Go to', count: pages.length, items: pages.map((hit) => ({ type: 'hit' as const, hit })), best: pages[0]!.rank }] : []),
       ...(creates.length ? [{ key: 'create', label: 'Create', count: creates.length, items: creates.map((hit) => ({ type: 'hit' as const, hit })), best: creates[0]!.rank }] : []),
     ].sort((a, b) => b.best - a.best)
-    return [...groups, ...tail.map((g) => ({ key: g.key, label: g.label, count: g.count, items: g.items }))]
-  }, [q, recent, opened, shown, scope, pages, creates, member, accounting, marketing])
+    /* Go to and Create keep their own order (the better answer first) and rise together above every record group whose best answer is no
+       better than theirs */
+    const tailBest = tail.length ? tail[0]!.best : null
+    const bests = (shown?.groups ?? []).map((g) => g.hits[0]?.rank ?? 0)
+    const at = tailBest === null ? groups.length : (() => { const i = bests.findIndex((b) => b <= tailBest); return i < 0 ? groups.length : i })()
+    const closing = tail.map((g) => ({ key: g.key, label: g.label, count: g.count, items: g.items }))
+    return [...groups.slice(0, at), ...closing, ...groups.slice(at)]
+  }, [q, recent, opened, shown, scope, pages, creates, member, accounting, marketing, touch, hw])   // eslint-disable-line react-hooks/exhaustive-deps
   const items = sections.flatMap((s) => s.items)
   const at = Math.min(active, Math.max(0, items.length - 1))
   /* each section's first row's place in the keyboard's walk */
@@ -301,7 +323,7 @@ export function GlobalSearch({ member = false, accounting = false, marketing = f
     <>
       <div className={styles.field}>
         <Icon name="search" size={20} weight={300} />
-        <input ref={input} className={styles.input} value={query} placeholder={accounting ? 'Search projects, invoices, POs, bills, vendors, tasks…' : marketing ? 'Search leads, tasks, notes, files…' : 'Search leads, projects, quotes, contracts, tasks, files…'} aria-label="Search the studio"
+        <input ref={input} className={styles.input} value={query} placeholder={sheet ? 'Search' : accounting ? 'Search projects, invoices, POs, bills, vendors, tasks…' : marketing ? 'Search leads, tasks, notes, files…' : 'Search leads, projects, quotes, contracts, tasks, files…'} aria-label="Search the studio"
                role="combobox" aria-expanded aria-controls="gs-list" aria-autocomplete="list" aria-activedescendant={items.length ? `gs-opt-${at}` : undefined}
                onChange={(e) => { setQuery(e.target.value); setActive(0) }} onKeyDown={onKeyDown} spellCheck={false} autoComplete="off" />
         {loading ? <span className={styles.spinner} aria-hidden /> : null}

@@ -10,7 +10,10 @@
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .page { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
+/* (the calm UI build 2026-10-27 — 5-23 · T-06) a sub-group label inside a card is sentence-case semibold 14, never capitals */
+.eyebrow { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* (5-14) the row's words first, its Connect at the card's right */
+.rowWords { flex: 1 1 240px; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .forms { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 /* (sweep S4 #20 · REG-727) The lead forms are a card table (components/om/card-table.module.css): a bordered list, a 40px caption
    head, 56px rows, the switch centred under its column. Here its tracks, and the row is the switch's label (it takes the press). */

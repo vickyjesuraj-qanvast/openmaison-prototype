@@ -7,10 +7,10 @@ import { useSeedStudio } from '@/lib/ghost-shape'   // (pending modules S31)
 import { slugFromName } from '@/lib/portal/model'
 import { CLIENT_PORTAL_TABS } from '@/lib/company/sections'
 import { useFlagPref } from '@/lib/prefs'
-import { LINKS_HELP, privacyStepLine } from '@/lib/portal/links'   // (pending modules S13)
+import { LINKS_HELP } from '@/lib/portal/links'   // (pending modules S13)
 import { PORTAL_SECTIONS, WELCOME_MAX } from '@/lib/portal/sections'
 import note from '@/components/company/read-only-note.module.css'
-import card from '@/components/leads/detail/card.module.css'
+import card from './portal-card.module.css'   // (the calm UI build 2026-10-27 — 5-23) the page's Company card head
 import plan from '@/components/company/plan/plan.module.css'
 import styles from './portal-setup.module.css'
 import sec from './portal-sections.module.css'
@@ -24,7 +24,7 @@ const TABS = CLIENT_PORTAL_TABS.map((t) => t.label)
 function CardGhost({ title, children, steps, stack = true }: { title: string; children?: React.ReactNode; steps?: StepGhost[]; /** the checklist's steps stack their line under their name; the clients' rows keep one line */ stack?: boolean }) {
   return (
     <section className={card.card}>
-      <div className={card.head}><div className={card.headText}><Words className={card.title}>{title}</Words></div></div>
+      <div className={card.head}><Words as="h2" className={card.title}>{title}</Words></div>
       {children ?? (
         <div className={styles.body}>
           <div className={styles.group}>
@@ -53,7 +53,7 @@ const stepGhosts = (mayRun: boolean, studio: string): StepGhost[] => [
   { title: 'Address', line: `app.openmaison.sg/my/${slugFromName(studio)} · made from your studio’s name. An old address keeps working after a change.`, tools: true, action: mayRun ? 'Change' : null },
   { title: 'Logo and colour', line: 'Taken from your brand kit. Nothing to enter again.', action: 'Open brand kit' },
   { title: 'How clients pay', line: studio === 'Demo Studio' ? 'Demo Studio Pte Ltd · bank transfer and PayNow, from Company › Profile.' : `Add the bank and PayNow your clients pay into, under ${studio} in Company › Profile.`, action: 'Open Profile' },
-  { title: 'Privacy notice', line: privacyStepLine({ privacy: '', terms: '', contact: '' }), action: mayRun ? 'Add the link' : null },
+  { title: 'Privacy notice', line: 'Not linked yet.', action: mayRun ? 'Add the link' : null },   // (the calm UI build 2026-10-27 — 5-37) as the page says it
   { title: 'Try it yourself', line: 'Open Ryan D’Souza’s page as they see it — read-only, nothing you do there is recorded.', action: 'See it as Ryan' },
 ]
 

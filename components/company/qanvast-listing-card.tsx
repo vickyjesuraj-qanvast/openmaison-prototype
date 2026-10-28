@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { profileTabOfHash } from '@/lib/company/sections'   // (the calm UI build 2026-10-27 — 5-36)
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { DemoNote } from '@/components/om/demo-note'
 import { MetaChip } from '@/components/om/meta-chip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
@@ -32,6 +35,7 @@ const day = (ms: number) => displayDate(new Date(ms))
  */
 export function QanvastListingCard({ data, canRun }: { data: ListingView; canRun: boolean }) {
   const snackbar = useSnackbar()
+  const router = useRouter()
   const { read, standIn } = data
   const [dialog, setDialog] = useState(false)
   const [what, setWhat] = useState(false)
@@ -71,10 +75,12 @@ export function QanvastListingCard({ data, canRun }: { data: ListingView; canRun
             <MetaChip color={CHIP_COLOR[state]}>{LISTING_WORDS.chip[state]}</MetaChip>
             {listed && pending ? <MetaChip color="blue">Changes waiting</MetaChip> : null}
             {listed && asked ? <MetaChip color="yellow">Changes asked</MetaChip> : null}
+            {/* (the calm UI build 2026-10-27 — 5-16, T-05) the stand-in said once, quietly: a Demo chip, its sentence the tooltip and the accessible
+                name — (S42E, E-21) the plays' half only for those who play */}
+            {standIn ? <DemoNote text={canRun ? SIMULATED_WORDS.listing : LISTING_SIMULATED_READ} testId="qanvast-simulated" /> : null}   {/* (the calm UI build 2026-10-27 — B1's request) the house DemoNote */}
           </span>
         </div>
         <p className={card.cardHelp}>{listed ? LISTING_WORDS.helpListed : LISTING_WORDS.helpNot}</p>
-        {standIn ? <span className={styles.hint} data-testid="qanvast-simulated">{canRun ? SIMULATED_WORDS.listing : LISTING_SIMULATED_READ}</span> : null}   {/* (S42E, E-21) the plays' half only for those who play */}
       </div>
 
       {/* where it stands — said from the record */}
@@ -137,14 +143,22 @@ export function QanvastListingCard({ data, canRun }: { data: ListingView; canRun
         /* a fact that isn't on record yet: the dialog closes (its words stay for the next open), the page lands on the card that keeps it and
            its field takes the focus — the UEN's, by its label */
         setDialog(false)
-        window.setTimeout(() => {
+        /* (the calm UI build 2026-10-27 — 5-36) Profile is four tabs: a card on another tab (Company details, About page) opens its tab first,
+           then the card lands and its field takes the focus, as before */
+        const tab = profileTabOfHash(to.card)
+        if (tab && !document.getElementById(to.card)) {
+          const u = new URL(window.location.href); u.searchParams.set('tab', tab); u.hash = to.card
+          router.replace(`${u.pathname}${u.search}${u.hash}`, { scroll: false })
+        }
+        const land = (tries: number) => {
           const el = document.getElementById(to.card)
-          if (!el) return
+          if (!el) { if (tries < 40) window.setTimeout(() => land(tries + 1), 100); return }
           el.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
           const label = to.field ? [...el.querySelectorAll('label')].find((l) => (l.textContent ?? '').startsWith(to.field!)) : null
           const field = (label?.htmlFor ? document.getElementById(label.htmlFor) : null) ?? el.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)')
           field?.focus({ preventScroll: true })
-        }, 260)
+        }
+        window.setTimeout(() => land(0), 260)
       }} /> : null}
     </section>
   )

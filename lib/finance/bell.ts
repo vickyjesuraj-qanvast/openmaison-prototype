@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { leadAssignees, leads, paymentsOut, projects, purchaseOrders, supplierBills, vendors } from '@/lib/db/schema'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { isAccounting } from '@/lib/settings/roles'
-import { deliveryLateDays, lateDeliveryTitle, poState } from './model'
+import { billWaiting, deliveryLateDays, lateDeliveryTitle, poState } from './model'
 import { moneyHref } from './server'
 import { displayDate } from '@/lib/format'
 import { money2 } from '@/lib/quotes/math'
@@ -29,8 +29,13 @@ export async function derivedBillRows(rules: NotificationRules, now: number): Pr
   const out: FeedRow[] = []
   for (const b of bills) {
     if (!b.dueOn) continue
-    const owed = b.totalMinor - paid.filter((p) => p.billId === b.id && !p.reversed).reduce((s, p) => s + p.amount, 0)
+    const paidMinor = paid.filter((p) => p.billId === b.id && !p.reversed).reduce((s, p) => s + p.amount, 0)
+    const owed = b.totalMinor - paidMinor
     if (owed <= 0) continue
+    /* (the Dashboard redesigned, 2026-10-26 — P-14, his Build mark; S44R's C8 rule) a bill still waiting for its OK is no bill to pay yet: To do
+       lists it under To approve, never To pay, and nothing may be paid on it — so it rings the approver (`bill_review`, stored when it was
+       recorded), never the payer. It rings here once it is approved. */
+    if (billWaiting({ approvalWhy: b.approvalWhy === 'limit' || b.approvalWhy === 'differs' ? b.approvalWhy : null, approvedAt: b.approvedAt?.getTime() ?? null }, paidMinor)) continue
     const due = b.dueOn.getTime()
     if (now < due - BILL_LEAD_DAYS * DAY) continue
     const late = now >= due + DAY

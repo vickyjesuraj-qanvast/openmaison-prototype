@@ -96,7 +96,7 @@ export function InvoiceSettings({ rules, canManage, linkProjects = true }: { rul
         </div>
         {canManage ? <div className={s.settingActions}>
           <Button variant="secondary" appearance="outlined" onPress={() => setTerms(saved.terms)} isDisabled={!dirty || busy}>Discard</Button>
-          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !termsOk} data-testid="invoice-settings-save">{busy ? 'Saving…' : 'Save invoice rules'}</Button>
+          <Button onPress={() => { void save() }} isDisabled={!dirty || busy || !termsOk} data-testid="invoice-settings-save">{busy ? 'Saving…' : 'Save'}   {/* (the calm UI build 2026-10-27, 5-18 · W-017) one Save label */}</Button>
         </div> : null}
       </div>
     </>

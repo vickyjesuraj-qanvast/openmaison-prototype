@@ -97,7 +97,7 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
     ok(new RegExp(`Confirm that electrical and plumbing is done[\\s\\S]*Finished ${dayMonth(EL_DONE)} · have a look and confirm`).test(await p.locator('[data-testid="portal-need"][data-kind="stage"]').innerText()), `board 1’s words: "Confirm that electrical and plumbing is done · Finished ${dayMonth(EL_DONE)} · have a look and confirm"`)
     { const sec = await portalSections(p); ok(sec.bar.slice(0, 3).join(',') === 'home,schedule,updates' && sec.bar[sec.bar.length - 1] === 'more' && sec.more[sec.more.length - 1] === 'files', 'the section bar: Home · Schedule · Updates first, More last with Files at its end (REG-1050)') }
     const stands = await p.locator('[data-testid="portal-stands"]').innerText()
-    ok(/Carpentry is under way/.test(stands) && stands.includes(`3 of 7 stages done. Handover is planned for ${dayLabel(SNAP_HAND)}.`), `Where the work stands, from the snapshot: "Carpentry is under way · 3 of 7 stages done. Handover is planned for ${dayLabel(SNAP_HAND)}."`)
+    ok(/Carpentry is under way/.test(stands) && stands.includes(`3 of 7 milestones done. Handover is planned for ${dayLabel(SNAP_HAND)}.`), `Where the work stands, from the snapshot: "Carpentry is under way · 3 of 7 milestones done. Handover is planned for ${dayLabel(SNAP_HAND)}." (the calm UI build 2026-10-27, a deliberate change: the client says milestones)`)
     ok(LIVE_HAND !== SNAP_HAND && !(await p.locator('main').innerText()).includes(dayMonth(LIVE_HAND)), `…the handover not shared yet (${dayMonth(LIVE_HAND)}) is nowhere on the page`)
     const latest = p.locator('[data-testid="portal-latest-update"]')
     /* (S42 A-03, R125) the demo's newest updates stay recent — every demo date moves with the day of the reset — so the line is read by its
@@ -119,7 +119,7 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
       ok((await stage(p, CA).innerText()).includes(shared) && /Under way/.test(await stage(p, CA).innerText()) && LIVE_CARP_END !== noOfIso(SNAP_CARP.end), `Carpentry as shared — ${shared}, Under way: the week it moved since is not shared, so it is absent`) }
     ok(/Confirmed/.test(await stage(p, MA).innerText()) && (await stage(p, MA).innerText()).includes(`You confirmed it ${dayMonth(MA_ANSWERED)}`), `the stage he confirmed earlier keeps its answer (Masonry & tiling, ${dayMonth(MA_ANSWERED)})`)
     ok(/Please confirm/.test(await stage(p, EL).innerText()), 'Electrical & plumbing: Please confirm')
-    ok(/Electrical and plumbing is finished/.test(await card(p).innerText()) && (await card(p).innerText()).includes(`marked this stage done on ${dayMonth(EL_DONE)}. Have a look when you are next at the flat, then tell us.`), 'the confirm card in board 2’s words')
+    ok(/Electrical and plumbing is finished/.test(await card(p).innerText()) && (await card(p).innerText()).includes(`marked this milestone done on ${dayMonth(EL_DONE)}. Have a look when you are next at the flat, then tell us.`), 'the confirm card in board 2’s words (the calm UI build 2026-10-27, a deliberate change: the client says milestones)')
     ok(await noOverflow(p), 'no sideways scroll at 390')
     await shot(p, 'schedule-390', true)
     ok(sql(`select schedule_seen_at from homeowner_lead_links where lead_id='${BEN}'`) !== seenBefore, 'his look at the Schedule is noted (what changes after it will be marked)')
@@ -134,7 +134,7 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
     ok(/Confirmed/.test(await stage(p, EL).innerText()), 'its row says Confirmed at once')
     await shot(p, 'confirmed-390', true)
     await p2.locator('[data-testid="portal-confirm-yes"]').click(); await settle(p2, 1200)
-    ok(/already answered for this stage/.test(await snack(p2).innerText()) && evs('project_stage_confirmed', EL) === 1, 'a second press (a page left open) is refused on the server — answered already')
+    ok(/already answered for this milestone/.test(await snack(p2).innerText()) && evs('project_stage_confirmed', EL) === 1, 'a second press (a page left open) is refused on the server — answered already')
     await p2.close()
     await go(p, '/my/demo-studio/schedule'); await settle(p, 800)
     ok(await card(p).count() === 0 && /Confirmed/.test(await stage(p, EL).innerText()) && /You confirmed it/.test(await stage(p, EL).innerText()), 'reloaded, the answered stage stays — with its answer (1.0 dropped it, I-263)')
@@ -145,7 +145,7 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
     ok(await card(p).count() === 1 && /Hacking and demolition is finished/.test(await card(p).innerText()), 'a stage the studio asks about gets its card')
     sql(`update project_milestones set confirm_asked_at = null where id='${HA}'`)
     await p.locator('[data-testid="portal-confirm-yes"]').click(); await settle(p, 1200)
-    ok(/hasn’t asked you to confirm this stage/.test(await snack(p).innerText()) && !sql(`select confirm_answer from project_milestones where id='${HA}'`), 'a confirm on a stage not asked is refused on the server — and nothing is written')
+    ok(/hasn’t asked you to confirm this milestone/.test(await snack(p).innerText()) && !sql(`select confirm_answer from project_milestones where id='${HA}'`), 'a confirm on a stage not asked is refused on the server — and nothing is written')
 
     // Something is not right
     sql(`update project_milestones set confirm_asked_at = strftime('%s','now') where id='${HA}'`)
@@ -236,10 +236,10 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
     await shot(s, 'studio-updates-1440')
     await go(s, `/projects/${BEN_P}`)
     await s.getByRole('button', { name: 'More options' }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: /Invite to Portal/ }).click(); await settle(s, 1500)   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1500) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
     const sections = await s.locator('[data-testid="access-sections"]').innerText()
     { const pub = Number(sql(`select count(*) from project_updates u join projects p on p.id = u.project_id where p.lead_id='${BEN}' and u.status='published' and u.deleted_at is null`))
-      ok(new RegExp(`Schedule[\\s\\S]*Shared ${dayMonth(SHARE_DAY)} · 1 stage to confirm`).test(sections) && new RegExp(`Updates[\\s\\S]*${pub} published · 1 waiting for review`).test(sections), `Client access › What Benjamin can see: Schedule "Shared ${dayMonth(SHARE_DAY)} · 1 stage to confirm" · Updates "${pub} published · 1 waiting for review"`) }
+      ok(new RegExp(`Schedule[\\s\\S]*Shared ${dayMonth(SHARE_DAY)} · 1 milestone to confirm`).test(sections) && new RegExp(`Updates[\\s\\S]*${pub} published · 1 waiting for review`).test(sections), `Client access › What Benjamin can see: Schedule "Shared ${dayMonth(SHARE_DAY)} · 1 milestone to confirm" (the calm UI build 2026-10-27, a deliberate change: the client says milestones) · Updates "${pub} published · 1 waiting for review"`) }
     ok(/Confirm that hacking and demolition is done/.test(await s.locator('[data-testid="access-waiting"]').innerText()), '…Waiting on Benjamin: the stage asked again')
     await shot(s, 'access-1440')
     await s.keyboard.press('Escape'); await settle(s, 300)
@@ -268,7 +268,7 @@ const MA_ANSWERED = atDay(sql(`select confirm_answered_at from project_milestone
     console.log('Benjamin at a desk (1440) · Paused')
     const D = await desk(); const d = await D.newPage(); watch(d, 'client-1440')
     await signIn(d)
-    ok((await d.locator('main').innerText()).includes(`Carpentry is under way; handover is planned for ${dayLabel(LIVE_HAND)}.`) && /3 of 7 stages done/.test(await d.locator('[data-testid="portal-stands"]').innerText()), `once shared, the home reads the new handover, ${dayLabel(LIVE_HAND)} (board 7’s line and its stage list)`)
+    ok((await d.locator('main').innerText()).includes(`Carpentry is under way; handover is planned for ${dayLabel(LIVE_HAND)}.`) && /3 of 7 milestones done/.test(await d.locator('[data-testid="portal-stands"]').innerText()), `once shared, the home reads the new handover, ${dayLabel(LIVE_HAND)} (board 7’s line and its stage list)`)
     await shot(d, 'home-1440', true)
     await go(d, '/my/demo-studio/schedule'); await settle(d, 600)
     ok(await card(d).count() === 1 && await noOverflow(d), 'the Schedule at 1440: the stage asked again, beside the studio’s note')

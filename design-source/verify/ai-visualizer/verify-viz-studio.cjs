@@ -18,7 +18,7 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   console.log('1 · the landing and the ways in')
   await page.goto(`${B}/visualizer`); await page.waitForTimeout(1500)
   check('landing titled AI Visualizer', (await page.locator('h1').first().textContent())?.trim() === 'AI Visualizer')
-  check('the bar reads its contents, not the title again', await page.getByRole('heading', { name: 'All designs' }).isVisible())
+  check('the bar reads its contents, not the title again', await page.getByRole('heading', { name: /^(All designs|Designs)$/ }).isVisible())   // (the calm UI build 2026-10-27, a deliberate change) 6-20: the library's root reads "Designs"
   check('Kevin Ng’s design is a card', await page.getByTestId('library-card').filter({ hasText: 'Kevin Ng' }).count() === 1)
   check('the Showroom ideas folder holds its design', (await page.getByText('Showroom ideas').count()) > 0)
   await shot('viz-01-landing')
@@ -54,7 +54,10 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
   check('the change is listed', ((await page.getByTestId('viz-changes').textContent()) ?? '').includes('Walls → Cool Grey'))
   check('Generate waits no more', await page.getByTestId('viz-generate').isEnabled())
+  /* (the calm UI build 2026-10-27, a deliberate change) — 6-04 · W-248: the line sits behind the tune button beside Generate (its tooltip, and the head of its switches) */
+  await page.getByTestId('viz-options-toggle').click(); await page.waitForTimeout(300)
   check('versions and quality fold into one line', ((await page.getByTestId('viz-options').textContent()) ?? '').includes('Makes 1 version · Fast'))
+  await page.getByTestId('viz-options-toggle').click(); await page.waitForTimeout(300)
   await page.keyboard.press('Meta+z'); await page.waitForTimeout(300)
   check('⌘Z takes the pick back', (await page.getByTestId('viz-changes').count()) === 0)
   await page.keyboard.press('Meta+Shift+z'); await page.waitForTimeout(300)

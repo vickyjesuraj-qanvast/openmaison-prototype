@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
-import { MetaChip } from '@/components/om/meta-chip'
 import { withFrom } from '@/lib/nav'
 import { displayDate } from '@/lib/format'
 import { categoryIcon, categoryLabel, readWords, type ArticleCard } from '@/lib/market-insights/model'
@@ -12,8 +11,9 @@ import { rememberPeek } from './peek'
 import gallery from '@/components/company/templates/quote-templates-gallery.module.css'
 import styles from './market-insights.module.css'
 
-/** The line over a card's title: its category, and — for the demo's own articles — that it is a sample. */
-export const eyebrowOf = (a: ArticleCard) => [categoryLabel(a.category), a.sample ? 'Sample' : null].filter(Boolean).join(' · ')
+/** The line over a card's title: its category. (the calm UI build 2026-10-27, 6-12 · W-413) A sample says so once a page — the list's note
+    and the article's — no longer "· Sample" on every card. */
+export const eyebrowOf = (a: ArticleCard) => categoryLabel(a.category)
 /** When it came out and how long it takes — "9 Oct ’26 · 5 min read". */
 export const whenOf = (a: ArticleCard) => `${displayDate(new Date(a.publishedAt))} · ${readWords(a.readMinutes)}`
 /** The article's own byline line — (S42E, E-17) the house date as the list and ⌘K say it, "9 Oct ’26 · 5 min read". */
@@ -54,7 +54,9 @@ export function ArticleCardView({ a, here }: { a: ArticleCard; here: string }) {
 }
 
 /** (1.0's FeaturedArticleCard) The featured article as one wide card: its cover with the Featured tag beside its category, title, first
-    lines, tags and byline. Shown only on All with no search, as 1.0 did. */
+    lines, tags and byline. Shown only on All with no search, as 1.0 did. (the calm UI build 2026-10-27, 6-34 · 6-08) The first lines sit under
+    the title (the words were pushed to the card's foot, a hole under the title), and the tags are drawn as the article's own (its tag chips, in
+    their own case — not capital tags); the card itself is the link, so here they are words, and each opens its search on the article's page. */
 export function FeaturedArticle({ a, here }: { a: ArticleCard; here: string }) {
   return (
     <Link href={withFrom(`/market-insights/${a.id}`, here)} onClick={() => peek(a)} className={styles.featured} data-testid="insight-featured" data-article={a.id}
@@ -67,7 +69,7 @@ export function FeaturedArticle({ a, here }: { a: ArticleCard; here: string }) {
         <span className={styles.eyebrow}>{eyebrowOf(a)}</span>
         <span className={styles.featuredTitle}>{a.title}</span>
         {a.excerpt ? <span className={styles.featuredExcerpt}>{a.excerpt}</span> : null}
-        {a.tags.length ? <span className={styles.tags}>{a.tags.map((t) => <MetaChip key={t}>{t}</MetaChip>)}</span> : null}
+        {a.tags.length ? <span className={styles.tags}>{a.tags.map((t) => <span key={t} className={styles.tag}>{t}</span>)}</span> : null}
         <span className={styles.byline}>
           <Avatar name={a.author} color="var(--om-color-primary-default)" size={36} tooltip={false} />
           <span className={styles.bylineText}><span className={styles.author}>{a.author}</span><span className={styles.when}>{whenOf(a)}</span></span>

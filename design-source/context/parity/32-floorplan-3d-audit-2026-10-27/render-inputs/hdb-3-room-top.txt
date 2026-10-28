@@ -1,0 +1,27 @@
+Using this top-down floor plan as the exact layout reference, generate a photorealistic bird's-eye render of the home viewed straight down from directly above (90 degrees overhead, no perspective tilt).
+
+- No ceiling — every room's interior is fully visible from above.
+- The plan is axis-aligned; keep the render axis-aligned too. The walls must stay PARALLEL TO THE IMAGE EDGES — do NOT rotate the layout or present it diamond-oriented.
+- The building footprint (outer wall outline) must match the plan's outline EXACTLY — same shape, same notches, same proportions.
+- Keep the EXACT same layout: same wall positions, same door and window placements. Do not add, move, or remove any room, wall, door, or window.
+- FIDELITY CHECK before finishing: your render must contain the same number of bedrooms, the same number of bathrooms, and the same kitchen position as the plan, each in the same relative location.
+- Furnish each room appropriately for its function (beds in bedrooms, sofa and TV in the living room, dining table, kitchen cabinetry and appliances, bathroom fixtures) in a modern, tasteful interior style.
+- NO TEXT anywhere in the output: no room names, labels, dimensions, captions, watermarks, or annotations — even if the input plan has text on it, the render must be a clean photorealistic image with zero text.
+- Photorealistic materials, realistic soft daylight with gentle shadows.
+
+RENDER QUALITY & CONTEXT:
+- The output must be a PHOTOGRAPH-QUALITY 3D render: physically-based materials, realistic lighting, soft shadows — as if ray-traced. It must NOT look like a sketch, drawing, illustration, line art, watercolor, or flat vector graphic. The input is only a geometric blueprint — do NOT inherit its line-drawing style.
+- NO SURROUNDINGS: no grass, garden, trees, roads, pavement, terrain, or any site context around the building. The unit sits alone on a clean, solid, neutral studio background.
+
+ROOM INVENTORY — detected from the plan. Your render must contain EXACTLY these rooms and nothing else:
+1. Living / Dining (top-left): sofa, TV console, dining table and chairs
+2. Kitchen (top-right): kitchen cabinetry, hob, fridge, sink
+3. Bathroom (right): shower, toilet, vanity
+4. Service yard (right): washing machine, drying rack
+5. Bedroom 2 (bottom-left): single bed, wardrobe, study desk
+6. Store (centre): shelves
+7. Master bathroom (bottom): shower, toilet, vanity
+8. Master bedroom (bottom-right): queen bed, bedside tables, wardrobe
+Totals: 8 rooms in all · 2 bedroom(s) · 2 bathroom(s)/WC(s).
+HARD RULE: do NOT add any extra bedroom, bed, bathroom, wall, or room that is not in this inventory. Do NOT merge, split, or omit any listed room. Each room's furniture must match its listed key items.
+This inventory is LAYOUT INFORMATION ONLY — do NOT write any of these names, or any other text, label, caption, or annotation, anywhere in the render. The output must be a clean photorealistic image containing ZERO text.

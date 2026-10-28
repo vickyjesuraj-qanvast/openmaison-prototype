@@ -1,0 +1,19 @@
+/* (the calm UI build 2026-10-27 — 5-19 · 5-20) A report's pill: the house scope pill in its own box (a bar's flex row holds it), never shrunk. */
+.wrap { display: inline-flex; flex-shrink: 0; min-width: 0; max-width: 100%; }
+.tip { display: inline-flex; min-width: 0; max-width: 100%; }
+
+/* (T-05) "How these are counted" — the foot's place under a report (insights-view.module.css `.foot`'s 16 above), the button flush left, the
+   words the foot's own type once open */
+.how { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); margin-top: var(--om-spacing-4); }
+.howText { margin: 0; max-width: 880px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+/* (5-07 · 5-09) a tile's figure that says how it counts on hover and focus — the house tile's (money.module.css `.tileValue`) */
+.tileValue { outline-offset: 2px; }
+
+/* (T-14) a fold's text button under a table, flush left */
+.fold { display: flex; justify-content: flex-start; }
+
+/* (REG-708) the house chart's small text button in a ghost: 32, as the DS `size="sm"` (doubled over the ghost kit's 36) */
+.ghostSm.ghostSm { height: 32px; }

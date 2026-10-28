@@ -14,7 +14,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { FileTile } from '@/components/leads/move-stage/fields'
-import { displayDate, displayDue, formatInputDateTime, parseInputDateTime } from '@/lib/format'
+import { displayDate, formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import type { Member, Tag } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
 import { TagPicker } from './tag-picker'
@@ -140,30 +140,36 @@ export function TaskPanel({
         <DrawerAction icon="more_vert" label="More" expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)} />
         {/* Panel kebab (frame 160): 200-wide menu → "Save as Template" · "Delete" (red). One phrase everywhere (build plan). */}
         <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={MENU_WIDTH.standard} sheetTitle="Task">
-          <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('template') }}>Save as Template</DropdownItem>
+          <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('template') }}>Save as a template</DropdownItem>
           <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onMenu('delete') }}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
         </Dropdown>
       </span>
     </>
   )
 
-  // Footer (956,68): Buttons Primary/36/Filled leading icon radio_button_unchecked "Mark as Completed", full width. The mock has no
-  // done-state footer — the same button reads "Completed" with check_circle and pressing it reopens the task.
+  // Footer (956,68): Buttons Primary/36/Filled leading icon radio_button_unchecked "Mark as done" (the calm UI build 2026-10-27, 1-23 · W-044 — was
+  // "Mark as Completed"), full width. The mock has no done-state footer — the same button reads "Completed" with check_circle and pressing it
+  // reopens the task.
   const footer = (
     <Button className={styles.fullWidth}
             iconStart={<Icon name={task.done ? 'check_circle' : 'radio_button_unchecked'} size={20} fill={task.done} />}
             onPress={onToggleDone}>
-      {task.done ? 'Completed' : 'Mark as Completed'}
+      {task.done ? 'Completed' : 'Mark as done'}
     </Button>
   )
+  /* (the calm UI build 2026-10-27, 1-23 · W-231 · 1-16) The record the task is for, named as what it is: a project's task says "Project" and the
+     project (its name and number, as the table's For cell does), a lead's "Lead", a task on neither "For · General task" (was "Lead · Studio",
+     and "Lead" over a project). */
+  const forKey = lead?.project ? 'Project' : lead ? 'Lead' : 'For'
+  const forName = (l: TaskLead) => (l.project ? `${l.project.name} · ${l.project.number}` : l.name)
 
   /* ── the panel's blocks, shared by the desk's order and the touch order (L4 — C-24) ── */
   const kv = (
       <dl className={styles.kv}>
         {lead !== undefined ? (
           <>
-            <dt className={styles.key}>Lead</dt>
-            <dd className={styles.value}>{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.project ? `${lead.name} · ${lead.project.number}` : lead.name}</NextLink> : 'Studio'}</dd>   {/* (fix-A, A-20) */}
+            <dt className={styles.key}>{forKey}</dt>
+            <dd className={styles.value}>{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{forName(lead)}</NextLink> : 'General task'}</dd>   {/* (fix-A, A-20) */}
           </>
         ) : null}
         <dt className={styles.key}>Creator</dt>
@@ -226,7 +232,7 @@ export function TaskPanel({
           <button ref={setAddTagEl} type="button" className={styles.link} aria-haspopup="dialog" aria-expanded={pickerOpen}
                   onClick={() => setPickerOpen((o) => !o)}>
             <Icon name="add" size={20} />
-            Add Tag
+            Add tag
           </button>
           <TagPicker open={pickerOpen} tags={tags} value={task.tags.map((t) => t.id)} anchor={addTagEl}
                      onChange={onTags} onCreate={onCreateTag}
@@ -252,7 +258,7 @@ export function TaskPanel({
           </div>
         ) : null}
         <Button className={styles.fullWidth} variant="secondary" appearance="outlined" iconStart={<Icon name="attach_file" size={20} />} onPress={onAttach}>
-          Attach Files
+          Attach files
         </Button>
       </section>
   )
@@ -262,12 +268,12 @@ export function TaskPanel({
     return (
       <Drawer open={open} title="Task" actions={actions} footer={footer} onClose={onClose}>
         {lead !== undefined ? (
-          <p className={styles.forLine} data-testid="panel-for">{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.project ? `${lead.name} · ${lead.project.number}` : lead.name}</NextLink> : 'Studio task'}</p>
+          <p className={styles.forLine} data-testid="panel-for">{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{forName(lead)}</NextLink> : 'General task'}</p>
         ) : null}
         <div className={styles.fields} data-compact="">
           {nameField}
           <div className={styles.when} data-testid="panel-when">
-            <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} />
+            <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} weekday />
             <DuePresetChips value={dueShown} now={today.getTime()} label="Due date presets" testId="panel-due-presets"
                             onChange={(d) => { if (d) changeDue(formatInputDateTime(d)); else if (task.dueAt) void onChange({ dueAt: null }) }} />
           </div>
@@ -295,7 +301,8 @@ export function TaskPanel({
           local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
       <div className={styles.fields}>
         {nameField}
-        <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} helper={dueShown ? displayDue(dueShown) : undefined} />
+        {/* (the calm UI build 2026-10-27, 1-23 · 1-24) the due once — the field; its helper repeated the same moment in a second format */}
+        <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} weekday />
         {milestoneField}
         {descriptionField}
         {taskLink}

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const [data, card] = await Promise.all([fetchSigning(id), linkCard('sign', id)])
   /* (pending modules S02) the agreement's card; the tab names the quote and the studio */
-  return linkMetadata('sign', id, `/sign/${id}/quote`, { card, pageTitle: data?.quote ? `Quotation · ${data.quote.number} · ${card.studio}` : card.pageTitle })
+  return linkMetadata('sign', id, `/sign/${id}/quote`, { card, pageTitle: data?.quote ? `Quote · ${data.quote.number} · ${card.studio}` : card.pageTitle })
 }
 
 /**

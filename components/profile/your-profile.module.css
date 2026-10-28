@@ -1,5 +1,9 @@
 /* (pending modules S01) Your profile — Company › Profile's cards (profile-view.module.css); only what is its own lives here. */
 .role { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27 — the audit's 1-29) a card's title with its role chip beside it */
+.titleRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.roleChip { display: inline-flex; border-radius: var(--om-radius-1); }
+.roleChip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 /* the signature's face as a quote's Signature section draws it (signature-section.module.css .box), at a signature's width */
 .signature { max-width: 480px; }
 /* (pending modules S03) the consent switch's row — the contract Automation's switch row (label, its line, the sm switch at the end) */

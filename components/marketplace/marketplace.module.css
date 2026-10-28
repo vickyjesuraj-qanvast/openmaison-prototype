@@ -6,14 +6,19 @@
  * at 3:2 (the gallery's well holds a page), the logo sits on the seam (1.0's card), the banners' strip and the deal's words.
  */
 
-/* the page under the L1 header: 24 in, the bar · the categories · the cards 24 apart (16 between the bar and the categories) */
+/* the page under the L1 header and its Brands | Deals strip: 24 in, the banners · the bar · the cards 24 apart */
 .content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
 .filters { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+/* (the calm UI build 2026-10-27, 6-01 · 6-27) ONE row: the Category scope pill at the left (the listing's place for a scope pill), the search
+   and the Sort pill at the right — the views are the house Tabs over it, the categories one pill instead of a rail of nine chips */
 .bar { composes: bar from '../om/tab-toolbar.module.css'; }
 .views { flex: 1; min-width: 0; display: flex; align-items: center; }
 .tools { composes: actions from '../om/tab-toolbar.module.css'; }
 .pillAnchor { position: relative; display: inline-flex; }
-.rail { min-width: 0; }
+/* the Brands | Deals strip sticks under the L1 header, as Qanvast Ops' does (REG-368): 8 + the header's 68 on a desk, the phone's bar + 60;
+   doubled, so the house strip's own `position: relative` can't win it back */
+.tabsHost { display: contents; }
+.stickyTabs.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 68px); z-index: 19; }
 
 /* ── the banners (1.0's hero banners): a strip of pictures, one a view on a desk, the next one peeking on a phone ─────────────────── */
 .banners { position: relative; min-width: 0; }
@@ -22,14 +27,15 @@
   border-radius: var(--om-radius-2);
 }
 .bannerTrack::-webkit-scrollbar { display: none; }
+/* (the calm UI build 2026-10-27, 6-01) half as tall — 120, a strip the eye passes on its way to the brands, not the first screen's subject */
 .banner {
-  position: relative; flex: 0 0 100%; height: 220px; scroll-snap-align: start; border-radius: var(--om-radius-2); overflow: hidden;
+  position: relative; flex: 0 0 100%; height: 120px; scroll-snap-align: start; border-radius: var(--om-radius-2); overflow: hidden;
   display: flex; align-items: flex-end; text-decoration: none; color: var(--om-color-on-inverse-surface-default); background: var(--om-color-surface-bg);
 }
 .banner > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--motion-toggle); }
 /* the words sit on a scrim at the foot of the picture, so they read on any photo */
 .banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--om-color-overlay-60p), transparent 70%); pointer-events: none; }
-.bannerText { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-6); max-width: 640px; }
+.bannerText { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-5) var(--om-spacing-6); max-width: 640px; }
 .bannerTitle { font: var(--om-type-heading-h4); }
 .bannerLine { font: var(--om-type-body-m); }
 .banner:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
@@ -44,37 +50,37 @@
 /* the brand's logo on the seam between its photo and its words (1.0's card): the house square at 48, on white */
 .logo { composes: thumb from '../om/thumb.module.css'; position: absolute; left: var(--om-spacing-4); bottom: calc(-1 * var(--om-spacing-6)); width: 48px; height: 48px; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
 .logo > img { object-fit: contain; }
-.brandBody.brandBody { padding-top: var(--om-spacing-8); }
-/* the ribbons over the photo: Featured and the brand's first deal (a button of its own — it opens the deal) */
+/* the card's words: the name and ONE meta line, 16 to the card's foot (the ⋮ sits centred on the two); 32 at the top only when a logo sits on
+   the seam (the calm UI build 2026-10-27, 6-01: the demo's drawn monograms are not drawn) */
+.brandBody.brandBody { padding-bottom: var(--om-spacing-4); }
+.brandBody.brandBody[data-logo] { padding-top: var(--om-spacing-8); }
+.metaLine.metaLine { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
+/* the badge over the photo: how many deals the brand has (a button of its own — one deal opens it, several the brand's page) */
 .ribbons { position: absolute; top: var(--om-spacing-3); left: var(--om-spacing-3); right: var(--om-spacing-3); z-index: 2; display: flex; gap: var(--om-spacing-2); align-items: flex-start; min-width: 0; pointer-events: none; }
 /* the gallery's ribbon (the template card's tag), set in this row rather than in its own corner — doubled, so the order the stylesheets land
    in never decides it (REG-422's rule) */
 .flag { composes: ribbon from '../company/templates/quote-templates-gallery.module.css'; }
 .flag.flag { position: static; flex-shrink: 0; pointer-events: auto; }
 .dealRibbon.dealRibbon {
-  flex-shrink: 1; min-width: 0; max-width: 100%; border: 0; cursor: pointer; text-align: left; font: var(--om-type-caption-s);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 0; cursor: pointer; text-align: left; font: var(--om-type-caption-s);
   transition: background-color var(--motion-hover);
 }
 @media (hover: hover) { .dealRibbon.dealRibbon:hover { background: var(--om-color-primary-variant-hover); } }
 .dealRibbon:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.foot { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
-.foot.foot { padding-right: 44px; }
-.foot > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.footFacts { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* the card's ⋮ at the foot line's end (the template card's sits beside a name over a fixed 220 well; a photo's well grows with the card) */
-.brandKebab.brandKebab { top: auto; bottom: var(--om-spacing-0-5); }
+/* the card's ⋮ centred on the name and its meta line (the template card's sits beside a name over a fixed 220 well; a photo's well grows with
+   the card): 16 under the words, less the half of what the 44 box is taller than their 40 */
+.brandKebab.brandKebab { top: auto; bottom: calc(var(--om-spacing-3) + var(--om-spacing-0-5)); }
 .footIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
-/* a deal's own words on its card: the brand above, the deal in two lines, when it runs */
+/* a deal's own words on its card: the brand above (its name, in its own case — T-06: capitals are for a status), the deal in full (6-21: it
+   wraps rather than ending in "…"), when it runs */
 .dealBody.dealBody { padding-right: var(--om-spacing-4); gap: var(--om-spacing-1); }
-.dealBrand { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dealTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-height: 40px; }
+.dealBrand { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dealTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; min-height: 40px; }
 .soon { color: var(--om-color-primary-default); }
 
 /* ── Show more ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 .more { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
 .moreCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.source { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
 
 /* ── the deal's dialog ─────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 .deal { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
@@ -90,31 +96,32 @@
 
 @media (max-width: 767px) {
   .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
-  .banner { flex-basis: 88%; height: 168px; }
+  .stickyTabs.stickyTabs { top: calc(var(--app-mobile-bar-height) + 60px); }
+  .banner { flex-basis: 88%; height: 112px; }
   .bannerTrack { gap: var(--om-spacing-3); scroll-padding-left: 0; }
   .bannerText { padding: var(--om-spacing-4); }
   .bannerTitle { font: var(--om-type-subtitle-l); }
   .bannerLine { font: var(--om-type-body-s); }
   .logo { width: 40px; height: 40px; left: var(--om-spacing-3); bottom: calc(-1 * var(--om-spacing-5)); }
-  .brandBody.brandBody { padding-top: var(--om-spacing-6); }
+  .brandBody.brandBody[data-logo] { padding-top: var(--om-spacing-6); }
+  /* the ⋮ rides the photo's corner, as the library cards' do on a phone — the deals' badge keeps clear of it; the words take the card's width,
+     two lines each */
   .ribbons { top: var(--om-spacing-2); left: var(--om-spacing-2); right: 48px; }
-  /* two cards a row: a featured brand's deal steps aside (its count is in the foot line, and its page lists it). (S42E, E-10) The deal's button
-     sits inside its tooltip's anchor (display: contents), so the rule reads it as a descendant — the child rule never matched, and the deal
-     was cut to a few letters beside Featured. A deal on its own wraps to two lines rather than ending in "…" (no hover under a finger). */
-  .ribbons:has(> [data-tone='await']) .dealRibbon { display: none; }
-  .dealRibbon.dealRibbon { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-  /* the ⋮ rides the photo's corner, as the library cards' do on a phone; the words take the card's width, two lines each */
   .brandKebab.brandKebab { top: var(--om-spacing-2); right: var(--om-spacing-2); bottom: auto; height: auto; z-index: 3; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
-  .foot.foot { padding-right: var(--om-spacing-4); }
-  .foot[data-vendor] > .footFacts { display: none; }
+  /* (the calm UI build 2026-10-27, 6-01) one meta line now, so a card's height followed its name's lines and a row of cards jumped by 20 under
+     the next; every card keeps room for two lines of name and two of meta (the most they print), so the grid's rows — and its ghost's — are even */
+  .brandBody.brandBody { padding-right: var(--om-spacing-4); min-height: calc(var(--om-spacing-3) + 40px + var(--om-spacing-1) + 32px + var(--om-spacing-4)); }
   .nameRow.nameRow { height: auto; min-height: 20px; align-items: flex-start; }
   .twoLines.twoLines { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
   .bannerCount { display: none; }
 }
 /* the ghost's sort pill: the pill's own width — "Sort: Most popular ▾" on a desk, its short "Popular ▾" where the bar is narrow */
-@media (max-width: 1024px) { .ghostPill.ghostPill { width: 106px; } }
+@media (max-width: 1024px) { .ghostPill.ghostPill { width: 106px; } .ghostCat.ghostCat { width: 72px; } }
 /* (REG-375) the open search takes the row's room on a narrow bar; the views step aside for it, as a section title does */
 @media (max-width: 1024px) {
   .bar:has([data-om-search-open]) .views { display: none; }
   .bar { flex-wrap: nowrap; }
 }
+
+/* (the calm UI build 2026-10-27 — T-12) a card's who-asked line wraps on a narrow card instead of cutting */
+.wrapLine { display: block; white-space: normal; overflow-wrap: anywhere; }

@@ -8,19 +8,17 @@ import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { PickOneDialog, type PickOption } from '@/components/company/templates/pick-one-dialog'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { IconButton } from '@/components/om/icon-button'
-import { Tooltip } from '@/components/om/tooltip'
 import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { useFlagPref } from '@/lib/prefs'
 import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { withFrom } from '@/lib/nav'
+import { ago } from '@/lib/templates/ago'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
 import type { DesignCard, VisualizerHome as HomeData } from '@/lib/visualizer/queries'
 import { createDesign, deleteDesigns, deleteDesignsForever, duplicateDesign, emptyDesignTrash, leadsToLink, linkDesignToLead, openLeadDesign, renameDesign, restoreDesigns, unlinkDesign } from '@/app/visualizer/actions'
-import { designKindLabel } from './kind-label'
+import { designCardKind, designKindLabel, STUDIO_OWN } from './kind-label'
 import { VisualizerHomeGhost } from './home-skeleton'
-import { INTRO_PREF, VisualizerIntro } from './intro'
+import { VisualizerIntro } from './intro'
 import { DesignCover } from './design-cover'
 import { VisualizerWelcome } from './welcome'
 import { photoProblem } from '@/components/visualizer/editor/dialogs/add-room'
@@ -40,7 +38,12 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
  * Tools › AI Visualizer (REG-673; 1.0's gallery landing, A B-01…B-26, on the house library gallery — REG-614's rule): every design the
  * member may see — a lead's (one each, named after the lead) or a personal one — as covers, with the Kind pill, search, folders for
  * personal designs, the list view, rename · move · duplicate · delete with Undo and the Deleted sheet. New ▾ starts a blank design, a
- * lead's design or one from a sample room; the intro card says what the tool does until it is dismissed.
+ * lead's design or one from a sample room; one line says what the tool does, its three steps a press away (the calm UI build 2026-10-27,
+ * 6-10 — the intro card it replaces sat above a gallery in use until dismissed).
+ * (the calm UI build 2026-10-27, 6-07 · 6-21 · 6-32) Every picture Generate makes is a *version* here as in the editor (the cards, the list,
+ * the delete line, the Deleted sheet); a card is the client's name, then "3 rooms · 5 versions" (Studio’s own / Project ahead of them when
+ * that is what it is — never the lead's stage, which the list's Kind column keeps), then "Edited 12 Sep ’26 by Michelle" on a line of its
+ * own; the room list leaves the card (the design's page and the search keep it).
  * (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M8; 1.0's start strip had From a project and its
  * landing grouped Projects · Leads; audit 16's VL-03 "projects Later" closed) New ▾ › **For a project…** — pick a project, its lead's design
  * opens, as the project's Design › Designs opens it — and the Kind pill's **Projects**: a lead's design whose lead is won into a live project
@@ -50,7 +53,6 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   const router = useRouter()
   const snackbar = useSnackbar()
   const { run } = useRun()
-  const [introHidden, setIntroHidden] = useFlagPref(INTRO_PREF, false)
   /* (F118 · F214) the pickers keep where New ▾ was pressed — the open folder a new design lands in */
   const [leadPick, setLeadPick] = useState<LibraryPlace | null>(null)
   const [projectPick, setProjectPick] = useState<LibraryPlace | null>(null)   // (S46B, M8)
@@ -76,7 +78,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
      design is shown first with one button — New ▾ › For a lead's own step (`forLead`), nothing generated until Generate. *(invented copy)* */
   const newestLead = [...data.leads].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))[0] ?? null
   const maison: MaisonSuggestion[] = [
-    'Which renders did clients pick this week?',
+    'Which versions did clients pick this week?',   // (the calm UI build 2026-10-27, 6-07) the Ask box reads "versions" as it read "renders" (lib/maison-ai/intents.ts)
     newestLead
       ? { label: 'Start a design for my newest lead', propose: newestLead.hasDesign
           ? { title: `${newestLead.name} has a design`, text: `${newestLead.name}’s design opens in the AI Visualizer — every lead has one.`, confirm: 'Open it', run: async () => { void forLead(newestLead.id, { folderId: null, here }); return true } }
@@ -181,9 +183,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         /* (F166) the ghost the reveal crossfades from is drawn with what the page knows: the intro if it shows, the folders at the level
            the page opens on, as many cards as it has (up to two rows) */
         page={{ title: 'AI Visualizer', skeleton: <VisualizerHomeGhost /> }}   /* (REG-708) the ghost its loading.tsx drew — the usual page, the member's own intro */
-        intro={introHidden ? null : (
-          <VisualizerIntro hasDesigns={items.length > 0} dismiss={<Tooltip label="Dismiss"><IconButton icon="close" label="Dismiss" size={24} variant="bare" iconSize={20} onClick={() => setIntroHidden(true)} /></Tooltip>} />
-        )}
+        intro={<VisualizerIntro />}
         items={items}
         deleted={deleted}
         now={data.now}
@@ -201,9 +201,10 @@ export function VisualizerHome({ data }: { data: HomeData }) {
             <DropdownItem onSelect={() => { close(); setSamplePick(place) }}><span className={styles.menuRow}><Icon name="photo" size={20} weight={300} />From a sample room…</span></DropdownItem>
           </>
         )}
-        /* (S46B, M8) Projects · Leads · Personal — the 3D Space Planner's order; a won lead's design is its project's, never both */
+        /* (S46B, M8) Projects · Leads · Studio’s own (the key stays `personal`) — the 3D Space Planner's order; a won lead's design is its
+           project's, never both */
         filters={[...(hasProjects ? [{ key: 'project', label: 'Projects', test: (t: Item) => t.d.kind === 'lead' && !!t.d.projectId }] : []),
-          { key: 'lead', label: 'Leads', test: (t) => t.d.kind === 'lead' && !t.d.projectId }, { key: 'personal', label: 'Personal', test: (t) => t.d.kind === 'personal' }]}
+          { key: 'lead', label: 'Leads', test: (t) => t.d.kind === 'lead' && !t.d.projectId }, { key: 'personal', label: STUDIO_OWN, test: (t) => t.d.kind === 'personal' }]}
         filterLabel="Kind"
         searchText={(t) => `${t.d.leadName ?? ''} ${t.d.projectName ?? ''} ${t.d.projectNumber ?? ''} ${t.d.roomNames.join(' ')}`}
         thumb={(t) => <DesignCover covers={t.d.covers} name={t.title} />}
@@ -212,17 +213,22 @@ export function VisualizerHome({ data }: { data: HomeData }) {
           // eslint-disable-next-line @next/next/no-img-element
           <span className={styles.glyph}>{t.d.covers[0] ? <img src={t.d.covers[0]} alt="" loading="lazy" decoding="async" /> : <Icon name="wand_shine" size={20} weight={300} />}</span>
         )}
-        /* (F117 · F134) what the design is leads its own line — "Lead · Met" as the editor says it, or "Personal" — so no chip takes the
-           name's width, at any card size */
-        meta={(t, at) => [
-          /* (wave E, phone-5) under Kind: Personal the pill already says it — the line keeps its room for the counts; under Leads the stage stays */
-          at.filter === 'all' ? kindOf(t.d) : at.filter === 'lead' ? t.d.leadStage : at.filter === 'project' ? t.d.projectNumber : null,   // (S46B) under Projects, its number
-          count(t.d.rooms, 'room', 'rooms'), count(t.d.renders, 'render', 'renders')].filter(Boolean).join(' · ')}
+        /* (F117 · F134) what the design is leads its own line, so no chip takes the name's width, at any card size. (the calm UI build
+           2026-10-27, 6-21 · 6-32) The name is the client's; the line is the counts, "Studio’s own" or "Project" ahead of them where that is
+           the fact (never the lead's stage — the list's Kind column says "Lead · Met"); (wave E, phone-5) under a Kind the pill says it, so
+           the line is the counts alone */
+        meta={(t, at) => [at.filter === 'all' ? designCardKind(t.d.kind, t.d.projectNumber) : null,
+          count(t.d.rooms, 'room', 'rooms'), count(t.d.renders, 'version', 'versions')].filter(Boolean).join(' · ')}
         usage={(t) => (t.d.roomNames.length ? t.d.roomNames.slice(0, 3).join(', ') + (t.d.roomNames.length > 3 ? ` +${t.d.roomNames.length - 3}` : '') : 'No rooms yet')}
+        /* (the calm UI build 2026-10-27, 6-21) who touched it last and when, on its own line, whole — the room list it shared the line with cut
+           exactly this ("Living room, Master bedroom, Kitch…"); the rooms are the design's page's and the search's */
+        foot={(t) => <span className={styles.footWrap}>{`Edited ${ago(t.updatedAt.getTime(), data.now)}${t.author ? ` by ${t.author}` : ''}`}</span>}   /* (T-12) it wraps on a phone's narrow card, never cut */
+        /* (the calm UI build 2026-10-27, 6-20 · 6-07) the heads read whole ("ROO…" and "REND…" at 100 · 110); the column's key stays `renders`
+           (each browser's column layout is kept under it) */
         columns={[
           { key: 'kind', label: 'Kind', track: '140px', cell: (t) => kindOf(t.d), sortable: (t) => kindOf(t.d) },
-          { key: 'rooms', label: 'Rooms', track: '100px', cell: (t) => String(t.d.rooms), sortable: (t) => t.d.rooms },
-          { key: 'renders', label: 'Renders', track: '110px', cell: (t) => String(t.d.renders), sortable: (t) => t.d.renders },
+          { key: 'rooms', label: 'Rooms', track: '120px', cell: (t) => String(t.d.rooms), sortable: (t) => t.d.rooms },
+          { key: 'renders', label: 'Versions', track: '140px', cell: (t) => String(t.d.renders), sortable: (t) => t.d.renders },
         ]}
         tableKey="viz-designs"
         onOpen={(t) => open(t.id)}
@@ -231,7 +237,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
           : t.d.leadId ? [{ label: 'Open the lead', onSelect: () => router.push(withFrom(`/leads/${t.d.leadId}`, here)) }]
           : [{ label: 'Link to a lead…', onSelect: () => setLinkFor(t), disabled: !!t.d.mayChange, title: t.d.mayChange ?? undefined }])}   /* (UX audit V2) */
         /* (verify round 1, F129) a refusal throws the server's words (Refused), so the snackbar says why rather than "please try again" */
-        onDuplicate={async (t) => { const r = await duplicateDesign(t.id); if ('error' in r) throw new Refused(r.error); snackbar({ message: 'Duplicated as a personal copy', actionLabel: 'Open', onAction: () => open(r.id) }) }}   /* one line at 344 whatever the name (the Open action rides it) */
+        onDuplicate={async (t) => { const r = await duplicateDesign(t.id); if ('error' in r) throw new Refused(r.error); snackbar({ message: 'Duplicated — the studio’s own copy', actionLabel: 'Open', onAction: () => open(r.id) }) }}   /* one line at 344 whatever the name (the Open action rides it); (6-32) the kind's own words */
         onRename={(t, name) => renameDesign(t.id, name)}
         nameMax={NAME_MAX}
         newIcons
@@ -242,7 +248,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         moveThumb={(t) => ({ src: t.d.covers[0] ?? null })}
         onDelete={(t) => deleteDesigns([t.id])}
         onDeleteMany={(ts) => deleteDesigns(ts.map((t) => t.id))}
-        deleteMessage={(t) => (t.d.renders ? `${t.title} and its ${count(t.d.renders, 'render', 'renders')} go to Deleted Designs — you can restore them there.` : `${t.title} goes to Deleted Designs — you can restore it there.`)}   /* (F128) never "its 0 renders" */
+        deleteMessage={(t) => (t.d.renders ? `${t.title} and its ${count(t.d.renders, 'version', 'versions')} go to Deleted Designs — you can restore them there.` : `${t.title} goes to Deleted Designs — you can restore it there.`)}   /* (F128) never "its 0 versions" */
         onRestore={(ids) => restoreDesigns(ids)}
         onDeleteForever={(ids) => deleteDesignsForever(ids)}
         onEmptyTrash={() => emptyDesignTrash()}
@@ -254,12 +260,12 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         foreverNote={(ts) => {
           const one = ts.length === 1
           const filed = ts.some((t) => t.d.kind === 'lead' && t.d.renders > 0), rendered = ts.some((t) => t.d.renders > 0)
-          return [filed ? `Renders saved to ${one ? 'the lead’s' : 'a lead’s'} Files stay there.` : null,
+          return [filed ? `Versions saved to ${one ? 'the lead’s' : 'a lead’s'} Files stay there.` : null,
             rendered ? `${one ? 'Its' : 'Their'} client links, and the client’s notes and replies on them, go ${one ? 'with it' : 'with them'}.` : null].filter(Boolean).join(' ') || null
         }}
         deletedMeta={{ label: 'Rooms', value: (t) => count(t.d.rooms, 'room', 'rooms') }}
-        usageWord={(t) => count(t.d.renders, 'render', 'renders')}
-        deletedUsageLabel="Renders"
+        usageWord={(t) => count(t.d.renders, 'version', 'versions')}
+        deletedUsageLabel="Versions"
         empty={{ title: 'No designs yet', help: 'Start with a room photo — a blank design, a lead’s or a project’s site photos, or one of the sample rooms. New ▾ has them all.',
           /* (REG-735) the studio's first visit: one welcome in place of the intro card, the empty state and the toolbar */
           welcome: <VisualizerWelcome busy={busy} onUpload={(fs) => { void upload(fs) }} onLead={() => setLeadPick({ folderId: null, here })}

@@ -85,9 +85,9 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     ok(/Client/.test(await d.locator('[aria-label="Project sections"]').innerText()), 'the project’s tabs list Client (Updates · Messages · Tickets · Questionnaire)')
     await go(d, `/projects/${ben}/tickets`)
     const views = await d.locator('[data-testid="project-view-chips"]').innerText()
-    ok(/Messages/.test(views) && /Tickets/.test(views), 'the Client view switch lists Messages and Tickets')
+    ok(/Messages/.test(views) && /Issues/.test(views), 'the Client view switch lists Messages and Issues')   // (the calm UI build 2026-10-27, a deliberate change) "Issues" on screen (3-37)
     ok(/Messages\s*·\s*1/.test(views), 'Messages counts the client’s unread message (1)')
-    ok(!/Tickets\s*·\s*\d/.test(views), 'Tickets counts none — nothing waits on the studio in the demo')
+    ok(!/Issues\s*·\s*\d/.test(views), 'Issues counts none — nothing waits on the studio in the demo')   // (the calm UI build 2026-10-27, a deliberate change)
     await go(d, `/projects/${ben}`)
 
     // ── 2 · The rail's Chat and /chat ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -96,7 +96,8 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     ok(/^Messages \(1 unread\)/.test(await chatLink.getAttribute('aria-label') ?? ''), 'the rail’s Messages is a link with its unread count')   // (one-home N-08, a deliberate change of this rule) the rail's word is "Messages" now
     await go(d, '/chat')
     const rows = d.locator('[data-testid="chat-row"]')
-    ok(await rows.count() >= 2 && /HDB 5-Room/.test(await rows.first().innerText()) && await rows.first().getAttribute('data-unread') !== null, '/chat lists the conversations, the unread one first')
+    /* (the calm UI build 2026-10-27, a deliberate change) a client's conversation is titled by the client (1-21): "Benjamin Han · client"; the team's keeps the project's name */
+    ok(await rows.count() >= 2 && /HDB 5-Room|Benjamin Han · client/.test(await rows.first().innerText()) && await rows.first().getAttribute('data-unread') !== null, '/chat lists the conversations, the unread one first')
     await rows.first().click(); await settle(d, 1800)
     ok(await d.locator('[data-testid="conversation-lines"] [data-testid="thread-new"]').count() === 1, 'the open conversation marks where the unread start (New)')
     await shot(d, 'h01-chat-desk')
@@ -145,13 +146,13 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     const drawer = d.locator('[data-testid="ticket-drawer"]')
     ok(await drawer.count() === 1 && /Water stain/.test(await drawer.innerText()), '?open= lands on the ticket in the drawer')
     const thread = await d.locator('[data-testid="ticket-thread"]').innerText()
-    ok(/Internal note/i.test(thread) && /Asked Ah Seng/.test(thread), 'the studio reads the internal note in the thread')
+    ok(/Note · team only/.test(thread) && /Asked Ah Seng/.test(thread), 'the studio reads the internal note in the thread')   // (the calm UI build 2026-10-27, a deliberate change) the tag reads "Note · team only" (1-22)
     await d.locator('[data-testid="ticket-composer"] textarea').fill('Probe reply — the plumber will also check the dishwasher hose.')
     await d.locator('[data-testid="ticket-composer"] [data-testid="thread-send"]').click(); await settle(d, 1800)
     const replyId = sql(`select id from ticket_replies where ticket_id='${T4}' and body like 'Probe reply%'`)
     ok(!!replyId && sql(`select count(*) from notification_outbox where key = 'c:client_issue_answered:${replyId}:${benHo}:email' and to_address = 'benjamin.han@gmail.com' and status = 'sent'`) === '1', 'a reply to the client goes to them by email through the delivery layer (the outbox)')
     ok(sql(`select count(*) from notification_outbox where key like 'c:client_issue_answered:${replyId}:%:whatsapp'`) === '0', 'no WhatsApp — off by default')
-    await d.locator('[data-testid="ticket-to"]').getByRole('radio', { name: 'Internal note' }).click(); await settle(d, 300)
+    await d.locator('[data-testid="ticket-to"]').getByRole('radio', { name: 'Note · team only' }).click(); await settle(d, 300)   // (the calm UI build 2026-10-27, a deliberate change) (1-22)
     await d.locator('[data-testid="ticket-composer"] textarea').fill('Probe note — check the warranty on the tap.')
     await d.locator('[data-testid="ticket-composer"] [data-testid="thread-send"]').click(); await settle(d, 1800)
     const noteId = sql(`select id from ticket_replies where ticket_id='${T4}' and body like 'Probe note%' and internal = 1`)
@@ -169,13 +170,13 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     ok(sql(`select priority from project_tickets where id='${T4}'`) === 'urgent', 'Escalate makes it Urgent')
     ok(sql(`select count(*) from notifications where kind='ticket_escalated' and member_id='huimin'`) === '1', 'Owners and Admins hear it (Hui Min; Dane did it)')
     await go(d, '/projects?scope=attention')
-    ok(/Escalated ticket/.test(await d.locator('body').innerText()), 'the project is in Needs attention — “Escalated ticket”')
+    ok(/Escalated ticket|Issue flagged to the Owner/.test(await d.locator('body').innerText())   /* (the calm UI build 2026-10-27, a deliberate change) plain words (1-08 · W-398 · W-426 · W-278 · 3-37) */, 'the project is in Needs attention — “Escalated ticket”')
     await go(d, `/projects/${ben}/tickets?open=${T4}`); await settle(d, 1000)
     await shot(d, 'h03-ticket-escalated-desk')
     sql(`update project_tickets set priority='normal', escalated_at=null, escalated_by=null, escalate_note=null where id='${T4}'`)
     await go(d, `/projects/${ben}/tickets`)
     await d.locator('[data-testid="new-ticket"]').click(); await settle(d, 500)
-    const nd = d.locator('[role="dialog"]').filter({ hasText: 'New ticket' })
+    const nd = d.locator('[role="dialog"]').filter({ hasText: 'New issue' })   // (the calm UI build 2026-10-27, a deliberate change) "Issues" on screen (3-37)
     await nd.getByLabel('Category').click(); await settle(d, 300)
     await d.getByRole('option', { name: 'Timeline', exact: true }).click(); await settle(d, 200)
     await nd.getByLabel('Subject').fill('Probe — the wardrobe doors arrive a week late')
@@ -264,11 +265,29 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     await d.locator('[data-testid="card-save"]').click(); await settle(d, 1500)
     ok(sql(`select portal_shown || '|' || portal_title from members where id='huimin'`) === '1|Studio manager', 'Members › Public profile: Hui Min shown, with a title')
 
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-36) at a desk the bar is the phone's five: Home · Schedule · Updates · Payments and More ▾,
+     the rest in its menu — a section is "in the bar" when it is either */
+  const deskSections = async (pg) => {
+    const bar = await pg.locator('[data-testid="portal-nav"]').innerText()
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return bar
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const rows = await pg.locator('[data-testid="portal-nav-more-row"]').allInnerTexts()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return `${bar}\n${rows.join('\n')}`
+  }
+  const deskHas = async (pg, key) => {
+    if (await pg.locator(`[data-testid="portal-nav"] a[data-key="${key}"]`).isVisible()) return true
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return false
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const there = await pg.locator(`[data-testid="portal-nav-more-row"][data-key="${key}"] [role="menuitem"]`).isVisible()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return there
+  }
     // ── 8 · The portal ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('8 · The portal')
     const C = await desk(); const c = await C.newPage(); watch(c, 'portal')
     await signIn(c, PHONE.ben)
-    const nav = await c.locator('[data-testid="portal-nav"]').innerText()
+    const nav = await deskSections(c)
     ok(/Messages/.test(nav) && /Issues/.test(nav) && /About/.test(nav), 'the portal lists Messages, Issues and About')
     await go(c, '/my/demo-studio/about')
     const about = await c.locator('body').innerText()
@@ -317,12 +336,12 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     await go(c, '/my/demo-studio/issues')
     ok(!/\/issues/.test(c.url()), 'Issues switched off: its page leads home')
     await go(c, '/my/demo-studio/messages')
-    ok(!/\/messages/.test(c.url()) && !/Messages/.test(await c.locator('[data-testid="portal-nav"]').innerText()), 'Messages switched off: gone from the bar and its page leads home')
+    ok(!/\/messages/.test(c.url()) && !/Messages/.test(await deskSections(c)), 'Messages switched off: gone from the bar and its page leads home')
     if (sectionsBefore) sql(`update settings set value='${sectionsBefore.replace(/'/g, "''")}' where key='portal_sections'`); else sql(`delete from settings where key='portal_sections'`)
     const aboutBefore = sql(`select value from settings where key='studio_about'`)
     sql(`update settings set value='{"year":null,"story":"","awards":[]}' where key='studio_about'`); sql(`update studio_pictures set deleted_at = 1 where kind='about'`); sql(`update members set portal_shown = 0`)
     await go(c, '/my/demo-studio/about')
-    ok(!/\/about/.test(c.url()) && !/About/.test(await c.locator('[data-testid="portal-nav"]').innerText()), 'an empty About page is withheld — no tab, the page leads home')
+    ok(!/\/about/.test(c.url()) && !/About/.test(await deskSections(c)), 'an empty About page is withheld — no tab, the page leads home')
     sql(`update settings set value='${aboutBefore.replace(/'/g, "''")}' where key='studio_about'`); sql(`update studio_pictures set deleted_at = null where kind='about'`)
 
     // ── 10 · Who may answer ────────────────────────────────────────────────────────────────────────────────────────────────────

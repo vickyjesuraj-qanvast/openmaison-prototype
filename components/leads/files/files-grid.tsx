@@ -270,7 +270,7 @@ export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null
     <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name || 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
       {visualize ? <DropdownItem onSelect={() => onPick('visualize')}>{visualize}</DropdownItem> : null}
-      {picture3d ? <DropdownItem onSelect={() => onPick('picture3d')} help="Place its rooms on it, then see it in 3D">Make a 3D picture</DropdownItem> : null}
+      {picture3d ? <DropdownItem onSelect={() => onPick('picture3d')} help="Place its rooms on it, then see it in 3D">Trace a floor-plan photo</DropdownItem> : null}   {/* (the calm UI build 2026-10-27 — B6's request, 6-06 · W-020) the planner's own words for this door, named apart from Floorplan to 3D Isometric */}
       {paper ? null : <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>}
       {paper ? null : <DropdownItem onSelect={() => onPick('duplicate')}>Duplicate</DropdownItem>}
       <DropdownItem onSelect={() => onPick('download')}>Download</DropdownItem>

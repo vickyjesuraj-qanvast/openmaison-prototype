@@ -54,6 +54,9 @@
 .markGlyph[data-side='client'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-tertiary-red-default); }
 .markText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .markName { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* (the calm UI build 2026-10-27, 3-28) the one plan's name, said once; a menu row's handle takes no box */
+.planName { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.menuRow { display: contents; }
 .markLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
 .markWords { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .markCount { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

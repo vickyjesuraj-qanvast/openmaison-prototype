@@ -23,7 +23,7 @@ export function QanvastStudiosGhost() {
             <div className={cardStyles.head}><div className={cardStyles.headText}><Line w={96} lh={16} h={10} /><span className={cardStyles.metaRight}><Line w={112} lh={16} h={10} /></span></div></div>
             <div className={styles.body}>
               <div className={styles.table} data-card-table="">
-                <div className={styles.head}><Words>OpenMaison’s switches</Words><span className={styles.col}><Words>On</Words></span></div>
+                <div className={styles.head}><Words>Set by OpenMaison</Words><span className={styles.col}><Words>On</Words></span></div>
                 {['76%', '64%'].map((w, i) => (
                   <div key={i} className={styles.row}>
                     <span className={styles.name}><Line w={i ? 72 : 96} lh={20} h={12} /><Line w={w} lh={16} h={10} /></span>

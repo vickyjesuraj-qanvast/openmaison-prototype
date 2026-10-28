@@ -8,8 +8,8 @@ import { IconButton } from '@/components/om/icon-button'
 import { ScopePill } from '@/components/om/scope-pill'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
-import { isOverdue, relativeTime, phoneDisplay, phoneLocal } from '@/lib/format'
-import { budgetCard } from '@/lib/leads/row-text'
+import { isOverdue, phoneDisplay, phoneLocal } from '@/lib/format'
+import { agoWords, budgetCard } from '@/lib/leads/row-text'
 import { cardLines, parked, waHref } from './lead-card-words'
 import styles from './lead-cards.module.css'
 
@@ -60,7 +60,6 @@ function StagePill({ row, open, onStageClick }: { row: LeadRow; open: boolean; o
 }
 
 export function LeadCards({ rows, now, query, openStageId, unseenIds, onSeen, onOpen, onStageClick, onTaskClick, onAssignClick }: LeadCardsProps) {
-  const nowDate = new Date(now)
   return (
     <div className={styles.list}>
       {rows.map((row) => {
@@ -80,11 +79,11 @@ export function LeadCards({ rows, now, query, openStageId, unseenIds, onSeen, on
             <button type="button" className={styles.head} onClick={() => onOpen(row)}>
               <span className={styles.nameRow}>
                 <span className={styles.name}>{highlightMatch(row.name, query)}</span>
-                {unseen ? <Tag color="blue" appearance="outlined">New</Tag> : null}
+                {/* (the calm UI build 2026-10-27 — 2-15, W-272) no "NEW" tag beside the New stage: the card's left band says "not opened yet", as on the desk */}
               </span>
               <span className={styles.meta}>
-                {/* The mock's "1d ago": the lead's age, the listing's own relative clock (lib/format.ts). */}
-                <span>{relativeTime(row.createdAt, nowDate)}</span>
+                {/* The mock's "1d ago": the lead's age — (the calm UI build — 2-35, W-067) named and in words, "Added 2 days ago", as the kanban's Updated */}
+                <span>Added {agoWords(row.createdAt, now)}</span>
                 <Icon name="keyboard_arrow_right" size={20} weight={300} />
               </span>
             </button>
@@ -125,7 +124,7 @@ export function LeadCards({ rows, now, query, openStageId, unseenIds, onSeen, on
               <button type="button" className={styles.link} aria-label={`Add a task for ${row.name}`}
                       onClick={(e) => onTaskClick(row, e.currentTarget)}>
                 <Icon name="add" size={20} />
-                Add Task
+                Add task
               </button>
             )}
             <hr className={styles.rule} />
@@ -143,8 +142,8 @@ export function LeadCards({ rows, now, query, openStageId, unseenIds, onSeen, on
                       <Avatar key={m.id} name={m.name} color={m.color} size={24} />
                     ))}
                     {row.assignees.length > 2 ? <span className={styles.plusBox}>+{row.assignees.length - 2}</span> : null}
-                    <IconButton icon="person_add" label={`Assign members to ${row.name}`} size={24} variant="primary"
-                                onClick={(e) => onAssignClick(row, e.currentTarget)} />
+                    <IconButton icon="person_add" label={`Assign members to ${row.name}`} size={24}
+                                onClick={(e) => onAssignClick(row, e.currentTarget)} />   {/* (the calm UI build — 2-06) the grey person-plus */}
                   </>
                 )}
               </div>

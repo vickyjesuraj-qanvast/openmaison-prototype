@@ -42,14 +42,14 @@ const go = async (p, url) => { await p.goto(BASE + url, { waitUntil: 'networkidl
       console.log(`1 · B-01 at ${label}: an unowned lead's "Move to Contacted"`)
       const C = await b.newContext(ctxOpts); const p = await C.newPage(); p.on('pageerror', (e) => errors.push(e.message))
       await go(p, `/leads/${unowned}`)
-      const primary = p.getByRole('button', { name: 'Move to Contacted' }).locator('visible=true').first()
-      ok(await primary.count() === 1, `the header offers "Move to Contacted" (${label})`)
+      /* (the calm UI build 2026-10-27, a deliberate change — audit 2-05) the filled button never offers a move the page refuses: an unowned lead's
+         primary is "Assign a member" — the Assign window opens, and the move follows once a member is saved; B-01's guarantee (no log typed and
+         lost) still holds */
+      const primary = p.getByRole('button', { name: 'Assign a member' }).locator('visible=true').first()
+      ok(await primary.count() === 1, `the header offers "Assign a member" (${label})`)
       if (label === '390') await primary.tap(); else await primary.click()
       await settle(p, 900)
-      const snack = p.locator('[data-om-snackbar]').first()
-      const words = await snack.innerText().catch(() => '')
-      ok(/Assign a member first/.test(words), `the press refuses with the rule ("${words.replace(/\n/g, ' ').slice(0, 60)}")`)
-      ok(await snack.getByRole('button', { name: 'Assign' }).count() === 1, '…and offers Assign as its way on')
+      ok(await p.getByText('Assign members', { exact: true }).locator('visible=true').count() >= 1, 'the press opens Assign members — the way on')
       ok(await p.getByRole('dialog', { name: /Move stage/ }).count() === 0 && await p.getByText('Contact log', { exact: false }).locator('visible=true').count() === 0, 'no Move stage window opened — no log can be typed and lost')
       await p.screenshot({ path: path.join(dir, `b01-${label}-refused.png`) })
       await go(p, `/leads/${owned}`)
@@ -73,7 +73,7 @@ const go = async (p, url) => { await p.goto(BASE + url, { waitUntil: 'networkidl
       return hit && d.contains(hit) ? 'on top' : `under ${hit ? hit.tagName + '.' + String(hit.className).slice(0, 30) : 'nothing'}`
     }, dlgName)
     await m.getByRole('button', { name: 'Auto Fill' }).locator('visible=true').first().tap(); await settle(m, 900)
-    const af = await top('Auto Fill')
+    const af = await top('Auto fill')   // (the calm UI build 2026-10-27, a deliberate change) — sentence case
     ok(af === 'on top', `Auto Fill opens above the log's sheet (${af}) — C-01`)
     await m.screenshot({ path: path.join(dir, 'c01-390-autofill.png') })
     await m.getByRole('dialog', { name: 'Auto Fill' }).getByRole('button', { name: 'Cancel' }).tap(); await settle(m, 700)

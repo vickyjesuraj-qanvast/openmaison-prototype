@@ -47,7 +47,8 @@ function CrewRowView({ j, mayChange, mayCheck, phone, onAct, showMilestone, show
       <span className={styles.text}>
         <span className={styles.name}><span className={styles.nameText}>{name}</span></span>
         <span className={styles.line} data-tone={j.late ? 'warn' : undefined}>{where}{j.late ? ' · running late' : ''}</span>
-        {j.checkedAt ? <span className={styles.checked} data-testid="crew-checked"><Icon name="verified" size={16} weight={300} className={styles.checkIcon} />{`Leader checked${j.checkedByName ? ` by ${j.checkedByName}` : ''} · ${dayMonth(dayOf(new Date(j.checkedAt)))}`}</span> : null}
+        {/* (the calm UI build 2026-10-27, 3-15 · W-236) "Checked by Hui Min" (was Leader checked by) */}
+        {j.checkedAt ? <span className={styles.checked} data-testid="crew-checked"><Icon name="verified" size={16} weight={300} className={styles.checkIcon} />{`${j.checkedByName ? `Checked by ${j.checkedByName}` : 'Checked'} · ${dayMonth(dayOf(new Date(j.checkedAt)))}`}</span> : null}
         {j.note ? <span className={styles.quote}>{`“${j.note}”`}</span> : null}
       </span>
       <span className={styles.chip}><MetaChip color={TONE[j.state]}>{CREW_STATUS_LABEL[j.state]}</MetaChip></span>

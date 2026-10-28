@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { ToolsPopover, onToolsPage, recordHome } from './tools-popover'
 import { readFrom } from '@/lib/nav'
-import { SOON, badgeHref, badgeLabel, railItemOpens } from './app-rail'   // (pending modules S46C · H2) the rail's badge rule, one for both
+import { BadgeMark, SOON, badgeHref, badgeLabel, badgeLook, railItemOpens, shownCount } from './app-rail'   // (pending modules S46C · H2) the rail's badge rule, one for both — (the calm UI build 2026-10-27) its looks too
 import { isAccounting, isMarketing } from '@/lib/settings/roles'
 import { companyGroupsFor } from '@/lib/company/sections'
 import { Tooltip } from '@/components/om/tooltip'
@@ -39,7 +39,7 @@ const DOCK = [
 /** The More sheet's rows (1082:24995): the rail's remaining destinations, in the mock's order and groups. */
 const MORE_TOP = [
   { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the dock keeps the mock's five; Tasks leads the sheet */
-  { icon: 'handyman', label: 'Tickets', href: '/tickets' },   /* (S46 — REG-2524) after Tasks, as on the rail (1.0's More › Pages had Escalations there) */
+  { icon: 'handyman', label: 'Issues', href: '/tickets' },   /* (S46 — REG-2524) after Tasks, as on the rail (1.0's More › Pages had Escalations there) — (the calm UI build 2026-10-27, 1-10) "Issues" on screen */
   { icon: 'storefront', label: 'Marketplace', href: '/marketplace' },   /* (pending modules S24) live — 1.0's More › Marketplace */
   { icon: 'domain', label: 'Company' },   /* (REG-1360) Finance is a Company section — More › Company › Finance */
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
@@ -104,8 +104,11 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
   const home = recordHome(pathname, readFrom(useSearchParams().get('from')))   // (S42 audit C-24) a meeting opened from its lead lights Leads
   /* (UX audit V3) what each row inside More counts, and whether More wears its dot */
   const unread = badges?.notifications ?? 0
-  const countOf = (label: string) => (label === 'Tasks' ? badges?.['/tasks'] ?? 0 : label === 'Tickets' ? badges?.['/tickets'] ?? 0 : label === 'Company' ? badges?.['/company'] ?? 0 : 0)
-  const counts = { Tasks: books ? 0 : countOf('Tasks'), Tickets: countOf('Tickets'), Company: countOf('Company') }   // (parity map, PR-022) Accounting's Tasks count rides the dock
+  /* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks: a row's mark is the rail item's (`BADGE_LOOK`) — Tasks a red dot, Issues a
+     grey dot, Company none (its approvals are the Dashboard's) */
+  const keyOf = (label: string) => (label === 'Tasks' ? '/tasks' : label === 'Issues' ? '/tickets' : label === 'Company' ? '/company' : '')
+  const countOf = (label: string) => { const k = keyOf(label); return k ? shownCount(k, badges?.[k] ?? 0) : 0 }
+  const counts = { Tasks: books ? 0 : countOf('Tasks'), Tickets: countOf('Issues'), Company: countOf('Company') }   // (parity map, PR-022) Accounting's Tasks count rides the dock
   const moreHas = counts.Tasks + counts.Tickets + counts.Company > 0
   const countWords = (label: string, n: number) => (label === 'Tasks' ? `${n} overdue` : `${n} waiting`)
   /** One Line row (1082:25102): glyph 20 secondary · body/m label. Destinations navigate and close; the rest are coming soon. */
@@ -116,7 +119,7 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
         <span className={styles.sheetIcon}><Icon name={it.icon} size={20} /></span>
         <span className={styles.sheetLabel}>{it.label}</span>
         {/* (UX audit V3) the rail's count, on the row */}
-        {n > 0 ? <span className={styles.rowCount} aria-hidden>{badgeCount(n)}</span> : null}
+        {n > 0 ? (badgeLook(keyOf(it.label)) === 'count' ? <span className={styles.rowCount} aria-hidden>{badgeCount(n)}</span> : <span className={`${styles.rowCount} ${styles.rowDot}`} data-look={badgeLook(keyOf(it.label))} aria-hidden />) : null}
         {/* (UX audit V6) a dead end wears the Company panel's "Soon" tag */}
         {!it.href && it.label !== 'Company' ? <span className={styles.soon} aria-hidden>Soon</span> : null}
       </>
@@ -159,7 +162,7 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
           </button>
           {/* (pending modules S01 — the held "Coming soon" avatar; 1.0's profile menu) the member you are, as every avatar draws them (their own photo,
               else their tinted initial); it opens the studio block's menu as a sheet: Your profile, then View as */}
-          <button type="button" className={styles.avatarBtn} aria-label={`You — ${viewer && viewer.id !== studio.baseId ? viewer.name : studio.owner}`} aria-haspopup="menu" aria-expanded={youOpen} onClick={() => setYouOpen(true)} data-testid="phone-avatar">
+          <button type="button" className={styles.avatarBtn} aria-label={`You — ${viewer ? viewer.name : studio.owner}`} aria-haspopup="menu" aria-expanded={youOpen} onClick={() => setYouOpen(true)} data-testid="phone-avatar">
             {viewer ? <Avatar name={viewer.name} color={viewer.color} size={36} tooltip={false} /> : null}
           </button>
         </div>
@@ -172,7 +175,8 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
           const n = it.href ? badges?.[it.href] ?? 0 : 0   /* (REG-919) the rail's count on the dock — Projects' projects that need attention; (S46C · H2) Leads' new leads */
           const inner = (
             <>
-              <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} />{n > 0 ? <span className={styles.dockBadge} aria-hidden>{badgeCount(n)}</span> : null}</span>
+              {/* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks on the dock: Projects and Leads wear none, Tasks a red dot */}
+              <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} />{it.href ? <BadgeMark look={badgeLook(it.href)} n={n} className={styles.dockBadge} dotClass={styles.dockDot} quietClass={styles.dockQuiet} /> : null}</span>
               <span className={styles.dockLabel}>{it.label}</span>
             </>
           )

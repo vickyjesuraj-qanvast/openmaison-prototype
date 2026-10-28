@@ -41,7 +41,7 @@ export function ReceiptPage({ d, from, print }: { d: ReceiptDocData; from?: stri
       <div className={styles.page} data-print={print || undefined} data-testid="receipt-page">
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
-            <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Money', href: tabHref }]} />
+            <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Payments', href: tabHref }]} />
             <div className={`${styles.titleRow} ${paper.headWrap}`}>
               <h1 className={styles.title}>{d.paper.payment.number}</h1>
               <span className={styles.chips}>
@@ -52,7 +52,7 @@ export function ReceiptPage({ d, from, print }: { d: ReceiptDocData; from?: stri
             </div>
           </div>
           <div className={styles.actions}>
-            <Button variant="secondary" appearance="outlined" onPress={() => router.push(back)}>{paperBackLabel(from, 'Money')}</Button>
+            <Button variant="secondary" appearance="outlined" onPress={() => router.push(back)}>{paperBackLabel(from, 'Payments')}</Button>
             {d.payment.shareToken ? <Tooltip label="Copy the receipt link"><IconButton icon="link" label="Copy the receipt link" onClick={copyLink} data-testid="receipt-copy-link" /></Tooltip> : null}
             <Tooltip label="Download PDF"><IconButton icon="download" label="Download PDF" onClick={() => printPaper()} /></Tooltip>
           </div>

@@ -185,7 +185,7 @@ export function OptionDialog({ open, projectId, choice, source, editing, gstPct,
               <TextField label={sign === 'add' ? 'It adds (S$)' : 'It saves (S$)'} required numeric="money" value={amount} onChange={setAmount} error={amountError} trailingIcon={null}
                          helper={picked?.bookPrice ?? (gstPct > 0 ? 'Before GST, as a line on the quote' : 'As a line on the quote')} />
             ) : <p className={styles.help}>{`The client reads “Included in your quote”.${picked?.bookPrice ? ` ${picked.bookPrice}.` : ''}`}</p>}
-            {sign !== 'none' && minor > 0 ? <p className={styles.help} data-testid="option-contract">{`The card shows ${priceText(sign === 'add' ? minor : -minor)}; a pick of it moves the contract by ${(contractLine(sign === 'add' ? minor : -minor, gstPct) ?? '').replace(/ (on|off) the contract/, '')}.`}</p> : null}
+            {sign !== 'none' && minor > 0 ? <p className={styles.help} data-testid="option-contract">{`The card shows ${priceText(sign === 'add' ? minor : -minor, gstPct)}; a pick of it moves the contract by ${(contractLine(sign === 'add' ? minor : -minor, gstPct) ?? '').replace(/ (on|off) the contract/, '')}.`}</p> : null}   {/* (the calm UI build 2026-10-27, 3-21) the card's figure is the client's, GST in */}
           </div>
         </div>
       )}

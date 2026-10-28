@@ -48,7 +48,7 @@ export function displayDateWeekday(d: Date): string {
 
 /** File size as the mock types it (931:40181 "711 KB"): whole KB below 1 MB, one decimal MB above. */
 export function fileSize(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined) return '--'
+  if (bytes === null || bytes === undefined) return '—'   // (the calm UI build 2026-10-27, T-08) the house's one empty mark
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`
 }
@@ -88,12 +88,14 @@ export function moneyCompact(minor: number): string {
 }
 const trimZero = (s: string) => s.replace(/\.0$/, '')
 
+/** (the calm UI build 2026-10-27 — the audit's 3-20, T-11) "30 Jul ’26 · 12:00 PM" — the house dot before the time, as `displayDue` writes it
+    (was "30 Jul ’26, 12:00 PM": never a comma before the time). */
 export function displayDateTime(d: Date): string {
   let h = d.getHours()
   const am = h < 12 ? 'AM' : 'PM'
   h = h % 12 || 12
   const m = String(d.getMinutes()).padStart(2, '0')
-  return `${displayDate(d)}, ${h}:${m} ${am}`
+  return `${displayDate(d)} · ${h}:${m} ${am}`
 }
 
 export function inputDate(d: Date): string {
@@ -120,17 +122,27 @@ export function dueDistance(d: Date, now: number): string {
   if (days > 1) return `in ${days} days`
   return `${-days} ${days === -1 ? 'day' : 'days'} late`
 }
+/** (the Dashboard redesigned, 2026-10-26 — P-13 "one fact, one number": "5 days overdue", never "(5d)") How late an overdue task is, in calendar
+    days as `isOverdue` counts them — "1 day overdue" · "5 days overdue"; '' when it is not overdue. Every task list and card says it so. */
+export function overdueWords(d: Date | null | undefined, now: number): string {
+  if (!d || !isOverdue(d, now)) return ''
+  const n = Math.round((startOfDay(new Date(now)) - startOfDay(d)) / 86_400_000)
+  return `${n} ${n === 1 ? 'day' : 'days'} overdue`
+}
 
-/** "1d ago"-style relative time, as on kanban cards. */
+/** Relative time, as on kanban cards. (the calm UI build 2026-10-27 — the audit's 1-24 · 3-20 · 5-49, T-11 one format) spelled out, as the
+    Dashboard already says it: "just now" · "5 min ago" · "3 hours ago" · "yesterday" · "4 days ago", then the house date (was "5m ago" ·
+    "3h ago" · "4d ago"). */
 export function relativeTime(d: Date, now = new Date()): string {
   const s = Math.max(0, (now.getTime() - d.getTime()) / 1000)
   if (s < 60) return 'just now'
   const mi = Math.floor(s / 60)
-  if (mi < 60) return `${mi}m ago`
+  if (mi < 60) return `${mi} min ago`
   const h = Math.floor(mi / 60)
-  if (h < 24) return `${h}h ago`
+  if (h < 24 && calendarDaysBetween(d, now) === 0) return `${h} ${h === 1 ? 'hour' : 'hours'} ago`
   const days = Math.max(1, calendarDaysBetween(d, now))   // (parity P-29) whole calendar days, as every other count — never one fewer late in the day
-  if (days < 30) return `${days}d ago`
+  if (days === 1) return 'yesterday'
+  if (days < 30) return `${days} days ago`
   return displayDate(d)
 }
 
@@ -261,6 +273,22 @@ export function parseInputDateTime(s: string): Date | null {
   return day
 }
 
+/**
+ * (the calm UI build 2026-10-27 — the audit's 3-20 · 4-16 · 1-24, T-11 one format) What a date field SHOWS: the house date, the year in full —
+ * "7 Oct 2026", "7 Oct 2026 · 2:00 PM" (was the field's own "7/10/2026", read as July 10 by many). Display only: the field still holds and
+ * hands on `d/m/yyyy` (`inputDate` · `formatInputDateTime`), which every parser reads — dates are never typed (REG-119), so nothing is lost.
+ */
+export function fieldDateWords(value: string | null | undefined): string {
+  const d = parseInputDate(value)
+  return d ? `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` : (value ?? '')
+}
+export function fieldDateTimeWords(value: string | null | undefined, weekday = false): string {
+  const d = value ? parseInputDateTime(value) : null
+  /* (the calm UI build, closing regression) `weekday`: the dates people plan by wear their day (Dane UAT g-weekday) — the task panel's Due,
+     whose second line saying the day went with 1-24's one date */
+  return d ? `${weekday ? `${DAYS[d.getDay()]}, ` : ''}${fieldDateWords(inputDate(d))} · ${displayTime(d)}` : fieldDateWords(value)
+}
+
 /** The canonical value date-time fields hold: `12/8/2026, 3:00 PM`. */
 export function formatInputDateTime(d: Date): string {
   let h = d.getHours()
@@ -289,7 +317,11 @@ export const maskNric = (v: string) => { const t = v.replace(/\s+/g, '').toUpper
 /* ── (parity P-28 · P-29 · Q-03 · Q-13 · Q-14, 2026-10-08) One way to count and write time and money on both records ─────────────────
    Every report, record and listing counts days on the calendar (the Schedule's rule, REG-1131: never elapsed milliseconds, which read one day
    fewer before midnight) and writes them "n days" in words — never weeks. A span under two days keeps its minutes and hours (turnaround needs
-   them, 1.0's "30m" · "26.3h"). Empty is the house "--". */
+   them, 1.0's "30m" · "26.3h"). Empty is the house "--".
+   (the calm UI build 2026-10-27 — the audit's 5-09 · 1-17 · 5-48, T-09 · T-08) in words a studio owner says — "30 min", "26 hours" — and an
+   empty value is the house's one stand-in, "—" (`EMPTY`; was "--", beside "- -" on the same pages). */
+/** (the calm UI build 2026-10-27, T-08) the one mark a table cell shows for a value it doesn't have */
+export const EMPTY = '—'
 const DAY_MS = 86_400_000
 /** The calendar day a moment falls on (local), as a whole number — differences are whole days. */
 export const calendarDay = (at: number | Date): number => { const d = at instanceof Date ? at : new Date(at); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS) }
@@ -297,23 +329,38 @@ export const calendarDay = (at: number | Date): number => { const d = at instanc
 export const calendarDaysBetween = (from: number | Date, to: number | Date): number => calendarDay(to) - calendarDay(from)
 /** "1 day" · "12 days" — never weeks. */
 export const dayWords = (n: number): string => `${n} ${Math.abs(n) === 1 ? 'day' : 'days'}`
-/** A span in the house words: under an hour "30m", under two days "26.3h", else calendar days "12 days"; null → "--". */
+/** A span in the house words: under an hour "30 min", under two days "26 hours", else calendar days "12 days"; null → "—". */
 export function spanWords(from: number | null | undefined, to: number | null | undefined): string {
-  if (from == null || to == null) return '--'
+  if (from == null || to == null) return EMPTY
   const ms = to - from
-  if (ms < 3_600_000) return `${Math.max(0, Math.round(ms / 60_000))}m`
-  if (ms < 48 * 3_600_000) { const r = Math.round((ms / 3_600_000) * 10) / 10; return `${Number.isInteger(r) ? r : r.toFixed(1)}h` }
+  if (ms < 3_600_000) return `${Math.max(0, Math.round(ms / 60_000))} min`
+  if (ms < 48 * 3_600_000) { const r = Math.max(1, Math.round(ms / 3_600_000)); return `${r} ${r === 1 ? 'hour' : 'hours'}` }
   return dayWords(calendarDaysBetween(from, to))
 }
-/** A duration given only as milliseconds (a median, a mean): under two days as `spanWords`, else whole days rounded — "n days"; null → "--". */
+/** A duration given only as milliseconds (a median, a mean): under two days as `spanWords`, else whole days rounded — "n days"; null → "—". */
 export function durationWords(ms: number | null | undefined): string {
-  if (ms == null) return '--'
+  if (ms == null) return EMPTY
   if (ms < 48 * 3_600_000) return spanWords(0, ms)
   return dayWords(Math.round(ms / DAY_MS))
 }
 /** (Q-03) A sum on a record's CARD, as the lead's mocked Quotes card writes it: "S$ 77,900" — a space, whole dollars. Money documents
     (invoices, the Money tab, Finance, the quote editor) keep their cents. */
 export const moneyCard = (minor: number): string => `S$ ${money(minor)}`
+
+/**
+ * (the calm UI build 2026-10-27 — the audit's 4-43, T-11) ONE "Saved …" label for every editor (the quote's, the contract's, the libraries'):
+ * "Saved just now" · "Saved 2 mins ago" · "Saved 3 hours ago" · "Saved 7 Sep ’26" — the house months (`displayDate`), never the server's locale
+ * ("7 Sept"). The quote editor's header wording (1201:33811).
+ */
+export function savedLabel(updatedAt: number, now: number): string {
+  const s = Math.max(0, Math.round((now - updatedAt) / 1000))
+  if (s < 45) return 'Saved just now'
+  const m = Math.round(s / 60)
+  if (m < 60) return `Saved ${m} ${m === 1 ? 'min' : 'mins'} ago`
+  const h = Math.round(m / 60)
+  if (h < 24) return `Saved ${h} ${h === 1 ? 'hour' : 'hours'} ago`
+  return `Saved ${displayDate(new Date(updatedAt))}`
+}
 
 /** (pending modules S16 — 1.0's rail and dock wrote "99+") A count on a glyph: the number up to 99, then "99+", so a busy studio's badge keeps to
     its corner instead of running over the icon. The control's accessible name keeps the whole number. */

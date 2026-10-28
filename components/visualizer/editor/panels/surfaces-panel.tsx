@@ -6,6 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Chips } from '@/components/om/chips'
+import { useMediaQuery } from '@/lib/breakpoint'
 import { resolveSurfaceCategories } from '@/lib/visualizer/catalogue'
 import type { LibraryMaterial, OwnSwatch } from '@/lib/visualizer/materials'
 import type { Finishes, MaterialRef, SurfaceDef } from '@/lib/visualizer/model'
@@ -46,6 +47,7 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
   rough?: boolean
 }) {
   const SKETCH_WHY = 'Render the sketch into a photo first — then trace what it didn’t mark'
+  const touch = useMediaQuery('(hover: none)')
   /* (UX audit V5) A photo read roughly says so wherever its surfaces are picked — in the list and inside each surface — with the way to do
      better beside it: Draw a surface (Add a surface, traced), or on one surface Redraw its outline. A tablet's tap on the photo lands inside
      a surface, so the list's note alone was never seen there. */
@@ -126,11 +128,14 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
     )
   }
   const groups = SURFACE_GROUP_ORDER.map((g) => ({ g, members: surfaces.filter((s) => surfaceGroupFor(s.label) === g) })).filter((x) => x.members.length)
+  /* (the calm UI build 2026-10-27, 6-35 · W-394 · W-090 · W-263) the panel is named as its tab is ("Surfaces"); a desk clicks, a finger taps;
+     the foot's "Missed one? Draw it on the photo, or add it by name and tap where it is." is the + and the pencil's own tooltips — the one
+     instruction on the screen at rest is the hint bar until Got it */
   return (
-    <Panel key="list" title="Surfaces & materials" sub={surfaces.length ? `${surfaces.length} ${surfaces.length === 1 ? 'surface' : 'surfaces'} on the photo · tap one to pick its finish` : undefined} testId="viz-surfaces"
-           actions={<><Tooltip label={sketch ? SKETCH_WHY : 'Draw a surface on the photo'}><IconButton icon="draw" label="Draw a surface" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={sketch} onClick={() => onDraw(null)} /></Tooltip><Tooltip label={sketch ? SKETCH_WHY : 'Add a surface by name'}><IconButton icon="add" label="Add a surface" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={sketch} onClick={onAdd} /></Tooltip></>}>
+    <Panel key="list" title="Surfaces" sub={surfaces.length ? `${surfaces.length} ${surfaces.length === 1 ? 'surface' : 'surfaces'} on the photo · ${touch ? 'tap' : 'click'} one to pick its finish` : undefined} testId="viz-surfaces"
+           actions={<><Tooltip label={sketch ? SKETCH_WHY : 'Missed one? Draw it on the photo'}><IconButton icon="draw" label="Draw a surface" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={sketch} onClick={() => onDraw(null)} /></Tooltip><Tooltip label={sketch ? SKETCH_WHY : `Add a surface the photo missed — by name, then ${touch ? 'tap' : 'click'} where it is`}><IconButton icon="add" label="Add a surface" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={sketch} onClick={onAdd} /></Tooltip></>}>
       {sketch ? (
-        <div className={styles.note}><Icon name="draw" size={20} weight={300} /><span>This photo reads as a sketch. Render it into a photo first (Tools, or the button below) — then its surfaces are marked for you.</span></div>
+        <div className={styles.note}><Icon name="draw" size={20} weight={300} /><span>This photo reads as a sketch. Render it into a photo first (Whole room, or the button below) — then its surfaces are marked for you.</span></div>
       ) : !surfaces.length ? (
         <div className={styles.section}>
           <span className={styles.none}>{reshaped ? 'This version is a whole-room look — its surfaces aren’t marked. Draw one, or edit from the Original.' : 'No surfaces marked on this photo yet.'}</span>
@@ -191,7 +196,6 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
         </div>
         </>
       )}
-      {surfaces.length && !sketch ? <span className={styles.hint}>Missed one? Draw it on the photo, or add it by name and tap where it is.</span> : null}
     </Panel>
   )
 }

@@ -102,7 +102,7 @@ export async function setFilesShown(leadId: string, fileIds: string[], shown: bo
   /* (fix-G, G-40) a receipt's entry in Files › Payments is a pointer to the receipt page — the client has the receipt on their Money tab, so
      the stub is never shown as a file (taking one off stays possible, for an entry shown before this rule) */
   const receipts = shown && rows.length ? new Set((await db.select({ id: projectPayments.receiptFileId }).from(projectPayments).where(inArray(projectPayments.receiptFileId, rows.map((r) => r.id)))).map((r) => r.id)) : new Set<string | null>()
-  if (shown && rows.length && rows.every((r) => receipts.has(r.id))) return { error: 'A receipt is already on the client’s Money page — it isn’t shown as a file' }
+  if (shown && rows.length && rows.every((r) => receipts.has(r.id))) return { error: 'A receipt is already on the client’s Payments page — it isn’t shown as a file' }
   const change = rows.filter((r) => (shown ? !r.shownAt && !receipts.has(r.id) : !!r.shownAt))
   if (!change.length) return { changed: 0, designs: 0 }
   await db.update(leadFiles).set({ shownToClientAt: shown ? new Date() : null }).where(inArray(leadFiles.id, change.map((r) => r.id)))

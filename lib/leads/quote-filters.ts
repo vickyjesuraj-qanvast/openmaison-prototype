@@ -10,6 +10,13 @@ import type { QuoteApproval } from '@/lib/settings/types'   // types only — sa
 export const QUOTE_STATUSES = ['Draft', 'Sent for Approval', 'Approved', 'Sent to Client', 'Confirmed', 'Signed'] as const
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
 export const isQuoteStatus = (s: string): s is QuoteStatus => (QUOTE_STATUSES as readonly string[]).includes(s)
+/** (the calm UI build 2026-10-27 — T-01, audit 4-04) What a status READS as on screen: one set, sentence case — ONE map, lib/quotes/status-words.ts
+ *  (it imports only this file's type, so there is no cycle), re-exported here for this module's readers. Display only — the stored value, the
+ *  status menu's keys, filters, URLs and every rule keep the stored words above. */
+export { QUOTE_STATUS_LABEL, quoteStatusLabel } from '@/lib/quotes/status-words'
+/** (the calm UI build 2026-10-27 — audit 2-25 · 4-15, W-053) A quote's stored visibility ('Private' · 'Shared') in plain words: who can see it. */
+export const quoteVisibilityLabel = (v: string, clientFirst: string | null): string =>
+  v === 'Shared' ? `${clientFirst || 'The client'} can see it` : v === 'Private' ? 'Only your studio can see it' : v
 
 /**
  * The two statuses that exist only in a studio that reviews quotes internally (Settings › Leads › Quote approval).
@@ -94,7 +101,7 @@ export const clientValidityPassed = (q: QuoteListRow, now: number) => waitingOnC
 export type QuoteQuick = '' | 'approval' | 'waiting' | 'expiring'
 export const QUOTE_TODOS: { key: Exclude<QuoteQuick, ''>; label: (n: number) => string; icon: string; approversOnly?: boolean }[] = [
   { key: 'approval', label: (n) => `Waiting for my approval · ${n}`, icon: 'approval', approversOnly: true },
-  { key: 'waiting', label: (n) => `Waiting on client · ${n}`, icon: 'hourglass_top' },
+  { key: 'waiting', label: (n) => `With client · ${n}`, icon: 'hourglass_top' },   // (the calm UI build 2026-10-27 — 4-04) the status's own words
   { key: 'expiring', label: (n) => `Expiring this week · ${n}`, icon: 'event' },
 ]
 /** (Q4 · Q5) How many wait on each to-do — the approvals only for a member who approves, while the studio asks for approval. */
@@ -112,9 +119,11 @@ export function quickMatch(q: QuoteListRow, quick: QuoteQuick, now: number): boo
   return true
 }
 
-/** Overdue = a due date before today on a quote that is not yet Signed (mirrors tasks: open + due before today). */
+/** Overdue = a due date before today on a quote the client has not decided on yet (mirrors tasks: open + due before today). (the Dashboard
+    redesigned, 2026-10-26 — P-14) Confirmed settles it as Signed does: the due date's follow-up closes on either (lib/quotes/follow-up.ts), so
+    the Due cell never reads late on a quote whose follow-up is done. */
 export const isQuoteOverdue = (q: Pick<Quote, 'dueAt' | 'status'>, now: number) =>
-  !!q.dueAt && q.status !== 'Signed' && q.dueAt.getTime() < startOfDay(new Date(now))
+  !!q.dueAt && q.status !== 'Signed' && q.status !== 'Confirmed' && q.dueAt.getTime() < startOfDay(new Date(now))
 
 /**
  * Filter + sort. The Date pane bounds the quote's Created date (the first date column; the mock names the pane "Dates").

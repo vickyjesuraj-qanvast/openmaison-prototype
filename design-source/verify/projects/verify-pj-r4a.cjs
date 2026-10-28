@@ -105,10 +105,28 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     ok((await p.request.get(BASE + `/my/demo-studio/file/${planId}`, { maxRedirects: 0 })).headers()['location']?.includes('/my/demo-studio/login'), 'signed out, a file’s address asks to sign in (and comes back to the file, fix-F F-20)')
 
     // ── The desk (board 7) ─────────────────────────────────────────────────────────────────────────────────────────────
+  /* (the calm UI build 2026-10-27, a deliberate change — 3-36) at a desk the bar is the phone's five: Home · Schedule · Updates · Payments and More ▾,
+     the rest in its menu — a section is "in the bar" when it is either */
+  const deskSections = async (pg) => {
+    const bar = await pg.locator('[data-testid="portal-nav"]').innerText()
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return bar
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const rows = await pg.locator('[data-testid="portal-nav-more-row"]').allInnerTexts()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return `${bar}\n${rows.join('\n')}`
+  }
+  const deskHas = async (pg, key) => {
+    if (await pg.locator(`[data-testid="portal-nav"] a[data-key="${key}"]`).isVisible()) return true
+    if (!(await pg.locator('[data-testid="portal-nav-more"]').count())) return false
+    await pg.locator('[data-testid="portal-nav-more"]').click(); await pg.waitForTimeout(300)
+    const there = await pg.locator(`[data-testid="portal-nav-more-row"][data-key="${key}"] [role="menuitem"]`).isVisible()
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(250)
+    return there
+  }
     console.log('The portal at a desk (1440)')
     const D = await desk(); const d = await D.newPage(); watch(d, 'desk')
     await signIn(d, PHONE.ben); await enterCode(d)
-    ok(await d.locator('[data-testid="portal-nav"] a[data-key="files"]').isVisible() && !(await d.locator('[data-testid="portal-dock"]').isVisible()), 'at a desk the sections sit in the studio’s bar')
+    ok(await deskHas(d, 'files') && !(await d.locator('[data-testid="portal-dock"]').isVisible()), 'at a desk the sections sit in the studio’s bar (Files under its More ▾ — the calm UI build 2026-10-27, a deliberate change)')
     /* (fix-F, F-14) the file he opened above is no longer a need — any need's button proves the rule */
     ok(/Look and confirm|See how to pay|Choose|Open|Answer/.test(await d.locator('[data-testid="portal-need"]').first().innerText()) && await d.locator('[data-testid="portal-need"]').first().isVisible(), 'at a desk each need has its button (board 7)')
     await shot(d, 'home-1440', true)
@@ -119,7 +137,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     const S = await desk(); const s = await S.newPage(); watch(s, 'studio')
     await go(s, `/leads/${VIVIEN}`)
     await s.getByRole('button', { name: 'More options' }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: 'Invite to Portal' }).click(); await settle(s, 1500)
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1500) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */
     const panel = s.locator('[data-testid="client-access"]')
     ok(await panel.getAttribute('data-state') === 'none' && /Not invited/i.test(await s.locator('[data-testid="access-chip"]').innerText()), 'Invite to Portal opens its panel — Not invited')
     await shot(s, 'access-lead-1440')
@@ -127,7 +145,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     const wa = await s.evaluate(() => window.__wa)
     ok(wa.length === 1 && wa[0].includes('wa.me/6591008254') && decodeURIComponent(wa[0]).includes('/my/demo-studio'), 'Invite opens WhatsApp on the press with the portal’s address')
     ok(!/openmaison/i.test(decodeURIComponent(wa[0]).replace(/https?:\/\/[^/ ]+/g, '')), 'the message carries the studio’s name, never OpenMaison’s')
-    ok(/Invited, not opened/i.test(await s.locator('[data-testid="access-chip"]').innerText()), 'the chip says Invited, not opened')
+    ok(/^invited$/i.test((await s.locator('[data-testid="access-chip"]').innerText()).trim()), 'the chip says Invited (the calm UI build 2026-10-27, a deliberate change: the chip says the state alone — 5-42)')
     ok(!!sql(`select invited_at from homeowner_lead_links where lead_id='${VIVIEN}'`) && sql(`select count(*) from lead_events where lead_id='${VIVIEN}' and kind='invite_sent'`) !== '0', 'the invite is a record and an Activity line')
     ok(/Look through your quote/.test(await s.locator('[data-testid="access-waiting"]').innerText()), 'Waiting on Vivien lists her quote')
     // See it as the client
@@ -165,7 +183,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     // Withdraw + Undo, then the withdrawn number refused
     await go(s, `/leads/${VIVIEN}`)
     await s.getByRole('button', { name: 'More options' }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: 'Invite to Portal' }).click(); await settle(s, 1500)
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1500) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */
     ok(/Opened/i.test(await s.locator('[data-testid="access-chip"]').innerText()), 'the panel now says Opened')
     await s.locator('[data-testid="access-client-menu"]').click(); await settle(s, 300); await s.getByRole('menuitem', { name: /^Withdraw .*access$/ }).click()   // fix-G G-23: Withdraw lives in the client's row menu; await settle(s, 1200)
     ok(await until(async () => !!sql(`select withdrawn_at from homeowner_lead_links where lead_id='${VIVIEN}'`) && /Withdrawn/i.test(await s.locator('[data-testid="access-chip"]').innerText())), 'Withdraw access: the link is withdrawn')
@@ -189,7 +207,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     ok(await s.locator('[data-testid="need-setup-portal"]').isVisible() && /Invite the client/.test(await s.locator('[data-testid="need-setup-portal"]').innerText()), 'Needs you gains “Invite the client” (Aisha, not invited)')
     await go(s, `/projects/${BEN_P}`)
     await s.getByRole('button', { name: 'More options' }).first().click(); await settle(s, 300)
-    await s.getByRole('menuitem', { name: /Invite to Portal/ }).click(); await settle(s, 1500)   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
+    await s.getByRole('menuitem', { name: /^(Client portal|Invite to Portal)$/ }).click(); await settle(s, 1500) /* (the calm UI build 2026-10-27, a deliberate change) the menu row reads "Client portal" (3-25 · W-218) */   // (one-home N-15, a deliberate change of this rule) the panel and the project ⋮ item are "Invite to Portal" now
     ok(/Who can open this project/.test(await s.locator('[data-testid="client-access"]').innerText()) && /Opened/i.test(await s.locator('[data-testid="access-chip"]').innerText()), 'the project’s menu opens Invite to Portal — Benjamin opened it')
     await shot(s, 'access-project-1440')
     await s.keyboard.press('Escape'); await settle(s, 400)
@@ -217,8 +235,9 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     const clients = await s.locator('[data-testid="portal-client-row"]').allInnerTexts()
     /* the rule, not the demo's names: the card shows the first four by state — opened, then invited, then not invited (fix-F's R77b invites
        two more clients, so Aisha, not invited, is under All clients) */
-    const rank = (c) => (/Opened/i.test(c) ? 0 : /Invited, not opened/i.test(c) ? 1 : /Not invited/i.test(c) ? 2 : 3)
-    ok(clients.length <= 4 && clients.some((c) => /Benjamin Han[\s\S]*Opened/i.test(c)) && clients.some((c) => /Ryan[\s\S]*(Invited, not opened|Opened)/i.test(c)) && clients.every((c, i) => i === 0 || rank(clients[i - 1]) <= rank(c)), 'the clients as board 9 lists them — the first four, by state')
+    /* (the calm UI build 2026-10-27, a deliberate change: the chip says the state alone — 5-42) — Opened · Invited · Not invited */
+    const rank = (c) => (/Opened/i.test(c) ? 0 : /Not invited/i.test(c) ? 2 : /Invited/i.test(c) ? 1 : 3)
+    ok(clients.length <= 4 && clients.some((c) => /Benjamin Han[\s\S]*Opened/i.test(c)) && clients.some((c) => /Ryan[\s\S]*((?<!not )Invited|Opened)/i.test(c)) && clients.every((c, i) => i === 0 || rank(clients[i - 1]) <= rank(c)), 'the clients as board 9 lists them — the first four, by state')
     await shot(s, 'setup-1440', true)
     const [tp] = await Promise.all([S.waitForEvent('page'), s.locator('[data-testid="portal-test"]').click()])
     await tp.waitForLoadState('networkidle'); await settle(tp, 1000)

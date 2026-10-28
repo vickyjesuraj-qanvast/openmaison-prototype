@@ -79,7 +79,7 @@ export function SentBanner({ status, version, at, confirmedBy, now, onRevise, va
   return (
     <div className={styles.banner} role="status" data-testid="sent-banner" data-tone="sent">
       <span className={styles.bannerIcon}><Icon name={status === 'Signed' ? 'lock' : status === 'Confirmed' ? 'task_alt' : 'send'} size={20} weight={300} /></span>
-      <span className={styles.bannerText}>{text}{validityEnded ? <> <b data-testid="validity-ended">Its validity ended on {validityEnded}</b> — extend {variation ? 'Valid until' : 'Quote Valid Until'} if the price still stands.</> : null}
+      <span className={styles.bannerText}>{text}{validityEnded ? <> <b data-testid="validity-ended">The price was valid until {validityEnded}.</b> Change Valid until if it still stands.</> : null}
         {signedTotal ? <> <b data-testid="signed-total">The client signed for {signedTotal}</b> — edits here don’t change the contract; a change after signing is a variation order.</> : null}</span>
       <span className={styles.bannerActions}>
         <Button variant="secondary" appearance="outlined" onPress={onRevise}>Revise — new version</Button>

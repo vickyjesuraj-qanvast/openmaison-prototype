@@ -25,6 +25,9 @@ const fs = require('fs')
 const os = require('os')
 const crypto = require('crypto')
 const { execSync } = require('child_process')
+/* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-40) the studio block's menu opens Your profile · Sign out; View as, the studio's
+   plan and the studios sit under its Demo fold — opened here before they are pressed (the fold is remembered per browser once open) */
+const openDemo = async (pg) => { const m = pg.locator('[role="menu"][aria-label="View as"], [role="dialog"][aria-label="View as"], [role="dialog"][aria-label="You"]').first(); await m.waitFor({ timeout: 8000 }).catch(() => {}); const f = m.getByTestId('demo-fold'); if (await f.count() && (await f.getAttribute('aria-expanded')) !== 'true') { await f.click(); await pg.waitForTimeout(300) } return m }
 const [DB, dirArg, baseArg] = process.argv.slice(2)
 if (!DB || /local\.db$/.test(DB)) { console.error('Give the scratch DB path — never local.db'); process.exit(2) }
 const dir = dirArg || path.join(__dirname, 'pm2-s42d')
@@ -92,7 +95,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
   const demoPlan = async (p, name) => {
     if (!(await p.getByRole('button', { name: /^Demo Studio/ }).count())) await go(p, '/leads')
     await p.getByRole('button', { name: /^Demo Studio/ }).first().click(); await settle(p, 400)
-    await p.getByRole('menu', { name: 'View as' }).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
+    await (await openDemo(p)).getByTestId('demo-plan').getByRole('menuitemradio', { name }).click()
     await settle(p, 2600)
   }
   const bal = () => json(`select plan_credits as p, topup_credits as t, period_start as s, period_end as e from studio_credit_balances where id = 'studio'`)[0]
@@ -107,7 +110,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
     as('dane')
     const ctx = await desk()
     const d = await page(ctx, 'desk')
-    await go(d, '/dashboard', 2500)
+    await go(d, '/tasks', 2500)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
 
     // ── 1 · Maison AI's answers ─────────────────────────────────────────────────────────────────────────────────────────────────────
     if (want(1)) {
@@ -117,12 +120,12 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       const client = json(`select name from leads where deleted_at is null and lower(name) like '${first.toLowerCase()} %' and lower(name) <> '${member.name.toLowerCase()}' limit 1`)[0]
       ok(!!client, `the demo has a client who shares only ${first}’s first name (${client?.name})`)
       for (const who of ['germaine', 'dane']) {
-        as(who); await go(d, '/dashboard', 1500)
+        as(who); await go(d, '/tasks', 1500)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
         const a = await ask(d, member.name)
         ok(new RegExp(`What ${first} is working on`).test(a.title) && !(client && a.all.includes(client.name)), `D-01 · ${who}: “${member.name}” answers about the member, not ${client?.name} — “${a.title}”`, a.all.slice(0, 160))
         await closeSheet(d)
       }
-      as('dane'); await go(d, '/dashboard', 1500)
+      as('dane'); await go(d, '/tasks', 1500)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
       const c = await ask(d, client.name)
       ok(c.title === client.name, `D-01 · a client’s whole name still answers about the client — “${c.title}”`)
       const team = await ask(d, 'who is on the team')
@@ -137,7 +140,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       ok(acc.title !== 'I can’t answer that yet' && (acc.title === 'Not for Accounting' || /^Statement/.test(acc.title)) && /Accounting keeps the books|Statement/.test(acc.all), `D-04 · Accounting naming a client (${lead.name}) is told why — “${acc.title}”`)
       await shot(d, '01-accounting-client-1440')
       await closeSheet(d)
-      as('dane'); await go(d, '/dashboard', 1500)
+      as('dane'); await go(d, '/tasks', 1500)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
       const handed = sql(`select l.name from leads l join projects p on p.lead_id = l.id and p.deleted_at is null where l.deleted_at is null and l.direct = 0`).split('\n').filter(Boolean)
       const att = await ask(d, 'Which leads need attention?')
       const named = att.rows.map((r) => r.split('\n')[0].trim())
@@ -153,7 +156,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       ok(/in the last 7 days/.test(portal.title) && !/this week/.test(portal.title), `D-14 · the portal’s visits say “in the last 7 days” — “${portal.title}”`)
       await closeSheet(d)
       for (const who of ['germaine', 'dane']) {
-        as(who); await go(d, '/dashboard', 1500)
+        as(who); await go(d, '/tasks', 1500)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
         const cr = await ask(d, 'Who used the most AI credits this month?')
         const bare = cr.all.replace(/AI credits?/g, '').match(/\bcredits?\b/g)
         ok(!bare, `D-13 · ${who}: the credits answer says “AI credits” every time — “${cr.all.slice(0, 120)}”`, bare)
@@ -167,7 +170,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
     // ── 2 · the sheet and the keyboard ──────────────────────────────────────────────────────────────────────────────────────────────
     if (want(2)) {
       console.log('2 · Maison AI from the keyboard')
-      as('dane'); await go(d, '/dashboard', 1800)
+      as('dane'); await go(d, '/tasks', 1800)   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
       const fabBtn = d.locator('button[aria-label="Maison AI"]').last()
       await fabBtn.focus(); await d.keyboard.press('Enter'); await settle(d, 900)
       const inAsk = await d.evaluate(() => !!document.activeElement?.closest('[data-testid="maison-ask"]') && document.activeElement?.tagName === 'INPUT')
@@ -176,7 +179,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       ok(await d.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-label="Maison AI suggestions"]')), 'D-06 · Tab walks on inside the sheet (never to “Skip to content”)')
       await d.keyboard.press('Escape'); await settle(d, 700)
       ok(!(await sheet(d).isVisible().catch(() => false)) && await d.evaluate(() => document.activeElement?.getAttribute('aria-label') === 'Maison AI'), 'D-06 · Escape closes it and gives focus back to the button')
-      await go(d, '/dashboard', 1500)   // a fresh page: the mouse is the last thing used
+      await go(d, '/tasks', 1500)   // a fresh page: the mouse is the last thing used   // (Dashboard redesign 2026-10-26, a deliberate change) the Dashboard's Maison AI is the docked field (Q-02) — the sheet is asked on a page that keeps the floating button
       await d.locator('button[aria-label="Maison AI"]').last().click(); await settle(d, 900)
       ok(await sheet(d).isVisible() && !(await d.evaluate(() => !!document.activeElement?.closest('[data-testid="maison-ask"]'))), 'D-06 · a mouse press leaves focus where it was (no keyboard pops up on a phone)')
       await closeSheet(d)
@@ -334,7 +337,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       const L = json(`select name, plan from space_layouts where id = '${id}'`)[0]
       const under = L ? JSON.parse(L.plan).underlay?.name : null
       ok(!!L && L.name === 'Traced — Waterway sunrise' && under === 'Floor plan photo waterway sunrise', `D-15 · a slug file name reads as words: “${L?.name}” on “${under}”`)
-      ok(/Under it: Floor plan photo waterway sunrise/.test(await text(d.locator('body'))), 'D-15 · the floor-plan card says the same name')
+      ok(/Floor plan underneath/.test(await text(d.getByTestId('planner-underlay'))) && /Floor plan photo waterway sunrise/.test(await text(d.getByTestId('planner-underlay'))), 'D-15 · the floor-plan card says the same name')   // (the calm UI build 2026-10-27, a deliberate change) — 6-16 · W-417
       await shot(d, '10-traced-name-1440')
       for (const [w, h] of [[390, 844], [320, 640]]) {
         const pc = await phoneCtx(w, h); const q = await page(pc, `photo-${w}`)
@@ -413,6 +416,7 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
       const csv = path.join(os.tmpdir(), `s42d-vo-${Date.now()}.csv`); fs.writeFileSync(csv, 'Item,Qty,Unit,Rate\nAdditional power point,4,pcs,85\n')
       await go(d, `/projects/${ben}/money`, 2200)
       await d.locator('[data-testid="money-new"]').click(); await settle(d, 400)
+      await d.getByRole('menuitem', { name: /^Variation order/ }).first().click(); await settle(d, 300)   /* (the calm UI build 2026-10-27, a deliberate change) New ▾ is five kinds; a kind made more than one way opens its ways in place (3-26) */
       await d.getByRole('menuitem', { name: /contractor/ }).first().click(); await settle(d, 700)
       await d.getByTestId('vo-upload-dialog').locator('input[type="file"]').setInputFiles(csv); await settle(d, 2800)
       const spent = n(`select count(*) from credit_ledger where reason = 'spend' and created_at >= ${t0}`)

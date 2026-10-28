@@ -95,7 +95,10 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
   const go = async (p, url, t = 1500) => { await p.goto(BASE + url, { waitUntil: 'networkidle' }); await settle(p, t) }
   const shot = (p, name, full = false) => p.screenshot({ path: path.join(dir, `${name}.png`), fullPage: full })
   const tile = async (p, key, part = 'value') => (await p.getByTestId(key).locator(`[class*="__${part}"]`).first().innerText().catch(() => '')).trim()
-  const pickRange = async (p, label) => { await p.getByTestId('insights-range-chips').getByRole('radio', { name: label }).click(); await settle(p, 700) }
+  /* (the calm UI build 2026-10-27, a deliberate change) the report and the period are one house pill each (5-19 · 5-20): open it, pick its menuitemradio row; a folded table opens first (5-21) */
+  const pickIn = async (p, id, label) => { await p.getByTestId(id).getByRole('button').first().click(); await settle(p, 450); await p.getByRole('menuitemradio', { name: new RegExp(`^${label}`) }).first().click(); await settle(p, 700) }
+  const pickRange = async (p, label) => pickIn(p, 'insights-range-chips', label)
+  const unfold = async (p) => { for (const id of ['sales-sources-more', 'sales-flow-more']) { const b = p.getByTestId(id); if (await b.count() && await b.first().getAttribute('aria-expanded') === 'false') { await b.first().click(); await settle(p, 400) } } }
   /** a section table's rows as { first cell, column → text } */
   const rowsOf = (p, id) => p.getByTestId(`sales-${id}-table`).locator('[role="row"]').evaluateAll((rs) => rs.slice(1).map((r) => Object.fromEntries([...r.querySelectorAll('[role="cell"]')].map((c) => [c.dataset.col, c.innerText.replace(/\s+/g, ' ').trim()]))))
   const writes = () => num(`select (select count(*) from lead_events) + (select count(*) from stage_logs) + (select count(*) from notifications) + (select count(*) from quotes) + (select count(*) from lead_tasks)`)
@@ -114,14 +117,16 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/company/reports/leads', 1800)
       const chips = p.getByTestId('leads-report-chips')
       ok(await chips.isVisible(), 'an Owner’s Leads tab carries the report chips')
-      ok((await chips.getByRole('radio').allInnerTexts()).map((t) => t.trim()).join(' · ') === 'Response time · Sales', 'Response time · Sales')
-      ok(await chips.getByRole('radio', { name: 'Response time' }).getAttribute('aria-checked') === 'true' && await p.getByTestId('insights-tiles').isVisible(), 'it lands on Response time — today’s page, as it was')
-      await chips.getByRole('radio', { name: 'Sales' }).click(); await settle(p, 1200)
+      await chips.getByRole('button').first().click(); await settle(p, 450)
+      const reports = (await p.getByRole('menuitemradio').allInnerTexts()).map((t) => t.split('\n')[0].trim()); await p.keyboard.press('Escape'); await settle(p, 300)
+      ok(reports.join(' · ') === 'Response time · Sales', 'Response time · Sales', reports.join(' · '))
+      ok(/Report: Response time/.test(await chips.innerText()) && await p.getByTestId('insights-tiles').isVisible(), 'it lands on Response time — today’s page, as it was')
+      await pickIn(p, 'leads-report-chips', 'Sales'); await settle(p, 500)
       ok(await p.getByTestId('sales-report').isVisible() && await p.getByTestId('insights-tiles').count() === 0, 'Sales replaces the body; the range bar stays')
       ok(/[?&]report=sales\b/.test(p.url()) && /[?&]range=90\b/.test(p.url()), 'the pick and the range ride in the address', p.url())
       const heads = await p.locator('[data-testid="sales-report"] h2').allInnerTexts()
-      ok(heads.join(' · ') === 'By team member · Where leads stop · By source · Open pipeline · Over time · Going quiet · Going quiet, by team member', '1.0’s six reports as sections, in its order', heads.join(' · '))
-      ok(/Filtering on lead created date · \d+ leads? in range/.test(await p.getByTestId('insights-range').innerText()), 'the caption says what the range filters on')
+      ok(/^By (team )?member · Where leads stop · By source · Open pipeline · Over time · Going quiet$/.test(heads.join(' · ')), '1.0’s six reports as sections, in its order — one Going quiet with its By member switch (5-21)', heads.join(' · '))
+      ok(/Counts the leads added in this period · \d+ leads?/.test(await p.getByTestId('insights-range').getAttribute('data-tip') ?? ''), 'the period pill’s tooltip says what the range filters on')   // (the calm UI build 2026-10-27, a deliberate change) W-519
       await shot(p, 's45a-sales-1440', true)
       await p.reload({ waitUntil: 'networkidle' }); await settle(p, 1400)
       ok(await p.getByTestId('sales-report').isVisible(), 'a reload keeps Sales (the address)')
@@ -129,12 +134,13 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       ok(/[?&]range=30\b/.test(p.url()) && await p.getByTestId('sales-granularity').getByRole('radio', { name: 'By week' }).getAttribute('aria-checked').catch(() => null) === 'true', 'a range rides in the address; on 30 days the flow reads by week', p.url())
       await pickRange(p, 'Last 90 days')
       ok(await p.getByTestId('sales-granularity').getByRole('radio', { name: 'By month' }).getAttribute('aria-checked') === 'true', 'on 90 days the flow reads by month')
+      await unfold(p)
       const months = (await rowsOf(p, 'flow')).length
       await p.getByTestId('sales-granularity').getByRole('radio', { name: 'By week' }).click(); await settle(p, 700)
       const weeks = (await rowsOf(p, 'flow')).length
       ok(weeks > months, `By week breaks the range into weeks (${months} months → ${weeks} weeks)`)
       ok(await p.getByTestId('sales-flow-chart').isVisible() && await p.getByTestId('sales-flow-chart').locator('[data-kind="line"]').count() === 1, 'Over time draws the house chart (one axis, two counts) above its table')
-      await chips.getByRole('radio', { name: 'Response time' }).click(); await settle(p, 900)
+      await pickIn(p, 'leads-report-chips', 'Response time'); await settle(p, 300)
       ok(!/report=sales/.test(p.url()) && await p.getByTestId('insights-tiles').isVisible(), 'back to Response time: the address drops the report')
     }
 
@@ -171,6 +177,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
           const big = funnel.filter((r) => /Biggest drop/i.test(r.dropped))
           const drops = funnel.map((r) => n(r.dropped) || 0)
           ok(big.length === (Math.max(...drops) > 0 ? 1 : 0) && (!big.length || n(big[0].dropped) === Math.max(...drops)), `${tag}: the biggest drop is named once, on the largest`)
+          await unfold(p)
           const src = await rowsOf(p, 'sources')
           ok(src.reduce((s, r) => s + n(r.leads), 0) === leads && src.reduce((s, r) => s + n(r.won), 0) === won, `${tag}: by source adds up to the tiles`)
           ok(src.every((r) => n(r.leads) === num(`select count(*) from (${pop}) where ${r.source === 'No source' ? `trim(coalesce(source, '')) = ''` : `trim(source) = '${r.source.replace(/'/g, "''")}'`}`)), `${tag}: each source counts its own leads`)
@@ -206,7 +213,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       if (dl) {
         const file = path.join(dir, 'export.csv'); await dl.saveAs(file).catch(() => {})
         const body = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : ''
-        ok(/Sales · Last 90 days/.test(body) && ['By team member', 'Where leads stop', 'By source', 'Open pipeline', 'Over time', 'Going quiet'].every((t) => body.includes(t)), 'the sheet holds every section', dl.suggestedFilename())
+        ok(/Sales · Last 90 days/.test(body) && /By (team )?member/.test(body) && ['Where leads stop', 'By source', 'Open pipeline', 'Over time', 'Going quiet'].every((t) => body.includes(t)),   /* (the calm UI build 2026-10-27, a deliberate change) By member once B2's sales.ts lands (5-41) */ 'the sheet holds every section', dl.suggestedFilename())
       } else ok(false, 'a file downloads')
       await settle(p, 800)
       await p.getByRole('button', { name: 'Maison AI' }).first().click(); await settle(p, 800)
@@ -256,12 +263,20 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/company/reports/leads?range=90', 1400)
       const outreach = await tile(p, 'tile-outreach')
       await go(p, '/dashboard', 2000)
+      /* (Dashboard redesign 2026-10-26, a deliberate change) Where it stands' tiles became Pulse's figures (his P-03): an Owner's strip opens
+         Leads this week · Won · 90 days · First response, the Sales figure the report's Won value written short ("S$ 121.1K") with the report's
+         own "n of N leads", First response the report's own median — the house compact money, never a second count */
+      const short = (v) => { const m = cents(v) / 100; const t = (x) => x.toFixed(1).replace(/\.0$/, ''); return m >= 1e6 ? `S$ ${t(m / 1e6)}M` : m >= 1e3 ? `S$ ${t(m / 1e3)}K` : `S$ ${Math.round(m).toLocaleString('en-SG')}` }
+      /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-17 · §2's vocabulary) Pulse's labels are sentences: "Won in the last 90
+         days" · "To collect" (was Owed to you) · "Profit in October" · "First reply to new leads" (was First response) — the same four, in the same order */
+      const OWNER_FIGURES = ['WON IN THE LAST 90 DAYS', 'TO COLLECT', `PROFIT IN ${new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'Asia/Singapore' }).format(new Date()).toUpperCase()}`, 'FIRST REPLY TO NEW LEADS']
       const labels = (await p.locator('[data-testid="stands-tiles"] > *').evaluateAll((els) => els.map((e) => (e.querySelector('[class*="__label"]')?.textContent ?? '').trim().toUpperCase())))
-      ok(labels.slice(0, 3).join(' · ') === 'LEADS · SALES · RESPONSE TIME', 'an Owner’s tiles: Leads, then Sales and Response time', labels.join(' · '))
-      ok(await tile(p, 'tile-sales') === wonValue, `Sales is the report’s Won value on its 90 days (${wonValue})`)
-      ok(new RegExp(`^${wonCount} of ${inRange} leads? won`).test(await tile(p, 'tile-sales', 'help')), '…its help the report’s Won of Leads', await tile(p, 'tile-sales', 'help'))
-      ok(await tile(p, 'tile-response') === outreach, `Response time is the report’s Assignment → First outreach median (${outreach})`)
-      ok(await p.locator('[data-testid="stands-tiles"] [data-grade]').count() === 0, 'no tile is coloured (red is for late and ours)')
+      /* (the calm pass 2026-10-26, a deliberate change — the Claude Design option he took, lane C1) an Owner's four: Won first, First response last */
+      ok(labels.join(' · ') === OWNER_FIGURES.join(' · '), 'an Owner’s figures: Won · To collect · Profit · First reply to new leads', labels.join(' · '))
+      ok(await tile(p, 'tile-sales') === short(wonValue), `Won is the report’s Won value on its 90 days (${await tile(p, 'tile-sales')} ⇐ ${wonValue})`)
+      ok(new RegExp(`${wonCount} of ${inRange} leads?`).test(await tile(p, 'tile-sales', 'help')), '…its line the report’s Won of Leads', await tile(p, 'tile-sales', 'help'))
+      ok(await tile(p, 'tile-response') === outreach, `First response is the report’s Assignment → First outreach median (${outreach})`)
+      ok(await p.locator('[data-testid="stands-tiles"] [data-grade]').count() === 0, 'no figure is coloured (red is for late and ours — the grade is its chip)')
       await p.getByTestId('tile-sales').click(); await p.waitForURL(/\/company\/reports\/leads/, { timeout: 10000 }).catch(() => {}); await settle(p, 1800)
       const u = new URL(p.url())
       ok(u.searchParams.get('report') === 'sales' && u.searchParams.get('range') === '90' && u.searchParams.get('from') === '/dashboard' && await p.getByTestId('sales-report').isVisible(), 'Sales opens the Sales report on 90 days, with the way back', p.url())
@@ -270,12 +285,17 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/dashboard', 1600)
       await p.getByTestId('tile-response').click(); await p.waitForURL(/\/company\/reports\/leads/, { timeout: 10000 }).catch(() => {}); await settle(p, 1600)
       ok(!/report=sales/.test(p.url()) && /range=90/.test(p.url()) && await p.getByTestId('insights-tiles').isVisible(), 'Response time opens its report on 90 days')
-      for (const [who, expect] of [['huimin', ['LEADS', 'SALES', 'RESPONSE TIME']], ['nurul', ['LEADS', 'RESPONSE TIME']], ['germaine', ['MY LEADS', 'MY PROJECTS', 'TICKETS', 'MESSAGES']], ['james', ['LEADS', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES']]]) {   /* (pending modules S45B, a deliberate change of this rule) a Manager's Contractors tile after Open projects — (S46B, a deliberate change of this rule) and Tickets after the projects' own */
+      /* (Dashboard redesign 2026-10-26, a deliberate change) each role's Pulse (his P-11): an Admin's is the Owner's, Marketing's the lead desk's
+         two, a Designer's their own, a Manager's the leads' three over their team — Won a count, no money */
+      /* (the calm pass 2026-10-26, a deliberate change) an Admin's are the Owner's four */
+      /* (the calm UI build 2026-10-27, a deliberate change — 1-17) each role's same figures, in their sentence-case labels */
+      for (const [who, expect] of [['huimin', OWNER_FIGURES], ['nurul', ['LEADS THIS WEEK', 'FIRST REPLY TO NEW LEADS']], ['germaine', ['MY LEADS', 'MY PROJECTS', 'YOUR COMMISSION TO BE PAID']], ['james', ['LEADS THIS WEEK', 'WON IN THE LAST 90 DAYS', 'FIRST REPLY TO NEW LEADS']]]) {
         as(who)
         await go(p, '/dashboard', 1800)
         const got = (await p.locator('[data-testid="stands-tiles"] > *').evaluateAll((els) => els.map((e) => (e.querySelector('[class*="__label"]')?.textContent ?? '').trim().toUpperCase())))
-        ok(JSON.stringify(got.slice(0, expect.length)) === JSON.stringify(expect) && (who === 'huimin' || who === 'nurul' || !got.includes('SALES')), `${who}: ${expect.join(' · ')}${who === 'germaine' || who === 'james' ? ' — no Sales, no Response time' : ''}`, got.join(' · '))
-        if (who === 'nurul') ok(!got.includes('SALES'), 'nurul (Marketing): no money on her Dashboard')
+        ok(JSON.stringify(got) === JSON.stringify(expect), `${who}: ${expect.join(' · ')}`, got.join(' · '))
+        if (who === 'nurul') ok(!got.includes('WON IN THE LAST 90 DAYS'), 'nurul (Marketing): no money on her Dashboard')   // (the calm UI build 2026-10-27, a deliberate change) Won's new label
+        if (who === 'james') ok(!/S\$/.test(await tile(p, 'tile-sales')), 'james (Manager): Won as a count — no money on his page')
       }
       as('dane')
       await go(p, '/dashboard', 1800)
@@ -316,9 +336,11 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
         const marks = [t(r.qs), t(r.cs)].filter(Boolean)
         const signed = marks.length ? Math.min(...marks) : t(r.w)
         const net = r.qa != null ? netOf(r.sa ?? r.qa, r.g ? GST : 0) : r.a ? netOf(r.a, GST) : null
-        ok(await cell('source') === (r.source || '--'), `${r.number}: Source is its lead’s (${r.source})`)
-        ok(await cell('signedOn') === (signed ? displayDate(signed) : '--'), `${r.number}: Signed on is the first signature, else the Won day${signed ? '' : ' — none: “--”'}`, await cell('signedOn'))
-        ok(n(await cell('valueNet')) === (net === null ? NaN : Math.round(net / 100)) || (net === null && await cell('valueNet') === '--'), `${r.number}: Value before GST is the sale as signed, before GST`, await cell('valueNet'))
+        /* (the calm UI build 2026-10-27, a deliberate change — T-08 · 5-48) a cell with nothing to say shows the one empty mark "—" (was "--") */
+        const NONE = '—'
+        ok(await cell('source') === (r.source || NONE), `${r.number}: Source is its lead’s (${r.source})`)
+        ok(await cell('signedOn') === (signed ? displayDate(signed) : NONE), `${r.number}: Signed on is the first signature, else the Won day${signed ? '' : ' — none: “—”'}`, await cell('signedOn'))
+        ok(n(await cell('valueNet')) === (net === null ? NaN : Math.round(net / 100)) || (net === null && await cell('valueNet') === NONE), `${r.number}: Value before GST is the sale as signed, before GST`, await cell('valueNet'))
         checked++
       }
       ok(checked >= 3, `every open project checked (${checked})`)

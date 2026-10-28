@@ -10,7 +10,7 @@ export const isFolderLibrary = (v: unknown): v is FolderLibrary => typeof v === 
 
 /** The top of each library, as its crumb and the Move dialog say it — the tab's own name. */
 export const LIBRARY_ROOT: Record<FolderLibrary, string> = {
-  quotes: 'Quotes', contracts: 'Contracts', tasks: 'Tasks', texts: 'T&Cs & Notes', payments: 'Payment schedules', 'book-items': 'My Items', 'book-sections': 'My Sections', visualizer: 'All designs', materials: 'All materials', schedules: 'Schedules',   // (REG-673 · 677) a one-page section's bar reads its contents, not the page's title again
+  quotes: 'Quotes', contracts: 'Contracts', tasks: 'Tasks', texts: 'T&Cs & Notes', payments: 'Payment schedules', 'book-items': 'Items', 'book-sections': 'Sections', visualizer: 'Designs', materials: 'All materials', schedules: 'Project schedules',   // (the calm UI build 2026-10-27 — W-268 · W-109 · 4-06 · 6-20)   // (REG-673 · 677) a one-page section's bar reads its contents, not the page's title again
 }
 /** The Company page each library lives on. */
 export const LIBRARY_PATH: Record<FolderLibrary, string> = {

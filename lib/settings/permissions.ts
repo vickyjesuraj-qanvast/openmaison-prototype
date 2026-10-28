@@ -73,7 +73,7 @@ const MEMBERS: RulePlace = { href: '/company/members', label: 'Company › Membe
 const BOOK: RulePlace = { href: '/company/price-book', label: 'Company › Price book' }
 const PLAN: RulePlace = { href: '/company/plan', label: 'Company › Plan & AI credits' }
 /** (simplify S-20) Settings › Projects' first card, where every project approval is switched */
-const OWNER_OK = 'Projects › What waits for an Owner or an Admin'
+const OWNER_OK = 'Projects › Approvals'   // (the calm UI build, 5-33 · W-068) the card's name
 const OK_INVOICE: RulePlace = { href: '/settings?section=projects#invoice-approval', label: OWNER_OK }
 export const RULE_PLACES: Partial<Record<string, RulePlace>> = {
   members: MEMBERS, owner: MEMBERS, 'member-details': MEMBERS, 'member-paynow': MEMBERS,
@@ -83,7 +83,7 @@ export const RULE_PLACES: Partial<Record<string, RulePlace>> = {
   publish: { href: '/settings?section=quotes#template-approval', label: 'Quotes & pricing › Template approval' },
   payments: { href: '/settings?section=quotes#payment-lock', label: 'Quotes & pricing › Payment schedule' },
   'price-book': BOOK, 'price-book-approve': BOOK,
-  'price-book-sections': { href: '/company/price-book/sections', label: 'Company › Price book › My Sections' },
+  'price-book-sections': { href: '/company/price-book/sections', label: 'Company › Price book › Sections' },   // (the calm UI build, 4-39) the tab's name
   'ai-use': PLAN, 'ai-buy': PLAN, 'ai-amounts': PLAN, 'ai-plan': PLAN, 'ai-usage': PLAN,
   'portal-setup': { href: '/company/portal', label: 'Company › Client portal' },   // (Projects r4a)
   /* (simplify S-20, a deliberate change) the project approvals sit together on Settings › Projects' first card, What waits for an Owner or an
@@ -94,17 +94,18 @@ export const RULE_PLACES: Partial<Record<string, RulePlace>> = {
   'project-handover': { href: '/settings?section=projects#handover-review', label: OWNER_OK },
   'project-see': LEADS_VIS,
   'project-members': LEADS_VIS,   // (parity P-38) a project's members are its lead's — the same reach as a lead's
-  'payment-confirm': { href: '/settings?section=finance#payment-settings', label: 'Finance › Client payments' },   // (Projects round 6) · (one-home N-14) the card's name · (simplify S-15) on Settings › Finance
+  'payment-confirm': { href: '/settings?section=finance#payment-settings', label: 'Settings › Finance › Client payments' },   // (Projects round 6) · (one-home N-14) the card's name · (simplify S-15) on Settings › Finance
   /* (gaps build, package C) the schedule's two approvals */
   'project-milestone-done': { href: '/settings?section=projects#done-approval', label: OWNER_OK },
   'project-schedule-share': { href: '/settings?section=projects#share-approval', label: OWNER_OK },
   /* (gaps build F1) money out's two approvals — set with the costs (Settings › Projects' approvals card names them and links here) */
-  'po-send': { href: '/settings?section=finance#cost-settings', label: 'Finance › Costs' },
-  'expense-log': { href: '/settings?section=finance#cost-settings', label: 'Finance › Costs' },
-  'bill-approve': { href: '/settings?section=finance#cost-settings', label: 'Finance › Costs' },   // (S44R, C8)
+  /* (the calm UI build, 5-28 · W-039) Settings' Finance module by its full path — Company › Finance › Costs is the list, this is its rules */
+  'po-send': { href: '/settings?section=finance#cost-settings', label: 'Settings › Finance › Costs' },
+  'expense-log': { href: '/settings?section=finance#cost-settings', label: 'Settings › Finance › Costs' },
+  'bill-approve': { href: '/settings?section=finance#cost-settings', label: 'Settings › Finance › Costs' },   // (S44R, C8)
   /* (gaps build F2) the books' rules */
-  'commission-run': { href: '/settings?section=finance#commission-settings', label: 'Finance › Commission' },
-  'credit-issue': { href: '/settings?section=finance#credit-settings', label: 'Finance › Credit notes' },   // (simplify S-15) back on Settings › Finance, under Money in
+  'commission-run': { href: '/settings?section=finance#commission-settings', label: 'Settings › Finance › Commission' },
+  'credit-issue': { href: '/settings?section=finance#credit-settings', label: 'Settings › Finance › Credit notes' },   // (simplify S-15) back on Settings › Finance, under Money in
 }
 /**
  * (parity P-38, D-18) The areas the table is grouped by, in Settings' module order (Studio · Leads · Projects · … · Finance), each with the card
@@ -113,6 +114,13 @@ export const RULE_PLACES: Partial<Record<string, RulePlace>> = {
  */
 export const PERMISSION_AREAS = ['Studio', 'Leads', 'Projects', 'Client portal', 'Quotes and contracts', 'Templates and the price book', 'Money in', 'Money out', 'Profit and commission', 'Design tools', 'AI credits and the plan'] as const
 export type PermissionArea = (typeof PERMISSION_AREAS)[number]
+/** (the calm UI build 2026-10-27, T-01) How each area's caption reads — Finance's two lists are Client payments and Costs on screen. The keys
+    stay (each group's test id is its key's); only the words change. */
+export const AREA_LABEL: Record<PermissionArea, string> = {
+  'Studio': 'Studio', 'Leads': 'Leads', 'Projects': 'Projects', 'Client portal': 'Client portal', 'Quotes and contracts': 'Quotes and contracts',
+  'Templates and the price book': 'Templates and the price book', 'Money in': 'Client payments', 'Money out': 'Costs', 'Profit and commission': 'Profit and commission',
+  'Design tools': 'Design tools', 'AI credits and the plan': 'AI credits and the plan',
+}
 const AREA_OF: Record<string, PermissionArea> = {
   settings: 'Studio', members: 'Studio', owner: 'Studio', 'member-details': 'Studio', 'member-paynow': 'Studio', 'sent-messages': 'Studio', 'studio-compliance': 'Studio', 'qanvast-listing': 'Studio',
   see: 'Leads', assign: 'Leads', 'delete-lead': 'Leads', insights: 'Leads', 'files-change': 'Leads', 'lead-setup': 'Leads',
@@ -197,7 +205,7 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
     /* (REG-652, price book parity Q-03 · Q-04) The price book: Owners and Admins change it; anyone else proposes an item for approval. */
     row('price-book', 'Add or change items in the price book', (r) => (runsBook({ id: ME, role: r }) ? 'yes' : 'submit')),
     row('price-book-approve', 'Approve a proposed price book item', (r) => (runsBook({ id: ME, role: r }) ? 'yes' : 'no')),
-    row('price-book-sections', 'Save or change My Sections', (r) => (runsBook({ id: ME, role: r }) ? 'yes' : 'no')),
+    row('price-book-sections', 'Save or change the price book’s sections', (r) => (runsBook({ id: ME, role: r }) ? 'yes' : 'no')),
     /* (REG-664) Folders in Templates and the Price book: Owners and Admins make, rename, move and delete them; an entry is filed by whoever
        may rename it — a template by its author (a quote template, which keeps no author, by an Owner or an Admin). */
     row('folders', 'Make, rename, move and delete folders in Templates and the Price book', (r) => (folderBlock({ role: r }) === null ? 'yes' : 'no')),
@@ -209,9 +217,9 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
     row('materials', 'Change or delete a studio material', (r) => own(materialChangeBlock({ id: ME, role: r }, OTHER) === null, materialChangeBlock({ id: ME, role: r }, ME) === null)),
     /* (REG-700, AI credits Q-23 · Q-24 — integration A-18: 1.0's rules as they are) Everyone uses AI within their monthly amount; the Owner
        buys, sets the amounts and changes the plan; the Owner and Admins see the studio's usage, everyone else their own. */
-    row('ai-use', 'Use AI tools, within their monthly amount', () => 'yes'),
+    row('ai-use', 'Use AI tools, within their monthly limit', () => 'yes'),
     row('ai-buy', 'Buy AI credits or turn on auto top-up', (r) => (mayBuyCredits(r) ? 'yes' : 'no')),   // (pending modules S19) auto top-up is buying
-    row('ai-amounts', 'Set members’ monthly AI credits', (r) => (maySetAmounts(r) ? 'yes' : 'no')),
+    row('ai-amounts', 'Set members’ monthly AI credit limits', (r) => (maySetAmounts(r) ? 'yes' : 'no')),
     row('ai-plan', 'Change the plan, seats and billing', (r) => (mayChangePlan(r) ? 'yes' : 'no')),
     row('ai-usage', 'See the studio’s AI usage', (r) => (usageReach(r) === 'studio' ? 'yes' : 'own')),
     /* (Projects r4a, Q-49 · Q-46) The client portal: its set-up (the address, Live or Paused) is the Owners' and Admins'; a client's access
@@ -224,7 +232,7 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
     /* (Projects round 5 — F-05 · F-07 · F-17 · F-18) Money in: the project's team sees its money and prepares its invoices; with Settings ›
        Projects › Invoices need approval on (the default) a Designer's or a Manager's invoice waits for an Owner or an Admin. Voiding a sent
        invoice and recording a client's approval of a variation order given outside its link are the Owners' and Admins'. */
-    row('project-money', 'See a project’s money — its contract value and invoices', (r) => {
+    row('project-money', 'See a project’s payments — its contract value and invoices', (r) => {
       const v = { id: ME, role: r, teamIds: r === 'Manager' ? [MINE] : [] }
       return seesMoney(v, [OTHER]) ? 'yes' : seesMoney(v, [MINE]) ? 'team' : seesMoney(v, [ME]) ? 'own' : 'no'   // (parity map, MI-007) seesMoney — the team's, and the books'
     }),
@@ -337,7 +345,7 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
     row('commission-see', 'See commission — what is earned, paid and owed', (r) => (seesBooks(r) ? 'yes' : 'own')),
     row('commission-ask', 'Ask for another commission rate on a project', (r) => (runsStudio(r) ? 'yes' : onTeam(r))),
     /* (parity map, FB-114 — a deliberate change of this row) paying commission is running the money (Accounting); setting it is the studio's */
-    row('commission-run', 'Set commission rates and shares, and answer asks', (r) => (runsStudio(r) ? 'yes' : 'no')),
+    row('commission-run', 'Set commission rates and shares, and answer rate requests', (r) => (runsStudio(r) ? 'yes' : 'no')),
     row('commission-pay', 'Pay commission', (r) => (runsMoney(r) ? 'yes' : 'no')),
     row('credit-issue', 'Issue, void or refund a credit note', (r) => (runsMoney(r) ? 'yes' : 'no')),   // (parity map, MI-007) app/finance/books-actions.ts
     row('xero', 'Connect Xero and push the books', (r) => (runsMoney(r) ? 'yes' : 'no')),   // (parity map, FB-114) app/finance/xero-actions.ts
@@ -345,16 +353,16 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
   /* (gaps build H) tickets and Messages follow the change rule (`mayChangeProject`, app/projects/tickets-actions.ts · messages-actions.ts); the
      categories, the messages clients get by themselves and the About page are the Owners' and Admins' */
   rows.push(
-    row('project-tickets', 'Answer, assign, escalate and resolve a client’s ticket', onTeam),
+    row('project-tickets', 'Answer, assign, flag to the Owner and resolve a client’s issue', onTeam),
     row('project-messages', 'Write to the client in a project’s Messages', onTeam),
-    row('client-messages', 'Change the ticket categories and the messages clients get by themselves', (r) => (runsStudio(r) ? 'yes' : 'no')),
+    row('client-messages', 'Change the issue categories and the messages clients get by themselves', (r) => (runsStudio(r) ? 'yes' : 'no')),
     row('about-page', 'Change the About page clients read — the story, photos, awards and who is shown', (r) => (runsStudio(r) ? 'yes' : 'no')),
   )
   /* (gaps build I — I-Q1 · Q3 · Q6 · Q10 · Q12) the Workload view and Insights are Owners', Admins' and Managers' (a Manager's team); capacities
      and the studio's own compliance steps are Owners' and Admins'; a project's checklist follows the change rule (app/projects/compliance-actions.ts) */
   rows.push(
     row('project-workload', 'See the Workload view and Company › Reports › Projects', (r) => (runsStudio(r) ? 'yes' : r === 'Manager' ? 'team' : 'no')),   // (parity P-38) REG-1361's home
-    row('project-capacity', 'Set how many projects each person can run', (r) => (runsStudio(r) ? 'yes' : 'no')),
+    row('project-capacity', 'Set the most projects each member can run', (r) => (runsStudio(r) ? 'yes' : 'no')),
     row('project-compliance', 'Answer a project’s compliance checklist', onTeam),
     row('studio-compliance', 'Mark the studio’s own compliance steps done', (r) => (runsStudio(r) ? 'yes' : 'no')),
     /* (pending modules S37) Company › Profile › Listed on Qanvast — 1.0's /verify was the owner's alone; 2.0's Profile rule */
@@ -372,7 +380,7 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
   rows.push(
     row('crew-mark', 'Mark a vendor as a contractor — its trades, sites at once and code', (r) => (changesVendor(r) ? 'yes' : 'no')),
     row('crew-assign', 'Put a contractor on a project, move them, mark them on site or done, take them off', (r) => (seesContractors(r) ? onTeam(r) : 'no')),
-    row('crew-check', 'Mark a contractor’s work Leader checked', (r) => (seesContractors(r) && checksCrew(r) ? onTeam(r) : 'no')),
+    row('crew-check', 'Mark a contractor’s work checked', (r) => (seesContractors(r) && checksCrew(r) ? onTeam(r) : 'no')),
     row('crew-see', 'See the contractors’ workload — who is free, who is over capacity, the work with no contractor', (r) => (seesContractors(r) ? 'yes' : 'no')),
   )
   return rows

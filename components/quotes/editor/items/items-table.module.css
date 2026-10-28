@@ -167,6 +167,11 @@
 .row[data-child] .colItem { padding-left: var(--om-spacing-10); }   /* (REG-2526) 28 a level, as the prototype's tree: 40 · 68 */
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
+/* (the calm UI build 2026-10-27, the UI audit's 4-12) a child line's eye in its default state (fully shown) waits for the row's hover or focus —
+   at rest only an exception (hidden, without prices) shows; under a finger it stays, as there is no hover to bring it. */
+.eye[data-rest] { display: none; }
+.row:hover .eye[data-rest], .row:focus-within .eye[data-rest], .eye[data-rest][aria-expanded='true'] { display: inline-flex; }
+@media (hover: none) { .eye.eye[data-rest] { display: inline-flex; } }
 
 /* Inputs: plain text at rest; while the row is active (`data-active`, item-row.tsx: an editable control — input, select, the
    description — holds the focus, or one of its select menus is open; a button in the row never activates it) the number cells take the

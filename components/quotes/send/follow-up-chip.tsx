@@ -27,7 +27,7 @@ export function FollowUpChip({ days, onChange, noun = 'quote' }: { days: number;
   return (
     <div className={styles.followUp} data-testid="follow-up-chip">
       <ScopePill ref={anchor} icon="event" label={pick.days ? `Follow up in ${pick.label}` : 'No follow-up'} open={open} onClick={() => setOpen((o) => !o)} />
-      <span className={styles.followHelp}>{pick.days ? `Sets the ${noun}’s Due date and adds a follow-up task for you` : `The ${noun}’s Due date stays as it is`}</span>
+      <span className={styles.followHelp}>{pick.days ? 'Adds a follow-up task for you on that day' : `The ${noun}’s follow-up date stays as it is`}</span>
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Follow up in">
         {FOLLOW_UPS.map((f) => (
           <DropdownItem key={f.days} role="menuitemradio" checked={f.days === pick.days} onSelect={() => { setOpen(false); onChange(f.days) }}>{f.label}</DropdownItem>

@@ -96,7 +96,7 @@ export function CommissionSettings({ data, canManage }: { data: BooksSettings['c
       <RuleDialog open={!!editing} title={editing && !editing.memberId && !editing.projectId ? 'The studio’s commission' : 'Change the rate'}
                   subtitle={editing ? (editing.memberId || editing.projectId ? `${editing.rule ? subjectOf(editing.rule) : ''} — from today.` : 'Everyone, on every project, unless a rate fits them — from today.') : undefined}
                   initial={editing?.rule ? { basis: editing.rule.basis, rateBp: editing.rule.rateBp, fixedMinor: editing.rule.fixedMinor } : null} allowNone={!!editing && !editing.memberId && !editing.projectId}
-                  busy={busy} saveLabel="Save the rate" onClose={() => setEditing(null)}
+                  busy={busy} saveLabel="Save" onClose={() => setEditing(null)}
                   onSave={(d) => { const e = editing; if (!e) return; void save(e.memberId, e.projectId, d).then((ok) => { if (ok) setEditing(null) }) }} />
       <RuleDialog open={!!adding} title={adding?.scope === 'member' ? 'A member’s own rate' : adding?.scope === 'project' ? 'A project’s rate' : 'A member’s rate on a project'}
                   subtitle="It applies from today, over the studio’s rule." initial={null} allowNone={false} busy={busy} saveLabel="Add the rate" subjectWhy={addWhy}
@@ -117,7 +117,7 @@ export function CreditSettings() {
     <div className={s.setting} id="credit-settings" data-testid="credit-settings">
       <div className={s.settingHead}>
         <span className={s.settingTitle}>Credit notes</span>
-        <span className={s.settingHelp}>A credit note takes money off a sent invoice — its GST at the invoice’s rate — and is numbered when it is issued. Owners and Admins issue them from the project’s Money tab.</span>
+        <span className={s.settingHelp}>A credit note takes money off a sent invoice — its GST at the invoice’s rate — and is numbered when it is issued. Owners and Admins issue them from the project’s Payments tab.</span>
       </div>
       <span className={s.settingHelp} data-testid="credit-numbers-pointer">Credit notes are numbered under Document numbers, above.</span>
     </div>

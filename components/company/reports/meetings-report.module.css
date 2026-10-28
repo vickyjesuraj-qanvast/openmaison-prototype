@@ -7,6 +7,14 @@
 .bar { composes: bar from '../../leads/insights/insights-view.module.css'; }
 .barEnd { composes: barEnd from '../../leads/insights/insights-view.module.css'; }
 .caption { composes: caption from '../../leads/insights/insights-view.module.css'; }
+/* (the calm UI build 2026-10-27 — 5-19) the reports' one bar (insights-view.module.css) */
+.pickBar { composes: pickBar from '../../leads/insights/insights-view.module.css'; }
+.picks { composes: picks from '../../leads/insights/insights-view.module.css'; }
+.pickEnd { composes: pickEnd from '../../leads/insights/insights-view.module.css'; }
+/* (5-23) Coaching and the deal score card: the page's section head over the Overview card's frame (composed) — its rows' 12 at the top as at
+   the foot, where the card's 48 caption head used to stand */
+.rowsCard { composes: section from '../../leads/insights/insights-view.module.css'; min-width: 0; }
+.panel { composes: card from '../../leads/detail/card.module.css'; padding-top: var(--om-spacing-3); }
 .tiles { composes: tiles from '../../leads/insights/insights-view.module.css'; }
 .section { composes: section from '../../leads/insights/insights-view.module.css'; }
 .sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; }

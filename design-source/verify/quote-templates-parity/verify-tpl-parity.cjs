@@ -33,6 +33,10 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
     const social = page.getByTestId('social-links')
     await social.getByLabel('Instagram').fill('@demostudio.sg'); await social.getByLabel('Facebook').fill('fb.com/demostudio')
+    // (the calm UI build 2026-10-27, a deliberate change) Profile is four tabs (5-36): the socials are on Details, the entities on Bank & entities;
+    // one Save per tab in the page header ("Save", 5-18) — the socials are saved before the tab changes, then the entities on their own tab
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')
+    await page.goto(`${BASE}/company/profile?tab=entities`); await page.getByTestId('entities').waitFor(); await ready(page)
     const e0 = page.getByTestId('entity').first()
     await e0.getByLabel('Bank', { exact: true }).fill('DBS Bank'); await e0.getByLabel('Account name').fill('Demo Studio Pte Ltd'); await e0.getByLabel('Account number').fill('072-123456-7'); await e0.getByLabel('SWIFT / BIC').fill('DBSSSGSG')
     await page.getByRole('button', { name: 'Add an entity' }).click()
@@ -43,7 +47,7 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
     const [fc] = await Promise.all([page.waitForEvent('filechooser'), e1.getByRole('button', { name: /logo/ }).click()])
     await fc.setFiles(LOGO); await snack(page, 'Logo added')
     await shot('01-profile-filled')
-    await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+    await page.getByRole('button', { name: 'Save', exact: true }).click(); await page.waitForTimeout(400); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) "Save" (5-18)
     const brand = sql("select value from settings where key='brand'")
     ok('profile saved: socials + SWIFT + entity letterhead', brand.includes('@demostudio.sg') && brand.includes('DBSSSGSG') && brand.includes('202400001K') && brand.includes('data:image'), brand.length + ' chars')
   })

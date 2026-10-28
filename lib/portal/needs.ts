@@ -208,9 +208,9 @@ export const BEFORE_STEPS: BeforeStepDef[] = [
       const d = [...(f.payments ?? [])].sort((a, b) => a.position - b.position)[0]
       if (!d) return null
       const title = `Pay the ${d.stage.toLowerCase()}`
-      if (d.state === 'paid') return { title, state: 'done', line: 'Done. Thank you — your receipt is on your Money page.', action: null, change: null }
+      if (d.state === 'paid') return { title, state: 'done', line: 'Done. Thank you — your receipt is on your Payments page.', action: null, change: null }
       if (d.state === 'to_confirm') return { title, state: 'done', line: 'Done. Waiting for the studio to confirm it arrived.', action: null, change: null }
-      if (d.state === 'due') return { title, state: 'now', line: `${money2(d.owedMinor)}${d.dueAt ? `, due ${dayMonth(dayOf(new Date(d.dueAt)))}` : ''}. How to pay is on your Money page.`, action: { label: title, href: `/my/${f.slug}/money#pay-${d.invoiceId}`, previewHref: null }, change: null }
+      if (d.state === 'due') return { title, state: 'now', line: `${money2(d.owedMinor)}${d.dueAt ? `, due ${dayMonth(dayOf(new Date(d.dueAt)))}` : ''}. How to pay is on your Payments page.`, action: { label: title, href: `/my/${f.slug}/money#pay-${d.invoiceId}`, previewHref: null }, change: null }
       return { title, state: 'later', line: 'Your designer sends the invoice once the agreement is signed.', action: null, change: null }
     },
   },
@@ -237,7 +237,7 @@ export const ACCESS_SECTIONS: AccessSectionDef[] = [
     if (!s) return null
     const asks = s.toConfirm.length
     const state = s.summary
-      ? [`Shared ${shortDay(s.summary.sharedAt)}`, asks ? `${plural(asks, 'stage')} to confirm` : null, s.concerns ? `${s.concerns} not right` : null].filter(Boolean).join(' · ')
+      ? [`Shared ${shortDay(s.summary.sharedAt)}`, asks ? `${plural(asks, 'milestone')} to confirm` : null   /* (the calm UI build 2026-10-27, 3-04) milestones, as the Schedule says */, s.concerns ? `${s.concerns} not right` : null].filter(Boolean).join(' · ')
       : s.hasMilestones ? 'Not shared yet' : 'No schedule yet'
     return { key: 'schedule', name: 'Schedule', state, href: `${f.base}/schedule` }
   },
@@ -263,16 +263,17 @@ export const ACCESS_SECTIONS: AccessSectionDef[] = [
   (f) => {
     if (!f.base.startsWith('/projects/') || !f.payments?.length) return null
     const paid = f.payments.filter((p) => p.state === 'paid').length, due = f.payments.filter((p) => p.state === 'due').length, waiting = f.payments.filter((p) => p.state === 'to_confirm').length
-    return { key: 'money', name: 'Money', state: [paid ? `${paid} paid` : null, due ? `${due} due` : null, waiting ? `${waiting} to confirm` : null].filter(Boolean).join(' · ') || 'Nothing invoiced yet', href: `${f.base}/money` }
+    return { key: 'money', name: 'Payments', state: [paid ? `${paid} paid` : null, due ? `${due} due` : null, waiting ? `${waiting} to confirm` : null].filter(Boolean).join(' · ') || 'Nothing invoiced yet', href: `${f.base}/money` }
   },
   /* (Projects round 8) Choices — only a home that is a project has them */
   (f) => {
     if (!f.base.startsWith('/projects/')) return null
     const list = f.choices ?? []
     const waiting = list.filter((c) => c.status === 'shared').length, declined = list.filter((c) => c.status === 'declined').length, chosen = list.filter((c) => c.status === 'chosen').length
-    return { key: 'choices', name: 'Choices', state: list.length ? [waiting ? `${waiting} waiting` : null, declined ? `${declined} said no to` : null, chosen ? `${chosen} chosen` : null].filter(Boolean).join(' · ') : 'Nothing shared', href: `${f.base}/choices` }   // (gaps build D, item 2)
+    return { key: 'choices', name: 'Choices', state: list.length ? [waiting ? `${waiting} waiting` : null, declined ? `${declined} turned down` : null   /* (the calm UI build 2026-10-27, 3-25 · W-079) */, chosen ? `${chosen} chosen` : null].filter(Boolean).join(' · ') : 'Nothing shared', href: `${f.base}/choices` }   // (gaps build D, item 2)
   },
-  (f) => ({ key: 'files', name: 'Files', state: f.files.length ? `${f.files.length} of ${f.filesTotal} shown` : f.filesTotal ? `None of ${f.filesTotal} shown` : 'No files yet', href: `${f.base}/files` }),
+  /* (the calm UI build 2026-10-27, 3-25 · W-572) what is shared, said as a sentence: "3 of 10 files shared" · "10 files, none shared yet" */
+  (f) => ({ key: 'files', name: 'Files', state: f.files.length ? `${f.files.length} of ${plural(f.filesTotal, 'file')} shared` : f.filesTotal ? `${plural(f.filesTotal, 'file')}, none shared yet` : 'No files yet', href: `${f.base}/files` }),
   (f) => ({ key: 'designs', name: 'Designs', state: f.designs.length ? `${plural(f.designs.reduce((n, d) => n + d.rooms, 0), 'room')} shared` : 'Nothing shared', href: f.designs[0] ? `/visualizer/${f.designs[0].designId}` : '/visualizer' }),
   /* (gaps build G) the floor plan — only a home that is a project has one */
   (f) => {

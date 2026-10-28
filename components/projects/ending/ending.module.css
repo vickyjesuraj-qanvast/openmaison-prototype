@@ -18,6 +18,11 @@
 .item { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); min-width: 0; }
 .item > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .why { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (the calm UI build 2026-10-27, 3-17) the quiet "Leave for after handover" tick under the row's words; the row's ⋮; a menu row's handle */
+.deferTick { display: inline-flex; margin-top: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.rowMenuWrap { position: relative; display: inline-flex; }
+.menuRow { display: contents; }
+.why.why { overflow-wrap: anywhere; white-space: normal; }   /* (the calm UI build 2026-10-27, 3-16) a caption wraps, never cut */
 /* A met item wears the done tick of LEAD STAGES (stages-card .row[data-state='done'] .icon); an open one the red of an overdue follow-up. */
 .mark { flex-shrink: 0; color: var(--om-color-tertiary-green-default); }
 .row[data-open] .mark { color: var(--om-color-tertiary-red-default); }

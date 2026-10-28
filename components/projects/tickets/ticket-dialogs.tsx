@@ -55,7 +55,7 @@ export function usePickedPhotos(max: number) {
   return { photos, reset: () => setPhotos([]), view }
 }
 
-/** The Looked after by select's first option. (invented copy) */
+/** The Handled by select's first option. (invented copy) */
 export const NOBODY = 'Nobody yet'
 
 export function NewTicketDialog({ open, categories, team, client, onClose, onSave }: {
@@ -81,14 +81,15 @@ export function NewTicketDialog({ open, categories, team, client, onClose, onSav
     } finally { setBusy(false) }
   }
   return (
-    <Dialog open={open} onClose={() => { reset(); onClose() }} title="New ticket" subtitle={`For ${client} — they see it on their page and can answer there.`} size="modal" width={600}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={() => { reset(); onClose() }}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy} data-testid="new-ticket-save">{busy ? 'Saving…' : 'Add ticket'}</Button></>}>
+    /* (the calm UI build 2026-10-27, 3-37 · 1-11) "New issue" — the client's word on both sides */
+    <Dialog open={open} onClose={() => { reset(); onClose() }} title="New issue" subtitle={`For ${client} — they see it on their page and can answer there.`} size="modal" width={600}
+            footer={<><Button variant="secondary" appearance="outlined" onPress={() => { reset(); onClose() }}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy} data-testid="new-ticket-save">{busy ? 'Saving…' : 'Add issue'}</Button></>}>
       <div className={styles.form} data-testid="new-ticket">
         <TextField label="Category" mode="select" options={categories} value={category} onChange={setCategory} required error={tried && !category ? MSG.required : undefined} />
         <TextField label="Subject" value={subject} onChange={(v) => setSubject(v.slice(0, SUBJECT_MAX))} maxLength={SUBJECT_MAX} required error={tried && !subject.trim() ? MSG.required : undefined} helper="A short line — “Water stain under the kitchen sink”" />
         <TextArea label="What happened" value={body} onChange={(v: string) => setBody(v.slice(0, BODY_MAX))} className={styles.field} />
         {ph.view}
-        <TextField label="Looked after by" mode="select" options={[NOBODY, ...names]} value={assignee} onChange={setAssignee} helper="Optional — they hear it on the bell" />
+        <TextField label="Handled by" mode="select" options={[NOBODY, ...names]} value={assignee} onChange={setAssignee} helper="Optional — they hear it on the bell" />   {/* (the calm UI build 2026-10-27, W-244) */}
       </div>
     </Dialog>
   )
@@ -114,8 +115,9 @@ export function EscalateDialog({ open, number, onClose, onSave }: { open: boolea
   const [busy, setBusy] = useState(false)
   const save = async () => { setTried(true); if (!note.trim()) return; setBusy(true); try { if (await onSave(note)) { setNote(''); setTried(false) } } finally { setBusy(false) } }
   return (
-    <Dialog open={open} onClose={onClose} title={`Escalate ${number}`} subtitle="It turns Urgent, Owners and Admins hear it, and the project stays in Needs attention until it is resolved." size="modal" width={600}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy} data-testid="escalate-save">{busy ? 'Saving…' : 'Escalate'}</Button></>}>
+    /* (the calm UI build 2026-10-27, 1-10 · W-181) Escalate → Flag to the Owner; "Needs your attention" (T-01) */
+    <Dialog open={open} onClose={onClose} title={`Flag ${number} to the Owner`} subtitle="It turns Urgent, Owners and Admins hear it, and the project stays in Needs your attention until it is resolved." size="modal" width={600}
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy} data-testid="escalate-save">{busy ? 'Saving…' : 'Flag to the Owner'}</Button></>}>
       <div className={styles.form}>
         <TextField label="Why it is urgent" value={note} onChange={(v) => setNote(v.slice(0, NOTE_MAX))} maxLength={NOTE_MAX} required error={tried && !note.trim() ? MSG.required : undefined} helper="Owners and Admins read this — the client doesn’t" />
       </div>

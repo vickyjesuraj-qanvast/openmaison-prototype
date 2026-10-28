@@ -70,14 +70,14 @@ export function VoUploadDialog({ open, projectId, onClose, onMade }: { open: boo
         {file && !file.read ? <p className={up.uploadNote} role="status"><Icon name="upload_file" size={20} weight={300} />Reading {file.name}…</p> : null}
         {ok ? (
           <section className={up.block} aria-label="The lines read" data-testid="vo-upload-read">
-            <p className={up.uploadNote} role="status"><Icon name="task_alt" size={20} weight={300} /><span><b>{ok.count} {ok.count === 1 ? 'line' : 'lines'}</b> read from {ok.source} · {money2(ok.totalMinor)}</span></p>
+            <p className={up.uploadNote} role="status"><Icon name="task_alt" size={20} weight={300} /><span><b>{ok.count} {ok.count === 1 ? 'item' : 'items'}</b> read from {ok.source} · {money2(ok.totalMinor)}</span></p>   {/* (the calm UI build 2026-10-27, T-01) a quote's lines are items, as Upload a quote's */}
             <div className={up.uploadTable} role="table" aria-label="The lines read">
               <div className={up.uploadRow} role="row" data-head=""><span role="columnheader">Section</span><span role="columnheader">Item</span><span role="columnheader">Qty</span><span role="columnheader">Unit</span><span role="columnheader">Amount</span></div>
               {rows.map(({ g, l }, k) => (
                 <div key={k} className={up.uploadRow} role="row"><span role="cell">{g ?? '—'}</span><span role="cell">{l.name}</span><span role="cell">{l.qty ?? 1}</span><span role="cell">{l.unit ?? '—'}</span><span role="cell">{money2(Math.round((l.qty ?? 1) * ((l.costMinor ?? 0) + (l.markupMinor ?? 0))))}</span></div>
               ))}
             </div>
-            {ok.count > 12 ? <span className={up.uploadMore}>+ {ok.count - 12} more {ok.count - 12 === 1 ? 'line' : 'lines'}</span> : null}
+            {ok.count > 12 ? <span className={up.uploadMore}>+ {ok.count - 12} more {ok.count - 12 === 1 ? 'item' : 'items'}</span> : null}
             <p className={up.uploadHelp}>{costs ? 'Each amount comes in as the line’s cost with no markup — set your markup in the editor.' : 'Each amount comes in as the line’s price.'} An omission stays a line with a minus quantity.</p>
             <span><Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={() => setFile(null)} isDisabled={busy}>Choose another file</Button></span>
           </section>

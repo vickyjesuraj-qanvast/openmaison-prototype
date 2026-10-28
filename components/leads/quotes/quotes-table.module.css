@@ -115,6 +115,13 @@
   border-radius: var(--om-radius-1);
 }
 .dueBtn[data-overdue] { color: var(--om-color-tertiary-red-default); }
+/* (the calm UI build 2026-10-27, 4-12) the empty follow-up cell's add waits for the row's hover or focus; under a finger it stays */
+.dueAdd { display: inline-flex; opacity: 0; transition: opacity var(--motion-hover); }
+.row:hover .dueAdd, .row:focus-within .dueAdd { opacity: 1; }
+@media (hover: none) { .dueAdd.dueAdd { opacity: 1; } }
+/* (4-15) a private quote's quiet lock in the number line */
+.lock { display: inline-flex; align-items: center; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
+.lock:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .dueBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* ---- Row hover actions (910:36644 / 910:36709 "Hover button" @1106,14): View + kebab, H g12, level-1 shadow, right 24. ----
@@ -184,7 +191,6 @@
   .actions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; display: flex; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .row[data-selected] .actions { background: var(--om-color-primary-variant); }
   .actionsInner { position: static; transform: none; }
-  .actionsInner > .float:first-child { display: none; }   /* View is dropped: the title opens */
   .float { box-shadow: none; background: transparent; }
   .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph in a column that always shows it — not a stack of outlined squares */
   .frame[data-overflow]:not([data-at-end]) .hActions, .frame[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
@@ -216,7 +222,7 @@
   .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
   .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; top: var(--om-spacing-2); right: var(--om-spacing-2); opacity: 1; pointer-events: auto; }
   .actionsInner { position: static; transform: none; }
-  .actionsInner > .float:first-child { display: none; }   /* View is the card's own press; the ⋮ opens with Open as its first row */
+  /* (the calm UI build 2026-10-27, 4-46) the row has no View any more — the card's own press opens; the ⋮ (its first row Open) is the float */
   .float { box-shadow: none; background: transparent; }
   .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph on a card that always shows it */
   .row {

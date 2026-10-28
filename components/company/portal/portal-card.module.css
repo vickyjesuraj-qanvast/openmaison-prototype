@@ -1,0 +1,7 @@
+/* (the calm UI build 2026-10-27 — 5-23) Client portal's card: the Overview card's frame and paddings (its bodies are built on them), the Company
+   card's title — bold, sentence case, ink (profile-view.module.css .cardTitle) — never the grey capital caption. */
+.card { composes: card from '../../leads/detail/card.module.css'; }
+.head { composes: head from '../../leads/detail/card.module.css'; gap: var(--om-spacing-2); }
+.title { composes: cardTitle from '../profile-view.module.css'; flex: 1; min-width: 0; }
+.metaRight { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.link { composes: link from '../../leads/detail/card.module.css'; }

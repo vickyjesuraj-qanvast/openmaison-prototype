@@ -17,12 +17,46 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
  */
 export type MaisonRow = { id: string; label: string; meta?: string; href?: string; run?: () => void
   /** (pending modules S10) a press asks this question — "which lead?" answered by picking one */ ask?: string
-  /** (pending modules S10 — "charts drawn inside the answer") the row's share of the answer's largest figure, 0…1, drawn as a bar under it */ share?: number }
+  /** (pending modules S10 — "charts drawn inside the answer") the row's share of the answer's largest figure, 0…1, drawn as a bar under it */ share?: number
+  /** (the Dashboard redesigned 2026-10-26, P-10 — "a list you can act on: rows with their verb, the same as Needs you") the row's one verb, a
+      quiet button at its end: it opens (`href`) or asks (`ask`) — the words still open the row's record */
+  verb?: MaisonDoor }
+
+/* ── (the Dashboard redesigned 2026-10-26 — his marks P-10 · lane D4; 1.0's answer components A-5 · A-6 · A-7 · A-8 · A-11 · A-12 · A-13 ·
+   A-14, D-1.0-home-and-chat.md §3.A) **Answers as cards you can use**, additive: an answer may carry, beside its words and rows, a few figures,
+   one record, a small chart, a timeline, a comparison and its doors — drawn on the house pieces wherever Maison AI answers (the docked field on
+   the Dashboard, the sheet everywhere else; components/maison-ai/answer-cards.tsx). Every value comes from the studio's records by rule, as
+   the answer's words do; every door opens with the way back. A receipt is what a change Maison AI ran did, with its Undo (client-made). ── */
+
+/** A door: one press to the place (`href`), a question asked (`ask`), or a call / WhatsApp (`tel:` · `wa.me` in `href`, `channel` drawn as its
+    glyph — the only verbs that carry one, his § 2). Doors that share a `group` fold into "{group} · n ▾" (1.0's grouped doors). */
+export type MaisonDoor = { label: string; href?: string; ask?: string; channel?: 'call' | 'whatsapp'; group?: string; testId?: string }
+/** A figure: the house number tile (StatTile) — its caption, the figure, the line under it, and where a press goes. `grade` only where the
+    figure's own report grades it. */
+export type MaisonFigure = { key: string; label: string; value: string; help?: string; grade?: 'good' | 'warn' | 'bad'; href?: string; ask?: string }
+/** A record: a lead or a project as one card — its name, its line (property · budget · source), the facts known, what to focus on. */
+export type MaisonRecord = { kind: 'lead' | 'project'; name: string; line?: string; facts?: { label: string; value: string }[]; points?: string[]; note?: string }
+/** A small chart — bars over a few periods (1.0's "Chart Engine" bar, A-12): each bar's words, its value in the figure's words, its share of
+    the largest (the bar's height). The figure is in the words; the bar only shows it. */
+export type MaisonChart = { label: string; bars: { key: string; label: string; value: string; share: number }[] }
+/** A timeline: what happened on a record, newest first, a type glyph each (the house timeline, components/om/timeline.tsx). */
+export type MaisonTimelineItem = { id: string; day: string; time: string; icon: string; text: string }
+/** A comparison: this beside that, row by row (1.0's `compare_entities`, A-14). */
+export type MaisonCompare = { left: string; right: string; rows: { label: string; left: string; right: string }[]; note?: string }
+
 /** (parity map, TD-107 · FB-118) `chips` — questions to ask next (what Maison AI answers, when nothing matched); `link` — the one button to the
     record or the report the answer comes from.
     (pending modules S10) `plan` — a change the Ask box proposes: the sheet shows what will happen with one confirm, and the confirm runs it
-    through the page's own action, with Undo (components/shell/maison-plans.ts). Nothing is written until it is pressed. */
-export type MaisonAnswer = { title: string; text?: string; rows?: MaisonRow[]; chips?: string[]; link?: { label: string; href: string }; plan?: MaisonPlan }
+    through the page's own action, with Undo (components/shell/maison-plans.ts). Nothing is written until it is pressed.
+    (the Dashboard redesigned 2026-10-26, P-10) `figures` · `record` · `chart` · `timeline` · `compare` · `doors` — the answer's cards. */
+export type MaisonAnswer = { title: string; text?: string; rows?: MaisonRow[]; chips?: string[]; link?: { label: string; href: string }; plan?: MaisonPlan
+  figures?: MaisonFigure[]; record?: MaisonRecord; chart?: MaisonChart; timeline?: MaisonTimelineItem[]; compare?: MaisonCompare; doors?: MaisonDoor[] }
+
+/** (the Dashboard redesigned 2026-10-26, P-10 · D §4.4) What a change Maison AI ran did — "Reminder opened in WhatsApp · Ryan D’Souza · VO-2" —
+    with the house action's own Undo where it has one, and a door to the record. Client-made, from the run (components/shell/maison-plans.ts). */
+export type MaisonReceipt = { text: string; meta?: string
+  /** `run` resolves null once it landed, else the refusal's words; `done` is what the receipt then says */
+  undo?: { label?: string; run: () => Promise<string | null>; done: string }; open?: { label: string; href: string } }
 
 /**
  * (pending modules S10 — 1.0's mAIson wrote leads, tasks and payments the moment it was asked, with no confirm step; the cards' question "may the
@@ -41,6 +75,9 @@ export type MaisonPlanDo =
   | { kind: 'stop_repeat'; expenseId: string; title: string }
   /** a Draft variation order started on a project (Money's New ▾ › Variation order — it opens in the quote editor) */
   | { kind: 'variation'; projectId: string }
+  /** (the Dashboard redesigned 2026-10-26, lane D4 — "Remind Ryan about VO-2") the quote's own reminder, opened in WhatsApp with its link (the
+      quote screen's Remind words, lib/quotes/next-step.ts `reminderMessage`), and kept on the client's Activity so the team sees who nudged them */
+  | { kind: 'remind_quote'; quoteId: string; phone: string; number: string; client: string; first: string; studio: string; token: string; variation: boolean; validUntil: string | null }
 export type MaisonPlan = { title: string; text: string; lines?: string[]; confirm: string; do: MaisonPlanDo }
 export type MaisonProposal = { title: string; text: string; lines?: string[]; confirm: string
   /** Runs the action; resolves true once it landed (the page says what happened, with its Undo), false when it was refused. */
@@ -108,3 +145,27 @@ export function useMaisonAi(suggestions: readonly MaisonSuggestion[], raised = f
     return () => set(EMPTY)
   }, [key, raised])
 }
+
+/* ── (the Dashboard redesigned 2026-10-26 — his marks P-01 · Q-02 · Q-09 · lane D4) **Maison AI, docked.** On the Dashboard the field docked at
+   the page's foot IS Maison AI (components/maison-ai/dock/maison-dock.tsx): while it is mounted the shell's floating button and its sheet step
+   aside, and a question asked from the page (`askMaisonAi`) is the dock's to answer. One flag, counted, so a page over a page never leaves it
+   stuck. ── */
+let docked = 0
+const dockListeners = new Set<() => void>()
+const subscribeDock = (cb: () => void) => { dockListeners.add(cb); return () => { dockListeners.delete(cb) } }
+/** Whether Maison AI is docked on the page in front of you (the Dashboard's field). */
+export function useMaisonDocked(): boolean {
+  return useSyncExternalStore(subscribeDock, () => docked > 0, () => false)
+}
+/** The dock says it is there for as long as it is mounted. */
+export function useDockPresence() {
+  useEffect(() => {
+    docked += 1; dockListeners.forEach((l) => l())
+    return () => { docked = Math.max(0, docked - 1); dockListeners.forEach((l) => l()) }
+  }, [])
+}
+
+/** (Q-09) The key that asks Maison AI — ⌘J / Ctrl J (lib/keys/registry.ts `maison`): the dock's field on the Dashboard, the sheet's Ask box on
+    every other page. Its guard, as ⌘K's: a dialog that holds the keyboard keeps it, unless it is Maison AI's own sheet. */
+export const isAskKey = (e: KeyboardEvent) => (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'j'
+export const keyboardHeldElsewhere = (): boolean => !!Array.from(document.querySelectorAll('[aria-modal="true"]')).find((d) => !d.querySelector('[data-maison-ask-field], [data-testid="maison-ask"]'))

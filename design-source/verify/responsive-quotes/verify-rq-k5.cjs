@@ -94,7 +94,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const card = m.getByTestId('payment-card').first()
     await card.scrollIntoViewIfNeeded(); await settle(m, 500)
     await shot(m, '01-m390-payments')
-    ok(await m.getByRole('columnheader', { name: 'Percentage (%)' }).isVisible().catch(() => false) === false, 'no column heads on a phone — the rows are cards (B-11)')
+    ok(await m.getByRole('columnheader', { name: 'Share' }).isVisible().catch(() => false) === false, 'no column heads on a phone — the rows are cards (B-11)')   // (the calm UI build 2026-10-27, a deliberate change) 4-06: the heads read Payment · When · Share · Amount · Due
     const cb = await box(card)
     ok(cb.h >= 72, `the card stands at least 72 tall (${Math.round(cb.h)})`)
     ok(await hit(m, cb.cx, cb.cy, '[data-testid="payment-card"], [aria-label^="Drag to reorder"]') === 'payment-card', 'a tap on the card’s middle lands on the card, not the handle (B-01)')
@@ -109,7 +109,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(fn.size === 16 && Number(fn.weight) >= 700, `the name reads 16 bold (${fn.size}/${fn.weight})`)
     ok(fa.size >= 18 && fa.tabular.includes('tabular'), `the amount reads ${fa.size} tabular — P-08’s 18–26`)
     ok(fd.size === 14 && fs2.size === 14, `the description and the share line read 14 (${fd.size} · ${fs2.size})`)
-    ok(/^10% · On Approval$/.test((await share.innerText()).trim()), `the share line says "10% · On Approval" (${(await share.innerText()).trim()})`)
+    ok(/^10% · On signing$/.test((await share.innerText()).trim()), `the share line says "10% · On signing" (${(await share.innerText()).trim()})`)   // (the calm UI build 2026-10-27, a deliberate change) W-579
     // the sheet: a real tap, a changed share, Done
     await tap(m, cb.cx, cb.cy); await settle(m, 900)
     const sheet = m.getByRole('dialog', { name: DEP.name })
@@ -208,7 +208,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     // ── 4 · Send for confirmation · the contract picker · Version History at 390 ───────────────────────────────────────────────
     console.log('4 · Send ▾ on a phone: the confirmation sheet (B-17), the template list (B-18), the snackbar over a sheet (B-19)')
     await go(m, `/quotes/${DRAFT}`)
-    const conf = await openSend(m, /Send for confirmation/, 'Send for confirmation')
+    const conf = await openSend(m, /^Ask to confirm/, 'Send for confirmation')   // (the calm UI build 2026-10-27, a deliberate change) W-358: the Send ▾ rows read Ask to confirm · Send to sign; the dialogs keep their titles
     ok(await conf.isVisible(), 'Send ▾ › Send for confirmation opens its sheet')
     await conf.getByRole('textbox', { name: /Client phone/ }).waitFor({ state: 'visible' })
     await shot(m, '08-m390-confirm')
@@ -223,30 +223,30 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok((await box(under)).h <= 44 && await under.getByText(/characters/).count() === 0, `Reset message · Write with AI sit on one row — no character count on a phone (${Math.round((await box(under)).h)} tall)`)
     const over = await conf.locator('[data-surface-foot]').evaluate((el) => { const body = el.previousElementSibling; return body.scrollHeight - body.clientHeight })
     ok(over <= 0, `the whole sheet is in view at 390×844 — the body does not scroll (${over > 0 ? `${over}px over` : `${-over}px to spare`}); iOS types at 16 (REG-306) and scrolls a little under the pinned foot`)
-    const sendBtn = conf.getByRole('button', { name: 'Send via WhatsApp' }), copyBtn = conf.getByRole('button', { name: /Copy link|Copied/ })
+    const sendBtn = conf.getByRole('button', { name: /^Send (via|on) WhatsApp/ }), copyBtn = conf.getByRole('button', { name: /Copy link|Copied/ })   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     const sb = await box(sendBtn), cpb = await box(copyBtn)
-    ok(await hit(m, sb.cx, sb.y - 3, 'button') === 'Send via WhatsApp' && /^Copy link|^Copied/.test(await hit(m, cpb.cx, cpb.y + cpb.h + 3, 'button') || ''), 'Send via WhatsApp and Copy link answer 3px past their 36 boxes — the house touch overlay on every DS md button (B-16 · REG-344)')
+    ok(await hit(m, sb.cx, sb.y - 3, 'button') === 'Send on WhatsApp' && /^Copy link|^Copied/.test(await hit(m, cpb.cx, cpb.y + cpb.h + 3, 'button') || ''), 'Send via WhatsApp and Copy link answer 3px past their 36 boxes — the house touch overlay on every DS md button (B-16 · REG-344)')   // (the calm UI build 2026-10-27, a deliberate change) W-058: "Send on WhatsApp"
     await m.keyboard.press('Escape'); await settle(m, 600)
     // the contract template list
-    const picker = await openSend(m, /Send for signature/, 'Choose a contract template')
+    const picker = await openSend(m, /^Send to sign/, 'Which agreement should they sign?')   /* (the calm UI build 2026-10-27, a deliberate change) W-358: the row reads Send to sign */   // (the calm UI build 2026-10-27, a deliberate change) W-136: the picker's title
     ok(await picker.isVisible(), 'Send ▾ › Send for signature opens the picker')
     await picker.getByTestId('contract-starter-row').waitFor({ state: 'visible', timeout: 15000 }); await settle(m, 600)
     await shot(m, '09-m390-contract-picker')
     const rows = picker.locator('[data-testid="contract-starter-row"], [data-testid="contract-template-option"]')   // the DS radio's row = its label (the input inside is 13px)
     ok(await picker.getByRole('radio').count() === await rows.count() && await rows.count() >= 2, `the templates are a radio list (${await rows.count()} rows)`)
-    ok(await rows.first().innerText().then((t) => t.includes('Start from the studio agreement')), 'the first row is "Start from the studio agreement"')
+    ok(await rows.first().innerText().then((t) => t.includes('The studio agreement')), 'the first row is "The studio agreement"')   // (the calm UI build 2026-10-27, a deliberate change) W-616: a choice, Continue makes it
     ok(await picker.locator('[data-surface-foot] button').count() === 1, 'one button in the foot (B-18)')
     const useBtn = picker.getByTestId('contract-template-use')
-    ok((await useBtn.innerText()).trim() === 'Use template', `the suggested template is picked: the button reads "Use template" (${(await useBtn.innerText()).trim()})`)
+    ok((await useBtn.innerText()).trim() === 'Continue' && await picker.locator('[data-testid="contract-template-option"] input:checked').count() === 1, `the suggested template is picked; the one button reads "Continue" (${(await useBtn.innerText()).trim()})`)   // (the calm UI build 2026-10-27, a deliberate change) W-616
     const first = await box(rows.first())
     ok(first.h >= 56, `a row stands at least 56 tall (${Math.round(first.h)})`)
     const rowName = rows.first().locator('[class*="pickName"]'), rowMeta = rows.first().locator('[class*="pickMeta"]')
     ok((await fontOf(rowName)).size === 16 && (await fontOf(rowMeta)).size === 14, `a row reads 16 over 14 (${(await fontOf(rowName)).size} · ${(await fontOf(rowMeta)).size})`)
     await tap(m, first.cx, first.cy); await settle(m, 400)
-    ok((await useBtn.innerText()).trim() === 'Start from the studio agreement', `picking the first row names the button after it (${(await useBtn.innerText()).trim()})`)
+    ok((await useBtn.innerText()).trim() === 'Continue' && await picker.locator('[data-testid="contract-starter-row"] input:checked').count() === 1, `picking the first row picks the studio agreement; the button stays "Continue" (${(await useBtn.innerText()).trim()})`)   // (the calm UI build 2026-10-27, a deliberate change) W-616
     const second = await box(rows.nth(1))
     await tap(m, second.cx, second.cy); await settle(m, 400)
-    ok((await useBtn.innerText()).trim() === 'Use template', '…and a template puts "Use template" back')
+    ok((await useBtn.innerText()).trim() === 'Continue' && await picker.locator('[data-testid="contract-starter-row"] input:checked').count() === 0, '…and a template takes the pick back')   // (the calm UI build 2026-10-27, a deliberate change) W-616
     const contractsBefore = Number(sql(`select count(*) from contracts`))
     const ub = await box(useBtn)
     await tap(m, ub.cx, ub.cy); await m.waitForURL(/\/contracts\//, { timeout: 15000 }).catch(() => {}); await settle(m, 1200)
@@ -258,8 +258,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const snack = m.locator('[data-om-snackbar] [class*="bar"]').first()
     ok(await snack.isVisible(), 'Revise on a never-sent Draft answers with its rule in a snackbar')
     await m.getByRole('button', { name: 'More options' }).first().click(); await settle(m, 600)
-    await m.getByRole('menuitem', { name: 'Version History' }).click()
-    const hist = m.getByRole('dialog', { name: 'Version History' })
+    await m.getByRole('menuitem', { name: 'Version history' }).click()
+    const hist = m.getByRole('dialog', { name: 'Version history' })   // (the calm UI build 2026-10-27, a deliberate change) sentence case (4-27)
     await hist.waitFor({ state: 'visible', timeout: 15000 }); await settle(m, 1300)
     ok(await hist.isVisible(), '⋮ › Version History opens as a sheet')
     await shot(m, '10-m390-history-snackbar')
@@ -283,7 +283,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const tcard = t.getByTestId('payment-card').first()
     await tcard.scrollIntoViewIfNeeded(); await settle(t, 400)
     await shot(t, '11-t768-payments')
-    ok(await t.getByRole('columnheader', { name: 'Percentage (%)' }).isVisible().catch(() => false) === false && await tcard.isVisible(), 'the payments are cards at 768 too — no cut "Upon sigr" (B-11)')
+    ok(await t.getByRole('columnheader', { name: 'Share' }).isVisible().catch(() => false) === false && await tcard.isVisible(), /* (the calm UI build 2026-10-27, a deliberate change) 4-06: the heads read Payment · When · Share · Amount · Due */ 'the payments are cards at 768 too — no cut "Upon sigr" (B-11)')
     const tb = await box(tcard)
     await tap(t, tb.cx, tb.cy); await settle(t, 900)
     const tsheet = t.getByRole('dialog', { name: DEP.name })
@@ -301,13 +301,13 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await shot(t, '13-t768-terms')
     await go(t, `/quotes/${DRAFT}`)   // (quotes on the move, K1 landed) on a tablet too the Send ▾ is the Quote screen's foot, not a section screen's
     await t.getByTestId('quote-send').locator('visible=true').first().click()
-    const menu = t.getByRole('menu').filter({ hasText: 'Send for confirmation' }).first()
+    const menu = t.getByRole('menu').filter({ hasText: 'Ask to confirm' }).first()   // (the calm UI build 2026-10-27, a deliberate change) W-358: the Send ▾ rows read Ask to confirm · Send to sign; the dialogs keep their titles
     await menu.waitFor({ state: 'visible', timeout: 15000 }); await settle(t, 700)
     ok(await menu.isVisible(), 'Send ▾ opens its menu')
     const mb = await box(menu)
     ok(mb.x + mb.w <= 768 - 8 + 0.5 && mb.x >= 0, `the menu ends inside the screen (right edge ${Math.round(mb.x + mb.w)} ≤ 760) (B-02)`)
     ok(await sideways(t) <= 0, `the page gained no sideways scroll (${await sideways(t)})`)
-    ok(await menu.getByRole('menuitem', { name: /Send for confirmation/ }).evaluate((el) => el.getBoundingClientRect().right <= 760.5), 'the rows’ help lines end inside the screen too')
+    ok(await menu.getByRole('menuitem', { name: /^Ask to confirm/ }).evaluate((el) => el.getBoundingClientRect().right <= 760.5), 'the rows’ help lines end inside the screen too')
     await shot(t, '14-t768-send-menu')
     await t.keyboard.press('Escape'); await settle(t, 300)
     await T.close()
@@ -316,12 +316,12 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const T2 = await touchCtx(1024, 768); const t2 = await page(T2, 'tablet-1024')
     await go(t2, `/quotes/${DRAFT}?edit=payment`)
     await openSection(t2, 'section-payment')
-    ok(await t2.getByTestId('payment-card').count() >= 1 && await t2.getByRole('columnheader', { name: 'Percentage (%)' }).isVisible().catch(() => false) === false, 'at 1024 (touch) the payments are cards too (B-11)')
+    ok(await t2.getByTestId('payment-card').count() >= 1 && await t2.getByRole('columnheader', { name: 'Share' }).isVisible().catch(() => false) === false, /* (the calm UI build 2026-10-27, a deliberate change) 4-06: the heads read Payment · When · Share · Amount · Due */ 'at 1024 (touch) the payments are cards too (B-11)')
     await t2.getByTestId('payment-card').first().scrollIntoViewIfNeeded(); await settle(t2, 300)
     await shot(t2, '17-t1024-payments')
     await go(t2, `/quotes/${DRAFT}`)   // (quotes on the move, K1 landed) the Send ▾ is the Quote screen's foot at 1024 too
     await t2.getByTestId('quote-send').locator('visible=true').first().click()
-    const menu2 = t2.getByRole('menu').filter({ hasText: 'Send for confirmation' }).first()
+    const menu2 = t2.getByRole('menu').filter({ hasText: 'Ask to confirm' }).first()   // (the calm UI build 2026-10-27, a deliberate change) W-358: the Send ▾ rows read Ask to confirm · Send to sign; the dialogs keep their titles
     await menu2.waitFor({ state: 'visible', timeout: 15000 }); await settle(t2, 600)
     const mb2 = await box(menu2)
     ok(mb2.x + mb2.w <= 1024 - 8 + 0.5 && await sideways(t2) <= 0, `the Send ▾ menu ends inside a 1024 screen (right edge ${Math.round(mb2.x + mb2.w)} ≤ 1016) with no sideways scroll (B-02)`)
@@ -334,7 +334,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     const D = await b.newContext({ viewport: { width: 1440, height: 1024 } }); const d = await page(D, 'desk')
     await go(d, `/quotes/${DRAFT}`)
     await openSection(d, 'section-payment')
-    ok(await d.getByRole('columnheader', { name: 'Percentage (%)' }).isVisible() && await d.getByRole('columnheader', { name: 'Amount (S$)' }).isVisible(), 'the heads read "Percentage (%)" and "Amount (S$)"')
+    ok(await d.getByRole('columnheader', { name: 'Share' }).isVisible() && await d.getByRole('columnheader', { name: 'Amount' }).isVisible(), 'the heads read "Share" and "Amount"')   // (the calm UI build 2026-10-27, a deliberate change) 4-06: the heads read Payment · When · Share · Amount · Due
     ok(await d.getByTestId('payment-card').count() === 0, 'no cards at 1440')
     const pct = d.getByRole('button', { name: '10%' }).first()
     await pct.scrollIntoViewIfNeeded(); await pct.click(); await settle(d, 500)

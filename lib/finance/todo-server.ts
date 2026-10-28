@@ -2,7 +2,7 @@ import 'server-only'
 import { raiseDueRepeats } from './repeats-server'
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { commissionRequests, expenses, homeownerLeadLinks, leads, members, projectInvoices, projectPayments, projects, purchaseOrders } from '@/lib/db/schema'
+import { commissionRequests, expenses, homeownerLeadLinks, leads, members, paymentsOut, projectInvoices, projectPayments, projects, purchaseOrders, supplierBills } from '@/lib/db/schema'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { currentPortalSlug } from '@/lib/portal/queries'
@@ -86,7 +86,7 @@ export const todoCountOf = (d: TodoData) => todoRows(todoInputOf(d)).filter((r) 
 
 /**
  * (simplify S-16) The rail's money badge — what waits for an Owner's or an Admin's OK: POs waiting for approval, expenses waiting, client
- * invoices waiting, commission asks. Four counts in SQL (the rail draws on every page), on the same predicates as To do's To approve rows
+ * invoices waiting, commission asks — and bills waiting for their OK. Five counts in SQL (the rail draws on every page), on the same predicates as To do's To approve rows
  * (`poState` awaiting = a Draft with a submission; `expenseState` pending; `invoiceState` awaiting; an ask open). Nobody else's queue: 0.
  */
 export async function countFinanceToApprove(): Promise<number> {
@@ -94,7 +94,7 @@ export async function countFinanceToApprove(): Promise<number> {
   if (!runsStudio(viewer.role)) return 0
   await raiseDueRepeats()   // (pending modules S06) a repeating expense whose day came counts once it is logged — the rail asks before any page does
   const live = and(isNull(projects.deletedAt), isNull(leads.deletedAt))
-  const [[po], [ex], [inv], [ask]] = await Promise.all([
+  const [[po], [ex], [inv], [ask], [bill]] = await Promise.all([
     db.select({ n: sql<number>`count(*)` }).from(purchaseOrders).innerJoin(projects, eq(projects.id, purchaseOrders.projectId)).innerJoin(leads, eq(leads.id, projects.leadId))
       .where(and(eq(purchaseOrders.status, 'draft'), isNotNull(purchaseOrders.submittedAt), isNull(purchaseOrders.deletedAt), live)),
     db.select({ n: sql<number>`count(*)` }).from(expenses).leftJoin(projects, eq(projects.id, expenses.projectId))
@@ -103,6 +103,13 @@ export async function countFinanceToApprove(): Promise<number> {
       .where(and(eq(projectInvoices.status, 'draft'), isNotNull(projectInvoices.submittedAt), live)),
     db.select({ n: sql<number>`count(*)` }).from(commissionRequests).innerJoin(projects, eq(projects.id, commissionRequests.projectId))
       .where(and(eq(commissionRequests.status, 'open'), isNull(projects.deletedAt))),
+    /* (the Dashboard redesigned, 2026-10-26 — P-14, a bug B's study found: ST-06) the fifth kind To approve lists — a supplier bill waiting for
+       its OK (S44R, C8: a reason, no OK, nothing paid on it — `billWaiting`); the rail's count had only four, so the Company panel said one
+       fewer than To do's own To approve */
+    db.select({ n: sql<number>`count(*)` }).from(supplierBills).leftJoin(projects, eq(projects.id, supplierBills.projectId)).leftJoin(leads, eq(leads.id, projects.leadId))
+      .where(and(isNull(supplierBills.deletedAt), isNotNull(supplierBills.approvalWhy), isNull(supplierBills.approvedAt), sql`${supplierBills.totalMinor} > 0`,
+        sql`(${supplierBills.projectId} IS NULL OR (${projects.deletedAt} IS NULL AND ${leads.deletedAt} IS NULL))`,
+        sql`NOT EXISTS (SELECT 1 FROM ${paymentsOut} WHERE ${paymentsOut.billId} = ${supplierBills.id} AND ${paymentsOut.reversedAt} IS NULL AND ${paymentsOut.amountMinor} > 0)`)),
   ])
-  return Number(po?.n ?? 0) + Number(ex?.n ?? 0) + Number(inv?.n ?? 0) + Number(ask?.n ?? 0)
+  return Number(po?.n ?? 0) + Number(ex?.n ?? 0) + Number(inv?.n ?? 0) + Number(ask?.n ?? 0) + Number(bill?.n ?? 0)
 }

@@ -77,18 +77,23 @@ const restore = (d) => {
     console.log('1 · Finance › Vendors')
     await go(p, '/company/finance/vendors')
     const chip = p.getByTestId('finance-chips').getByRole('radio', { name: /^Contractors/ })
-    ok(await chip.count() === 1 && new RegExp(`\\b${contractors}\\b`).test(await chip.innerText()), 'the Contractors chip, its count the DB’s')
+    /* (the calm UI build 2026-10-27, a deliberate change — 5-27 · 5-43 · W-216, T-07) the chips carry no counts: the chip reads "Contractors" alone,
+       and the DB's count is the rows it lists when pressed (next) */
+    ok(await chip.count() === 1 && /^Contractors$/.test((await chip.innerText()).trim()), 'the Contractors chip (no count — T-07)')
     await chip.click(); await settle(p, 500)
     const vrows = p.locator('[data-vendor]')
     ok(await vrows.count() === contractors, 'pressed, it lists the contractors alone')
-    ok(/works on site/.test(await vrows.first().innerText()), 'a contractor’s row says its trades and “works on site”')
+    /* (the calm UI build 2026-10-27, a deliberate change — 5-43 · W-316) the row says "{trades} · Contractor" (was "… · works on site"); the
+       studio's code and the on-site words are on the vendor's panel (below) */
+    { const first = await vrows.first().innerText()
+      ok(/ · Contractor\b/.test(first) && activeTrades.some((t) => t && first.toLowerCase().includes(t)), 'a contractor’s row says its trades and “Contractor”') }
     await shot(p, '1-vendors-contractors-1440')
     await go(p, `/company/finance/vendors?open=${WOOD}`)
     const vp = p.getByTestId('vendor-panel')
     await vp.waitFor({ timeout: 8000 }).catch(() => {})
     const vpText = (await vp.innerText().catch(() => '')).replace(/\s+/g, ' ')
     ok(new RegExp(`On site Carpentry · ${capOf(WOOD)} sites? at once · WC`).test(vpText), 'its panel: On site — trades · sites at once · code')
-    ok(/This week (Free this week|Room for \d+ more|Full|\d+ over)/.test(vpText), 'and how it stands this week, in the Workload view’s words')
+    ok(/This week (Free this week|\d+ free slots?|Full|\d+ over)/.test(vpText), 'and how it stands this week, in the Workload view’s words')   // (the calm UI build 2026-10-27, a deliberate change) "n free slots" was "Room for n more"
     const sites = vp.getByTestId('vendor-panel-sites')
     ok(await sites.locator('li').count() === Number(sql(`select count(*) from project_contractors where vendor_id = '${WOOD}' and removed_at is null`)), 'Sites: every place it has on a project')
     ok(await sites.getByRole('link').first().getAttribute('href').then((h) => /\/projects\/[^/]+\/schedule\?crew=1.*from=/.test(h || '')).catch(() => false), 'each opens the project’s Schedule with its contractors, and comes back (?from=)')
@@ -156,12 +161,16 @@ const restore = (d) => {
     ok(await table.getByTestId('site-gap').count() >= 1, 'a gap says “Nobody yet” in its trade’s cell')
     await shot(p, '2-by-site-1440')
     await view.getByTestId('contractors-by').getByRole('radio', { name: 'By contractor' }).click(); await settle(p, 400)
-    /* the Dashboard's Contractors tile (S45A's hand-over): the view's own figure, its door the view */
+    /* the Dashboard's Contractors (S45A's hand-over) — (Dashboard redesign 2026-10-26, a deliberate change) no tile now: the Team card's
+       contractors' line (brief § 4) says the view's own figure, its door the view */
     const freeHere = await tileValue(p, 'free')
     await go(p, '/dashboard')
-    const dt = p.getByTestId('tile-contractors')
-    ok(await dt.count() === 1 && Number((await dt.locator('[class*="__value"]').innerText()).trim()) === freeHere, `the Dashboard’s Contractors tile: the view’s Free this week (${freeHere})`)
-    ok(/over capacity/.test(await dt.innerText()) && /starting with no contractor/.test(await dt.innerText()), 'its line: over capacity · starting with no contractor')
+    /* (the calm pass 2026-10-26, a deliberate change — lane C3) the line is the Team load card's foot with its View; work starting with no
+       contractor is Needs you's own row (`crew-gap`, one place for each thing), so the line says who is free and who is over */
+    const dt = p.getByTestId('team-contractors'), dl = p.getByTestId('team-contractors-line')
+    ok(await dt.count() === 1 && (await dt.innerText()).trim() === 'View' && new RegExp(`\\b${freeHere} free this week`).test(await dl.innerText()), `the Dashboard’s Team card: Contractors · the view’s Free this week (${freeHere}), with View`)
+    /* (the calm UI build 2026-10-27, a deliberate change — 1-33 · W-072) "n free this week, 1 overbooked" (was "· 1 over capacity") */
+    ok(/overbooked/.test(await dl.innerText()) && !/starting with no contractor/.test(await dl.innerText()), 'its line: overbooked — the starts with no contractor are Needs you’s')
     await dt.click(); await p.waitForURL(/of=contractors/, { timeout: 10000 }).catch(() => {}); await settle(p, 800)
     ok(await p.getByTestId('contractors-view').count() === 1, 'it opens the Contractors view')
     await go(p, '/projects?view=workload&of=contractors')
@@ -238,7 +247,7 @@ const restore = (d) => {
     await go(p, `/projects/${RYAN}`)
     if (await p.getByTestId('needs-more').count()) { await p.getByTestId('needs-more').first().click(); await settle(p, 300) }
     const need = p.getByRole('link', { name: 'Add a contractor' }).or(p.getByRole('button', { name: 'Add a contractor' }))
-    ok(/No Painting contractor on Painting/.test(await p.locator('body').innerText()) && await need.count() >= 1, 'Needs you: the gap’s row, Add a contractor (the gap Undo put back)')
+    ok(/No contractor booked|No Painting contractor on Painting/.test(await p.locator('body').innerText())   /* (the calm UI build 2026-10-27, a deliberate change) plain words (1-08 · W-398 · W-426 · W-278 · 3-37) */ && await need.count() >= 1, 'Needs you: the gap’s row, Add a contractor (the gap Undo put back)')
     if (await need.count()) {
       await need.first().click(); await p.waitForURL(/\/schedule/, { timeout: 10000 }).catch(() => {}); await settle(p, 1200)
       ok(await p.getByTestId('crew-dialog').count() === 1 && /Painting/.test(await p.getByTestId('crew-dialog').innerText()), 'Add a contractor: the Schedule with the dialog open on the gap’s milestone and trade')
@@ -262,10 +271,11 @@ const restore = (d) => {
     await go(p, '/projects?view=workload')
     ok(await p.getByTestId('contractors-view').count() === 1 && await p.getByTestId('workload-of').count() === 0, 'a Designer (Germaine): the Contractors view, no Members chip')
     await go(p, '/dashboard')
-    ok(await p.getByTestId('tile-contractors').count() === 0, 'and no Contractors tile on her Dashboard (the Workload view’s readers)')
+    /* (Dashboard redesign 2026-10-26, a deliberate change) the contractors' line rides the Team card — the Workload view's readers */
+    ok(await p.getByTestId('team-contractors').count() === 0, 'and no contractors’ line on her Dashboard (the Workload view’s readers)')
     as('james')
     await go(p, '/dashboard')
-    ok(await p.getByTestId('tile-contractors').count() === 1, 'a Manager (James): the Contractors tile')
+    ok(await p.getByTestId('team-contractors').count() === 1, 'a Manager (James): the Team card’s contractors’ line')
     as('priya')
     await go(p, '/projects?view=workload&of=contractors')
     ok(await p.getByTestId('contractors-view').count() === 0, 'Accounting never opens the listing')

@@ -15,17 +15,17 @@ import fin from '../finance.module.css'
  * to Finance's own ghost.
  */
 const COLS: Record<MoneyInKind, { help: string; cols: Col[] }> = {
-  invoices: { help: 'S$34,802.98 owed on 3 invoices · S$20,784.94 overdue. Every invoice sent, and the Drafts that are ready to send.', cols: [
+  invoices: { help: 'S$34,802.98 to collect on 3 invoices · S$20,784.94 overdue. Sent invoices and Drafts ready to send. How this works', cols: [
     { basis: 200, grow: 200, head: 52, cell: (r) => [cycle([104, 96, 112], r), cycle(['62%', '74%', '54%'], r)], stick: true },
     { basis: 240, grow: 240, head: 52, cell: (r) => [cycle(['80%', '66%', '72%'], r), cycle([96, 84, 110], r)] },
     { basis: 210, grow: 210, head: 46, cell: (r) => ({ slot: 'chip', w: cycle([64, 96, 52], r) }) },
     { basis: 130, grow: 130, head: 34, cell: 84 },
     { basis: 130, grow: 130, head: 30, cell: (r) => (r % 3 ? 84 : 24) },
-    { basis: 130, grow: 130, head: 36, cell: (r) => (r % 2 ? 24 : 84) },
+    { basis: 130, grow: 130, head: 70, cell: (r) => (r % 2 ? 24 : 84) },   /* (the calm UI build) "To collect" */
     { basis: 140, grow: 140, head: 28, cell: [80, 64] },
     { basis: 130, grow: 130, head: 70, cell: { slot: 'btn', w: 48 } },
   ] },
-  payments: { help: 'S$120,560.00 confirmed. Every client payment — confirmed with its receipt, or sent from the portal.', cols: [
+  payments: { help: 'S$120,560.00 confirmed. Every client payment — confirmed with its receipt, or sent from the portal and waiting to be confirmed. How this works', cols: [
     { basis: 170, grow: 170, head: 52, cell: (r) => [cycle([96, 104, 88], r), 112], stick: true },
     { basis: 180, grow: 180, head: 52, cell: [96, 80] },
     { basis: 240, grow: 240, head: 52, cell: (r) => [cycle(['80%', '66%', '72%'], r), 96] },
@@ -34,14 +34,14 @@ const COLS: Record<MoneyInKind, { help: string; cols: Col[] }> = {
     { basis: 200, grow: 200, head: 46, cell: { slot: 'chip', w: 80 } },
     { basis: 130, grow: 130, head: 70, cell: { slot: 'btn', w: 88 } },
   ] },
-  variations: { help: 'Every variation order on the projects — the client approves each on its link.', cols: [
+  variations: { help: 'Every variation order on the projects. How this works', cols: [
     { basis: 260, grow: 260, head: 104, cell: (r) => [40, cycle(['72%', '58%', '66%'], r)], stick: true },
     { basis: 240, grow: 240, head: 52, cell: (r) => [cycle(['80%', '66%', '72%'], r), 96] },
     { basis: 140, grow: 140, head: 52, cell: 84 },
     { basis: 240, grow: 240, head: 46, cell: { slot: 'chip', w: 120 } },
     { basis: 130, grow: 130, head: 70, cell: { slot: 'btn', w: 48 } },
   ] },
-  credits: { help: 'Every credit note — money taken off a sent invoice, and the refunds recorded on them.', cols: [
+  credits: { help: 'Every credit note and the refunds recorded on them. How this works', cols: [
     { basis: 240, grow: 240, head: 80, cell: (r) => [96, cycle(['70%', '56%', '64%'], r)], stick: true },
     { basis: 160, grow: 160, head: 52, cell: 96 },
     { basis: 240, grow: 240, head: 52, cell: (r) => [cycle(['80%', '66%', '72%'], r), 96] },
@@ -68,7 +68,7 @@ export function MoneyInGhostBody({ kind }: { kind: MoneyInKind }) {
       <div className={`${fin.phoneTools} ${fin.ghostPhone}`}>
         <div className={fin.phoneBar}><span className={fin.phoneSearch} style={{ display: 'flex' }}><Slot kind="btn" w="100%" /></span><Slot kind="icon" /></div>
         <div className={fin.kindRail}><GhostChips labels={labels} rail /></div>
-        <span className={fin.inlineRow}><Slot kind="btn" w={72} /></span>
+        <span className={fin.inlineRow}><Slot kind="btn" w={127} /></span>   {/* (the calm UI build, 5-10) "Status: All ▾", named on a phone */}
       </div>
       <div className={fin.kindBody}>
         <section className={plan.section}>
@@ -76,7 +76,7 @@ export function MoneyInGhostBody({ kind }: { kind: MoneyInKind }) {
             <div className={plan.sectionTitles}><Words as="h2" className={plan.sectionTitle}>{MONEY_IN_KINDS.find((k) => k.key === kind)!.label}</Words><Words className={plan.sectionHelp}>{g.help}</Words></div>
             <div className={plan.sectionTools}><Slot kind="icon" desk /></div>
           </div>
-          <GhostTable cols={g.cols} rows={7} head={56} row={64} phone={{ card: 286, lines: 7 }} />   {/* (pending modules S17) a phone's invoice card as the page's stack draws it */}
+          <GhostTable cols={g.cols} rows={7} head={56} row={64} phone={{ card: 196, lines: 4 }} />   {/* (the calm UI build, 5-10) a phone's card on the Leads model (finance-cards.tsx) */}
         </section>
       </div>
     </div>
