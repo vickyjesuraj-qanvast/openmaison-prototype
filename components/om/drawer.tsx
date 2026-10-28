@@ -31,7 +31,7 @@ export type PanelWidth = keyof typeof PANEL_WIDTH
  * (non-modal). Spec: design-source/context/lead-tasks/03-panel-tags.txt · 04-comments-attach.txt.
  */
 export function Drawer({
-  open, title, crumb, onBack, actions, footer, onClose, children, width = 'standard', label, kbPanel = false,
+  open, title, crumb, onBack, actions, footer, onClose, children, width = 'standard', label, kbPanel = false, footShadowUntilEnd = false,
 }: {
   open: boolean
   title: string
@@ -48,9 +48,11 @@ export function Drawer({
   label?: string
   /** (REG-711) The ? panel: keys pressed inside it still reach the page, so they can be tried with the list open. */
   kbPanel?: boolean
+  /** (Dane's Tickets review, 2026-10-26 — opt-in, the ticket's thread) the foot's shadow leaves once the body is scrolled to its end. */
+  footShadowUntilEnd?: boolean
 }) {
   const panel = useRef<HTMLElement>(null)
-  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow only while the body scrolls under it, as every dialog's
+  const [scrollRef, bodyScrolls] = useOverflow({ untilEnd: footShadowUntilEnd })   // (REG-725) the foot's shadow only while the body scrolls under it, as every dialog's
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel, { trap: false })
   /* (REG-353) ≤767 the canvas draws this panel as a bottom sheet (2c Task · 2d Task comments): it comes up off the

@@ -9,7 +9,7 @@
 //   5 · ⋮ Pin to top · Mute · Copy link — kept on the server; a muted member hears no bell for that conversation, the others still do;
 //   6 · a lead's conversation before Won — the client writes from their page, /chat lists it with a Lead chip, the studio answers there, the
 //       lead's Overview has the door; Won, it carries on in the project's;
-//   7 · Tickets › Filters — Priority · Status · Looks after, live; a Status pick widens the chips to All;
+//   7 · Tickets › Filters — Priority · Status · Assigned to (Dane's Tickets review, merged 2026-10-28: was Looks after), live; a Status pick widens the chips to All;
 //   8 · the ticket number — Settings › Finance › Document numbers' Tickets row: T-{YYYY}-{nnn} by default, a new prefix numbers the next ticket;
 //   9 · sending safeguards — OpenMaison's pause holds every message and lets it go when it lifts; a large send waits for the Owner (Drop);
 //       a failed message is tried again on the sweep, and Try again now sends one whose tries ran out;
@@ -234,7 +234,7 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n')
     await d.getByTestId('tickets-filter-tab-owners').click()
     await d.getByTestId('tickets-filter-owners').getByRole('button', { name: /Germaine/ }).first().click(); await settle(d, 500)
     const mine = Number(sql(`select count(*) from project_tickets where assignee_id='germaine'`))
-    ok(await cards() === mine, 'Looks after — applied live, as the modal stays open')
+    ok(await cards() === mine, 'Assigned to — applied live, as the modal stays open')   // (Dane's Tickets review, merged 2026-10-28) the group's name was "Looks after" (the same testid, the same rule)
     await d.getByTestId('tickets-filter-tab-status').click()
     await d.getByTestId('tickets-filter-status').getByRole('button', { name: 'Closed' }).click(); await settle(d, 400)
     await d.getByTestId('tickets-filters-done').click(); await settle(d, 400)

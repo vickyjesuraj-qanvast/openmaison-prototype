@@ -356,7 +356,9 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   const mp = await m.newPage()
   await mp.goto(BASE + '/tasks', { waitUntil: 'networkidle' }); await mp.waitForTimeout(900)
   const short = (await mp.locator('[data-testid="task-todos"] button').allInnerTexts()).map((s) => s.trim().split('\n').pop())
-  ok(short.length === 3 && short.every((s) => /^\d+$/.test(s)), `the chips say their count alone (${short.join(' · ')})`)
+  /* (Dane's Tasks review, merged 2026-10-28 — change 4, and the calm UI build's 1-27) a finger can't hover for a tooltip: a phone's chips say their
+     words and their count, on a row of their own that swipes sideways (was: their count alone) */
+  ok(short.length === 3 && short.every((s) => /^(Overdue|Today|Upcoming|Unassigned) · \d+$/.test(s)), `the chips say their words and their count (${short.join(' · ')}) (Dane’s Tasks review, merged 2026-10-28)`)
   ok(await mp.evaluate(() => document.scrollingElement.scrollWidth <= 390), 'no sideways page scroll at 390')
   await mp.screenshot({ path: path.join(dir, 'phone-tasks-390.png') })
   await m.close()

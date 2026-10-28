@@ -48,8 +48,43 @@
   .scopeWrap:has(> .todos) { display: contents; }
   .scopeWrap:has(> .todos) ~ * { margin-left: auto; }
   .todos { order: 3; flex: 1 0 100%; flex-wrap: wrap; margin-left: 0; }
+  /* (Dane's Tasks review, 2026-10-27) spelled out, they keep one row and swipe sideways (`data-spelled`, tasks-toolbar.tsx) */
+  .todos[data-spelled] { flex-wrap: nowrap; margin-inline: calc(-1 * var(--om-spacing-4)); padding-inline: var(--om-spacing-4); }   /* run to the screen's edges (past the page's 16), the first chip still on the content's line */
   .bar:has([data-om-search-open]) .todos { display: none; }
+  /* (Dane's Tasks review, 2026-10-27) the scope box steps aside here, so the row's 16 gap stacked on View all's 8: back to the 8, as on Leads */
+  .scopeWrap:has(> .todos) > .viewAll { margin-left: calc(var(--om-spacing-2) - var(--om-spacing-4)); }
+  /* (Dane's Tasks review, 2026-10-27) the Leads listing's way (REG-375): the open box has the row, the scope pill steps aside while it is open */
+  .bar:has([data-om-search-open]) .scopeWrap { display: none; }
+  .bar:has(> .scopeWrap):has([data-om-search-open]) .actions { flex: 1; margin-left: 0; justify-content: space-between; }   /* the box from the left edge, Filters at the right, as on Leads */
 }
-/* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk and on a phone (the calm UI build 2026-10-27,
-   1-27: a phone's chips keep their words), its count-only width on a tablet, where a full row folds them to their counts. */
-@media (min-width: 768px) and (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */
+/* (Dane's Tasks review, 2026-10-27) On a phone and a touch tablet the chips say their words; the row they don't fit swipes sideways, drawn
+   with no scrollbar. Each chip keeps its width. */
+.todos[data-spelled] {
+  overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+  /* (Dane's Tasks review, 2026-10-27, on his phone) sideways only: each chip's 44 touch box stood 4 above and below its 36, so the row
+     scrolled up and down by those pixels too and a swipe moved it every way. The 4 is room inside the row now, given back outside. */
+  overflow-y: hidden; padding-block: var(--om-spacing-1); margin-block: calc(-1 * var(--om-spacing-1));
+}
+.todos[data-spelled]::-webkit-scrollbar { display: none; }
+.todos[data-spelled] > * { flex: none; }
+/* …and on a touch tablet they take a line of their own under the pill and the tools, as a phone's do — squeezed into the end of the row,
+   a 768 showed part of one chip. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .bar:has(.todos[data-spelled]) { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .scopeWrap:has(> .todos[data-spelled]) { display: contents; }
+  .scopeWrap:has(> .todos[data-spelled]) ~ * { margin-left: auto; }
+  .todos[data-spelled] { order: 3; flex: 1 0 100%; margin-inline: calc(-1 * var(--om-spacing-6)); padding-inline: var(--om-spacing-6); }   /* to the sheet's edges, as a phone's */
+  /* (Dane's Tasks review, 2026-10-27) …and the row's 16 gap stacked on the 8 after the pill: View all 8 after it, as at the desk */
+  .scopeWrap:has(> .todos[data-spelled]) > .viewAll { margin-left: calc(var(--om-spacing-2) - var(--om-spacing-4)); }
+}
+/* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk, on a phone (the calm UI build 2026-10-27,
+   1-27: a phone's chips keep their words) and on a touch tablet (Dane's Tasks review, merged 2026-10-28 — change 4: a finger's chips say their
+   words), its count-only width on a tablet with a mouse, where a full row folds them to their counts. */
+@media (min-width: 768px) and (max-width: 1024px) and (hover: hover) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */
+
+/* (Dane's Tasks review, 2026-10-27) "View all" after the scope pill — the Leads listing's own (toolbar.module.css .viewAll: 8 after the pill,
+   folded out of the row where it has no room) */
+.viewAll { composes: viewAll from '../toolbar.module.css'; }
+.pillWrap { position: relative; display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; max-width: 100%; }   /* the scope menu's anchor at every width */
+/* (Dane's Tasks review, merged 2026-10-28) changes 1 and 11 — 8 between the pill and the Leads · Projects switch, and a rule between View all and
+   that switch — have nothing to space or divide: the calm UI build (1-06 · 1-26) moved the switch into the pill's menu at every width. */

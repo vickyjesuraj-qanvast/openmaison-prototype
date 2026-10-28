@@ -171,8 +171,8 @@ export const EVENTS: EventDef[] = [
   /* (gaps build H, H-Q10 · H-Q15) tickets and the conversation, from the client's side (invented copy) — (the calm UI build 2026-10-27, T-01 ·
      1-10) "issue" on screen, as the client's portal says it; "Escalate" is "Flag to the Owner"; "your OK" is "your approval"; the keys stay */
   { key: 'ticket_raised', label: 'A client reports an issue', help: 'A new issue from their portal — its category and subject.', who: 'The project’s members, else Owners and Admins', icon: 'handyman' },
-  { key: 'ticket_client', label: 'A client answers on an issue', help: 'They reply, reopen it with a reply, or close it.', who: 'Whoever looks after it, else the project’s members', icon: 'handyman' },
-  { key: 'ticket_assigned', label: 'An issue is given to you', help: 'Someone made you the one who looks after it.', who: 'The member it is given to', icon: 'person' },
+  { key: 'ticket_client', label: 'A client answers on an issue', help: 'They reply, reopen it with a reply, or close it.', who: 'Whoever it is assigned to, else the project’s members', icon: 'handyman' },
+  { key: 'ticket_assigned', label: 'An issue is given to you', help: 'Someone assigned it to you.', who: 'The member it is given to', icon: 'person' },
   { key: 'ticket_escalated', label: 'An issue is flagged to the Owner', help: 'Marked Urgent with a note — it stays in Needs your attention until resolved.', who: 'Owners and Admins', icon: 'flag' },
   /* (gaps build J, J-Q17) the 3D Space Planner (invented copy) */
   { key: 'layout_viewed', label: 'A client opens a shared 3D layout', help: 'The first time they open it — on its link or on their portal.', who: 'Whoever shared it and the project’s members', icon: 'view_in_ar' },

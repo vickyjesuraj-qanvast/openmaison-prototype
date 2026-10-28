@@ -50,9 +50,11 @@ export function TicketsGhost({ first = false, title }: { first?: boolean; /** (s
   }
   return (
     <div className={styles.tab} aria-hidden>
-      {/* (the calm UI build 2026-10-27, 3-37 · 1-25) "Issues" · "New issue" · Open · n · Closed · n · All · n */}
+      {/* (the calm UI build 2026-10-27, 3-37 · 1-25) "Issues" · "New issue" · the "Label · n" chips — (Dane's Tickets review, merged 2026-10-28,
+          changes 1 · 3) in his order All · Open · Closed; ≤767 the page's scope pill instead. The chips at the house chip's own radius, as the
+          rail's Issues ghost (1-45) — the page's Chips are radius 1 */}
       <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Issues</Words>}<span className={styles.actions}><Slot kind="icon" /><Slot kind="btnFold" w={120} /></span></div>
-      <div className={chipRow.chips}>{[84, 100, 72].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</div>
+      <div className={`${chipRow.chips} ${styles.ghostChips}`}>{[72, 84, 100].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-1)" />)}</div><span className={styles.ghostPill}><Slot kind="pill" /></span>
       <div className={styles.list}>
         {[260, 200, 240].map((w, i) => (
           <div key={i} className={styles.card}>

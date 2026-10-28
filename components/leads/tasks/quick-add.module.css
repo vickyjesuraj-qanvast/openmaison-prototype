@@ -26,6 +26,7 @@
 .opts {
   display: none; align-items: center; gap: var(--om-spacing-2);
   overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  overflow-y: hidden;   /* (Dane's Tasks review, 2026-10-27) sideways only, as the to-do chips' row */
 }
 .opts::-webkit-scrollbar { display: none; }
 .quick[data-open] .opts { display: flex; }
@@ -40,14 +41,55 @@
   background: var(--om-color-surface-default); color: var(--om-color-on-surface-default);
   font: var(--om-type-subheading-m); white-space: nowrap; cursor: pointer;
 }
+/* (Dane's Tasks review, 2026-10-27) the rail page's lead pill ("General" since the calm UI build's 1-16, was "Studio"; tasks-table.tsx `LeadPickerCell size="m"`) at its neighbours' size: 44 tall,
+   the chips' 14 semibold — it sat at a toolbar's 36 in body type, shorter and lighter than Assign beside it */
+.opts [data-testid='task-add-lead'] > button { height: 44px; font: var(--om-type-subheading-m); }
 .who:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* (C-08) the Maison AI button's rest: 16 in and 16 up on a phone, 24 and 24 on a tablet — the bar keeps that corner empty for it */
 :global(body:has(button[aria-label='Maison AI'])) .quick { padding-right: calc(var(--om-spacing-6) + 48px + var(--om-spacing-2)); }
 @media (max-width: 767px) {
-  .quick { bottom: var(--app-mobile-dock-height); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+  /* (Dane's Tasks review, 2026-10-27) docked edge to edge above the dock — the plate and its top rule, no card: out of the tab's 24 gutter,
+     so the Maison AI button (right 16) rests inside the bar's kept right end instead of over a card's corner */
+  .quick {
+    bottom: var(--app-mobile-dock-height); padding: var(--om-spacing-3) var(--quick-gutter, var(--om-spacing-4));   /* the + lines up with the cards */
+    margin-inline: calc(-1 * var(--quick-gutter, var(--om-spacing-4))); border-radius: 0;
+    margin-top: auto;   /* a short list: the bar rests at the page's foot (tasks-table.module.css `.phoneList`) */   /* the page's gutter: 16 on a lead's / project's page, 24 on the rail's Tasks (lead-tasks.module.css) */
+  }
   :global(body:has(button[aria-label='Maison AI'])) .quick { padding-right: calc(var(--om-spacing-4) + 48px + var(--om-spacing-2)); }
 }
+
+/* (Dane's Tasks review, 2026-10-27) a phone: at rest the bar is one button — the + and "Add a task…" where the field was — and the add happens in
+   the house bottom sheet over the dock (quick-add.tsx): the field focused, then the due presets, who and the lead, wrapping in the sheet's width */
+.rest {
+  display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 48px;
+  border: 0; background: none; padding: 0; margin: 0; cursor: pointer; text-align: left;
+  font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary);
+}
+.rest:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.restWords { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheetForm { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-4); }   /* the sheet's 16 sides (its head and foot) */
+/* (Dane's Tasks review, 2026-10-27) the due presets: one row that swipes sideways, out to the sheet's edges (the first chip on the field's line) */
+.sheetForm .opts { display: flex; margin-inline: calc(-1 * var(--om-spacing-4)); padding-inline: var(--om-spacing-4); }
+/* …and who and the lead on the foot's left, Add on its right; the lead's name gives way first ("Benjamin H…") */
+.sheetPicks { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.sheetPicks > * { flex-shrink: 0; }
+.sheetPicks > [data-testid='task-add-lead'] { flex-shrink: 1; min-width: 0; }
+/* (Dane's Tasks review, 2026-10-27) at the foot's button height — Add's 36 — the touch target kept at 44 by the house select's way (select-trigger.module.css) */
+.sheetPicks [data-testid='task-add-lead'] > button { height: 36px; font: var(--om-type-subheading-m); }
+.sheetPicks .who { min-height: 36px; height: 36px; position: relative; }
+.sheetPicks .who::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 44px; }
+/* …one bar at 320 too: the house foot sends its start to a line of its own below 360 (dialog.module.css, fix-E · W6); here the picks are small
+   and Add belongs beside them, so the lead's name shrinks instead. Doubled attribute: order-proof against the house rule. */
+@media (max-width: 359px) {
+  :global([data-surface-foot][data-surface-foot]):has(.sheetPicks) { flex-wrap: nowrap; }
+  :global([data-surface-foot][data-surface-foot]) > :has(> .sheetPicks) { flex-basis: auto; flex-shrink: 1; }
+}
+
+/* (Dane's Tasks review, 2026-10-27, on his phone) with the keyboard up, the phone scrolls the page past its own foot to keep the field in sight,
+   and the gap between the sheet and the keyboard shows the page's canvas — the app's grey (surface-bg). While this sheet is open the canvas is
+   the sheet's white, so the gap reads as the sheet; it goes back to grey when the sheet closes. */
+:global(body:has([data-task-sheet])) { background: var(--om-color-surface-default); }
 
 /* (REG-708) the quick add's ghost (tab-ghosts.tsx): its collapsed row, only where the page docks it — a phone or a touch tablet */
 .ghostQuick { display: none; }

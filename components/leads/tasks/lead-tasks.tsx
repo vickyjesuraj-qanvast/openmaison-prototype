@@ -458,10 +458,10 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
           studio={studio}
           composer={compact ? (
             /* (Leads on the move, L4 — P-10 · C-06) a phone or a touch tablet adds a task in one docked row: the title, a due preset and who */
-            <QuickAddTask now={now} focusKey={quickFocus}
+            <QuickAddTask now={now} focusKey={quickFocus} arrived={params.get('add') === '1'}   /* (Dane's Tasks review, merged 2026-10-28) an arrival opens a phone's New task sheet */
               members={addMembers.map((id) => team.find((m) => m.id === id)).filter((m): m is (typeof team)[number] => !!m)}
               onAssign={openAddAssign}
-              lead={studio ? <LeadPickerCell picker={{ leads: data.leads ?? [], value: addLead, onChange: setAddLead }} /> : undefined}
+              lead={studio ? <LeadPickerCell size="m" picker={{ leads: data.leads ?? [], value: addLead, onChange: setAddLead }} /> : undefined}
               onIdle={stopAdd}
               onSubmit={(title, dueAt) => { const members = addMembers; let id = ''; void run('add the task', async () => { id = await createTask(addLeadId, title, { assignees: members, dueAt }) }, dueAt ? `Task added · due ${displayDue(dueAt)}` : 'Task added').then((ok) => { if (ok && id) addedHere(id) }) }} />
           ) : undefined}

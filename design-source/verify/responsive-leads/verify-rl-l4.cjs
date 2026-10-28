@@ -8,7 +8,9 @@
 //      Undo; a hold selects and the bulk bar is Mark done · Assign · More… inside the screen (C-04), More… holds the rest; a tap opens the task on
 //      its name, When with the presets and Who first, who made it last (C-24); a preset sets the due day; the quick add takes a title + a preset
 //      in one row and saves it with its day (C-06); the toolbar's hit boxes are where its glyphs are (C-02); the Maison AI button rests in the
-//      quick add's corner, never on Add (C-08).
+//      quick add's corner, never on Add (C-08). (Dane's Tasks review, merged 2026-10-28) On a phone the quick add is the bar that opens the
+//      house "New task" sheet — the title focused, the presets one row, who and the lead in its foot beside Add, Add saves and closes it; a
+//      `?add=1` arrival opens it too.
 //  2 · P-10 · C-07 at 768 / 1024 (touch): Title · Members · Due date · Status with the ⋮ frozen in view and Edit gone; the quick add at the foot.
 //  3 · /tasks and a project's Tasks at 390: the cards name whose task it is; the quick add carries the Lead pill.
 //  4 · P-11 at 390: Files' one row — Take a photo · Search · ⋮ — the title whole at 320 (C-16); the camera's input (image/*, environment); a
@@ -194,29 +196,42 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await p.keyboard.press('Escape'); await settle(p, 500)
     if (await p.getByRole('dialog').count()) { await p.getByRole('button', { name: /^(Close|Done)$/ }).last().tap().catch(() => {}); await settle(p, 500) }
     // the quick add: + › Create New Task → the caret in the row → a title and a preset → Add
+    /* (Dane's Tasks review, merged 2026-10-28) On a phone the add happens in the house bottom sheet "New task" (his change 14): the docked bar
+       is one button, the title is focused in the sheet, the due presets are one row under it (15), who and the lead ride the foot beside Add,
+       and Add saves and closes the sheet — a second task is a second tap on the bar (REG-257's chain stays on a touch tablet's inline row).
+       The same rules, read on the sheet: the caret lands, 16 type, a title and one preset save the task with its day, nothing covers Add. */
     await p.getByRole('button', { name: 'New task' }).first().tap(); await settle(p, 500)   // (the calm UI build 2026-10-27, a deliberate change) — New task ▾ › Blank task
     await p.getByRole('menuitem', { name: 'Blank task' }).tap(); await settle(p, 900)
-    const quick = p.locator('[data-testid="task-quick-input"]')
-    ok(await quick.evaluate((el) => document.activeElement === el), 'Create New Task lands the caret in the quick add')
+    const taskSheet = p.getByRole('dialog', { name: 'New task' }).last()
+    ok(await taskSheet.isVisible(), 'Blank task opens the New task sheet on a phone (Dane’s Tasks review, merged 2026-10-28)')
+    const quick = taskSheet.locator('[data-testid="task-quick-input"]')
+    ok(await quick.evaluate((el) => document.activeElement === el), 'Create New Task lands the caret in the sheet’s title (Dane’s Tasks review, merged 2026-10-28)')
     ok(await fontPx(quick) === 16, 'the quick add types at 16')
     await quick.fill('Call back about the kitchen layout')
-    const opts = p.locator('[data-testid="task-quick-opts"]')
-    ok(await opts.isVisible(), 'once in use the presets and who share one row')
-    ok(/Assign|Dane|Sarah|Hui|Germaine|\+/.test(await p.locator('[data-testid="task-quick-who"]').innerText()), 'who it is for is a pill in the same row')
+    const opts = taskSheet.locator('[data-testid="task-quick-opts"]')
+    ok(await opts.isVisible() && (await opts.locator('[role="radio"]').count()) >= 3, 'the due presets are one row under the title (Dane’s Tasks review, merged 2026-10-28)')
+    const sheetWho = taskSheet.locator('[data-surface-foot] [data-testid="task-quick-who"]')
+    ok(await sheetWho.isVisible() && /Assign|Dane|Sarah|Hui|Germaine|\+/.test(await sheetWho.innerText()), 'who it is for is a pill in the sheet’s foot, beside Add (Dane’s Tasks review, merged 2026-10-28)')
     await opts.locator('[role="radio"]', { hasText: 'Tomorrow 10:00' }).tap(); await settle(p, 300)
-    // C-08: the Maison AI button rests in the quick add's corner, clear of Add
-    const fab = p.getByRole('button', { name: 'Maison AI' })
-    const save = p.locator('[data-testid="task-quick-save"]')
-    if (await fab.count() && await fab.isVisible()) {
-      const fr = await rect(fab), sr = await rect(save), qr = await rect(p.locator('[data-testid="task-quick-add"]'))
-      ok(sr.r <= fr.x && fr.y >= qr.y - 1, 'the Maison AI button rests in the quick add’s corner, never on Add (C-08)')
-    } else ok(true, 'the Maison AI button is away (tucked) — nothing to cover')
+    // C-08: nothing covers Add — the sheet stands over the page, the Maison AI button and the dock (Dane’s Tasks review, merged 2026-10-28)
+    const save = taskSheet.locator('[data-testid="task-quick-save"]')
+    {
+      const sr = await rect(save)
+      ok(await hits(save, sr.x + sr.w / 2, sr.y + sr.h / 2) && await hits(save, sr.r - 4, sr.y + sr.h / 2), 'Add is on top where it is drawn — the Maison AI button never on it (C-08)')
+    }
     await shot(p, 'm390-04-quick-add')
     await save.tap(); await settle(p, 1500)
     const made = json(`select id, due_at from lead_tasks where lead_id = '${OLIVIA}' and title = 'Call back about the kitchen layout'`)
     const madeDue = made[0] ? new Date(Number(made[0].due_at) * 1000) : null
     ok(made.length === 1 && madeDue && madeDue.getDate() === tmr.getDate() && madeDue.getHours() === 10, 'Add saves the task with its day — "call back tomorrow at 10" in a title and one tap')
-    ok(await quick.evaluate((el) => document.activeElement === el && el.value === ''), 'the quick add stays for the next one, empty')
+    /* (Dane's Tasks review, merged 2026-10-28) was "the quick add stays for the next one, empty": Add closes the sheet; the docked bar opens it
+       again, empty, the caret in its title */
+    ok(!(await taskSheet.isVisible().catch(() => false)) && await p.locator('[data-testid="task-quick-open"]').isVisible(), 'Add closes the sheet; the docked bar is back at rest (Dane’s Tasks review, merged 2026-10-28)')
+    await p.locator('[data-testid="task-quick-open"]').tap(); await settle(p, 700)
+    const again = p.getByRole('dialog', { name: 'New task' }).last().locator('[data-testid="task-quick-input"]')
+    ok(await again.evaluate((el) => document.activeElement === el && el.value === ''), 'the bar opens it for the next one, empty, the caret in the title (Dane’s Tasks review, merged 2026-10-28)')
+    await p.keyboard.press('Escape'); await settle(p, 600)
+    ok(!(await p.getByRole('dialog', { name: 'New task' }).last().isVisible().catch(() => false)), 'Esc lets the sheet go (Dane’s Tasks review, merged 2026-10-28)')
     ok(await docOverflow(p) <= 0, 'no sideways scroll at 390')
     await ctx.close()
     putBack()
@@ -250,8 +265,21 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await go(p, '/tasks')
     await shot(p, 'm390-05-rail-tasks')
     ok(await p.locator('[data-testid="task-card"]').count() > 0 && await p.locator('[data-testid="task-card-for"]').count() > 0, 'the rail’s cards name whose task it is')
-    await p.locator('[data-testid="task-quick-input"]').tap(); await settle(p, 500)
-    ok(/General/.test(await p.locator('[data-testid="task-add-lead"]').innerText()), 'the quick add carries the Lead pill (General until picked)')   // (the calm UI build 2026-10-27, a deliberate change) — 1-16: "General" for a task on no record (was Studio)
+    await p.locator('[data-testid="task-quick-open"]').tap(); await settle(p, 700)   // (Dane's Tasks review, merged 2026-10-28) the bar opens the New task sheet
+    const railSheet = p.getByRole('dialog', { name: 'New task' }).last()
+    ok(/General/.test(await railSheet.locator('[data-testid="task-add-lead"]').innerText()), 'the quick add carries the Lead pill (General until picked)')   // (the calm UI build 2026-10-27, a deliberate change) — 1-16: "General" for a task on no record (was Studio); (Dane's Tasks review, merged 2026-10-28) in the sheet's foot
+    {
+      /* (Dane's Tasks review, merged 2026-10-28 — change 7 · 16) the sheet's Lead pill and Assign stand at Add's 36, on one line with it, a finger's 44 kept */
+      const lr = await rect(railSheet.locator('[data-testid="task-add-lead"] > button')), wr = await rect(railSheet.locator('[data-testid="task-quick-who"]')), ar = await rect(railSheet.locator('[data-testid="task-quick-save"]'))
+      ok(Math.round(lr.h) === Math.round(ar.h) && Math.round(wr.h) === Math.round(ar.h) && Math.abs((lr.y + lr.h / 2) - (ar.y + ar.h / 2)) <= 1 && Math.abs((wr.y + wr.h / 2) - (ar.y + ar.h / 2)) <= 1,
+         `the sheet's Assign and Lead pill stand at Add's height, on its line (${Math.round(wr.h)} · ${Math.round(lr.h)} · ${Math.round(ar.h)}) (Dane’s Tasks review, merged 2026-10-28)`)
+    }
+    await p.keyboard.press('Escape'); await settle(p, 600)
+    /* (Dane's Tasks review, merged 2026-10-28 — a fix on the way) an arrival with ?add=1 (the Dashboard's Your day, a saved log's "Add tasks")
+       opens the New task sheet, as it landed the caret in the docked row before the sheet */
+    await go(p, '/tasks?add=1')
+    ok(await p.getByRole('dialog', { name: 'New task' }).last().isVisible().catch(() => false), '/tasks?add=1 on a phone opens the New task sheet (Dane’s Tasks review, merged 2026-10-28)')
+    await p.keyboard.press('Escape'); await settle(p, 600)
     await go(p, `/projects/${RYAN_PROJECT}/tasks`)
     ok(await p.locator('[data-testid="task-card"]').count() > 0, 'a project’s Tasks are the same cards')
     await ctx.close()

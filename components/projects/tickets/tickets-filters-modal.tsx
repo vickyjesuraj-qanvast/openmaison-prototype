@@ -20,15 +20,15 @@ type Group = 'priority' | 'status' | 'owners'
 const TABS: { key: Group; label: string }[] = [
   { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
-  { key: 'owners', label: 'Handled by' },   // (the calm UI build 2026-10-27, W-244) the drawer's own word
+  { key: 'owners', label: 'Assigned to' },   // (Dane's Tickets review, merged 2026-10-28 — his change 9) the drawer's own word (was the calm build's "Handled by", W-244)
 ]
 export type TicketPerson = { id: string; name: string; color: string; role?: string }
 
 /**
  * (parity map 2026-10-10, UC-047 — 1.0's Escalations › Filter: Priority, Status, Assigned To, Clear All Filters) Tickets › Filters, on the
  * house filter pattern (the Files filters modal: the Tasks modal's shell, a rail of groups with dots, Clear All · Done): Priority (Normal ·
- * Urgent), Status (the four states — a pick widens the Open / Resolved and closed / All chips to All, so the two never disagree) and Looks
- * after (the members on the tickets, and "Nobody yet"). Every change reaches the list at once (REG-464): Done only closes. ≤767 a bottom sheet.
+ * Urgent), Status (the four states — a pick widens the All / Open / Closed chips to All, so the two never disagree) and Assigned
+ * to (the members on the tickets, and "Unassigned"). Every change reaches the list at once (REG-464): Done only closes. ≤767 a bottom sheet.
  */
 export function TicketsFiltersModal({ open, people, value, onApply, onClose }: {
   open: boolean
@@ -54,7 +54,7 @@ export function TicketsFiltersModal({ open, people, value, onApply, onClose }: {
   const dots = activeTicketGroups(draft)
   useLiveApply(open, draft, value, true, onApply, sameTicketFilters)   // (REG-464)
   const toggleOwner = (id: string) => setDraft((d) => ({ ...d, owners: d.owners.includes(id) ? d.owners.filter((x) => x !== id) : [...d.owners, id] }))
-  const rows: TicketPerson[] = [...people, { id: NOBODY, name: 'Nobody yet', color: 'var(--om-color-on-surface-border)', role: 'Not taken on' }]
+  const rows: TicketPerson[] = [...people, { id: NOBODY, name: 'Unassigned', color: 'var(--om-color-on-surface-border)', role: 'Not taken on' }]
   return (
     <AnimatePresence>
       {open ? (
@@ -89,7 +89,7 @@ export function TicketsFiltersModal({ open, people, value, onApply, onClose }: {
                   </>
                 ) : (
                   <>
-                    <span className={styles.sectionTitle}>Looks after</span>
+                    <span className={styles.sectionTitle}>Assigned to</span>
                     <div className={styles.list} data-testid="tickets-filter-owners">
                       {rows.map((m) => (
                         <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggleOwner(m.id)}

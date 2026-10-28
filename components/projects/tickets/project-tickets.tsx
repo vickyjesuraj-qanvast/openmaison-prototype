@@ -1,9 +1,12 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Chips } from '@/components/om/chips'
+import { ScopePill } from '@/components/om/scope-pill'
+import { useSheetLayout } from '@/components/om/sheet'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -16,24 +19,51 @@ import type { ProjectTicketsData, TicketRow } from '@/lib/projects/tickets'
 import { NewTicketDialog, type NewTicketInput } from './ticket-dialogs'
 import { TicketCard, TicketDrawer } from './ticket-parts'
 import { TicketsFiltersModal } from './tickets-filters-modal'
+import { mayTakeTicket } from '@/lib/projects/policy'
 import styles from './tickets.module.css'
 
 export type TicketScope = 'open' | 'done' | 'all'
 export const scopeOf = (t: TicketRow, s: TicketScope) => (s === 'all' ? true : s === 'open' ? isLive(t.status) : !isLive(t.status))
-/** (the calm UI build 2026-10-27, 1-22 · 1-25 · 3-39 · W-296 · W-342 · W-580) the house Chips (an in-list filter, 1-26) with the house count —
-    "Open · 3 · Closed · 1 · All · 4", never "(n)", never a zero; "Closed" holds the resolved and the closed (its value stays `done`). */
+/** (the calm UI build 2026-10-27, 1-22 · 1-25 · 3-39 · W-296 · W-342 · W-580) the house count — "Open · 3", never "(n)", never a zero; "Closed"
+    holds the resolved and the closed (its value stays `done`). (Dane's Tickets review, merged 2026-10-28 — his change 1) the order All · Open ·
+    Closed, shared by the rail's Issues and a project's tab; Open stays the page's default pick. */
 const counted = (label: string, n: number) => (n > 0 ? `${label} · ${n}` : label)
-export const scopeChips = (list: TicketRow[]) => [
-  { value: 'open', label: counted('Open', list.filter((t) => isLive(t.status)).length) },
-  { value: 'done', label: counted('Closed', list.filter((t) => !isLive(t.status)).length) },
-  { value: 'all', label: counted('All', list.length) },
+const scopeCounts = (list: TicketRow[]): { value: TicketScope; name: string; count: number }[] => [
+  { value: 'all', name: 'All', count: list.length },
+  { value: 'open', name: 'Open', count: list.filter((t) => isLive(t.status)).length },
+  { value: 'done', name: 'Closed', count: list.filter((t) => !isLive(t.status)).length },
 ]
+export const scopeChips = (list: TicketRow[]) => scopeCounts(list).map((o) => ({ value: o.value, label: counted(o.name, o.count) }))
 
 /**
- * (gaps build H — H-Q2 · H-Q9) A project's Tickets tab: the house tab toolbar (Tickets · New ticket), Open / Resolved and closed / All, a card
+ * (Dane's Tickets review, 2026-10-26 — his change 3, merged 2026-10-28) The scope control, written once for the rail's Issues and a project's
+ * tab: the chips on a tablet and the desk; ≤767 the Leads listing's scope pill ("Open · 3 ▾", the calm build's "Label · n") over the house
+ * Dropdown — a bottom sheet there, "Issue status" — with the applied dot off Open.
+ */
+export function TicketScopeControl({ tickets, scope, onPick }: { tickets: TicketRow[]; scope: TicketScope; onPick: (s: TicketScope) => void }) {
+  const phone = useSheetLayout()
+  const [open, setOpen] = useState(false)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  if (!phone) return <Chips label="Show" options={scopeChips(tickets)} value={scope} onChange={(v) => onPick(v as TicketScope)} testId="ticket-scope" />
+  const options = scopeCounts(tickets)
+  const current = options.find((o) => o.value === scope) ?? options[0]
+  return (
+    <span className={styles.scopeMenu} data-testid="ticket-scope">
+      <ScopePill ref={pillRef} label={current ? counted(current.name, current.count) : 'All'} onClick={() => setOpen((o) => !o)} open={open} scoped={scope !== 'open'} />
+      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} sheetTitle="Issue status">
+        {options.map((o) => (
+          <DropdownItem key={o.value} role="menuitemradio" checked={o.value === scope} meta={String(o.count)} onSelect={() => { onPick(o.value); setOpen(false) }}>{o.name}</DropdownItem>
+        ))}
+      </Dropdown>
+    </span>
+  )
+}
+
+/**
+ * (gaps build H — H-Q2 · H-Q9) A project's Tickets tab: the house tab toolbar (Issues · New issue), All / Open / Closed, a card
  * per ticket — the studio's turn first, then urgent, then the newest — and the ticket in the house Drawer. `?open=<ticket>` (the bell, the
  * search) lands on it. A first run says what lands here and offers New ticket.
- * (parity map 2026-10-10, UC-047) Filters — Priority · Status · Looks after (the house pattern, live), the button in the toolbar beside New
+ * (parity map 2026-10-10, UC-047) Filters — Priority · Status · Assigned to (the house pattern, live), the button in the toolbar beside New
  * ticket; a Status pick widens the chips to All, a chip pressed clears it.
  */
 export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** (simplify S-03) the Client group's view switch, in the title's place */ views?: ReactNode }) {
@@ -69,6 +99,12 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
   const pickScope = (s: TicketScope) => { setScope(s); if (s !== 'all' && filters.status.length) setFilters((f) => ({ ...f, status: [] })) }
   const list = data.tickets.filter((t) => scopeOf(t, scope) && keepsTicket(t, filters))
   const open = openId ? data.tickets.find((t) => t.id === openId) ?? null : null
+  /* (Dane's Tickets review — Vicky's call) Assigned to offers only who may work on the project */
+  const onTeamIds = data.team.filter((m) => m.onTeam).map((m) => m.id)
+  const takers = data.team.filter((m) => mayTakeTicket(m, onTeamIds))
+  /* (Dane's Tickets review) the last ticket opened stays mounted after a close, so the drawer slides out instead of vanishing */
+  const [shown, setShown] = useState<TicketRow | null>(null)
+  if (open && open !== shown) setShown(open)
   const add = async (i: NewTicketInput) => {
     try {
       const r = await createTicket(data.project.id, i)
@@ -97,7 +133,7 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
       </div>
       {data.tickets.length ? (
         <>
-          <Chips label="Show" options={scopeChips(data.tickets)} value={scope} onChange={(v) => pickScope(v as TicketScope)} testId="ticket-scope" />
+          <TicketScopeControl tickets={data.tickets} scope={scope} onPick={pickScope} />
           {list.length ? (
             <div className={styles.list} data-testid="ticket-list">
               {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} scope={scope} onOpen={() => setOpenId(t.id)} />)}
@@ -113,12 +149,12 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
                     help={`When ${first} reports a problem on their page — a leak, a scratch, a door that sticks — it lands here with their photos, and you answer it here. You can add one for them too.`}
                     primary={data.mayChange ? { label: 'New issue', icon: 'add', onPress: () => setAdding(true) } : null} />
       )}
-      {open ? (
-        <TicketDrawer ticket={open} lines={data.threads[open.id] ?? []} team={data.team} mayChange={data.mayChange} me={data.me} now={data.now}
+      {shown ? (
+        <TicketDrawer open={!!open} ticket={shown} lines={data.threads[shown.id] ?? []} team={data.team} mayChange={data.mayChange} me={data.me} now={data.now}
                       onClose={() => setOpenId(null)} onChanged={() => router.refresh()} />
       ) : null}
       <TicketsFiltersModal open={filtering} people={data.team.map((m) => ({ id: m.id, name: m.name, color: m.color, role: m.role }))} value={filters} onApply={applyFilters} onClose={() => setFiltering(false)} />
-      <NewTicketDialog open={adding} categories={data.categories} team={data.team} client={data.project.client} onClose={() => setAdding(false)} onSave={add} />
+      <NewTicketDialog open={adding} categories={data.categories} team={takers} client={data.project.client} onClose={() => setAdding(false)} onSave={add} />
     </div>
   )
 }

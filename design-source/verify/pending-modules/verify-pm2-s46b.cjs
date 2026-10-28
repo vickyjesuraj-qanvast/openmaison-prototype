@@ -4,6 +4,10 @@
 //  M1 · Tickets stays in the Projects ⋮ (REG-1425): New ticket on Projects › Tickets — the header's button opens "Which project is this ticket
 //       for?" (the projects this member may not change kept, refused with the rule), then the project tab's own compose; the ticket lands on the
 //       picked project and opens in the drawer; `?new=1` opens the picker, `&project=` the compose; the empty list's card carries New ticket.
+//       (Dane's Tickets review, merged 2026-10-28) New issue is ONE form, Project its first field (only the projects this member may raise on —
+//       the select can't grey one); a pick names its client; Assigned to offers only who can work on the project (Owners and Admins before a
+//       pick) and lets go of a pick the next project can't take; `?new=1` opens the form with no project, `&project=` with it filled. At 390 the
+//       scope is one pill over an "Issue status" sheet, and the open search has the row (the pill steps aside).
 //       The Dashboard's Tickets tile is the ⋮ row's count (and the DB's turn rule), a door with the way back. Accounting and Marketing: neither.
 //  M6 · Complete handover in the project's ⋮, just before Delete — the Stage menu's Completed row: the same sheet, the same refusal in the row
 //       (Setting up: "Start the project first"; a Designer off the team: the team rule), no row once completed, the same answer while on hold.
@@ -110,18 +114,37 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     ok(await p.locator('header a[data-kb="back"]').count() === 0 && /^Issues$/.test((await text(p.locator('main h1, header h1').first())).trim()), 'an L1 page: “Issues”, no Back')   // (the calm UI build 2026-10-27, a deliberate change)
     await shot(p, 'm1-tickets-1440')
     await newBtn.click(); await settle(p, 700)
-    const pick = p.getByRole('dialog', { name: 'Which project is this issue for?' })
-    ok(await pick.isVisible(), 'New ticket asks which project first')
-    await pick.getByRole('combobox').click(); await settle(p, 300)
+    /* (Dane's Tickets review, merged 2026-10-28) the picker and the compose are one form: "Which project is this issue for?" is its first field */
+    const compose = p.getByRole('dialog', { name: 'New issue' })
+    const comboNames = async () => (await compose.getByRole('combobox').evaluateAll((els) => els.map((e) => (document.getElementById(e.getAttribute('aria-labelledby') ?? '')?.textContent ?? '').trim())))
+    ok(await compose.isVisible() && /^Project/.test((await comboNames())[0] ?? '') && /The project’s client sees it on their page/.test(await text(compose)), 'New issue asks which project first — the form’s first field, the subtitle the client’s in general', (await comboNames()).join(' | '))   // (Dane's Tickets review, merged 2026-10-28)
+    const projectBox = compose.getByRole('combobox', { name: /^Project/ })
+    const assignBox = compose.getByRole('combobox', { name: /^Assigned to/ })
+    /* who may be given it: active, on projects, and able to work on the project — Owners and Admins, its team, the Managers of its team (`mayTakeTicket`) */
+    const takersOf = (number) => sql(`select group_concat(name, '|') from (select m.name from members m where m.is_active = 1 and m.role not in ('Accounting','Marketing') and (m.role in ('Owner','Admin')${number ? ` or m.id in (select a.member_id from lead_assignees a join projects p on p.lead_id = a.lead_id where p.number = '${number}') or (m.role = 'Manager' and exists (select 1 from members r join lead_assignees a on a.member_id = r.id join projects p on p.lead_id = a.lead_id where r.manager_id = m.id and p.number = '${number}'))` : ''}) order by m.name)`).split('|').filter(Boolean)
+    const assignOptions = async () => { await assignBox.click(); await settle(p, 300); const o = (await p.getByRole('option').allInnerTexts()).map((x) => x.trim()); await p.getByRole('option', { name: 'Unassigned', exact: true }).click(); await settle(p, 200); return o }
+    await compose.getByTestId('new-ticket-save').click(); await settle(p, 500)
+    ok(await compose.isVisible() && await projectBox.getAttribute('aria-invalid') === 'true', 'Add issue with no project keeps the form open, the Project field marked required')   // (Dane's Tickets review, merged 2026-10-28)
+    const before = await assignOptions()
+    ok(before[0] === 'Unassigned' && JSON.stringify(before.slice(1).sort()) === JSON.stringify(takersOf(null)), `before a project is picked, Assigned to offers Owners and Admins only (${before.slice(1).join(', ')})`, before.join(' | '))   // (Dane's Tickets review, merged 2026-10-28)
+    await projectBox.click(); await settle(p, 300)
     const options = await p.getByRole('option').allInnerTexts()
     const projectsSeen = Number(sql(`select count(*) from projects p join leads l on l.id = p.lead_id where p.deleted_at is null and l.deleted_at is null`))
     ok(options.length === projectsSeen && options.every((o) => / · P-\d{4}-\d{3}$/.test(o.trim())), `every project an Owner sees, each with its number (${options.length})`, options.join(' | '))
     await shot(p, 'm1-pick-1440')
-    await p.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(p, 200)
-    await pick.getByRole('button', { name: 'Continue' }).click(); await settle(p, 700)
-    const compose = p.getByRole('dialog', { name: 'New issue' })
-    ok(await compose.isVisible() && /For Benjamin Han — they see it on their page/.test(await text(compose)), 'then the project tab’s own compose, for its client')
-    await compose.getByRole('combobox').first().click(); await settle(p, 250)
+    await p.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(p, 300)
+    ok(await compose.isVisible() && /For Benjamin Han — they see it on their page/.test(await text(compose)), 'the picked project names its client — the project tab’s own compose')   // (Dane's Tickets review, merged 2026-10-28)
+    const onBen = await assignOptions()
+    ok(onBen[0] === 'Unassigned' && JSON.stringify(onBen.slice(1).sort()) === JSON.stringify(takersOf('P-2026-002')), `then Assigned to offers only who can work on it (${onBen.slice(1).join(', ')})`, onBen.join(' | '))   // (Dane's Tickets review, merged 2026-10-28)
+    /* a pick the next project can't take lets go: someone on Benjamin's team who isn't on Ryan's */
+    const offRyan = onBen.slice(1).find((n) => !takersOf('P-2026-001').includes(n))
+    if (offRyan) {
+      await assignBox.click(); await settle(p, 300); await p.getByRole('option', { name: offRyan, exact: true }).click(); await settle(p, 200)
+      await projectBox.click(); await settle(p, 300); await p.getByRole('option', { name: `${RYAN_NAME} · P-2026-001` }).click(); await settle(p, 300)
+      ok(/Unassigned/.test(await text(assignBox)) && !new RegExp(offRyan).test(await text(assignBox)), `switching to a project ${offRyan} can't work on puts Assigned to back to Unassigned`, await text(assignBox))   // (Dane's Tickets review, merged 2026-10-28)
+      await projectBox.click(); await settle(p, 300); await p.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(p, 300)
+    }
+    await compose.getByRole('combobox', { name: /^Category/ }).click(); await settle(p, 250)   // (Dane's Tickets review, merged 2026-10-28) Project is the first combobox now
     const cat = (await p.getByRole('option').allInnerTexts())[0]?.trim()
     await p.getByRole('option', { name: cat, exact: true }).click(); await settle(p, 200)
     await compose.getByLabel(/^Subject/).fill(SUBJECT)
@@ -142,7 +165,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
 
     console.log('M1 · ?new=1 and &project=')
     await go(p, '/tickets?new=1', 1400)
-    ok(await p.getByRole('dialog', { name: 'Which project is this issue for?' }).isVisible() && !/new=1/.test(p.url()), '?new=1 opens the picker, and the address loses the mark')
+    ok(/The project’s client sees it on their page/.test(await text(p.getByRole('dialog', { name: 'New issue' }))) && !/new=1/.test(p.url()), '?new=1 opens the form with no project picked, and the address loses the mark')   // (Dane's Tickets review, merged 2026-10-28) one form
     await p.keyboard.press('Escape'); await settle(p, 400)
     await go(p, `/tickets?new=1&project=${RYAN}`, 1400)
     ok(/For Ryan D’Souza/.test(await text(p.getByRole('dialog', { name: 'New issue' }))), '&project= goes straight to that project’s compose')
@@ -181,13 +204,14 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await go(p, '/tickets')
     ok(await p.getByTestId('studio-new-ticket').count() === 1, 'germaine (Designer, on two projects’ teams): New ticket')
     await p.getByTestId('studio-new-ticket').click(); await settle(p, 600)
-    const gpick = p.getByRole('dialog', { name: 'Which project is this issue for?' })
-    await gpick.getByRole('combobox').click(); await settle(p, 300)
+    /* (Dane's Tickets review, merged 2026-10-28) one form: the Project select holds only the projects she may raise on — a select can't grey an
+       option, so a project she isn't on is left out (it was kept in the picker, refused with the rule) */
+    const gpick = p.getByRole('dialog', { name: 'New issue' })
+    await gpick.getByRole('combobox', { name: /^Project/ }).click(); await settle(p, 300)
     const gopts = (await p.getByRole('option').allInnerTexts()).map((x) => x.trim())
     const mine = sql(`select group_concat(p.number, ',') from projects p join lead_assignees a on a.lead_id = p.lead_id where a.member_id = 'germaine' and p.deleted_at is null`).split(',').filter(Boolean)
-    ok(mine.every((n) => gopts.slice(0, mine.length).some((o) => o.endsWith(n))), `her own projects first (${mine.join(', ')})`, gopts.join(' | '))
-    await p.getByRole('option', { name: `${RYAN_NAME} · P-2026-001` }).click(); await settle(p, 300)
-    ok(/can’t be picked — only the project’s team, their Managers, Owners and Admins change a project/.test(await text(gpick)) && await gpick.getByRole('button', { name: 'Continue' }).isDisabled(), 'a project she isn’t on stays in the list, refused with the rule')
+    ok(gopts.length === mine.length && mine.every((n) => gopts.some((o) => o.endsWith(n))), `her own projects, and only them (${mine.join(', ')})`, gopts.join(' | '))   // (Dane's Tickets review, merged 2026-10-28)
+    ok(!gopts.some((o) => o.endsWith('P-2026-001')), 'a project she isn’t on is not offered', gopts.join(' | '))   // (Dane's Tickets review, merged 2026-10-28)
     await shot(p, 'm1-germaine-refused-1440')
     await p.keyboard.press('Escape'); await settle(p, 300)
     await go(p, '/dashboard', 1800)
@@ -397,13 +421,30 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await go(q, '/tickets', 1500)
     ok(await q.getByRole('button', { name: 'New issue' }).count() === 1 && await sideways(q) <= 0, '390: New ticket as the header’s square, no sideways scroll', `${await sideways(q)}px`)
     await shot(q, 'm1-tickets-390')
+    /* (Dane's Tickets review, merged 2026-10-28 — his change 3) the scope is one pill over its sheet "Issue status" (All · Open · Closed); his Tasks
+       review's note fixed at the merge: the open search has the row, the pill steps aside, and comes back when the box folds */
+    const qscope = q.getByTestId('ticket-scope')
+    const pillWords = (await qscope.locator('[class*="label"]').first().innerText().catch(() => '')).trim()
+    ok(await qscope.getByRole('radio').count() === 0 && /^Open( · \d+)?$/.test(pillWords), `390: the scope is one pill, "${pillWords} ▾"`)   // (Dane's Tickets review, merged 2026-10-28)
+    await qscope.getByRole('button').first().click(); await settle(q, 600)
+    const scopeSheet = q.getByRole('menu', { name: 'Issue status' })   // the house Dropdown as a sheet (role menu)
+    const scopeRows = (await scopeSheet.getByRole('menuitemradio').allInnerTexts()).map((x) => x.split('\n')[0].trim())
+    ok(await scopeSheet.isVisible() && scopeRows.join(' · ') === 'All · Open · Closed', '390: its sheet "Issue status" — All · Open · Closed', scopeRows.join(' · '))   // (Dane's Tickets review, merged 2026-10-28)
+    await shot(q, 'm1-scope-390')
+    await q.keyboard.press('Escape'); await settle(q, 500)
+    await q.getByRole('button', { name: 'Search tickets' }).click(); await settle(q, 500)
+    const qbox = await q.getByRole('searchbox', { name: 'Search tickets' }).boundingBox().catch(() => null)
+    ok(!(await qscope.isVisible()) && !!qbox && qbox.x <= 24 && await sideways(q) <= 0, '390: the open search has the row from the left edge — the pill steps aside', JSON.stringify(qbox))   // (Dane's Tickets review, merged 2026-10-28)
+    await shot(q, 'm1-search-390')
+    await q.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : undefined)); await settle(q, 500)   // an empty box folds once it loses focus
+    ok(await qscope.isVisible(), '390: the box folds and the pill comes back')   // (Dane's Tickets review, merged 2026-10-28)
     await q.getByRole('button', { name: 'New issue' }).click(); await settle(q, 900)
-    ok(await q.getByRole('dialog', { name: 'Which project is this issue for?' }).isVisible() && await sideways(q) <= 0, '390: the picker as a sheet')
+    /* (Dane's Tickets review, merged 2026-10-28) one form, the Project its first field — as a sheet */
+    ok(await q.getByRole('dialog', { name: 'New issue' }).isVisible() && await sideways(q) <= 0, '390: the one form as a sheet')
     await shot(q, 'm1-pick-390')
-    await q.getByRole('dialog', { name: 'Which project is this issue for?' }).getByRole('combobox').click(); await settle(q, 400)
+    await q.getByRole('dialog', { name: 'New issue' }).getByRole('combobox', { name: /^Project/ }).click(); await settle(q, 400)
     await q.getByRole('option', { name: `${BEN_NAME} · P-2026-002` }).click(); await settle(q, 300)
-    await q.getByRole('button', { name: 'Continue' }).click(); await settle(q, 900)
-    ok(await q.getByRole('dialog', { name: 'New issue' }).isVisible() && await sideways(q) <= 0, '390: the compose as a sheet')
+    ok(/For Benjamin Han/.test(await text(q.getByRole('dialog', { name: 'New issue' }))) && await sideways(q) <= 0, '390: the compose as a sheet, for the picked project’s client')
     await shot(q, 'm1-compose-390')
     await q.keyboard.press('Escape'); await settle(q, 500)
     await go(q, '/dashboard', 1800)

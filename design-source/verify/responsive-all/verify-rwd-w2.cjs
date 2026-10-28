@@ -242,10 +242,23 @@ const SIZE = {
       const pb = await box(pill)
       const vw = SIZE[size].viewport.width
       let whole = n > 0, below = n > 0, top = n > 0
-      for (let i = 0; i < n; i++) { const x = await box(chips.nth(i)); if (x.l < 0 || x.r > vw) whole = false; if (x.t < pb.b) below = false; if (!(await onTop(chips.nth(i)))) top = false }
-      ok(whole, `${size}: every to-do chip is whole on the screen (${n})`)
+      /* (Dane's Tasks review, merged 2026-10-28 — changes 4 · 9 · 13) a phone's chips say their words ("Overdue · 9") on one row of their own that
+         swipes sideways, out to the screen's edges: at rest the first chip stands on the pill's line, and a chip past the edge is whole once the
+         row is swiped to it — so each chip is read where the row brings it, never cut, and the page itself never scrolls sideways */
+      const row = p.getByTestId('task-todos')
+      await row.evaluate((el) => { el.scrollLeft = 0 }); await p.waitForTimeout(150)
+      const rb = await box(row), c0 = n ? await box(chips.first()) : null
+      ok(n > 0 && Math.abs(rb.l) <= 1 && Math.abs(rb.r - vw) <= 1 && Math.abs(c0.l - pb.l) <= 1, `${size}: the chips' row runs edge to edge, its first chip on the pill's line (row ${Math.round(rb.l)}–${Math.round(rb.r)} · chip ${c0 ? Math.round(c0.l) : '-'} · pill ${Math.round(pb.l)}) (Dane’s Tasks review, merged 2026-10-28)`)
+      for (let i = 0; i < n; i++) {
+        await chips.nth(i).evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'nearest' })); await p.waitForTimeout(150)
+        const x = await box(chips.nth(i)); if (x.l < 0 || x.r > vw) whole = false; if (x.t < pb.b) below = false; if (!(await onTop(chips.nth(i)))) top = false
+      }
+      await row.evaluate((el) => { el.scrollLeft = 0 }); await p.waitForTimeout(150)
+      ok(whole, `${size}: every to-do chip is whole on the screen where its row brings it (${n}) (Dane’s Tasks review, merged 2026-10-28)`)
       ok(below, `${size}: the chips stand on a line of their own under the pill`)
       ok(top, `${size}: each chip is on top where it is drawn (nothing over it)`)
+      ok(n > 0 && (await chips.evaluateAll((els) => els.every((e) => /^(Overdue|Today|Upcoming|Unassigned) · \d+$/.test((e.innerText.trim().split('\n').pop() || '').trim())))), `${size}: each chip says its words and its count (Dane’s Tasks review, merged 2026-10-28)`)
+      ok(await p.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth), `${size}: the page never scrolls sideways (Dane’s Tasks review, merged 2026-10-28)`)
       if (n) {
         await tap(p, chips.first()); await p.waitForTimeout(700)
         ok(await chips.first().getAttribute('aria-pressed') === 'true', `${size}: a tap selects the first chip`)

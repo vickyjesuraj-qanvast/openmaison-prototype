@@ -26,10 +26,11 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
 
 /** `approvals` — (pending modules S46C · M3) the page's own count when the reveal draws it. (the calm UI build 2026-10-27 — the audit's 1-03)
     The page no longer draws its approvals line (the approvals are the Dashboard's), so neither does its ghost; the prop stays for a caller that
-    still passes it. */
+    still passes it. (Dane's Tasks review, merged 2026-10-28 — change 19) Dane's phone strip (the whole strip one button with a ›, and the
+    ghost's › — `ghostLine` · `ghostChev`) stays in approvals-line.tsx / .module.css, unused, with the line it redesigned. */
 export function TasksListGhost(props: { approvals?: number } = {}) {
   void props
-  /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
+  /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24, p16 on a phone — Dane's Tasks review change 9) */
   const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
   const sources = opensPath(useSignedInRole(), '/projects')   // (S43E W6-02) Marketing's page has no Leads · Projects
   const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} sources={sources} />

@@ -350,6 +350,7 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     await go(d, `/projects/${ben}/tickets?open=${T4}`); await settle(d, 1000)
     const alexSees = await d.locator('[data-testid="ticket-drawer"]').count()
     ok(alexSees === 0 || await d.locator('[data-testid="ticket-composer"]').count() === 0, 'a member off the project’s team can’t answer its tickets')
+    ok(alexSees === 0 || /Only the project’s team, their Managers, Owners and Admins can work on this issue/.test(await d.locator('[data-testid="ticket-drawer"]').locator('xpath=ancestor::*[@role="dialog"][1]').innerText().catch(() => '')), 'where the reply box would be, the read-only line says why')   // (Dane's Tickets review, merged 2026-10-28) his change 12, in the calm build's "issue"
     as('dane')
 
     // ── 11 · Activity, Sent messages ───────────────────────────────────────────────────────────────────────────────────────────

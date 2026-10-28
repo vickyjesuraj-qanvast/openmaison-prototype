@@ -55,25 +55,33 @@ export function usePickedPhotos(max: number) {
   return { photos, reset: () => setPhotos([]), view }
 }
 
-/** The Handled by select's first option. (invented copy) */
-export const NOBODY = 'Nobody yet'
+/** The Assigned to select's first option. (invented copy; Dane's Tickets review, 2026-10-26: was "Nobody yet" — merged 2026-10-28 over the calm
+    build's "Handled by", W-244: his testers' pick of three, and §2 of the calm build names no word for it) */
+export const NOBODY = 'Unassigned'
 
-export function NewTicketDialog({ open, categories, team, client, onClose, onSave }: {
+export function NewTicketDialog({ open, categories, team, client, project, onClose, onSave }: {
   open: boolean; categories: string[]; team: { id: string; name: string; onTeam: boolean }[]; client: string
+  /** (Dane's Tickets review, 2026-10-26) the rail's Tickets: the project is the form's first field (it was a picker of its own before the
+      form); its client names the subtitle once picked, its team leads Assigned to. A project's tab passes none — the project is known. */
+  project?: { options: string[]; value: string; onChange: (label: string) => void }
   onClose: () => void; onSave: (i: NewTicketInput) => Promise<boolean>
 }) {
   const [category, setCategory] = useState('')
   const [subject, setSubject] = useState('')
+  /* (Dane's Tickets review, 2026-10-26) the Subject's example shows only while the field is focused */
+  const [subjectFocused, setSubjectFocused] = useState(false)
   const [body, setBody] = useState('')
   const [assignee, setAssignee] = useState(NOBODY)
   const [tried, setTried] = useState(false)
   const [busy, setBusy] = useState(false)
   const ph = usePickedPhotos(PHOTOS_MAX)
   const names = team.map((m) => m.name)
+  /* (Dane's Tickets review) a project changed under a pick that can't work on the new one: the pick lets go, never saved as nobody unseen */
+  if (assignee !== NOBODY && !names.includes(assignee)) setAssignee(NOBODY)
   const reset = () => { setCategory(''); setSubject(''); setBody(''); setAssignee(NOBODY); setTried(false); ph.reset() }
   const save = async () => {
     setTried(true)
-    if (!category || !subject.trim()) return
+    if ((project && !project.value) || !category || !subject.trim()) return
     setBusy(true)
     try {
       const ok = await onSave({ category, subject, body, photos: ph.photos, assigneeId: team.find((m) => m.name === assignee)?.id ?? null })
@@ -81,15 +89,20 @@ export function NewTicketDialog({ open, categories, team, client, onClose, onSav
     } finally { setBusy(false) }
   }
   return (
-    /* (the calm UI build 2026-10-27, 3-37 · 1-11) "New issue" — the client's word on both sides */
-    <Dialog open={open} onClose={() => { reset(); onClose() }} title="New issue" subtitle={`For ${client} — they see it on their page and can answer there.`} size="modal" width={600}
+    /* (the calm UI build 2026-10-27, 3-37 · 1-11) "New issue" — the client's word on both sides. (Dane's Tickets review, merged 2026-10-28 — his
+       changes 7 · 10) the rail's form names its client once a project is picked; ≤767 room under the last field, the foot's shadow gone at the end */
+    <Dialog open={open} onClose={() => { reset(); onClose() }} footShadowUntilEnd title="New issue" subtitle={client ? `For ${client} — they see it on their page and can answer there.` : 'The project’s client sees it on their page and can answer there.'} size="modal" width={600}
             footer={<><Button variant="secondary" appearance="outlined" onPress={() => { reset(); onClose() }}>Cancel</Button><Button onPress={() => { void save() }} isDisabled={busy} data-testid="new-ticket-save">{busy ? 'Saving…' : 'Add issue'}</Button></>}>
-      <div className={styles.form} data-testid="new-ticket">
+      <div className={`${styles.form} ${styles.newForm}`} data-testid="new-ticket">
+        {project ? <TextField label="Project" mode="select" searchable options={project.options} value={project.value} onChange={project.onChange} required error={tried && !project.value ? MSG.required : undefined} /> : null}
         <TextField label="Category" mode="select" options={categories} value={category} onChange={setCategory} required error={tried && !category ? MSG.required : undefined} />
-        <TextField label="Subject" value={subject} onChange={(v) => setSubject(v.slice(0, SUBJECT_MAX))} maxLength={SUBJECT_MAX} required error={tried && !subject.trim() ? MSG.required : undefined} helper="A short line — “Water stain under the kitchen sink”" />
+        <TextField label="Subject" value={subject} onChange={(v) => setSubject(v.slice(0, SUBJECT_MAX))} maxLength={SUBJECT_MAX} required error={tried && !subject.trim() ? MSG.required : undefined} helper={subjectFocused ? 'A short line — e.g. Water stain under the kitchen sink' : undefined}
+                   onFocus={() => setSubjectFocused(true)} onBlur={() => setSubjectFocused(false)} />
         <TextArea label="What happened" value={body} onChange={(v: string) => setBody(v.slice(0, BODY_MAX))} className={styles.field} />
         {ph.view}
-        <TextField label="Handled by" mode="select" options={[NOBODY, ...names]} value={assignee} onChange={setAssignee} helper="Optional — they hear it on the bell" />   {/* (the calm UI build 2026-10-27, W-244) */}
+        {/* (Dane's Tickets review, merged 2026-10-28 — his changes 9 · 11 · 13) "Assigned to" (the calm build's "Handled by", W-244, gives way), only who
+            can work on the project */}
+        <TextField label="Assigned to" mode="select" options={[NOBODY, ...names]} value={assignee} onChange={setAssignee} helper="Optional — the assigned person will be notified" />
       </div>
     </Dialog>
   )

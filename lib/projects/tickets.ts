@@ -38,7 +38,8 @@ export type TicketRow = {
   /** (simplify S-22) the task and the variation order made from it — the studio's reads only */
   asks?: AskLinks
 }
-export type TicketTeamMember = { id: string; name: string; role: string; color: string; onTeam: boolean }
+export type TicketTeamMember = { id: string; name: string; role: string; color: string; onTeam: boolean; /** the members they manage — `mayTakeTicket` */ reports: string[] }
+const reportsOf = (all: { id: string; managerId: string | null }[], id: string) => all.filter((x) => x.managerId === id).map((x) => x.id)
 
 const photosOf = (v: unknown, src: (id: string) => string): TicketPhoto[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((id) => ({ id, src: src(id) })) : [])
 const studioPhoto = (id: string) => imageAddress(id)
@@ -124,11 +125,11 @@ export type ProjectTicketsData = {
 
 async function teamFor(leadId: string): Promise<TicketTeamMember[]> {
   const [all, on] = await Promise.all([
-    db.select({ id: members.id, name: members.name, role: members.role, color: members.color, isActive: members.isActive }).from(members),
+    db.select({ id: members.id, name: members.name, role: members.role, color: members.color, isActive: members.isActive, managerId: members.managerId }).from(members),
     db.select({ id: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId)),
   ])
   const onIds = new Set(on.map((r) => r.id))
-  return pickable(all).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, onTeam: onIds.has(m.id) }))
+  return pickable(all).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, onTeam: onIds.has(m.id), reports: reportsOf(all, m.id) }))
     .sort((a, b) => Number(b.onTeam) - Number(a.onTeam) || a.name.localeCompare(b.name))
 }
 
@@ -191,7 +192,7 @@ export async function ticketRaise(viewer?: Awaited<ReturnType<typeof fetchViewer
       .innerJoin(leads, eq(leads.id, projects.leadId)).where(and(isNull(projects.deletedAt), isNull(leads.deletedAt))),
     visibleLeadIds(v),
     db.select({ leadId: leadAssignees.leadId, id: leadAssignees.memberId }).from(leadAssignees),
-    db.select({ id: members.id, name: members.name, role: members.role, color: members.color, isActive: members.isActive }).from(members),
+    db.select({ id: members.id, name: members.name, role: members.role, color: members.color, isActive: members.isActive, managerId: members.managerId }).from(members),
     fetchTicketCategories(),
   ])
   const list: TicketProject[] = rows.filter((r) => !seen || seen.has(r.leadId)).map((r) => {
@@ -202,7 +203,7 @@ export async function ticketRaise(viewer?: Awaited<ReturnType<typeof fetchViewer
   /* the ones this viewer may raise on first; inside, the running ones before the completed, the newest number first */
   const rank = (x: TicketProject) => (x.blocked ? 2 : 0) + (x.stage === 'completed' ? 1 : 0)
   list.sort((a, b) => rank(a) - rank(b) || b.number.localeCompare(a.number, undefined, { numeric: true }))
-  return { projects: list, categories: liveCategories(cats), members: pickable(all).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, onTeam: false })) }
+  return { projects: list, categories: liveCategories(cats), members: pickable(all).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, onTeam: false, reports: reportsOf(all, m.id) })) }
 }
 
 /** One ticket's thread for the studio — the studio-wide list opens it in the drawer. Null when the viewer may not see its project. */

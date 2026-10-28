@@ -38,7 +38,9 @@ export function StudioTicketsGhost({ raise: told }: { raise?: boolean } = {}) {
         ) : (
           <div className={styles.tab}>
             <div className={styles.bar}>
-              <span className={chipRow.chips}>{[84, 100, 72].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-1)" />)}</span>   {/* (the calm UI build 2026-10-27, 1-25) Open · n · Closed · n · All · n — (1-45) the house chip's own radius */}
+              {/* (the calm UI build 2026-10-27, 1-25 · 1-45) "Label · n" chips at the house chip's own radius — (Dane's Tickets review, merged 2026-10-28,
+                  changes 1 · 3) in his order All · n · Open · n · Closed · n, holding the left; ≤767 the page's scope pill instead */}
+              <span className={styles.chips}><span className={`${chipRow.chips} ${styles.ghostChips}`}>{[72, 84, 100].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-1)" />)}</span><span className={styles.ghostPill}><Slot kind="pill" /></span></span>
               <span className={styles.actions}><Slot kind="search" /><Slot kind="icon" /></span>   {/* (parity map, UC-047) Filters after the search */}
             </div>
             <div className={styles.list}>

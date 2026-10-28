@@ -7,3 +7,15 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .door { min-height: 44px; }
 }
+/* (Dane's Tasks review, 2026-10-27) a phone: the strip itself is the button (approvals-line.tsx `phone`) — one row, the words wrapping beside the
+   glyph, a › at the end; no separate door. The ghost draws the same: the › in the door's place below 768. */
+.whole.whole { width: 100%; flex-wrap: nowrap; min-height: 48px; border: 0; text-align: left; cursor: pointer; }   /* doubled: order-proof against a button's centred text (Dane saw it centred on his phone) */
+.whole .text { text-align: left; }
+.whole:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.chev { flex-shrink: 0; margin-left: auto; }
+.ghostChev { display: none; }
+@media (max-width: 767px) {
+  .ghostLine { flex-wrap: nowrap; }
+  .ghostLine .door { display: none; }
+  .ghostChev { display: block; flex-shrink: 0; margin-left: auto; }
+}

@@ -12,6 +12,7 @@ import { ScopePill } from '@/components/om/scope-pill'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { TASK_SCOPE_LABEL, TASK_SCOPES_IN_PILL, TASK_SOURCE_IN, TASK_SOURCE_LABEL, type TaskScope, type TaskSource } from '@/lib/leads/task-filters'
 import { DropdownDivider } from '@/components/leads/dropdown'
 import styles from './tasks-toolbar.module.css'
@@ -129,6 +130,10 @@ export function TasksMoreButton({ onMenu, group, deleteAll = true }: { onMenu: (
 export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, todos, searchPlaceholder, inHeader = false, bare = false, source, views }: TasksToolbarProps) {
   const [scopeOpen, setScopeOpen] = useState(false)
   const sheet = useSheetLayout()
+  /* (Dane's Tasks review, 2026-10-27) a finger can't hover a chip to read its tooltip: on a phone and a touch tablet the to-do chips say their
+     words ("Overdue · 9") and sit in one row that swipes sideways when they don't all fit */
+  const touchTablet = useMediaQuery(TOUCH_TABLET)
+  const spelled = sheet || touchTablet
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
   /* (pending modules S46C · H4) The to-do chips don't always fit beside the scope and the search — an expanded rail, a 1280 screen: then every
      chip says only its glyph and count (its words stay its name and its tooltip), and the full words come back once the row has room for them.
@@ -154,16 +159,47 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
     return () => ro.disconnect()
   }, [todoKey])
 
+  /* (Dane's Tasks review, 2026-10-27) the Leads listing's "View all" (Dane's UAT 1.05): while the pill holds a narrower scope, one press back to
+     All tasks. Where the row has no room for it beside the pill and the tools (a long scope at 320) it folds away, as on Leads — the pill's sheet
+     opens on All tasks, its first row. Measured, never guessed.
+     (Dane's Tasks review, merged 2026-10-28 — change 10 on the calm build's pill) the pill holds whose tasks too now (1-26: the Leads · Projects
+     switch is its menu's second group), so View all reads the pill as the Leads listing's does: it stands while the pill is off its default
+     (the applied dot) and one press puts the whole pill back — All tasks, Leads and projects. Search and Filters stay; a picked to-do chip is let
+     go, as picking a row of the pill's menu lets it go (lead-tasks.tsx `scope.onChange` · `source.onChange`). */
+  const pillScoped = !!scope && (scope.value !== 'all' || (!!source && source.value !== 'all'))
+  const viewAll = !!scope && !bare && pillScoped
+  const viewAllPress = () => { if (scope && scope.value !== 'all') scope.onChange('all'); if (source && source.value !== 'all') source.onChange('all') }
+  const barRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  const viewAllRef = useRef<HTMLSpanElement>(null)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const [folded, setFolded] = useState(false)
+  useEffect(() => {
+    const bar = barRef.current, pill = pillRef.current, btn = viewAllRef.current, actions = actionsRef.current
+    if (!viewAll || !bar || !pill || !btn || !actions) return
+    const ro = new ResizeObserver(() => {
+      /* the pill at its full words — a pill already squeezed to "Studi…" reads narrower than it needs (its label's hidden overflow added back) */
+      const cut = Math.max(0, ...[...pill.querySelectorAll('*')].filter((el) => getComputedStyle(el).textOverflow === 'ellipsis').map((el) => el.scrollWidth - el.clientWidth))
+      const tools = getComputedStyle(actions).display === 'none' ? 0 : actions.offsetWidth + 16   // the row's 16 gap before the tools
+      setFolded(bar.clientWidth < pill.offsetWidth + cut + 8 + btn.offsetWidth + tools)   // View all sits 8 after the pill
+    })
+    ro.observe(bar); ro.observe(pill); ro.observe(btn); ro.observe(actions)
+    return () => ro.disconnect()
+  }, [viewAll])
+
   return (
-    <div className={styles.bar}>
+    <div className={styles.bar} ref={barRef}>
       {scope && !bare ? (
         /* (REG-466) The rail's Tasks page: the listing's "All leads ▾" chip — All tasks · My tasks · General tasks, with the open count.
            (REG-729) The house scope pill (components/om/scope-pill), as the listing's: the applied dot off "All tasks" (REG-295), the 4% hover.
            (the calm UI build 2026-10-27, 1-06 · 1-25 · T-07) The count the house way, "Label · n"; Unassigned left the pill for its chip
            (TASK_SCOPES_IN_PILL); whose tasks — leads, projects — is the menu's second group at every width, and the pill names it once picked. */
         <span className={styles.scopeWrap} ref={wrapRef}>
-          <ScopePill label={`${TASK_SCOPE_LABEL[scope.value]}${source ? TASK_SOURCE_IN[source.value] : ''} · ${scope.count}`} open={scopeOpen}
-                     scoped={scope.value !== 'all' || (!!source && source.value !== 'all')} onClick={() => setScopeOpen((o) => !o)} />
+          {/* (Dane's Tasks review, 2026-10-27) the pill and its menu in their own box: where the chips take a line of their own the scope box
+              steps aside (`display: contents`) and the menu lost its anchor — on a touch tablet it opened ~4,000px down the page */}
+          <span className={styles.pillWrap}>
+          <ScopePill ref={pillRef} label={`${TASK_SCOPE_LABEL[scope.value]}${source ? TASK_SOURCE_IN[source.value] : ''} · ${scope.count}`} open={scopeOpen}
+                     scoped={pillScoped} onClick={() => setScopeOpen((o) => !o)} />
           <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" sheetTitle="Show">
             {[...TASK_SCOPES_IN_PILL, ...(TASK_SCOPES_IN_PILL.includes(scope.value) ? [] : [scope.value])].map((k) => (
               <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>
@@ -174,19 +210,28 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
               <DropdownItem key={`src-${k}`} role="menuitemradio" checked={source.value === k} onSelect={pick(() => source.onChange(k))}>{k === 'all' ? 'Leads and projects' : TASK_SOURCE_LABEL[k]}</DropdownItem>
             ))}</div></> : null}
           </Dropdown>
+          </span>
+          {viewAll ? (
+            <span ref={viewAllRef} className={styles.viewAll} data-folded={folded || undefined} inert={folded || undefined} aria-hidden={folded || undefined}>
+              <Button appearance="text" onPress={viewAllPress} data-testid="view-all-tasks">View all</Button>
+            </span>
+          ) : null}
+          {/* (Dane's Tasks review, merged 2026-10-28) change 11's rule between View all and the Leads · Projects switch is not drawn: the switch is the
+              pill menu's second group now (the calm UI build 1-26) — nothing stands after View all to divide from */}
           {todos?.length ? (
-            <span className={styles.todos} data-testid="task-todos">
-              {/* (responsive audit W2-04) a phone's chips have a line of their own — (the calm UI build 2026-10-27, 1-27) and keep their words */}
+            <span className={styles.todos} data-testid="task-todos" data-spelled={spelled || undefined}>
+              {/* (responsive audit W2-04) a phone's chips have a line of their own — (the calm UI build 2026-10-27, 1-27) and keep their words;
+                  (Dane's Tasks review, 2026-10-27 — change 4) so do a touch tablet's, on one row of their own that swipes sideways */}
               {todos.map((t) => (
-                <Tooltip key={t.key} label={t.label} disabled={!compact || sheet}>
-                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} compact={compact && !sheet} selected={t.selected} onClick={t.onClick} />
+                <Tooltip key={t.key} label={t.label} disabled={spelled || !compact}>
+                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={spelled ? undefined : t.short} compact={!spelled && compact} selected={t.selected} onClick={t.onClick} />
                 </Tooltip>
               ))}
             </span>
           ) : null}
         </span>
       ) : (views ?? <h2 className={styles.title}>All tasks</h2>)}
-      <div className={styles.actions}>
+      <div className={styles.actions} ref={actionsRef}>
         {bare ? null : (<>
         {inHeader ? null : <AddTaskButton onAdd={onAdd} />}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />

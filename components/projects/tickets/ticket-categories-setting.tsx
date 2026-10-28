@@ -87,7 +87,7 @@ export function TicketCategoriesSetting({ data, canManage }: { data: TicketCateg
           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={add} isDisabled={!adding.trim() || !!taken(adding)}>Add</Button>
         </div>
       ) : null}
-      <ListEntryDialog open={!!edit} title="Ticket category" entry={edit} total={list.length} taken={takenName}
+      <ListEntryDialog open={!!edit} title="Issue category" entry={edit} total={list.length} taken={takenName}
                        note="A rename carries the issues that hold it." onClose={() => { setEdit(null); setTakenName(null) }} onSave={(e) => { void save(e) }} />
     </div>
   )

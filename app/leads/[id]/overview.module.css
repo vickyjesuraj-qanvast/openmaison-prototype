@@ -124,6 +124,12 @@
    OUTPUT, not a constant — with the FAB band the card fell 64px short and the page grew a pointless scroll. The FAB then
    sits over the card's empty bottom-right corner, exactly as it does on Notes above. Populated tabs keep the full band. */
 .centre:has([data-testid$='-empty']) { --fab-clearance: var(--om-spacing-6); }
+/* (Dane's Tasks review, 2026-10-27) A phone's Tasks tab docks its quick add at the foot (quick-add.module.css), and that bar keeps the FAB's corner
+   itself: no band under it, so on a short list the bar rests on the page's foot (or the project's site bar) instead of floating above a white
+   band. The tab's own 24 under the list is taken back by the list (tasks-table.module.css `.phoneList`). */
+@media (max-width: 767px) {
+  .centre:has([data-testid='task-quick-add']) { --fab-clearance: 0px; padding-bottom: var(--fab-clearance); }
+}
 
 /* (Dane's UAT 5.19) The house attention pulse (the quote Items' `data-fresh`, Company › Members' new row) on the LEAD STAGES card, once,
    when the "Moved to X" snackbar's View brings the reader here from another tab: a 14% primary wash over the card that holds, then fades. */

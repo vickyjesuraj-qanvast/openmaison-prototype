@@ -22,17 +22,20 @@ import type { TicketLine, TicketRow, TicketTeamMember } from '@/lib/projects/tic
 import { ThreadComposer, ThreadLines, type ThreadItem } from '../threads/thread'
 import { AskMenu } from '../threads/ask-menu'
 import { EscalateDialog, ResolveDialog } from './ticket-dialogs'
+import { ReadOnlyNote } from '@/components/company/read-only-note'
+import { mayTakeTicket } from '@/lib/projects/policy'
 import styles from './tickets.module.css'
 
 /** "Your turn" · "Benjamin’s turn" — whose word is next on a live ticket (the studio's side). (the calm UI build 2026-10-27, 1-22 · W-427: was
     "Waiting on you" · "Waiting on Benjamin", which read under the avatar of the member who looks after it as if they were the one waiting) */
 export const turnWords = (t: Pick<TicketRow, 'turn' | 'client'>) => (t.turn === 'studio' ? 'Your turn' : t.turn === 'client' ? `${t.client.split(/\s+/)[0]}’s turn` : null)
 
-/** One ticket in a list: its subject first, the line under it, the newest word, whose turn it is and who handles it.
+/** One ticket in a list: its subject first, the line under it, the newest word, whose turn it is and who it's assigned to.
     (the calm UI build 2026-10-27, 1-22 · T-06 · T-09) The subject leads — the number moved to the end of the line under it; the project is named by
     its name (its number is the drawer's Project row); the category and the day are that line's words, never caps tags. `scope` = the list's
-    scope: a status the scope already says (Open on the Open list) is not repeated on the card — "Being fixed" still is. Who handles it is the
-    avatar's tooltip, "Handled by Germaine". */
+    scope: a status the scope already says (Open on the Open list) is not repeated on the card — "Being fixed" still is. Who it's assigned to is
+    the avatar's tooltip, "Assigned to Germaine" — (Dane's Tickets review, merged 2026-10-28, his change 9) his word over the calm build's
+    "Handled by" (W-244), "Unassigned" when nobody has it. */
 export function TicketCard({ t, now, showProject = false, scope, onOpen }: { t: TicketRow; now: number; showProject?: boolean; scope?: 'open' | 'done' | 'all'; onOpen: () => void }) {
   const turn = turnWords(t)
   const saysStatus = !(scope === 'open' && t.status === 'open')
@@ -48,10 +51,10 @@ export function TicketCard({ t, now, showProject = false, scope, onOpen }: { t: 
       <span className={styles.side}>
         {turn ? <span className={styles.turn} data-turn={t.turn ?? undefined}>{turn}</span> : null}
         {t.assignee ? (
-          <Tooltip label={`Handled by ${t.assignee.name}`}>
-            <span className={styles.handler} role="img" aria-label={`Handled by ${t.assignee.name}`}><Avatar name={t.assignee.name} color={t.assignee.color} size={24} tooltip={false} /></span>
+          <Tooltip label={`Assigned to ${t.assignee.name}`}>
+            <span className={styles.handler} role="img" aria-label={`Assigned to ${t.assignee.name}`}><Avatar name={t.assignee.name} color={t.assignee.color} size={24} tooltip={false} /></span>
           </Tooltip>
-        ) : <span className={styles.turn} data-turn="client">Nobody yet</span>}
+        ) : <span className={styles.turn} data-turn="client">Unassigned</span>}
       </span>
     </button>
   )
@@ -70,14 +73,18 @@ export function studioEventText(i: ThreadItem): { text: string; icon: string; to
 }
 
 /**
- * The ticket in the house Drawer: the report (subject, chips, who and when, the words, the photos), its facts (looked after by · priority),
+ * The ticket in the house Drawer: the report (subject, chips, who and when, the words, the photos), its facts (assigned to · priority),
  * the thread — replies, internal notes, state lines — and the composer with To the client · Internal note. Resolve and Escalate open their
  * dialogs; Reopen, Assign and Escalate's Undo act at once. `onChanged` re-reads the ticket after every landed write.
  */
-export function TicketDrawer({ ticket: t, lines, team, mayChange, me, now, onClose, onChanged, showProject = false, onOpenProject }: {
+export function TicketDrawer({ open = true, ticket: t, lines, team, mayChange, me, now, onClose, onChanged, showProject = false, onOpenProject }: {
+  /** (Dane's Tickets review, 2026-10-26) false while it slides away — the host keeps the last ticket mounted so the house Drawer can play its exit */
+  open?: boolean
   ticket: TicketRow; lines: TicketLine[]; team: TicketTeamMember[]; mayChange: boolean; me: { id: string }; now: number
   onClose: () => void; onChanged: () => void; showProject?: boolean; onOpenProject?: () => void
 }) {
+  /* (Dane's Tickets review — Vicky's call) the reassign menu offers only who may work on the project */
+  const teamIds = team.filter((m) => m.onTeam).map((m) => m.id)
   const snackbar = useSnackbar()
   const router = useRouter()
   const pathname = usePathname()
@@ -121,10 +128,11 @@ export function TicketDrawer({ ticket: t, lines, team, mayChange, me, now, onClo
   }
   const assign = async (memberId: string | null) => {
     setAssignOpen(false)
-    const r = await run('change who handles it', assignTicket(t.id, { memberId }))   // (the calm UI build 2026-10-27, W-244) "Handled by"
+    /* (Dane's Tickets review, merged 2026-10-28 — his change 9) in "Assigned to"'s words (were the calm build's "handles", W-244) */
+    const r = await run('change who it’s assigned to', assignTicket(t.id, { memberId }))
     if (!r) return
     const name = team.find((m) => m.id === memberId)?.name
-    snackbar({ message: name ? `${name} handles ${t.number}` : `Nobody handles ${t.number} now`, actionLabel: 'Undo', onAction: () => { void run('put it back', assignTicket(t.id, { memberId: r.was })).then((u) => { if (u) onChanged() }) } })
+    snackbar({ message: name ? `${t.number} is assigned to ${name}` : `${t.number} is unassigned now`, actionLabel: 'Undo', onAction: () => { void run('put it back', assignTicket(t.id, { memberId: r.was })).then((u) => { if (u) onChanged() }) } })
     onChanged()
   }
   const reopen = async () => {
@@ -149,15 +157,19 @@ export function TicketDrawer({ ticket: t, lines, team, mayChange, me, now, onClo
     if (r) router.push(withFrom(`/quotes/${r.id}`, pathname))
   }
   return (
-    /* (the calm UI build 2026-10-27, 3-37) "Issues" on screen; the drawer's accessible name keeps "Ticket {n}" (a probe's handle) */
-    <Drawer open title={t.number} crumb="Issues / " onClose={onClose} label={`Ticket ${t.number}`} width="wide"
+    /* (the calm UI build 2026-10-27, 3-37) "Issues" on screen; the drawer's accessible name keeps "Ticket {n}" (a probe's handle).
+       (Dane's Tickets review, merged 2026-10-28 — his changes 4 · 6) it slides out on close; the foot's shadow leaves at the thread's end */
+    <Drawer open={open} footShadowUntilEnd title={t.number} crumb="Issues / " onClose={onClose} label={`Ticket ${t.number}`} width="wide"
             footer={mayChange ? (live ? (
               <div className={styles.footWrap}>
                 {/* (the calm UI build 2026-10-27, 1-22) the team's own line is a "Note · team only" — the words its line wears in the thread */}
                 <ThreadComposer label={to === 'note' ? 'A note for the team' : `Reply to ${first}`} maxPhotos={PHOTOS_MAX} onSend={reply} focusKey={focusKey} testId="ticket-composer"
                                 extra={<Chips label="Who reads it" options={[{ value: 'client', label: 'To the client' }, { value: 'note', label: 'Note · team only' }]} value={to} onChange={(v) => setTo(v === 'note' ? 'note' : 'client')} testId="ticket-to" />} />
               </div>
-            ) : <div className={styles.footRow}><p className={styles.closedNote}>{t.status === 'resolved' ? `Resolved — ${first} can reply to reopen it.` : `Closed by ${t.raisedByName}.`}</p><Button variant="secondary" appearance="outlined" onPress={() => { void reopen() }} data-testid="ticket-reopen">Reopen</Button></div>) : undefined}>
+            ) : <div className={styles.footRow}><p className={styles.closedNote}>{t.status === 'resolved' ? `Resolved — ${first} can reply to reopen it.` : `Closed by ${t.raisedByName}.`}</p><Button variant="secondary" appearance="outlined" onPress={() => { void reopen() }} data-testid="ticket-reopen">Reopen</Button></div>) : (
+              /* (Dane's Tickets review, 2026-10-26 — his change 12, merged 2026-10-28 in the calm build's "issue") the foot says why there is no reply box */
+              <ReadOnlyNote text="Only the project’s team, their Managers, Owners and Admins can work on this issue." />
+            )}>
       <div className={styles.drawerBody} data-testid="ticket-drawer" data-status={t.status}>
         <div className={styles.report}>
           {/* (the calm UI build 2026-10-27, 1-22 · T-06) the status and Urgent stay tags; the category moved to the facts below (a fact, not a state) */}
@@ -186,17 +198,19 @@ export function TicketDrawer({ ticket: t, lines, team, mayChange, me, now, onClo
           {t.escalatedAt && live ? <div className={styles.escalated} data-testid="ticket-escalated"><Icon name="flag" size={18} /><span>{`Flagged to the Owner ${relativeTime(new Date(t.escalatedAt), new Date(now))}${t.escalateNote ? ` — “${t.escalateNote}”` : ''}`}</span></div> : null}
         </div>
         <dl className={styles.facts}>
-          {showProject ? <><dt>Project</dt><dd>{onOpenProject ? <Button appearance="text" onPress={onOpenProject}>{`${t.projectName} · ${t.projectNumber}`}</Button> : `${t.projectName} · ${t.projectNumber}`}</dd></> : null}
+          {showProject ? <><dt>Project</dt><dd>{onOpenProject ? <button type="button" className={styles.factLink} onClick={onOpenProject}>{`${t.projectName} · ${t.projectNumber}`}</button> : `${t.projectName} · ${t.projectNumber}`}</dd></> : null}
           <dt>Client</dt><dd>{t.client}</dd>
           <dt>Category</dt><dd>{t.category}</dd>
-          <dt>Handled by</dt>
+          {/* (Dane's Tickets review, merged 2026-10-28 — changes 2 · 9 · 13) "Assigned to" (was the calm build's "Handled by", W-244), the house text
+              link at the rows' size, its menu only who can work on the project */}
+          <dt>Assigned to</dt>
           <dd>
             <span ref={assignRef}>
-              {mayChange ? <Button appearance="text" size="sm" onPress={() => setAssignOpen((o) => !o)} aria-haspopup="menu" aria-expanded={assignOpen} data-testid="ticket-assign">{t.assignee?.name ?? 'Nobody yet — pick someone'}</Button> : t.assignee?.name ?? 'Nobody yet'}
+              {mayChange ? <button type="button" className={styles.factLink} onClick={() => setAssignOpen((o) => !o)} aria-haspopup="menu" aria-expanded={assignOpen} data-testid="ticket-assign">{t.assignee?.name ?? 'Unassigned — pick someone'}</button> : t.assignee?.name ?? 'Unassigned'}
             </span>
-            <PortalMenu open={assignOpen} anchor={assignRef} onClose={() => setAssignOpen(false)} align="left" width={MENU_WIDTH.detail} role="menu" sheetTitle="Handled by">
-              {team.map((m) => <DropdownItem key={m.id} role="menuitemradio" checked={t.assignee?.id === m.id} onSelect={() => { void assign(m.id) }}>{m.onTeam ? `${m.name} · on this project` : `${m.name} · ${m.role}`}</DropdownItem>)}
-              {t.assignee ? <DropdownItem onSelect={() => { void assign(null) }}>Nobody</DropdownItem> : null}
+            <PortalMenu open={assignOpen} anchor={assignRef} onClose={() => setAssignOpen(false)} align="left" width={MENU_WIDTH.detail} role="menu" sheetTitle="Assigned to">
+              {team.filter((m) => mayTakeTicket(m, teamIds)).map((m) => <DropdownItem key={m.id} role="menuitemradio" checked={t.assignee?.id === m.id} onSelect={() => { void assign(m.id) }}>{m.onTeam ? `${m.name} · on this project` : `${m.name} · ${m.role}`}</DropdownItem>)}
+              {t.assignee ? <DropdownItem onSelect={() => { void assign(null) }}>Unassigned</DropdownItem> : null}
             </PortalMenu>
           </dd>
           <dt>Priority</dt><dd>{PRIORITY_WORDS[t.priority]}</dd>

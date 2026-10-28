@@ -26,6 +26,11 @@ export const seesMoney = (viewer: Who, teamIds: readonly string[]) => seesBooks(
 export const seesStudioMoney = (viewer: Pick<Viewer, 'role'>) => seesBooks(viewer.role)
 
 export const CHANGE_RULE = 'Only the project’s team, their Managers, Owners and Admins change a project'   // (fix-B, B-47) Managers named, as worksOn lets them (REG-1059's way)
+/** (Dane's Tickets review, 2026-10-26 — Vicky's call) Who may be given a ticket: whoever may work on its project, read as `worksOn` reads a
+    viewer — `reports` are the members they manage. Assigned to offers only them, and `createTicket` / `assignTicket` refuse anyone else, so a
+    ticket never lands with someone who can't answer it. */
+export const mayTakeTicket = (m: { id: string; role: string; reports: readonly string[] }, teamIds: readonly string[]) =>
+  worksOn({ id: m.id, role: m.role, teamIds: [...m.reports] }, teamIds)
 /** Rename, set its dates and value, start it. */
 export const mayChangeProject = (viewer: Who, teamIds: readonly string[]) => worksOn(viewer, teamIds)
 /** (Q-04) Any member may add a direct project; a Designer's is theirs (the lead form's rule, REG-609). (parity map, PR-022) Accounting never

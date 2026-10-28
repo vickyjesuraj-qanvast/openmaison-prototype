@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useSheetLayout } from '@/components/om/sheet'
 import { leaveThen } from '@/components/company/leave-guard'
 import { withFrom } from '@/lib/nav'
 import { DASHBOARD } from '@/lib/dashboard/model'
@@ -26,12 +27,23 @@ export const APPROVALS_COUNT_KEY = 'om.shape.tasks.approvals.n'
 
 export function ApprovalsLine({ count }: { count: number }) {
   const router = useRouter()
+  const phone = useSheetLayout()
   if (count <= 0) return null
+  const open = () => leaveThen(() => router.push(withFrom(DASHBOARD, '/tasks')))
+  /* (Dane's Tasks review, 2026-10-27) a phone: the whole strip is the door — the glyph, the sentence and a › at its end, one press; the words
+     wrapped over "Open Dashboard" pushed alone to the right read untidy */
+  if (phone) return (
+    <button type="button" className={`${note.note} ${styles.line} ${styles.whole}`} onClick={open} aria-label={`${approvalsWords(count)} — ${APPROVALS_DOOR}`} data-testid="tasks-approvals">
+      <Icon name="approval" size={20} weight={300} />
+      <span className={styles.text}>{approvalsWords(count)}</span>
+      <Icon name="chevron_right" size={20} className={styles.chev} />
+    </button>
+  )
   return (
     <div className={`${note.note} ${styles.line}`} data-testid="tasks-approvals">
       <Icon name="approval" size={20} weight={300} />
       <span className={styles.text}>{approvalsWords(count)}</span>
-      <Button appearance="text" className={styles.door} onPress={() => leaveThen(() => router.push(withFrom(DASHBOARD, '/tasks')))} data-testid="tasks-approvals-door">{APPROVALS_DOOR}</Button>
+      <Button appearance="text" className={styles.door} onPress={open} data-testid="tasks-approvals-door">{APPROVALS_DOOR}</Button>
     </div>
   )
 }

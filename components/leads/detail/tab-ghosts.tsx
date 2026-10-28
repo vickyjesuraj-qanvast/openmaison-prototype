@@ -53,8 +53,10 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
   return (
     <>
       {studio ? (
-        /* (the calm UI build) the Leads · Projects switch rides in the scope's menu now — no slot of its own (`sources` kept for the callers) */
-        <div className={tasksBar.bar} data-sources={sources || undefined}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={145} /><span className={tasksBar.todos}>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
+        /* (the calm UI build) the Leads · Projects switch rides in the scope's menu now — no slot of its own (`sources` kept for the callers).
+           (Dane's Tasks review, merged 2026-10-28 — change 4) the chips' row is `data-spelled` as the page's is on a phone and a touch tablet: one
+           row that swipes, at the chips' word widths (tasks-toolbar.module.css `.todoGhost`) */
+        <div className={tasksBar.bar} data-sources={sources || undefined}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={145} /><span className={tasksBar.todos} data-spelled>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
       ) : <Bar bar={tasksBar.bar} title={tasksBar.title} words="All tasks" head={title}><Slot kind="btnFold" w={119} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>}
       {/* (the calm UI build 2026-10-27 — 1-07 · 2-19) no foot "+ Add Task" row; Status rests in Column settings; /tasks opens on Title · For ·
           Members · Due (Creator and Tags in Column settings) */}

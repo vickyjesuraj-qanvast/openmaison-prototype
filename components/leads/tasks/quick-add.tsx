@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { Button } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { FootStart } from '@/components/om/dialog'
 import type { Member } from '@/lib/db/schema'
 import { DuePresetChips } from './due-presets'
 import styles from './quick-add.module.css'
@@ -22,16 +24,20 @@ export function whoWords(members: Member[]): string {
  * a title and one tap. The desk keeps its inline add row (frame 194). The members start as the lead's (T4); the pill opens the Assign sheet.
  * On the rail's Tasks page the lead's pill rides in the same row (`lead`). The right end of the row stays clear for the Maison AI button
  * when it rests there (C-08), so neither covers the other.
+ * (Dane's Tasks review, 2026-10-27 — merged 2026-10-28) On a phone the docked row is one button that opens the house "New task" sheet; Add
+ * there saves and closes it (the chain above stays on a touch tablet's inline row).
  */
-export function QuickAddTask({ now, members, onAssign, onSubmit, lead, focusKey = 0, onIdle }: {
+export function QuickAddTask({ now, members, onAssign, onSubmit, lead, focusKey = 0, arrived = false, onIdle }: {
   now: number
   members: Member[]
   onAssign: (anchor: HTMLElement) => void
   onSubmit: (title: string, dueAt: Date | null) => void
-  /** (REG-466) The rail page's Lead pill — Studio, or a lead / project. */
+  /** (REG-466) The rail page's Lead pill — General (the calm UI build 1-16; was Studio), or a lead / project. */
   lead?: ReactNode
-  /** Bumped by the toolbar's Create New Task (and Create › Task): the caret lands in the field. */
+  /** Bumped by the toolbar's Create New Task (and Create › Task): the caret lands in the field — on a phone, the New task sheet opens. */
   focusKey?: number
+  /** The page opened with `?add=1` — its `focusKey` asks for the add as a press would (a phone's sheet opens; elsewhere the caret lands). */
+  arrived?: boolean
   /** The row was let go (Esc) — the host's "adding" ends. */
   onIdle?: () => void
 }) {
@@ -40,8 +46,18 @@ export function QuickAddTask({ now, members, onAssign, onSubmit, lead, focusKey 
   const [active, setActive] = useState(false)
   const field = useRef<HTMLInputElement>(null)
   const box = useRef<HTMLDivElement>(null)
+  /* (Dane's Tasks review, 2026-10-27) a phone: the docked bar is the way in, and the add happens in a bottom sheet over the dock — the
+     title focused, the due presets, who and the lead under it, Add at its foot. The touch tablet (no dock) keeps the inline row. */
+  const sheet = useSheetLayout()
+  const [sheetOpen, setSheetOpen] = useState(false)
+  /* (Dane's Tasks review, merged 2026-10-28 — a fix on the way) an arrival with `?add=1` (a saved log's "Add tasks", the Dashboard's Your day)
+     opens the sheet too, as it landed the caret in the docked row before the sheet: the arrival's key counts as unseen. Read once, at mount —
+     the address drops `?add=1` (lead-tasks.tsx), so the list remounting later (a search that found nothing, cleared) never reopens it. */
+  const [seenKey, setSeenKey] = useState(() => (arrived ? 0 : focusKey))
+  if (focusKey !== seenKey) { setSeenKey(focusKey); if (sheet && focusKey) setSheetOpen(true) }   // Create New Task opens the sheet (render-phase adjust)
+  const letGo = () => { setTitle(''); setDue(null); setActive(false); setSheetOpen(false); onIdle?.() }
   useEffect(() => {
-    if (!focusKey) return
+    if (!focusKey || sheet) return
     /* the page may still be `inert` under its ghost (REG-708): try each frame for a moment, as the desk's add row does */
     let tries = 0, raf = 0
     const land = () => {
@@ -53,19 +69,55 @@ export function QuickAddTask({ now, members, onAssign, onSubmit, lead, focusKey 
     }
     land()
     return () => cancelAnimationFrame(raf)
-  }, [focusKey])
+  }, [focusKey, sheet])
   const open = active || title.trim() !== '' || due !== null
   const submit = () => {
     const t = title.trim()
     if (!t) return
     onSubmit(t, due)
     setTitle(''); setDue(null)
+    if (sheet) { setSheetOpen(false); setActive(false); return }   // the sheet's Add saves and closes; the snackbar says it was added
     field.current?.focus()
   }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); submit() }
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setTitle(''); setDue(null); setActive(false); field.current?.blur(); onIdle?.() }
+    if (e.key === 'Escape') { if (sheet) return; e.preventDefault(); e.stopPropagation(); setTitle(''); setDue(null); setActive(false); field.current?.blur(); onIdle?.() }   // in the sheet Esc is the sheet's own (it closes)
   }
+  const line = (
+    <div className={styles.line}>
+      <Icon name="add" size={24} className={styles.lead} />
+      <input ref={field} className={styles.input} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={onKeyDown} autoFocus={sheet}
+             placeholder="Add a task…" aria-label="New task" enterKeyHint="done" autoComplete="off" data-testid="task-quick-input" />
+      {!sheet && title.trim() ? <Button className={styles.add} onPress={submit} data-testid="task-quick-save">Add</Button> : null}
+    </div>
+  )
+  const dues = <DuePresetChips value={due} onChange={(d) => { setDue(d); if (!sheet) field.current?.focus() }} now={now} scroll testId="task-quick-due" />
+  const who = (
+    <button type="button" className={styles.who} onClick={(e) => onAssign(e.currentTarget)} aria-haspopup="dialog"
+            aria-label={members.length ? `Members of the new task: ${members.map((m) => m.name).join(', ')} — change` : 'Assign the new task'} data-testid="task-quick-who">
+      {members.length ? <Avatar name={members[0]!.name} color={members[0]!.color} size={24} tooltip={false} /> : <Icon name="person_add" size={20} />}
+      <span>{whoWords(members)}</span>
+      <Icon name="keyboard_arrow_down" size={20} />
+    </button>
+  )
+  if (sheet) return (
+    <>
+      <div className={styles.quick} data-testid="task-quick-add">
+        <button type="button" className={styles.rest} onClick={() => setSheetOpen(true)} aria-haspopup="dialog" data-testid="task-quick-open">
+          <Icon name="add" size={24} className={styles.lead} />
+          <span className={styles.restWords}>Add a task…</span>
+        </button>
+      </div>
+      {/* (Dane's Tasks review, 2026-10-27) the title and one row of due presets that swipes sideways; who and the lead ride the foot, left, with Add */}
+      <Sheet open={sheetOpen} onClose={letGo} title="New task" bodyClassName={styles.sheetBody}
+             footer={<>
+               <FootStart><span className={styles.sheetPicks}>{who}{lead}</span></FootStart>
+               <Button onPress={submit} isDisabled={!title.trim()} data-testid="task-quick-save">Add</Button>
+             </>}>
+        <div className={styles.sheetForm} data-task-sheet="">{line}<div className={styles.opts} data-testid="task-quick-opts">{dues}</div></div>
+      </Sheet>
+    </>
+  )
   return (
     <div ref={box} className={styles.quick} data-open={open || undefined} data-testid="task-quick-add"
          onFocus={() => setActive(true)}
@@ -73,22 +125,8 @@ export function QuickAddTask({ now, members, onAssign, onSubmit, lead, focusKey 
            if (e.relatedTarget instanceof Node && box.current?.contains(e.relatedTarget)) return
            setActive(false)
          }}>
-      <div className={styles.line}>
-        <Icon name="add" size={24} className={styles.lead} />
-        <input ref={field} className={styles.input} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={onKeyDown}
-               placeholder="Add a task…" aria-label="New task" enterKeyHint="done" autoComplete="off" data-testid="task-quick-input" />
-        {title.trim() ? <Button className={styles.add} onPress={submit} data-testid="task-quick-save">Add</Button> : null}
-      </div>
-      <div className={styles.opts} data-testid="task-quick-opts">
-        <DuePresetChips value={due} onChange={(d) => { setDue(d); field.current?.focus() }} now={now} scroll testId="task-quick-due" />
-        <button type="button" className={styles.who} onClick={(e) => onAssign(e.currentTarget)} aria-haspopup="dialog"
-                aria-label={members.length ? `Members of the new task: ${members.map((m) => m.name).join(', ')} — change` : 'Assign the new task'} data-testid="task-quick-who">
-          {members.length ? <Avatar name={members[0]!.name} color={members[0]!.color} size={24} tooltip={false} /> : <Icon name="person_add" size={20} />}
-          <span>{whoWords(members)}</span>
-          <Icon name="keyboard_arrow_down" size={20} />
-        </button>
-        {lead}
-      </div>
+      {line}
+      <div className={styles.opts} data-testid="task-quick-opts">{dues}{who}{lead}</div>
     </div>
   )
 }

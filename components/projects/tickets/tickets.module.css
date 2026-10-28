@@ -2,13 +2,29 @@
  * (gaps build H — H-Q1…H-Q9) Tickets: the project's tab, the studio's list, the drawer — composed from the house pieces: the tab toolbar
  * (components/om/tab-toolbar.module.css), the detail card's box (components/leads/detail/card.module.css), the conversation's lines
  * (../threads/thread.module.css), the house square thumbnail. One ticket = one card row: its number, subject and chips, the line under it,
- * the newest word, who looks after it.
+ * the newest word, who it is assigned to.
  */
 .tab { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; flex: 1; }
 .bar { composes: bar from '../../om/tab-toolbar.module.css'; }
 .title { composes: title from '../../om/tab-toolbar.module.css'; }
 .actions { composes: actions from '../../om/tab-toolbar.module.css'; }
-.chips { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+/* (Dane's Tickets review, 2026-10-26) the scope chips hold the left, the search + Filters sit on the right */
+/* (Dane's Tickets review) ≤767 the scope is one pill over its menu (TicketScopeControl); the ghosts draw the chips or the pill by width */
+.scopeMenu { position: relative; display: inline-flex; }
+.ghostPill { display: none; }
+/* (merged 2026-10-28) the ghost's chip row wears the house chips' own class too (components/om/chips.module.css `.chips { display: flex }`, the
+   same weight): doubled, the phone's "none" holds whatever order the build loads the two sheets in (CLAUDE.md › the load order) */
+@media (max-width: 767px) { .ghostChips.ghostChips { display: none; } .ghostPill { display: inline-flex; } }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; flex: 1; min-width: 0; }
+/* (Dane's Tasks review, 2026-10-27 — his note "Tickets on a phone: the open search covers the scope pill", fixed at the merge 2026-10-28 as his
+   Tasks change 2 does it) ≤767 on the rail's Issues the open search box covered "Open · 3 ▾" (a side effect of his Tickets change 3, the phone's
+   pill): while the box is open (or holds words) the pill steps aside and the box has the row from the left edge, Filters at the right, as on
+   Leads (REG-375); closing it brings the pill back. A project's tab has no search, so nothing changes there. Unlayered, these beat the house
+   tab toolbar's layered rules whatever order the sheets load in. */
+@media (max-width: 767px) {
+  .bar:has([data-om-search-open]) .chips { display: none; }
+  .bar:has(> .chips):has([data-om-search-open]) .actions { flex: 1; min-width: 0; margin-left: 0; justify-content: space-between; }
+}
 
 .list { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .card { composes: card from '../../leads/detail/card.module.css'; display: grid; grid-template-columns: 1fr auto; gap: var(--om-spacing-1) var(--om-spacing-4);
@@ -25,7 +41,7 @@
 .side { grid-column: 2; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-2); }
 .turn { font: var(--om-type-body-xs); color: var(--om-color-primary-default); white-space: nowrap; }
 .turn[data-turn='client'] { color: var(--om-color-on-surface-secondary); }
-/* (the calm UI build 2026-10-27, 1-22) who handles it — the avatar, named in its tooltip ("Handled by Germaine") */
+/* (the calm UI build 2026-10-27, 1-22) who it is assigned to — the avatar, named in its tooltip ("Assigned to Germaine", Dane's word, merged 2026-10-28) */
 .handler { display: inline-flex; }
 
 /* The drawer's body: the report, then the thread */
@@ -42,15 +58,21 @@
 .facts { display: grid; grid-template-columns: auto 1fr; gap: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-s); margin: 0; }
 .facts dt { color: var(--om-color-on-surface-secondary); }
 .facts dd { margin: 0; color: var(--om-color-on-surface-default); min-width: 0; }
+/* (Dane's Tickets review, 2026-10-26) a value that opens something is the house text link, flush with its row — the DS text button's padding
+   pushed it off the label's line and its own column; the rows' size, semibold */
+.factLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 .tools { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
 .escalated { display: flex; gap: var(--om-spacing-2); align-items: flex-start; padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-red-variant); font: var(--om-type-body-s); }
 .closedNote { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .footWrap { flex: 1; min-width: 0; }
 .footRow { display: flex; flex: 1; align-items: center; gap: var(--om-spacing-3); }
-.drawerBody { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+/* (Dane's Tickets review, 2026-10-26) room under the thread's last line, clear of the composer's shadow — on top of the Drawer body's own 24 */
+.drawerBody { display: flex; flex-direction: column; gap: var(--om-spacing-5); padding-bottom: var(--om-spacing-6); }
 
 /* Forms */
 .form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* (Dane's Tickets review, 2026-10-26) ≤767 the New ticket sheet: room under its last field, clear of the foot */
+@media (max-width: 767px) { .newForm { padding-bottom: var(--om-spacing-6); } }
 .field textarea { min-block-size: 96px; }
 .formRow { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
 .formPhotos { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; }

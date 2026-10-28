@@ -46,12 +46,8 @@
   .searchSlot.searchSlot > :has(input) { display: inline-flex; flex: none; }
   .searchSlot.searchSlot [data-size='md'] { width: 280px; }
 }
-/* (REG-307) Parity with the Notes toolbar's twin (notes-toolbar.module.css): the DS md SearchBar is 36 tall and a
-   fingertip wants 44, so the BOX stands up on a touch pointer — the glyph, the type and the stroke are the DS's. Doubled: the DS sets the
-   md height at the same weight. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .searchSlot.searchSlot [data-size='md'] { height: 44px; }
-}
+/* (REG-307 · Leads on the move P-13 · A-10) The touch box — 44 tall, typed at 16, a 44 clear — lives in the house piece now
+   (components/om/toolbar-search.module.css; Dane's Tasks review, 2026-10-27), so every page's search matches this one. */
 
 /* (REG-735) The bare row's title (the studio's first visit) — the tab toolbars' */
 .title { composes: title from '../om/tab-toolbar.module.css'; }
@@ -62,10 +58,4 @@
 @media (max-width: 767px) {
   .todo { order: 3; flex: 1 0 100%; }
   .bar:has(.searchSlot [data-om-search-open]) .todo { display: none; }
-}
-/* (Leads on the move, P-13 · A-10) The search types at 16 on a phone and a touch tablet — every typed box does — and says which list it searches. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .searchSlot input { font: var(--om-type-body-l); }
-  /* (A-10) the DS search's clear (20 drawn) takes a finger's 44, paid back with margin so the box keeps its measure */
-  .searchSlot [aria-label='Clear search'] { min-width: 44px; min-height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }
