@@ -7,7 +7,9 @@ import { Icon } from '@/components/om/icon'
 import { snackbarRise } from '@/lib/motion'
 import styles from './review-banner.module.css'
 
-/** Bottom banner shown while imported leads await review (779:26186). The whole banner is the button. */
+/** Bottom banner shown while imported leads await review (779:26186). The whole banner is the button.
+ *  (Vicky 2026-10-29: brought back — reverses the calm UI build's 2-16 / C-32) in the calm build's words: "Label · n" (T-07), sentence case
+ *  (T-13); `data-testid="leads-review-bar"` is its handle, beside the scope pill's `leads-review-open` row. */
 export function ReviewBanner({ count, duplicates, onOpen }: { count: number; duplicates: number; onOpen: () => void }) {
   // Stuck detection: a 1px sentinel sits right after the banner in the body's flow; while it is
   // below the viewport the banner is floating (canvas beneath it), otherwise it rests in the body.
@@ -40,11 +42,12 @@ export function ReviewBanner({ count, duplicates, onOpen }: { count: number; dup
     {/* Canvas strip under the floating banner — a sibling behind it so the banner's shadow stays visible. */}
     <span className={styles.strip} data-stuck={stuck || undefined} aria-hidden />
     <motion.button ref={banner} type="button" className={styles.banner} data-stuck={stuck || undefined} variants={snackbarRise} initial="initial" animate="animate" exit="exit"
-                   onClick={onOpen} aria-label={`Review imported leads (${count})${duplicates > 0 ? `, ${duplicates} duplicate${duplicates === 1 ? '' : 's'}` : ''}`}>
+                   onClick={onOpen} data-testid="leads-review-bar"
+                   aria-label={`Review imported leads · ${count}${duplicates > 0 ? `, ${duplicates} duplicate${duplicates === 1 ? '' : 's'}` : ''}`}>
       <span className={styles.lead}>
-        <span className={styles.title}>Review imported leads ({count})</span>
+        <span className={styles.title}>Review imported leads · {count}</span>
         {/* (REG-729) the DS Tag, filled yellow — the look this hand-typed tag copied */}
-        {duplicates > 0 ? <Tag color="yellow" className={styles.tag}>{`${duplicates} Duplicate${duplicates === 1 ? '' : 's'}`}</Tag> : null}
+        {duplicates > 0 ? <Tag color="yellow" className={styles.tag}>{`Duplicates · ${duplicates}`}</Tag> : null}   {/* (Vicky 2026-10-29) "Label · n", as the sheet's "Show only duplicates · n" */}
       </span>
       <span className={styles.spacer} />
       <span className={styles.open} aria-hidden>

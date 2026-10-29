@@ -324,13 +324,17 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
       const unsafe = (p, sel) => p.evaluate((s) => [...document.querySelectorAll(s)].filter((e) => e.offsetParent || getComputedStyle(e).position === 'fixed').map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0).map((r) => ({ l: Math.round(r.left), r: Math.round(innerWidth - r.right), b: Math.round(innerHeight - r.bottom) })), sel)
       const safe = (rs) => rs.length > 0 && rs.every((x) => x.l >= 46 && x.r >= 46 && x.b >= 20)
       let p = await notched('/leads')
-      /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the docked "Review imported leads" bar is gone — the queue's way in is the scope
-         pill's "Needs your attention › To review · n" row (`leads-review-open`), in the bottom sheet a phone held sideways takes; the same rule read
-         there: the queue's door rests off the home indicator */
+      /* (Vicky 2026-10-29: brought back) the docked "Review imported leads · n" bar is back (`leads-review-bar`, reverses 2-16 / C-32): it rests off
+         the home indicator, as before the calm build */
+      let rs = await unsafe(p, '[data-testid="leads-review-bar"]')
+      ok(rs.length > 0 && rs.every((x) => x.b >= 20), `the review banner rests off the home indicator (${JSON.stringify(rs)})`)
+      /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the queue's way in is also the scope pill's "Needs your attention › To review · n"
+         row (`leads-review-open`), in the bottom sheet a phone held sideways takes — (Vicky 2026-10-29: brought back) kept as the second way in; the
+         same rule read there: the queue's door rests off the home indicator */
       await tap(p, await seen(p, 'button[aria-haspopup]', /All leads/))
       await p.locator('[data-testid="leads-review-open"]').first().scrollIntoViewIfNeeded().catch(() => {}); await settle(p, 300)
-      let rs = await unsafe(p, '[data-testid="leads-review-open"]')
-      ok(rs.length > 0 && rs.every((x) => x.b >= 20), `the review banner rests off the home indicator (${JSON.stringify(rs)})`)
+      rs = await unsafe(p, '[data-testid="leads-review-open"]')
+      ok(rs.length > 0 && rs.every((x) => x.b >= 20), `the scope pill's To review row rests off the home indicator (${JSON.stringify(rs)})`)
       await p.close()
       p = await notched(`/leads/${LEAD}/tasks`)
       rs = await unsafe(p, '[class*="quick-add-module__"][class*="__input"]')

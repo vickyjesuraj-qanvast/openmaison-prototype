@@ -24,8 +24,8 @@ const TO_DO_PHONE: AttentionScope[] = ['today', 'overdue', 'unassigned', 'unseen
 export function StageFilterDropdown({
   open, onClose, counts, value, onSelect, onManage, attention, phone = false, review,
 }: {
-  /** (the calm UI build 2026-10-27 — audit 2-16, W-600) the import queue, as a row of the group that needs the member — where the docked
-   *  "Review imported leads (14)" bar sat on every visit; it opens the review sheet (not a scope) */
+  /** (the calm UI build 2026-10-27 — audit 2-16, W-600) the import queue, as a row of the group that needs the member; it opens the review
+   *  sheet (not a scope). (Vicky 2026-10-29: brought back) the docked "Review imported leads · n" bar is back too — this row is the second way in */
   review?: { count: number; onOpen: () => void }
   /** (Leads on the move, P-05) the phone's sheet: To call today first in the To do group */
   phone?: boolean

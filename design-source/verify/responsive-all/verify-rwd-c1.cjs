@@ -241,9 +241,14 @@ const SIZE = {
           await shot(p, 'c3-return-sideways')
         } else ok(false, 'a Qanvast lead to return')
         await go(p, '/leads')
-        /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the docked review bar went — the queue is the scope pill's "To review · n" row */
+        /* (the calm UI build 2026-10-27, a deliberate change) B2 2-16: the queue is the scope pill's "To review · n" row — (Vicky 2026-10-29: brought
+           back) the row stays as the second way in, and the docked review bar (`leads-review-bar`) is back: the row read first, then the bar pressed */
         await tap(p, p.locator('button[class*="scope-pill"]').first()); await p.waitForTimeout(500)
-        await tap(p, p.getByTestId('leads-review-open').first()); await p.waitForTimeout(1200)
+        ok(/To review/.test(await p.getByTestId('leads-review-open').first().innerText().catch(() => '')), 'the scope pill keeps its "To review · n" row')
+        await p.keyboard.press('Escape'); await p.waitForTimeout(500)
+        const bar = p.getByTestId('leads-review-bar').first()
+        ok(await bar.isVisible() && await onTop(bar), 'the docked review bar is back, on screen and on top')
+        await tap(p, bar); await p.waitForTimeout(1200)
         const rev = p.getByRole('dialog', { name: 'Review imported leads' }), vb = await box(rev)
         ok(vb.l <= 0.5 && vb.t <= 0.5 && vb.w >= 843 && vb.h >= 389, 'Review imported leads is the whole screen, as on a phone', `${Math.round(vb.w)}×${Math.round(vb.h)}`)
         const approveAll = rev.getByRole('button', { name: /^(Approve All Clean|Approve \d+ \(no duplicates\))/ })   // (the calm UI build 2026-10-27, a deliberate change) B2: "Approve n (no duplicates)"

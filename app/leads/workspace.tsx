@@ -5,6 +5,7 @@ import { AutoHideChrome } from '@/components/shell/auto-hide-chrome'
 import { rememberView, useStoredView, type ListingView } from '@/lib/leads/view-pref'
 import { copyText } from '@/lib/clipboard'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { AnimatePresence } from 'motion/react'
 import { GHOST_MIN_MS, PageReveal } from '@/components/shell/page-reveal'
 import { ListingGhost } from '@/components/leads/listing-ghost'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
@@ -49,6 +50,7 @@ import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { DeletedLeadsSheet } from '@/components/leads/deleted-sheet'
 import { ImportWizard } from '@/components/leads/import-wizard'
+import { ReviewBanner } from '@/components/leads/review-banner'
 import { ReviewSheet } from '@/components/leads/review-sheet'
 import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
@@ -198,6 +200,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [reviewOpen, setReviewOpen] = useState(false)
   // The queue emptied under an open sheet → close it (render-phase adjust; the action's snackbar is the cue).
   if (reviewOpen && review.length === 0) setReviewOpen(false)
+  /* (Vicky 2026-10-29: brought back — reverses the calm UI build's 2-16 / C-32) the docked review bar shows while imported leads wait and the
+     sheet is shut. Bottom-docked overlays (FAB, bulk bar, snackbar, AI sheet) lift above it through `--bottom-dock`, which the bar itself
+     writes from its measured height (REG-302, components/leads/review-banner.tsx). */
+  const docked = review.length > 0 && !reviewOpen
   const deletingRef = useRef(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [nowTick, setNowTick] = useState(initialNow)
@@ -460,7 +466,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /* (pending modules S05) The listing's three suggestions act, from the listing's own rows — (pending modules S10) one builder for the listing
      and Qanvast Ops › Leads (components/leads/use-listing-maison.ts) */
   const aiSuggestions = useListingMaison({ rows, newest: newest ?? null, team })
-  useMaisonAi(aiSuggestions)   /* (REG-507) the shell's FAB + sheet carry the listing's suggestions */
+  useMaisonAi(aiSuggestions, docked)   /* (REG-507) the shell's FAB + sheet carry the listing's suggestions, raised above the review bar (Vicky 2026-10-29: brought back) */
 
   /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
   /* (the calm UI build 2026-10-27 — audit 2-33 · 2-13 · T-10, W-031 · W-242) New lead ▾: the two ways a member adds a lead by hand, then ONE row
@@ -554,7 +560,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                                      onSelect={(s) => { setStageScope(s); setAttention(null) }} onManage={() => router.push(`${withFrom('/settings?section=leads', here())}#lead-stages`)}   /* (pending modules S05) Manage Stages › Settings › Lead management › Lead stages */
                                      phone={mobile}   /* (leads on the move, P-05) To call today leads the phone's To do group */
                                      attention={{ counts: attentionCounts, value: attention, onSelect: (k) => { setAttention(k); setStageScope(null) } }}
-                                     review={review.length ? { count: review.length, onOpen: () => { setNowTick(Date.now()); setReviewOpen(true) } } : undefined}   /* (the calm UI build — 2-16) the import queue, where the docked bar sat */ />
+                                     review={review.length ? { count: review.length, onOpen: () => { setNowTick(Date.now()); setReviewOpen(true) } } : undefined}   /* (the calm UI build — 2-16) the import queue — (Vicky 2026-10-29) a second way in beside the docked bar, which is back */ />
               }
               query={query}
               onQueryChange={setQuery}
@@ -651,8 +657,16 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               />
             )}
           </div>
-          {/* (the calm UI build 2026-10-27 — audit 2-16 · T-05, W-600) The docked "Review imported leads (14)" bar that sat on every visit is gone:
-              the queue is the scope pill's "Needs your attention › To review · n" row, and the import's own snackbar still offers Review. */}
+          {/* (Vicky 2026-10-29: "bring it back" — reverses the calm UI build's 2-16 / C-32) The docked "Review imported leads · n" bar is back at
+              the listing's foot while imported leads wait; the scope pill's "Needs your attention › To review · n" row (`leads-review-open`) stays as
+              a second way in, and the import's own snackbar still offers Review. */}
+          <AnimatePresence>
+            {docked ? (
+              <ReviewBanner count={review.length}
+                            duplicates={review.filter((r) => r.row.status === 'duplicate').length}
+                            onOpen={() => { setNowTick(Date.now()); setReviewOpen(true) }} />
+            ) : null}
+          </AnimatePresence>
         </div>
 
       <StageDropdown

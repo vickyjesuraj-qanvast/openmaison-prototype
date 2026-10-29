@@ -437,9 +437,22 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     // ── 8 · Review ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     console.log('8 · P-09 · A-24 · A-16 at 390: Review shows what differs')
     await go(m, '/leads')
-    /* (the calm UI build 2026-10-27, a deliberate change — 2-16) the docked review bar went: the queue is the scope's "To review · n" row */
+    /* (the calm UI build 2026-10-27, a deliberate change — 2-16) the queue is the scope's "To review · n" row — (Vicky 2026-10-29: brought back) the
+       row stays as the second way in, and the docked review bar (`leads-review-bar`) is back above the dock, clear of the Maison AI button */
     await tapEl(m, m.locator('button[class*="scope-pill"]').first()); await settle(m, 500)
-    await tapEl(m, m.getByTestId('leads-review-open').first()); await settle(m, 900)
+    ok(/To review/.test(await m.getByTestId('leads-review-open').first().innerText().catch(() => '')), 'the scope keeps its "To review · n" row')
+    await m.keyboard.press('Escape'); await settle(m, 500)
+    {
+      const bar = m.getByTestId('leads-review-bar').first()
+      const bb = await bar.isVisible() ? await box(bar) : null
+      const clear = await m.evaluate(() => {
+        const r = (sel) => { const e = document.querySelector(sel); if (!e) return null; const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 ? b : null }
+        return { dock: r('nav[aria-label="Primary"]'), fab: r('[data-maison-fab] button') }
+      })
+      const apart = (a, f) => !f || a.bt <= f.top + 0.5 || a.y >= f.bottom - 0.5 || a.r <= f.left + 0.5 || a.x >= f.right - 0.5
+      ok(!!bb && apart(bb, clear.dock) && apart(bb, clear.fab), `the docked review bar is back at 390, above the dock and clear of the Maison AI button (${bb ? `${Math.round(bb.y)}–${Math.round(bb.bt)}` : 'none'} · dock ${clear.dock ? Math.round(clear.dock.top) : '—'} · FAB ${clear.fab ? `${Math.round(clear.fab.top)}–${Math.round(clear.fab.bottom)}` : '—'})`)
+      await tapEl(m, bar); await settle(m, 900)
+    }
     const rv = m.getByRole('dialog', { name: 'Review imported leads' })
     const metas = await rv.locator('[class*="cardMeta"]').evaluateAll((els) => els.map((e) => e.textContent))
     ok(metas.length > 0 && metas.every((x) => !/\b\d{8}\b/.test(x)), 'the queue\'s cards print every number grouped (A-16)')

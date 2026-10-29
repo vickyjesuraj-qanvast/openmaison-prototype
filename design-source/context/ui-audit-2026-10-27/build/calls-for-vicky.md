@@ -55,6 +55,8 @@ the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's wor
     Kept off as repeats unless he says: On Hold / Lost subtitles · Stage ▾'s Active / Inactive heads · New project's split helper · the plan's
     Main tag · Messages' Direct / Group / Studio / Client tags · a choice's state tag on the client page · brand kit card helpers · X-Ray's legend
     and row bar · an agency tag · the Qanvast table's inert sort arrows.
+    Also back, 2026-10-29 (REG-3421, his "bring it back"): the Leads listing's docked "Review imported leads · n" bar (2-16 / C-32), as it
+    was and in the build's words; the scope pill's To review · n row stays as the second way in. Shots `review-bar-1440.jpg` · `review-bar-390.jpg`.
 The brief for these is kept at `.claude/calm-build/close/brief.md` on Vicky's machine; after each, the probes of its area and `npm run design:lint`.
 
 ## Left unbuilt because it would change figures or data
