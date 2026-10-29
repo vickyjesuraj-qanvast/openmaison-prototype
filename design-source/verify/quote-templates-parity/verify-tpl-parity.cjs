@@ -109,6 +109,14 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
     ok('numbers read A1 … B1', a1 >= 1 && b1 >= 1, `A1 ${a1} · B1 ${b1}`)
     await shot('08-editor-lettered')
   })
+  /* (Vicky 2026-10-29: brought back) the top bar's chips beside the status: Default on the studio's default template, and "Edited since vN" once an edit isn't published yet
+     (Q-10's numbering above is one) — the calm UI build had left the status pill alone */
+  await step('editor: Default · Edited since', async () => {
+    const chips = (await page.locator('header:has(input[aria-label="Template name"])').first().innerText()).replace(/\s+/g, ' ')
+    const isDefault = sql(`select is_default from quote_templates where id='${TPL}'`) === '1', version = sql(`select version from quote_templates where id='${TPL}'`)
+    ok('the top bar says Default on the default template', isDefault ? /\bDefault\b/i.test(chips) : !/\bDefault\b/i.test(chips), chips.slice(0, 120))   // (Vicky 2026-10-29: brought back)
+    ok('…and "Edited since v" + the version while the edit waits to be published', new RegExp(`Edited since v${version}\\b`, 'i').test(chips), chips.slice(0, 120))   // (Vicky 2026-10-29: brought back)
+  })
   await step('editor Q-21: sub-total in the heading', async () => {
     await moreOptions()
     const subSw = insp.getByRole('switch', { name: /Sub-total under each section/ }).first()

@@ -490,9 +490,10 @@ const KEPT = ['project_updates', 'project_update_files', 'expenses', 'project_pa
     await go(p, '/dashboard', 1500)
     const okStudio = Number(((await card(p).locator('[data-testid="needs-chips"]').innerText().catch(() => '')).match(/Approvals (\d+)/) ?? [0, 0])[1])
     ok(okStudio > 0 && okCount === okStudio, `Mine keeps every approval (${okCount} = ${okStudio})`)
-    /* (the calm UI build 2026-10-27, a deliberate change) one home for approvals (the audit's 1-03): the Tasks page no longer repeats them — they are the Dashboard's Approvals tab */
+    /* (Vicky 2026-10-29: brought back) the Tasks page points to them again, in one line with the Dashboard's own number — "n approvals wait for you on the Dashboard" */
     await go(p, '/tasks', 1500)
-    ok(await p.locator('[data-testid="tasks-approvals"]').count() === 0 && okStudio > 0, `the Tasks page carries no approvals line — the ${okStudio} approvals are the Dashboard's own tab`)
+    const tasksLine = (await p.locator('[data-testid="tasks-approvals"]').innerText().catch(() => '')).replace(/\s+/g, ' ')
+    ok(okStudio > 0 && new RegExp(`(^|\\s)${okStudio === 1 ? '1 approval waits' : `${okStudio} approvals wait`} for you on the Dashboard`).test(tasksLine), `the Tasks page’s line says the Dashboard’s ${okStudio} approvals`, tasksLine)   // (Vicky 2026-10-29: brought back)
     for (const [who, rule] of [['germaine', 'designer'], ['priya', 'books'], ['nurul', 'desk'], ['huimin', 'admin'], ['james', 'manager']]) {
       as(who)
       await go(p, '/dashboard', 1600); await expand(p)

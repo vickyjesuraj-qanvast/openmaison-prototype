@@ -69,29 +69,25 @@ export const railItemOpens = (role: string | null | undefined, it: { label: stri
 /** (fix-A, A-38) "1 needs attention", "2 need attention". */
 const badgeWords = (href: string, n: number) => (href === '/projects' && n === 1 ? 'needs attention' : BADGE_WORDS[href] ?? 'overdue')
 /**
- * (the calm UI build 2026-10-27 — the audit's 1-04 · 1-03 · 2-22, T-07: a red badge means unread, or yours and overdue) What each item's count
- * looks like on the rail and the phone's dock and More sheet: **count** — the red number, the bell's unread and Messages' unread only;
- * **dot** — a red dot with no number, Tasks while something of yours is overdue; **quiet** — a grey dot, Issues while a client waits on the
- * studio; **none** — no mark: the projects that need attention, the leads nobody opened, the approvals (Company, Tools) — each is a row of the
- * Dashboard's Needs your attention, the front door. The counts are read as before (`railBadges`); only their look changed. An item with no mark
- * opens its plain list.
+ * (Vicky 2026-10-29: "bring back most of it and only change is for count badge just show the red dot instead of numbers which looked too much")
+ * What each item's count looks like on the rail and the phone's dock and More sheet: **count** — the red number, for the two inboxes only (the
+ * bell's unread, Messages' unread); **dot** — every other navigation count, a red dot of 8 where the number sat: Tasks' overdue, Issues' waiting,
+ * Projects' needing attention, Leads' not opened, Company's and Tools' approvals. The number stays in the item's name for a screen reader
+ * ("Leads (3 new)"), and a counted item lands where its count is (`BADGE_LANDING`). The calm UI build (2026-10-27, the audit's 1-04 · T-07) had
+ * dropped the marks on Projects, Leads, Company and Tools and drawn Issues' grey; his word brings them back, as dots.
  */
-export type BadgeLook = 'count' | 'dot' | 'quiet' | 'none'
-export const BADGE_LOOK: Record<string, BadgeLook> = { notifications: 'count', '/chat': 'count', '/tasks': 'dot', '/tickets': 'quiet', '/projects': 'none', '/leads': 'none', '/company': 'none', tools: 'none' }
-export const badgeLook = (key: string): BadgeLook => BADGE_LOOK[key] ?? 'count'
-/** The count an item shows and lands by — none for an item whose mark went. */
-export const shownCount = (key: string, n: number): number => (badgeLook(key) === 'none' ? 0 : n)
+export type BadgeLook = 'count' | 'dot'
+export const BADGE_LOOK: Record<string, BadgeLook> = { notifications: 'count', '/chat': 'count', '/tasks': 'dot', '/tickets': 'dot', '/projects': 'dot', '/leads': 'dot', '/company': 'dot', tools: 'dot' }
+export const badgeLook = (key: string): BadgeLook => BADGE_LOOK[key] ?? 'dot'
 /** (pending modules S46C · H2) The rail's badge rule, shared with the phone's dock and More sheet so one count reads and lands alike everywhere:
     where an item goes while it wears its count, and the name it says ("Leads (2 new)", "Tasks (3 overdue)"). */
-export const badgeHref = (href: string, n: number): string => (shownCount(href, n) > 0 ? BADGE_LANDING[href] ?? href : href)
-export const badgeLabel = (label: string, href: string, n: number): string | undefined => (shownCount(href, n) > 0 ? `${label} (${n} ${badgeWords(href, n)})` : undefined)
-/** (the calm UI build 2026-10-27) An item's mark as drawn: the red number, a red dot, a grey dot or nothing. */
-function BadgeMark({ look, n, className, dotClass, quietClass }: { look: BadgeLook; n: number; className?: string; dotClass?: string; quietClass?: string }) {
-  if (n <= 0 || look === 'none') return null
-  const cls = (...c: (string | undefined)[]) => c.filter(Boolean).join(' ')
-  if (look === 'dot') return <span className={cls(className, dotClass)} aria-hidden />
-  if (look === 'quiet') return <span className={cls(className, quietClass)} aria-hidden />
-  return <span className={className} aria-hidden>{badgeCount(n)}</span>
+export const badgeHref = (href: string, n: number): string => (n > 0 ? BADGE_LANDING[href] ?? href : href)
+export const badgeLabel = (label: string, href: string, n: number): string | undefined => (n > 0 ? `${label} (${n} ${badgeWords(href, n)})` : undefined)
+/** An item's mark as drawn: the red number (an inbox) or the red dot (every other count); nothing at 0. */
+function BadgeMark({ look, n, className, dotClass }: { look: BadgeLook; n: number; className?: string; dotClass?: string }) {
+  if (n <= 0) return null
+  if (look === 'dot') return <span className={dotClass ? `${className ?? ''} ${dotClass}`.trim() : className} data-badge="dot" aria-hidden />
+  return <span className={className} data-badge="count" aria-hidden>{badgeCount(n)}</span>
 }
 export { BadgeMark }
 
@@ -151,18 +147,18 @@ export function AppRail({ badges, team = [], credits = null, studio = DEMO_CHROM
              carry `fill: true` outright, so it read as selected from the Qanvast Ops and Settings pages too. */
           <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
-        {/* (the calm UI build 2026-10-27 — the audit's 1-04) each count in its look (`BADGE_LOOK`): the bell's and Messages' red number, Tasks' red
-            dot, Issues' grey dot; Projects, Leads, Company and Tools wear none — their rows are the Dashboard's */}
-        {it.href || it.panel ? <BadgeMark look={badgeLook(it.href ?? it.panel ?? '')} n={badges?.[it.href ?? it.panel ?? ''] ?? 0} className={styles.badge} dotClass={styles.badgeDot} quietClass={styles.badgeQuiet} /> : null}
-        {it.label === 'Notifications' ? <BadgeMark look="count" n={badges?.notifications ?? 0} className={styles.badge} dotClass={styles.badgeDot} quietClass={styles.badgeQuiet} /> : null}   {/* (REG-604) */}
-        {it.label === 'Tools' ? <BadgeMark look={badgeLook('tools')} n={badges?.tools ?? 0} className={styles.badge} dotClass={styles.badgeDot} quietClass={styles.badgeQuiet} /> : null}   {/* (UX audit Q4) quotes waiting for this approver — (1-03) the Dashboard's Approvals */}
+        {/* (Vicky 2026-10-29: brought back) each count in its look (`BADGE_LOOK`): the bell's and Messages' red number; every other item's
+            count a red dot — Tasks, Issues, Projects, Leads, Company, Tools */}
+        {it.href || it.panel ? <BadgeMark look={badgeLook(it.href ?? it.panel ?? '')} n={badges?.[it.href ?? it.panel ?? ''] ?? 0} className={styles.badge} dotClass={styles.badgeDot} /> : null}
+        {it.label === 'Notifications' ? <BadgeMark look="count" n={badges?.notifications ?? 0} className={styles.badge} /> : null}   {/* (REG-604) */}
+        {it.label === 'Tools' ? <BadgeMark look={badgeLook('tools')} n={badges?.tools ?? 0} className={styles.badge} dotClass={styles.badgeDot} /> : null}   {/* (UX audit Q4) quotes waiting for this approver */}
         <span className={styles.label}>{it.label}</span>
       </>
     )
     if (it.panel) {
       return (
         <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || companyOpen}>
-          <button ref={companyRef} type="button" className={className} aria-label={shownCount(it.panel, badges?.[it.panel] ?? 0) ? `${it.label} (${badges?.[it.panel]} ${badges?.[it.panel] === 1 ? 'approval' : 'approvals'})` : it.label} data-active={active || companyOpen || undefined}
+          <button ref={companyRef} type="button" className={className} aria-label={badges?.[it.panel] ? `${it.label} (${badges?.[it.panel]} ${badges?.[it.panel] === 1 ? 'approval' : 'approvals'})` : it.label} data-active={active || companyOpen || undefined}
                   aria-haspopup="menu" aria-expanded={companyOpen} aria-current={active ? 'page' : undefined} onClick={() => setCompanyOpen((o) => !o)}>
             {inner}
           </button>
@@ -172,7 +168,7 @@ export function AppRail({ badges, team = [], credits = null, studio = DEMO_CHROM
     if (it.label === 'Tools') {
       return (
         <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || toolsOpen}>
-          <button ref={toolsRef} type="button" className={className} aria-label={shownCount('tools', badges?.tools ?? 0) ? `${it.label} (${badges?.tools} ${badges?.tools === 1 ? 'quote is' : 'quotes are'} waiting for your approval)` : it.label} data-active={toolsOpen || active || undefined}
+          <button ref={toolsRef} type="button" className={className} aria-label={badges?.tools ? `${it.label} (${badges?.tools} ${badges?.tools === 1 ? 'quote is' : 'quotes are'} waiting for your approval)` : it.label} data-active={toolsOpen || active || undefined}
                   aria-haspopup="menu" aria-expanded={toolsOpen} aria-current={active ? 'page' : undefined} onClick={() => setToolsOpen((o) => !o)}>
             {inner}
           </button>

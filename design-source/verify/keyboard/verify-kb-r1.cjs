@@ -34,6 +34,10 @@ const cls = (mod, name) => `[class*="${mod}-module__"][class*="__${name}"]`
   ok(/On this page · Leads/i.test(text), 'it opens on this page', text.split('\n').slice(0, 4).join(' | '))
   ok(/Create New Lead|New lead/.test(text) /* (the calm UI build 2026-10-27, a deliberate change) B2: C reads "New lead" */ && /Next lead/.test(text) && /Filters/.test(text) && /Switch the view/.test(text), 'the listing’s keys, in the page’s words')
   ok(/Everywhere/i.test(text) && /Go to Tasks/.test(text) && /Search the studio/.test(text), 'and the keys that work everywhere')
+  /* (Vicky 2026-10-29: brought back) over the list, how many of this page's keys you use — "You use n of N here", its bar as wide as that share */
+  { const meter = panel.getByTestId('shortcuts-meter'); const words = (await meter.innerText().catch(() => '')).trim(); const m = /^You use (\d+) of (\d+) here$/.exec(words.split('\n')[0] ?? '')
+    const share = m ? await meter.locator('i').evaluate((el) => el.style.width).catch(() => '') : ''
+    ok(!!m && Number(m[1]) <= Number(m[2]) && Number(m[2]) > 0 && share === `${Math.round((Number(m?.[1]) / Number(m?.[2])) * 100)}%`, 'the panel says how many of this page’s keys you use — "You use n of N here"', `${words} · ${share}`) }   // (Vicky 2026-10-29: brought back)
   const main = await p.locator('#om-main > *').first().boundingBox()
   const pbox = await panel.boundingBox()
   ok(!!main && !!pbox && main.x + main.width <= pbox.x + 2, 'the page makes room for the panel at 1440', main && pbox && `page ends ${Math.round(main.x + main.width)} · panel starts ${Math.round(pbox.x)}`)

@@ -82,8 +82,8 @@ const OLIVIA = '2bc08444-0409-47c3-9675-0750977c5838'         // Olivia Martinez
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     return rows
   }
-  /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-04, T-07) the rail's Tasks wears a red dot and Issues a grey one — no number on the glyph; the count is the item's
-     accessible name ("Tasks (3 overdue)", "Issues (1 waiting)"), the same count as before */
+  /* (the calm UI build 2026-10-27) (the audit's 1-04, T-07) no number on the glyph; the count is the item's accessible name ("Tasks (3 overdue)", "Issues (1 waiting)"),
+     the same count as before — (Vicky 2026-10-29: brought back) every navigation count a red dot, Issues' too (it was grey) */
   const railBadge = async (p, href) => { const l = await p.locator(`nav a[href^="${href}"]`).first().getAttribute('aria-label', { timeout: 1500 }).catch(() => null); const m = /\((\d+) /.exec(l ?? ''); return m ? Number(m[1]) : 0 }
   const ask = async (p, question) => {
     const fab = p.getByRole('button', { name: 'Maison AI', exact: true }).first()
@@ -162,7 +162,8 @@ const OLIVIA = '2bc08444-0409-47c3-9675-0750977c5838'         // Olivia Martinez
             const toApprove = await p.locator('[data-testid="todo-approve"] [data-todo]').count()
             ok(panel === toApprove && toApprove > 0, `the Company panel's "${panel} to approve" = To do's To approve rows (${toApprove}) — the waiting bill counted`, { panel, toApprove })
             ok(await p.locator(`[data-testid="todo-approve"] [data-todo="billok-${bill.id}"]`).count() === 1, 'the waiting bill is one of To approve’s rows')
-            ok(!/\d/.test(label ?? '') && label === 'Company', 'the rail’s Company wears no count — its approvals are the Dashboard’s (the panel says them, grey)', label)   // (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-03 · 1-04)
+            const railN = Number((/^Company \((\d+) approvals?\)$/.exec(label ?? '') ?? [])[1] ?? 0)
+            ok(railN >= toApprove && await p.getByRole('button', { name: /^Company/ }).first().locator('[class*="__badgeDot"][data-badge="dot"]').count() === 1, 'the rail’s Company counts them — a red dot, the number in its name (the panel says each section’s, grey)', label)   // (Vicky 2026-10-29: brought back)
             await c.close()
           }
           sql(`update supplier_bills set approved_at = ${Math.floor(Date.now() / 1000)}, approved_by = 'dane' where id = '${bill.id}'`)

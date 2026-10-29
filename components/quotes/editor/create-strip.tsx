@@ -35,9 +35,11 @@ const write = (s: StripState) => {
 const serverSnapshot = (): StripState => 'collapsed'
 
 export type StripLink = 'ai' | 'items' | 'templates'
-/* (The calm UI build 2026-10-27, the UI audit's 4-03) One door each: Maison AI is the page's button (the FAB), the Price book is the Items card's
-   Create ▾ › From Price book and each section's foot — the strip's two tiles for them left; the keys stay for the host's handler. */
+/* (The calm UI build 2026-10-27, the UI audit's 4-03, had left Templates alone — Maison AI to the page's button, the Price book to Create ▾ and
+   each section's foot; Vicky 2026-10-29: brought back) the mock's strip (1260:31160): Maison AI · Price book · Templates */
 const LINKS: { key: StripLink; icon: string | null; label: string }[] = [
+  { key: 'ai', icon: null, label: 'Maison AI' },
+  { key: 'items', icon: 'list_alt', label: 'Price book' },   /* (UX audit Q7) one name for the book on every way in (REG-662's pick) */
   { key: 'templates', icon: 'description', label: 'Templates' },
 ]
 

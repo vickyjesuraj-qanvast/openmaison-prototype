@@ -32,7 +32,15 @@ the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's wor
 7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
 8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).
 9. dash-d1 — the Dashboard's Your day ghost after a meeting's time (seed whether a meeting still has its Directions line).
-10. **Removed by the calm build — Vicky picks which come back** (he asked 2026-10-29, after the Tasks "+ New task" bar came back, REG-3412).
+10. ~~**Removed by the calm build — Vicky picks which come back**~~ — **done 2026-10-29 (REG-3413…3420).** His pick: "bring back most of it
+    and only change is for count badge just show the red dot instead of numbers which looked too much". Back: (a) every navigation count on
+    the rail, the dock and More as a red dot (Projects · Leads · Company · Tools again, Issues red, Tasks as it was; the number in the item's
+    name; the bell and Messages keep their numbers), Leads landing on Not opened yet and Projects on Needs your attention (REG-3413 · 3414);
+    (b) /tasks' approvals line with its ghost and Dane's phone strip (REG-3415); (c) the bell's Approve · Send back in the row, the row's
+    words still opening the Review pane (REG-3416); (d) the Create strip's Maison AI · Price book (REG-3417); (e) Vendors' chip counts
+    (REG-3418); (f) the template editor's Default · Edited since (REG-3419); (g) the ? panel's meter (REG-3420). **h and i stay off**, as he
+    chose: the ✕ on Deleted leads' band, the import wizard's second Import history link. Shots `design-source/verify/ui-audit-build/shots/brought-back/`.
+    The list as it was (he asked 2026-10-29, after the Tasks "+ New task" bar came back, REG-3412):
     Recommended back: (a), (b), (d). Each is small; read the row in `changes-for-developers.md` (grep the words) before restoring, and keep
     the build's words.
     a. the rail's red counts on Projects · Leads · Company · Tools (and the phone dock / More); Leads landing on "Not opened yet";
@@ -84,9 +92,10 @@ The brief for these is kept at `.claude/calm-build/close/brief.md` on Vicky's ma
 ## Shell and Dashboard
 
 - **C-11 · Approving from the bell takes one more step.** An approval row opens the Dashboard's Review pane on that record. Approve and Send
-  back do exactly what they did. ↩ REG-1549 (simplify round 2's in-row Approve · Send back). [B1 ▲1]
+  back do exactly what they did. ↩ REG-1549 (simplify round 2's in-row Approve · Send back). [B1 ▲1] — **Brought back 2026-10-29 (REG-3416):**
+  Approve · Send back act in the row again; the row's words still open the Review pane.
 - **C-12 · Two findability doors went.** The audit's 1-03 and 1-04 overrule them. Both counts still exist: the listing's Not opened scope, and
-  the Dashboard's Approvals tab. [B1 ▲2]
+  the Dashboard's Approvals tab. [B1 ▲2] — **Both brought back 2026-10-29 (REG-3413…3415)**, the count as a red dot.
   - The rail's Leads no longer wears "n new" or lands on Not opened. ↩ REG-2505 (S46C H2).
   - The "n approvals wait for you on the Dashboard" line left /tasks. ↩ REG-2504 · REG-2959 (S46C M3).
 - **C-13 · The Maison AI button steps aside at a desk too.** It fades while words or a control sit under its corner. It comes back as the

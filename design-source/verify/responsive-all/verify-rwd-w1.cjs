@@ -81,9 +81,10 @@ const holdReveal = (c) => c.addInitScript(() => { const o = performance.getEntri
     {
       const c = await ctx(PHONE); const p = await page(c, 'counts')
       await go(p, '/dashboard')
-      const badges = await p.evaluate(() => [...document.querySelectorAll('[class*="mobile-nav-module__"][class*="__barBadge"], [class*="mobile-nav-module__"][class*="__dockBadge"]')].map((e) => { const cs = getComputedStyle(e); return { k: /barBadge/.test(e.className) ? 'bar' : 'dock', top: cs.top, right: cs.right } }))
+      const badges = await p.evaluate(() => [...document.querySelectorAll('[class*="mobile-nav-module__"][class*="__barBadge"], [class*="mobile-nav-module__"][class*="__dockBadge"]')].map((e) => { const cs = getComputedStyle(e); return { k: /barBadge/.test(e.className) ? 'bar' : 'dock', dot: e.getAttribute('data-badge') === 'dot', top: cs.top, right: cs.right } }))
       ok(badges.length > 0 && badges.filter((x) => x.k === 'bar').every((x) => x.top === '4px' && x.right === '4px'), 'the bar’s count sits 4 · 4 in its icon’s box, as its rule says', JSON.stringify(badges))
-      ok(badges.filter((x) => x.k === 'dock').every((x) => x.top === '-2px' && x.right === '-2px'), 'the dock’s counts sit −2 · −2 on their icon’s corner, as their rule says')
+      /* (Vicky 2026-10-29: brought back) the dock's counts are red dots now (Projects · Leads · Tasks) — an 8 dot sits 5 · 5, where More's dot sits; a number keeps −2 · −2 */
+      ok(badges.filter((x) => x.k === 'dock').every((x) => (x.dot ? x.top === '5px' && x.right === '5px' : x.top === '-2px' && x.right === '-2px')), 'the dock’s counts sit on their icon’s corner, as their rule says (a dot 5 · 5, a number −2 · −2)', JSON.stringify(badges.filter((x) => x.k === 'dock')))   // (Vicky 2026-10-29: brought back)
       await p.locator('nav[aria-label="Primary"]').getByRole('button', { name: /^More/ }).tap(); await settle(p, 800)
       const rows = await p.evaluate(() => [...document.querySelectorAll('[class*="mobile-nav-module__"][class*="__rowCount"]')].map((e) => { const row = e.parentElement.getBoundingClientRect(), r = e.getBoundingClientRect(); return { pos: getComputedStyle(e).position, inside: r.top >= row.top - 0.5 && r.bottom <= row.bottom + 0.5 && r.left >= row.left && r.right <= row.right + 0.5, top: Math.round(r.top) } }))
       ok(rows.length > 0, `the More sheet carries its counts (${rows.length})`)

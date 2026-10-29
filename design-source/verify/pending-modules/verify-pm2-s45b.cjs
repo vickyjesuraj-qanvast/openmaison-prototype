@@ -77,9 +77,8 @@ const restore = (d) => {
     console.log('1 · Finance › Vendors')
     await go(p, '/company/finance/vendors')
     const chip = p.getByTestId('finance-chips').getByRole('radio', { name: /^Contractors/ })
-    /* (the calm UI build 2026-10-27, a deliberate change — 5-27 · 5-43 · W-216, T-07) the chips carry no counts: the chip reads "Contractors" alone,
-       and the DB's count is the rows it lists when pressed (next) */
-    ok(await chip.count() === 1 && /^Contractors$/.test((await chip.innerText()).trim()), 'the Contractors chip (no count — T-07)')
+    /* (Vicky 2026-10-29: brought back) the chips say how many they list, in the house count form — "Contractors · n", the DB's count, the rows it lists when pressed (next) */
+    ok(await chip.count() === 1 && (await chip.innerText()).trim() === `Contractors · ${contractors}`, `the Contractors chip says “Contractors · ${contractors}”`, (await chip.innerText()).trim())   // (Vicky 2026-10-29: brought back)
     await chip.click(); await settle(p, 500)
     const vrows = p.locator('[data-vendor]')
     ok(await vrows.count() === contractors, 'pressed, it lists the contractors alone')

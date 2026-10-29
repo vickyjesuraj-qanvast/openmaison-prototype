@@ -18,7 +18,7 @@ export function TemplateEditorSkeleton() {
         <div className={styles.bar}>
           <Bone w={24} h={24} r={4} />
           <span className={styles.name}><Line w={144} lh={32} h={16} /></span>
-          <span className={styles.chips}><Slot kind="chip" w={86} /></span>
+          <span className={styles.chips}><Slot kind="chip" w={86} /><Slot kind="chip" w={58} /></span>   {/* the status, and (Vicky 2026-10-29: brought back) Default */}
           <span className={styles.desk}><Line w={110} lh={16} h={10} /></span>
           <span className={styles.grow} />
           <span className={styles.desk}><Slot kind="btn" w={249} /></span>

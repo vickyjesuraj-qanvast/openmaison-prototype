@@ -7,6 +7,7 @@
 //    Dashboard with ?from=/tasks; never at 0 (Germaine · Priya · Nurul: no line); the ghost draws the line where the page draws it
 //  - H2: the Leads item counts the leads nobody has opened yet that the viewer sees (Who sees leads), "Leads (n new)", landing on the listing's
 //    Unseen scope (the rail's badge-landing rule), the phone's dock alike; opening the lead — from the listing or from anywhere — clears it
+//    (Vicky 2026-10-29: brought back — the count drawn as a red dot, the number in the item's name)
 //  - H4: the listing's search finds a lead by its District; the lead's email is a mail link beside Copy; the number keeps REG-746 (it dials on
 //    a touch screen, a desk copies); Tasks' Upcoming chip (1.0's Due › Upcoming: open, due after today) on My Tasks, where Unassigned isn't
 //  - R1: Deleted Leads keeps its "permanently removed after 30 days": the sweep's `deleted-leads` job and a read of the sheet remove a lead
@@ -159,23 +160,31 @@ async function measure(b, opts, url, blocks) {
       const ctx = await b.newContext(opts()); const p = await page(ctx, 'm3-dane')
       await go(p, '/dashboard', 1800)
       /* (Dashboard redesign 2026-10-26, a deliberate change) Needs you's approvals are its Your OK chip — the group label became a filter chip (lane D2) */
-      /* (the calm UI build 2026-10-27, a deliberate change) 1-03: approvals have one home — the Dashboard's Approvals tab and its Review pane. The Tasks page's line pointing there went
-         (its ghost too); the same rule read now: the Dashboard counts them, Tasks carries no line, at every width and for every role */
+      /* (the calm UI build 2026-10-27) the Dashboard's approvals are its Approvals tab — (Vicky 2026-10-29: brought back) the Tasks page's line pointing there is back, with
+         its ghost, and Dane's phone strip (one button with a ›) */
       const okLabel = (await p.getByTestId('needs-chips').innerText().catch(() => '')).replace(/\s+/g, ' ')
       const n = Number((okLabel.match(/(?:To approve|Approvals) (\d+)/) ?? [])[1] ?? 0)
       ok(n > 0, `Dane’s Dashboard: Approvals ${n}`)
       await go(p, '/tasks', 1800)
-      ok(await p.getByTestId('tasks-approvals').count() === 0 && await p.getByTestId('tasks-approvals-door').count() === 0, 'Tasks carries no approvals line — the Dashboard is their one home')
+      const line = p.getByTestId('tasks-approvals')
+      const words = n === 1 ? '1 approval waits for you on the Dashboard' : `${n} approvals wait for you on the Dashboard`
+      ok(await line.isVisible() && (await line.innerText()).includes(words), `the line says the Dashboard’s own number: “${words}”`, await line.innerText().catch(() => ''))   // (Vicky 2026-10-29: brought back)
+      const lineBox = await line.boundingBox(), barBox = await p.getByTestId('task-todos').boundingBox().catch(() => null)
+      ok(!!lineBox && (!barBox || lineBox.y < barBox.y), 'it sits at the top, above the toolbar')   // (Vicky 2026-10-29: brought back)
       await shot(p, '03-tasks-approvals-1440')
+      await p.getByTestId('tasks-approvals-door').click()
+      await p.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {}); await settle(p, 1200)
+      ok(new URL(p.url()).pathname === '/dashboard' && new URL(p.url()).searchParams.get('from') === '/tasks', 'Open Dashboard goes to the Dashboard with ?from=/tasks', p.url())   // (Vicky 2026-10-29: brought back)
       await ctx.close()
       const m = await measure(b, opts(), '/tasks', ['approvals-line.line', 'approvals-line.text', 'approvals-line.door'])
       const rows = m.rows ?? []
-      ok(m.none || rows.every((r) => r.ghost === 0 && r.page === 0), 'the reveal’s ghost draws no line either', rows)
+      ok(!m.none && rows.every((r) => r.ghost === 1 && r.page === 1 && r.first && Math.abs(r.first.dy) <= 2 && Math.abs(r.first.dx) <= 2), 'the reveal’s ghost draws the line where the page draws it', rows)   // (Vicky 2026-10-29: brought back)
+      ok(!m.none && (m.words ?? []).length === 0, 'the ghost’s sentence is the page’s', m.words)   // (Vicky 2026-10-29: brought back)
       for (const [who, role] of [['germaine', 'Designer'], ['priya', 'Accounting'], ['nurul', 'Marketing']]) {
         as(who)
         const c2 = await b.newContext(opts()); const q = await page(c2, `m3-${who}`)
         await go(q, '/dashboard', 1500)
-        const has = await q.getByTestId('needs-ok').count()
+        const has = Number(((await q.getByTestId('needs-chips').innerText().catch(() => '')).replace(/\s+/g, ' ').match(/(?:To approve|Approvals) (\d+)/) ?? [])[1] ?? 0)
         await go(q, '/tasks', 1500)
         ok(has === 0 && await q.getByTestId('tasks-approvals').count() === 0, `${role}: nothing waits for their OK — no line`)
         await c2.close()
@@ -183,7 +192,11 @@ async function measure(b, opts, url, blocks) {
       as('dane')
       const ph = await b.newContext(phoneOpts()); const q = await page(ph, 'm3-390')
       await go(q, '/tasks', 1800)
-      ok(await q.getByTestId('tasks-approvals').count() === 0 && await sideways(q) <= 0, '390: no line, and the page fits the phone', `${await sideways(q)}px`)
+      /* (Vicky 2026-10-29: brought back) Dane's phone strip (his Tasks review, 2026-10-27): the whole strip is the door — one button, the words and a › — no separate door */
+      const strip = q.getByTestId('tasks-approvals')
+      ok(await strip.isVisible() && await strip.evaluate((el) => el.tagName === 'BUTTON') && await q.getByTestId('tasks-approvals-door').count() === 0 && await sideways(q) <= 0, '390: the line is one button and fits the phone', `${await sideways(q)}px`)
+      const door = await strip.boundingBox()
+      ok(!!door && door.height >= 44, '390: the strip is a 44px target', door)
       await shot(q, '04-tasks-approvals-390')
       await ph.close()
     }
@@ -196,21 +209,22 @@ async function measure(b, opts, url, blocks) {
       ok(n >= 2, `the demo has new leads nobody has opened (${n})`)
       const ctx = await b.newContext(opts()); const p = await page(ctx, 'h2-dane')
       await go(p, '/tasks', 1500)
-      /* (the calm UI build 2026-10-27, a deliberate change) 1-04 · T-07: the rail's Leads wears no count — the leads nobody opened are the listing's own "Not opened yet" scope
-         (and the Dashboard's rows) — so the same rule is read there: the scope holds the n, by Who sees leads, and opening one takes it out */
+      /* (Vicky 2026-10-29: brought back) the rail's Leads wears its count again — as a red dot, no number on the glyph (his "just show the red dot instead of numbers"); the
+         number is its name, "Leads (n new)", and the press lands on the listing's "Not opened yet" scope, the n it counts */
       const unseenShown = async (pg) => { await go(pg, '/leads?scope=unseen', 1500); return pg.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').count() }
       const link = railLeads(p)
-      ok((await link.getAttribute('aria-label')) === 'Leads' && (await link.getAttribute('href')) === '/leads', 'the rail: Leads is a plain destination (no count)', [await link.getAttribute('aria-label'), await link.getAttribute('href')])
-      ok(await link.locator('[class*="app-rail-module__"][class*="__badge"]').count() === 0, 'no badge on it')
+      ok((await link.getAttribute('aria-label')) === `Leads (${n} new)` && (await link.getAttribute('href')) === '/leads?scope=unseen', `the rail: “Leads (${n} new)”, landing on the Not opened yet scope`, [await link.getAttribute('aria-label'), await link.getAttribute('href')])   // (Vicky 2026-10-29: brought back)
+      ok(await link.locator('[class*="app-rail-module__"][class*="__badgeDot"][data-badge="dot"]').count() === 1 && (await link.locator('[class*="app-rail-module__"][class*="__badge"]').innerText()).trim() === '', 'the badge is a red dot, no number')   // (Vicky 2026-10-29: brought back) — a dot in place of the number
       await p.locator('nav[aria-label="Workspace"]').screenshot({ path: path.join(dir, '05-rail-leads-count-1440.png') })
-      const shown = await unseenShown(p)
-      ok(shown === n, `the listing’s Not opened yet scope holds the ${n} nobody opened`, `${shown} rows`)
+      await link.click(); await p.waitForURL(/\/leads\?scope=unseen/, { timeout: 15000 }).catch(() => {}); await settle(p, 1500)
+      const shown = await p.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').count()
+      ok(shown === n, `the press lands on the listing’s Not opened yet scope — the ${n} it counted`, `${shown} rows`)   // (Vicky 2026-10-29: brought back)
       await ctx.close()
       /* Germaine (Designer), Nurul (Marketing), Priya (Accounting) — and Who sees leads */
       for (const [who, role, expect] of [['germaine', 'Designer', n], ['nurul', 'Marketing', n]]) {
         as(who); const c2 = await b.newContext(opts()); const q = await page(c2, `h2-${who}`)
         await go(q, '/tasks', 1300)
-        ok(await unseenShown(q) === expect, `${role} (everyone sees every lead): Not opened yet · ${expect}`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
+        ok((await railLeads(q).getAttribute('aria-label')) === `Leads (${expect} new)`, `${role} (everyone sees every lead): Leads (${expect} new)`)   // (Vicky 2026-10-29: brought back)
         await c2.close()
       }
       as('priya'); { const c2 = await b.newContext(opts()); const q = await page(c2, 'h2-priya'); await go(q, '/tasks', 1300); ok(await railLeads(q).count() === 0, 'Accounting: no Leads item, no count'); await c2.close() }
@@ -219,8 +233,8 @@ async function measure(b, opts, url, blocks) {
         const sees = unseenFor(`exists (select 1 from lead_assignees a where a.lead_id = l.id and a.member_id = '${who}')`)
         as(who); const c2 = await b.newContext(opts()); const q = await page(c2, `h2-${who}-assigned`)
         await go(q, '/tasks', 1300)
-        const label = String(await unseenShown(q))   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
-        ok(label === String(sees), `Only the leads assigned to them: ${role} ${who} counts the ${sees} they see`, label)
+        const label = await railLeads(q).getAttribute('aria-label')   // (Vicky 2026-10-29: brought back) the rail counts again
+        ok(sees ? label === `Leads (${sees} new)` : label === 'Leads' && (await railLeads(q).getAttribute('href')) === '/leads', `Only the leads assigned to them: ${role} ${who} counts the ${sees} they see`, label)
         await c2.close()
       }
       if (vis0) sql(`update settings set value = '${vis0}' where key = 'lead_visibility'`); else sql(`delete from settings where key = 'lead_visibility'`)
@@ -229,10 +243,8 @@ async function measure(b, opts, url, blocks) {
       const ph = await b.newContext(phoneOpts()); const q = await page(ph, 'h2-390')
       await go(q, '/tasks', 1500)
       const dock = dockLeads(q)
-      /* (the calm UI build 2026-10-27, a deliberate change) 1-04: as the rail — no count, its name "Leads" (the dock's link names itself by its
-         words, the rail's by its label: one accessible name), landing on the plain listing, no mark drawn */
-      const dockName = await q.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Leads', exact: true }).count()
-      ok(dockName === 1 && (await dock.getAttribute('href')) === '/leads' && await dock.locator('[class*="__dockBadge"], [class*="__dockDot"], [class*="__dockQuiet"]').count() === 0, 'the phone’s dock: the same count, words and landing', [dockName, await dock.getAttribute('aria-label'), await dock.getAttribute('href')])
+      /* (Vicky 2026-10-29: brought back) as the rail — its count a red dot on the glyph, the number in its name, landing on Not opened yet */
+      ok((await dock.getAttribute('aria-label')) === `Leads (${n} new)` && (await dock.getAttribute('href')) === '/leads?scope=unseen' && await dock.locator('[class*="__dockDot"][data-badge="dot"]').count() === 1, 'the phone’s dock: the same count (a dot), words and landing', [await dock.getAttribute('aria-label'), await dock.getAttribute('href')])
       await q.locator('nav[aria-label="Primary"]').screenshot({ path: path.join(dir, '06-dock-leads-count-390.png') })
       await ph.close()
       /* opening clears it: from anywhere (the lead's own address), then from the listing */
@@ -240,14 +252,14 @@ async function measure(b, opts, url, blocks) {
       await go(r, `/leads/${CHLOE}`, 2500)
       ok(sql(`select seen_at is not null from leads where id = '${CHLOE}'`) === '1', 'opening a new lead from its address marks it opened')
       await go(r, '/tasks', 1300)
-      ok(await unseenShown(r) === n - 1, `…and the count follows: Not opened yet · ${n - 1}`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope, not the rail
+      ok((await railLeads(r).getAttribute('aria-label')) === `Leads (${n - 1} new)` && await unseenShown(r) === n - 1, `…and the count follows: Leads (${n - 1} new)`)   // (Vicky 2026-10-29: brought back)
       await go(r, '/leads?scope=unseen', 1500)
       await r.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row]').filter({ hasText: 'Rahul Menon' }).first().locator('[role="cell"]').nth(1).click()
       await r.waitForURL(new RegExp(`/leads/${RAHUL}`), { timeout: 15000 }).catch(() => {}); await settle(r, 2000)
       ok(sql(`select seen_at is not null from leads where id = '${RAHUL}'`) === '1', 'a press on the listing’s row marks it opened (the band’s own rule)')
       await go(r, '/tasks', 1300)
       const after = unseenFor('')
-      ok(after === n - 2 && await unseenShown(r) === after && (await railLeads(r).getAttribute('aria-label')) === 'Leads' && (await railLeads(r).getAttribute('href')) === '/leads', `with none left the item is plain Leads again, landing on the listing (${after} left)`)   // (the calm UI build 2026-10-27, a deliberate change) 1-04: the scope counts, the rail stays plain
+      ok(after === n - 2 && (after ? (await railLeads(r).getAttribute('aria-label')) === `Leads (${after} new)` : (await railLeads(r).getAttribute('aria-label')) === 'Leads' && (await railLeads(r).getAttribute('href')) === '/leads'), `with none left the item is plain Leads again, landing on the listing (${after} left)`)   // (Vicky 2026-10-29: brought back)
       await c3.close()
       sql(`update leads set seen_at = NULL where id in ('${CHLOE}', '${RAHUL}')`)
     }

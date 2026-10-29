@@ -199,7 +199,7 @@ export function FinanceGhost({ tab: given, runs: told, asks }: { tab?: string; r
     <div className={fin.page}>
       <div className={fin.toolbar}>
         <span className={fin.search} style={{ display: 'flex' }}><Slot kind="btn" w="100%" /></span>
-        <GhostChips labels={crews ? ['Active', 'Contractors'] : ['Active']} />   {/* (the calm UI build, 5-27) Active · Contractors without counts; Inactive and All only while a vendor is inactive */}
+        <GhostChips widths={crews ? [85, 112] : [85]} />   {/* (the calm UI build, 5-27) Active · Contractors; Inactive and All only while a vendor is inactive — (Vicky 2026-10-29: brought back) each with its count, data, so their desk widths */}
         <span className={fin.toolEnd}><Slot kind="btn" w={138} /></span>
       </div>
       <Section title="Vendors" help="The studio’s sub-contractors and suppliers. Merge a duplicate into the one that stays; deactivate one you no longer use." cols={VENDOR_COLS} rows={7} card={170} lines={3} />

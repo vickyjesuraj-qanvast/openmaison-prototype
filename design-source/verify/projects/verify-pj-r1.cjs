@@ -260,9 +260,10 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     console.log('Rail · keys · search · settings')
     await go('/leads')
     const railItem = p.locator('nav[aria-label="Workspace"] a[href^="/projects"]')
-    /* (the calm UI build 2026-10-27, a deliberate change) 1-04 · T-07: the rail's Projects wears no count — what needs attention is the Dashboard's
-       Needs your attention and the listing's own scope — so it is a plain destination: its name alone, its plain list */
-    ok(await railItem.count() === 1 && (await railItem.getAttribute('aria-label') ?? 'Projects') === 'Projects' && (await railItem.getAttribute('href')) === '/projects', 'the rail\'s Projects is a plain destination (no count; the count is the Dashboard\'s and the listing\'s scope)')
+    /* (Vicky 2026-10-29: brought back) the rail's Projects wears its count again, as a red dot (no number on the glyph); the number is its name, and it lands on the listing's
+       Needs your attention scope — the projects it counts */
+    const attn = await railItem.getAttribute('aria-label') ?? ''
+    ok(await railItem.count() === 1 && (/needs? attention/.test(attn) ? (await railItem.getAttribute('href')) === '/projects?scope=attention' && await railItem.locator('[class*="__badgeDot"][data-badge="dot"]').count() === 1 && (await railItem.locator('[class*="__badge"]').innerText()).trim() === '' : attn === '' || attn === 'Projects'), 'the rail\'s Projects is a destination wearing its count — a red dot, the number in its name', attn)   // (Vicky 2026-10-29: brought back)
     await p.keyboard.press('g'); await p.waitForTimeout(150); await p.keyboard.press('p'); await p.waitForURL(/\/projects/); await p.waitForTimeout(1200)
     ok(new URL(p.url()).pathname === '/projects', 'G P goes to Projects')
     await p.keyboard.press('g'); await p.waitForTimeout(150); await p.keyboard.press('b'); await p.waitForURL(/price-book/); await p.waitForTimeout(600)

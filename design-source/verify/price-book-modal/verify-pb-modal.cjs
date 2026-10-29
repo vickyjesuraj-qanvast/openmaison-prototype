@@ -25,7 +25,7 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
     // the strip's My Items
     // REG-773 (UX audit Q7): the Create strip's tile reads Price book (it read My Items)
-    await page.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await page.waitForTimeout(300); await page.getByRole('menuitem', { name: 'From Price book' }).click(); await page.waitForTimeout(600)   // (the calm UI build 2026-10-27, a deliberate change) one door each (4-03): the Price book is Create ▾ › From Price book (and each section's foot)
+    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)   // (Vicky 2026-10-29: brought back) the Create strip's Price book tile (the calm UI build had sent it to Create ▾ › From Price book, which the table's own check below still presses)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     ok('the strip’s My Items opens the Price book modal over the editor', await dlg.isVisible() && page.url().includes(`/quotes/${Q1}`))
     ok('it lands on My Items', (await dlg.getByRole('radio', { name: /^My Items/ }).getAttribute('aria-checked')) === 'true' || /true/.test(await dlg.locator('[data-selected="true"], [aria-checked="true"]').first().innerText().catch(() => '')) || await dlg.getByTestId('book-item').count() > 0)

@@ -124,10 +124,9 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
     const chip = page.getByRole('button', { name: '1 approval', exact: true })   // (the calm UI build 2026-10-27, a deliberate change) T-01: Approvals
     ok('Q4 Tools › Quotes shows "Waiting for my approval · 1"', await chip.isVisible())
     const tools = page.locator('button[aria-label^="Tools"]').first()
-    /* (the calm UI build 2026-10-27, a deliberate change) the audit's 1-03 · 1-04: approvals have one home — the rail's Tools wears no count now (a
-       plain "Tools"); the quote that waits is still counted where it can be acted on: the Tools panel's Quotes tile (next check) and the Dashboard's
-       Needs your attention, as a row "OM-10001 is waiting for your approval" (the card, or its See all drawer) */
-    ok('Q4 the rail’s Tools is plain — the quote waits on the Dashboard instead', (await tools.getAttribute('aria-label')) === 'Tools' && await tools.locator('[class*="__badge"]').count() === 0, await tools.getAttribute('aria-label'))
+    /* (Vicky 2026-10-29: brought back) the rail's Tools counts it again — a red dot on the glyph, no number (his "just show the red dot instead of numbers"); the number is
+       its name. The quote is also a row of the Dashboard's Needs your attention (below) */
+    ok('Q4 the rail’s Tools item counts it — a red dot, the number in its name', /1 quote is waiting for your approval/.test(await tools.getAttribute('aria-label') || '') && await tools.locator('[class*="__badgeDot"][data-badge="dot"]').count() === 1 && (await tools.locator('[class*="__badge"]').innerText()).trim() === '', await tools.getAttribute('aria-label'))   // (Vicky 2026-10-29: brought back)
     await chip.click(); await page.waitForTimeout(500)
     ok('Q4 the chip narrows the list to it', await page.locator('[data-kb-row]').count() === 1 && await row(page, Q1).count() === 1)
     await shot(page, 'q4-waiting-for-approval')
@@ -135,7 +134,7 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
     ok('Q4 the Tools panel’s Quotes tile carries the count', /1 waiting for your approval/.test(await page.getByRole('menuitem', { name: /^Quotes/ }).getAttribute('aria-label') || ''))
     await shot(page, 'q4-tools-panel-count')
     await page.keyboard.press('Escape')
-    /* (the calm UI build 2026-10-27, a deliberate change) 1-03: the rail's count moved to the Dashboard — its row for this quote, with Approve */
+    /* (the calm UI build 2026-10-27) 1-03: the quote is a row of the Dashboard too, with Approve */
     await page.goto(`${BASE}/dashboard`); await ready(page, 1500)
     const dashRow = () => page.locator(`[data-inbox-row="quote-approve:${Q1}"]`).first()
     if (await dashRow().count() === 0 && await page.getByTestId('needs-more').count()) { await page.getByTestId('needs-more').first().click(); await page.waitForTimeout(900) }
@@ -231,7 +230,7 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
     const folded = sql(`select collapsed from quote_items where id='${G}'`)
     const { ctx, page } = await desk()
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page, 1500)
-    ok('Q7 the Create strip keeps Templates; the Price book is Create ▾ › From Price book (below)', await page.locator('aside[aria-label="Create"]').getByRole('button', { name: 'Templates' }).count() >= 1)   // (the calm UI build 2026-10-27, a deliberate change) 4-03: one door each — the strip's Price book tile moved to Create ▾ and the section foot
+    ok('Q7 the Create strip names it Price book — Maison AI · Price book · Templates (1260:31160); Create ▾ › From Price book too (below)', await page.locator('aside[aria-label="Create"]').getByRole('button', { name: 'Price book' }).count() >= 1 && await page.locator('aside[aria-label="Create"]').getByRole('button', { name: 'Maison AI' }).count() >= 1 && await page.locator('aside[aria-label="Create"]').getByRole('button', { name: 'Templates' }).count() >= 1)   // (Vicky 2026-10-29: brought back) the strip's Maison AI and Price book tiles
     await page.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await page.waitForTimeout(300)
     ok('Q7 Create ▾ says "From Price book"', await page.getByRole('menuitem', { name: 'From Price book' }).isVisible())
     await page.getByRole('menuitem', { name: 'From Price book' }).click(); await page.waitForTimeout(800)

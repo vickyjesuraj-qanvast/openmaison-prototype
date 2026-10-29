@@ -95,11 +95,10 @@
 .barIcon > .barBadge { top: 4px; right: 4px; }
 .dockIcon > .dockBadge { top: -2px; right: -2px; }
 .sheetItem > .rowCount { position: static; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
-/* (the calm UI build 2026-10-27 — the audit's 1-04) a row's mark with no number: Tasks' red dot, Issues' grey dot; the dock's the same 8 dot */
+/* (the calm UI build 2026-10-27 — the audit's 1-04; Vicky 2026-10-29: every navigation count is a red dot) a row's mark with no number; the
+   dock's the same 8 dot, on its glyph's corner where More's dot sits (.moreDot) — one place for a dot on the dock */
 .sheetItem > .rowCount.rowDot { min-width: 8px; width: 8px; height: 8px; padding: 0; }
-.sheetItem > .rowCount.rowDot[data-look='quiet'] { background: var(--om-color-on-surface-secondary); }
-.dockIcon > .dockBadge.dockDot, .dockIcon > .dockBadge.dockQuiet { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 0; right: 0; }
-.dockIcon > .dockBadge.dockQuiet { background: var(--om-color-on-surface-secondary); }
+.dockIcon > .dockBadge.dockDot { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 5px; right: 5px; }
 /* (UX audit V6) a row that isn't built yet: the Company panel's "Soon" tag */
 .soon { composes: soon from '../company/company-popover.module.css'; }
 .avatarBtn {

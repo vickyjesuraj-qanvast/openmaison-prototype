@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { ToolsPopover, onToolsPage, recordHome } from './tools-popover'
 import { readFrom } from '@/lib/nav'
-import { BadgeMark, SOON, badgeHref, badgeLabel, badgeLook, railItemOpens, shownCount } from './app-rail'   // (pending modules S46C · H2) the rail's badge rule, one for both — (the calm UI build 2026-10-27) its looks too
+import { BadgeMark, SOON, badgeHref, badgeLabel, badgeLook, railItemOpens } from './app-rail'   // (pending modules S46C · H2) the rail's badge rule, one for both — (the calm UI build 2026-10-27) its looks too
 import { isAccounting, isMarketing } from '@/lib/settings/roles'
 import { companyGroupsFor } from '@/lib/company/sections'
 import { Tooltip } from '@/components/om/tooltip'
@@ -104,13 +104,14 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
   const home = recordHome(pathname, readFrom(useSearchParams().get('from')))   // (S42 audit C-24) a meeting opened from its lead lights Leads
   /* (UX audit V3) what each row inside More counts, and whether More wears its dot */
   const unread = badges?.notifications ?? 0
-  /* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks: a row's mark is the rail item's (`BADGE_LOOK`) — Tasks a red dot, Issues a
-     grey dot, Company none (its approvals are the Dashboard's) */
+  /* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks: a row's mark is the rail item's (`BADGE_LOOK`) — (Vicky 2026-10-29: brought
+     back) Tasks, Issues and Company each a red dot while it counts, the number in the row's name */
   const keyOf = (label: string) => (label === 'Tasks' ? '/tasks' : label === 'Issues' ? '/tickets' : label === 'Company' ? '/company' : '')
-  const countOf = (label: string) => { const k = keyOf(label); return k ? shownCount(k, badges?.[k] ?? 0) : 0 }
+  const countOf = (label: string) => { const k = keyOf(label); return k ? badges?.[k] ?? 0 : 0 }
   const counts = { Tasks: books ? 0 : countOf('Tasks'), Tickets: countOf('Issues'), Company: countOf('Company') }   // (parity map, PR-022) Accounting's Tasks count rides the dock
   const moreHas = counts.Tasks + counts.Tickets + counts.Company > 0
-  const countWords = (label: string, n: number) => (label === 'Tasks' ? `${n} overdue` : `${n} waiting`)
+  /* the rail's own words for each count: "3 overdue" · "2 waiting" · (§2) "4 approvals" */
+  const countWords = (label: string, n: number) => (label === 'Tasks' ? `${n} overdue` : label === 'Company' ? `${n} ${n === 1 ? 'approval' : 'approvals'}` : `${n} waiting`)
   /** One Line row (1082:25102): glyph 20 secondary · body/m label. Destinations navigate and close; the rest are coming soon. */
   const moreItem = (it: { icon: string; label: string; href?: string }) => {
     const n = countOf(it.label)
@@ -119,7 +120,7 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
         <span className={styles.sheetIcon}><Icon name={it.icon} size={20} /></span>
         <span className={styles.sheetLabel}>{it.label}</span>
         {/* (UX audit V3) the rail's count, on the row */}
-        {n > 0 ? (badgeLook(keyOf(it.label)) === 'count' ? <span className={styles.rowCount} aria-hidden>{badgeCount(n)}</span> : <span className={`${styles.rowCount} ${styles.rowDot}`} data-look={badgeLook(keyOf(it.label))} aria-hidden />) : null}
+        {n > 0 ? (badgeLook(keyOf(it.label)) === 'count' ? <span className={styles.rowCount} data-badge="count" aria-hidden>{badgeCount(n)}</span> : <span className={`${styles.rowCount} ${styles.rowDot}`} data-badge="dot" aria-hidden />) : null}
         {/* (UX audit V6) a dead end wears the Company panel's "Soon" tag */}
         {!it.href && it.label !== 'Company' ? <span className={styles.soon} aria-hidden>Soon</span> : null}
       </>
@@ -175,8 +176,9 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
           const n = it.href ? badges?.[it.href] ?? 0 : 0   /* (REG-919) the rail's count on the dock — Projects' projects that need attention; (S46C · H2) Leads' new leads */
           const inner = (
             <>
-              {/* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks on the dock: Projects and Leads wear none, Tasks a red dot */}
-              <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} />{it.href ? <BadgeMark look={badgeLook(it.href)} n={n} className={styles.dockBadge} dotClass={styles.dockDot} quietClass={styles.dockQuiet} /> : null}</span>
+              {/* (the calm UI build 2026-10-27 — the audit's 1-04) the rail's looks on the dock — (Vicky 2026-10-29: brought back) Projects', Leads' and
+                  Tasks' counts each a red dot */}
+              <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} />{it.href ? <BadgeMark look={badgeLook(it.href)} n={n} className={styles.dockBadge} dotClass={styles.dockDot} /> : null}</span>
               <span className={styles.dockLabel}>{it.label}</span>
             </>
           )
@@ -204,7 +206,7 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
         <ViewAsPopover open={youOpen} anchor={null} onClose={() => setYouOpen(false)} team={team} profile studios={studio.studios} />
         {credits && !books ? <CreditsSheet initial={credits.summary} gstLine={credits.gstLine} open={creditsOpen} onClose={() => setCreditsOpen(false)} onBack={() => { setCreditsOpen(false); setOpen(true) }} /> : null}
         <button type="button" className={styles.dockItem} data-active={open || undefined}
-                aria-label={moreHas ? `More (${[counts.Tasks ? `Tasks ${countWords('Tasks', counts.Tasks)}` : null, counts.Company ? `Company ${countWords('Company', counts.Company)}` : null].filter(Boolean).join(', ')})` : 'More'} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+                aria-label={moreHas ? `More (${[counts.Tasks ? `Tasks ${countWords('Tasks', counts.Tasks)}` : null, counts.Tickets ? `Issues ${countWords('Issues', counts.Tickets)}` : null, counts.Company ? `Company ${countWords('Company', counts.Company)}` : null].filter(Boolean).join(', ')})` : 'More'} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} />{moreHas ? <span className={styles.moreDot} aria-hidden /> : null}</span>   {/* (UX audit V3) something inside counts */}
           <span className={styles.dockLabel}>More</span>
         </button>

@@ -58,6 +58,8 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
     ? groups.map((g) => ({ ...g, rows: g.rows.filter((r) => r.label.toLowerCase().includes(needle) || keysPlain(r.keys, platform).toLowerCase().includes(needle)) })).filter((g) => g.rows.length)
     : groups
   const used = usedKeys()
+  const here = scope === 'here' ? groups.filter((g) => g.key !== 'layer').flatMap((g) => g.rows) : []   // (Vicky 2026-10-29: brought back) the meter's rows
+  const usedHere = here.filter((r) => used.has(r.id)).length
 
   return (
     <Drawer open={open} title="Keyboard shortcuts" label="Keyboard shortcuts" onClose={closeShortcuts} width="narrow" kbPanel
@@ -85,7 +87,14 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
         <SearchBar appearance="outlined" size="md" placeholder="Find a shortcut" aria-label="Find a shortcut" value={q} onChange={setQ} className={styles.find} />
         <Chips label="Show the keys for" options={[{ value: 'here', label: 'On this page' }, { value: 'all', label: 'All pages' }]} value={scope}
                onChange={(v) => setScope(v === 'all' ? 'all' : 'here')} />
-        {/* (the calm UI build 2026-10-27 — the audit's 1-36, W-063) the "You use n of N here" meter went — the tick on each row you have used stays */}
+        {/* (the calm UI build 2026-10-27 — the audit's 1-36, W-063, had taken the meter off; Vicky 2026-10-29: brought back) how many of this page's
+            keys you use, over the list — the tick on each row you have used stays */}
+        {scope === 'here' && here.length && !needle ? (
+          <div className={styles.progress} data-testid="shortcuts-meter">
+            <span>You use {usedHere} of {here.length} here</span>
+            <span className={styles.bar} aria-hidden><i style={{ width: `${Math.round((usedHere / here.length) * 100)}%` }} /></span>
+          </div>
+        ) : null}
         {shown.length ? shown.map((g) => (
           <section key={g.key} className={styles.group} aria-label={g.title}>
             <h3 className={styles.groupHead}>{g.title}</h3>

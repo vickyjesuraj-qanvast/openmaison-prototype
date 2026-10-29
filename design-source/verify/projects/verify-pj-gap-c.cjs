@@ -218,11 +218,9 @@ const TODAY = dayNum(Date.now())
       ok(await bellRow.count() === 1, 'the bell: "Michelle asks for 1 week more on Carpentry fabrication"')
       /* (simplify round 2, a deliberate change of this rule — P2 §6.7) the ask answers in the bell's row too: Approve · Decline under its words; the
          words still open the record (the row's first button)
-         (the calm UI build 2026-10-27, a deliberate change) 1-03 · 1-20: one home for approvals — the bell's row and its ⋮ (Review on the Dashboard ·
-         Decline) open the Dashboard's Review pane on the ask; the milestone's own panel still answers it (below, opened from the Schedule) */
-      await bellRow.getByRole('button', { name: /^More for / }).click(); await p.waitForTimeout(400)
-      ok(await p.getByTestId('notification-approve').count() === 1 && /^Decline$/.test((await p.getByTestId('notification-send-back').innerText().catch(() => '')).trim()), 'the bell row’s ⋮ carries Review on the Dashboard · Decline')
-      await p.keyboard.press('Escape'); await p.waitForTimeout(300)
+         (the calm UI build 2026-10-27) 1-03 · 1-20: the row's words open the Dashboard's Review pane on the ask — (Vicky 2026-10-29: brought back) its Approve · Decline act in
+         the row again, as before; the milestone's own panel still answers it (below, opened from the Schedule) */
+      ok(await bellRow.getByTestId('notification-approve').count() === 1 && /^Approve$/.test((await bellRow.getByTestId('notification-approve').innerText().catch(() => '')).trim()) && /^Decline$/.test((await bellRow.getByTestId('notification-send-back').innerText().catch(() => '')).trim()), 'the bell row carries Approve · Decline')   // (Vicky 2026-10-29: brought back)
       await bellRow.locator('button').first().click(); await p.waitForTimeout(2200)
       /* (the calm UI build 2026-10-27, a deliberate change — 1-03 · 1-20) the row goes to `/dashboard?review=<record>`; the inbox reads it once and lets
          the address go (needs-inbox.tsx — a reload doesn't open it again), so the rule is read on the page: the Dashboard, its Review pane open on this ask */

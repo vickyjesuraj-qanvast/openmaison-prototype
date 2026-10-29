@@ -100,10 +100,12 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     const row = (await menuRows(p)).find((r) => r[0].startsWith('Tickets'))
     await p.keyboard.press('Escape'); await settle(p, 300)
     const railItem = p.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
-    /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-04 · 1-10) the rail says Issues and wears a grey dot, no number on the glyph — the count is its accessible name, "Issues (n waiting)" */
+    /* (the calm UI build 2026-10-27, a deliberate change) (the audit's 1-04 · 1-10) the rail says Issues, no number on the glyph — the count is its accessible name, "Issues (n waiting)";
+       (Vicky 2026-10-29: brought back) its mark is the red dot every navigation count wears (the calm build drew it grey) */
     const railLabel = (await railItem.getAttribute('aria-label').catch(() => '')) ?? ''
     const rowCount = Number((/\((\d+) waiting\)/.exec(railLabel) ?? ['', '0'])[1])
-    ok(!row && await railItem.count() === 1 && rowCount === toAnswer && (toAnswer === 0 || new RegExp(`^Issues \\(${toAnswer} waiting\\)`).test(railLabel)), `the rail carries Tickets after Tasks, its count the tickets waiting on the studio (${rowCount} = ${toAnswer}); the Projects ⋮ has no Tickets row`, (await railItem.getAttribute('aria-label')) ?? '')
+    const redDot = await railItem.locator('[class*="__badgeDot"][data-badge="dot"]').count()
+    ok(!row && await railItem.count() === 1 && rowCount === toAnswer && (toAnswer === 0 ? redDot === 0 : new RegExp(`^Issues \\(${toAnswer} waiting\\)`).test(railLabel) && redDot === 1), `the rail carries Tickets after Tasks, its count the tickets waiting on the studio (${rowCount} = ${toAnswer}); the Projects ⋮ has no Tickets row`, (await railItem.getAttribute('aria-label')) ?? '')
     const railOrder = await p.locator('[class*="app-rail-module__"] a[href]').evaluateAll((as) => as.map((a) => new URL(a.href).pathname))
     ok(railOrder.indexOf('/tickets') === railOrder.indexOf('/tasks') + 1, 'Tickets sits right after Tasks', railOrder.join(' · '))
 
@@ -177,7 +179,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     /* (the Dashboard redesigned 2026-10-26 — a deliberate change of this rule, his marks P-04 · P-13 and brief § 4: the Tickets tile is gone; a
        ticket waiting on the studio is its project's Needs you row under Clients waiting, one per ticket, and the rail's Tickets keeps the count) */
     const railTickets = p.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
-    /* (the calm UI build 2026-10-27, a deliberate change) 1-04: the rail's Issues wears a grey dot, its number in its name ("Issues (n waiting)") */
+    /* (the calm UI build 2026-10-27, a deliberate change) 1-04: the rail's Issues keeps its number in its name ("Issues (n waiting)") — (Vicky 2026-10-29: brought back) its mark a red dot */
     const rowCount2 = Number((/\((\d+) waiting\)/.exec((await railTickets.getAttribute('aria-label').catch(() => '')) || '') ?? ['', '0'])[1])
     const more = p.locator('[data-card="needs"] [data-testid="needs-more"]')
     /* (the calm UI build 2026-10-27, a deliberate change) 1-01: "See all n" opens every row in the house Drawer (was "Show all n" unrolling the card) */

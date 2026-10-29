@@ -77,6 +77,7 @@ Each of these keeps the same server action and the same rule. None loses a featu
   - pressing the row, or ⋮ › Review on the Dashboard, opens `/dashboard?review=<record>`;
   - ⋮ › Send back adds `&back=1`;
   - the Review pane runs the same actions.
+  - **Brought back 2026-10-29 (REG-3416):** the row's Approve · Send back act in place again; pressing the row's words still opens the Review pane.
 - **New quotes open without two columns.** A quote with no stored column set opens without Discount and GST (%) (`DEFAULT_COLUMNS` in
   `lib/quotes/items-model.ts`). A line that uses either brings that column back by itself (REG-3222). Quotes with a stored set keep theirs.
 - **Every Settings choice that saves as it changes now has Undo** (REG-3276).
@@ -103,8 +104,8 @@ build added. "—" means the control has no handle.
 
 | What | Was | Now | Handle |
 |---|---|---|---|
-| Approve / Send back on a bell approval | inline buttons on the bell's row | the row's press, or ⋮ › Review on the Dashboard → `/dashboard?review=<record>`; ⋮ › Send back / Decline → `&back=1` | `notification-approve` · `notification-send-back` (now ⋮ rows) |
-| The approvals count on /tasks | a line at the top of /tasks | gone from /tasks; the Dashboard's Approvals tab and its Review pane hold the approvals (`countApprovalsWaiting` kept) | `tasks-approvals*` (kept in the unmounted `approvals-line.tsx`) |
+| Approve / Send back on a bell approval | inline buttons on the bell's row | the row's press, or ⋮ › Review on the Dashboard → `/dashboard?review=<record>`; ⋮ › Send back / Decline → `&back=1` — **brought back 2026-10-29** (REG-3416: Approve · Send back act in the row again; the row's words still open the Review pane; the ⋮ went) | `notification-approve` · `notification-send-back` (now ⋮ rows) |
+| The approvals count on /tasks | a line at the top of /tasks | gone from /tasks; the Dashboard's Approvals tab and its Review pane hold the approvals (`countApprovalsWaiting` kept) — **brought back 2026-10-29** (REG-3415: the line is back at the top of /tasks with its ghost, Dane's phone strip on a phone) | `tasks-approvals*` (kept in the unmounted `approvals-line.tsx`) |
 | Ask Maison AI on a Dashboard card | a ✦ button in each card's head | the card's ⋮ › Ask Maison AI about this; on a phone, the dock | `<card>-ask` on the menu row · `ask-<card>` |
 | Hide a card (phone) | the card's own ⋮ | the page ⋮ › Cards on your page | `page-card-<key>` |
 | Whole studio / Just me (phone) | a segmented switch on its own row | the page ⋮ › Show | new: `page-scope-studio` · `page-scope-mine`; desks keep `scope-switch` |
@@ -114,13 +115,13 @@ build added. "—" means the control has no handle.
 | Your own "Open to new leads" (now "Take new leads") | the studio block's menu, the phone's You sheet | Your profile › New leads (`/profile#new-leads`); same `setMyAccepting` | `you-accepting`; new: `profile-new-leads` |
 | View as · Studio plan · Studios | the top of the studio block's menu | that menu's Demo fold at the bottom (remembered in `om.viewas.demo`); More › View as on a phone is unchanged | new: `demo-fold` |
 | Keyboard shortcuts from Maison AI | a suggestion in the Maison AI sheet | the ? key, ⌘K › Go to › Keyboard shortcuts, the bell's one-time note | — |
-| "You use n of N here" | a meter over the ? panel's list | gone; the tick on each used row stays | — |
+| "You use n of N here" | a meter over the ? panel's list | gone; the tick on each used row stays — **brought back 2026-10-29** (REG-3420: the meter is back over the list, `shortcuts-meter`) | — |
 | Column settings' help | a paragraph over the list | an ⓘ tooltip on the drawer's title | — |
 | The bell's Due rows | a group of their own | one fold at the end, "Due · n · Show" | new: `notifications-due-fold` |
 | A bell row's other channels | a line under the row | the time's tooltip, and the row's words for a screen reader | — |
-| Rail counts for Projects, Leads, Company, Tools | red numbers on the rail, dock and More | no mark (their rows are the Dashboard's); each opens its plain list (Leads no longer lands on `?scope=unseen`) | `BADGE_LOOK` |
-| Rail count for Tasks | a red number | a red dot; the item's name says "Tasks (3 overdue)" | read the `aria-label` |
-| Rail count for Issues | a red number | a grey dot; "Issues (1 waiting)" | read the `aria-label` |
+| Rail counts for Projects, Leads, Company, Tools | red numbers on the rail, dock and More | no mark (their rows are the Dashboard's); each opens its plain list (Leads no longer lands on `?scope=unseen`) — **brought back 2026-10-29** (REG-3413 · REG-3414: each wears a red dot again, the number in its name; Leads lands on `?scope=unseen`, Projects on `?scope=attention`) | `BADGE_LOOK` |
+| Rail count for Tasks | a red number | a red dot; the item's name says "Tasks (3 overdue)" — **brought back 2026-10-29** (REG-3413: unchanged — the dot every navigation count now wears) | read the `aria-label` |
+| Rail count for Issues | a red number | a grey dot; "Issues (1 waiting)" — **brought back 2026-10-29** (REG-3413: the dot is red, as every navigation count) | read the `aria-label` |
 | Esc while a snackbar shows | went Back at once | the first Esc dismisses the newest snackbar; a second goes Back | — |
 | The Maison AI button over page content | always drawn | steps aside (§4) | `data-aside` |
 | The Maison AI button on a project page (phone) | showing at the top | tucked at the top; back on the first scroll up and at the end | — |
@@ -320,8 +321,8 @@ build added. "—" means the control has no handle.
 | Expand all / Collapse all | an outlined toolbar button | an Items ⋮ row | `toolbar-fold` |
 | Full screen | the toolbar's last icon | the Items ⋮ › Full screen (a Collapse icon stays while full screen) | new: `items-full-screen` |
 | Round prices | a link beside Total | the Items ⋮ › Round prices… (desk); the touch Adjust sheet keeps its link | new: `items-round` |
-| Maison AI (Items) | a toolbar button and a Create strip tile | the page's Maison AI button (same sheet); a touch tablet's Items row keeps its glyph | — |
-| The Price book modal | a Create strip tile and a link under the table | Create ▾ › From Price book; each section's foot; Add item › Add from Price book… | — |
+| Maison AI (Items) | a toolbar button and a Create strip tile | the page's Maison AI button (same sheet); a touch tablet's Items row keeps its glyph — **brought back 2026-10-29** (REG-3417: the Create strip's Maison AI tile is back) | — |
+| The Price book modal | a Create strip tile and a link under the table | Create ▾ › From Price book; each section's foot; Add item › Add from Price book… — **brought back 2026-10-29** (REG-3417: the Create strip's Price book tile is back) | — |
 | The print note ("prints lines by trade") | above the Items table | the Template card's line (desk); the Items screen on the move keeps it | — |
 | Discount (the lines' total) | always in the totals | only when a line carries one | — |
 | Additional discount | always | while it holds a value; "+ Add a discount" otherwise | — |
@@ -378,7 +379,7 @@ build added. "—" means the control has no handle.
 | The import dialog's long subtitle, export line, vendor helper | the dialog | the same fold | new: `import-how` |
 | The Quote settings pane's clauses | the intro | "How this works" | new: `defaults-how` |
 | The template editor's first-visit banner | under the top bar | the inspector's empty state | `editor-hint` (on the empty state) |
-| The top bar's "Default" and "Edited since vN" | top-bar chips | the gallery card's chip / ribbon; the Publish changes button | new: `template-head-words` |
+| The top bar's "Default" and "Edited since vN" | top-bar chips | the gallery card's chip / ribbon; the Publish changes button — **brought back 2026-10-29** (REG-3419: both chips are back beside the status) | new: `template-head-words` |
 | The payment, schedule, task and text editors' chips | the header | the name row, the gallery card's usage line, the list's columns | — |
 | T&Cs' kind tag · Tasks' Due dates tag · "· A4" · a contract's first words · Ready-made | on the card | the card's meta line (in words); the list's columns | — |
 | The brand kit's card helpers | under each card head | removed as repeats ("PNG, JPG or SVG." and "Sizes are in points, as on paper." kept) | — |
@@ -657,7 +658,7 @@ These pieces now behave differently by default, or have something new. You will 
 | `LibraryGallery` (`components/company/templates/library-gallery.tsx`) | The scope pill's default noun is "Status" (was "Show"); a phone keeps the noun ("Kind: All") | Name the pill by what it filters |
 | `AiBrief` (`components/leads/detail/ai-brief.tsx`) | `single` draws the lead's one-action card; an empty `tag` draws nothing | A project keeps its stack of briefs |
 | `InfoColumn` (`components/leads/detail/info-column.tsx`) | Shows only rows with a value. Pass `onEditField` to draw the "Add …" link that opens Edit details on that field; the link is drawn only when it is passed | — |
-| Rail badges (`BADGE_LOOK` in `components/shell/app-rail.tsx`) | Each item's mark is `count` · `dot` · `quiet` · `none`; the count is in the item's `aria-label` | A test reads the `aria-label`, not the badge |
+| Rail badges (`BADGE_LOOK` in `components/shell/app-rail.tsx`) | Each item's mark is `count` (the bell, Messages) or `dot` (every other count; Vicky 2026-10-29, REG-3413 — `quiet` and `none` went); the count is in the item's `aria-label`, and the mark carries `data-badge="count|dot"` | A test reads the `aria-label`, not the badge |
 | Report pickers (`components/company/reports/report-pill.tsx`) | New `PickPill` ("Report: … ▾" / "Period: … ▾"), `HowCounted`, `FoldButton` | Every report bar uses them |
 | Folds | `HowItWorks` in `app/settings/how-it-works.tsx` (Settings) and a different `HowItWorks` in `components/company/price-book/how-it-works.tsx` (the Price book's dialogs) | Two pieces share one name: import the right one |
 | `PrivateLinkBadge` (`components/quotes/confirm/private-link-badge.tsx`) | One "Private link" badge on every client link page | — |

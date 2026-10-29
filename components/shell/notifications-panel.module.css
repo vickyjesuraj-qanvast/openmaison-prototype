@@ -43,12 +43,8 @@
    glyph's 36 and the row's gap in, less the text button's own inline padding (spacing-2) — and the row's foot keeps its 8. */
 .acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); margin-top: calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2) var(--om-spacing-2) calc(36px + var(--om-spacing-3)); }
 
-/* (the calm UI build 2026-10-27 — the audit's 1-03 · 1-20) an approval's row: its ⋮ (Review · Send back, both on the Dashboard's Review pane) at
-   the row's top-right, the words making room for it; the time line's tooltip says what else it went by */
-.row { position: relative; }
-.row:has(.actMore) .rowBtn { padding-right: calc(var(--om-spacing-2) + 36px); }
-.actMore { position: absolute; top: var(--om-spacing-2); right: var(--om-spacing-1); display: inline-flex; }
-.menuRow { display: contents; }
+/* (the calm UI build 2026-10-27 — the audit's 1-20) the time line's tooltip says what else it went by — (Vicky 2026-10-29) an approval's ⋮ went:
+   its Approve · Send back are back in the row (.acts above) */
 .when { cursor: default; }
 /* what is due, folded at the list's end under one line: "Due · 14 · 3 late" and Show / Hide */
 .dueFold { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); width: 100%; min-height: 44px; padding: var(--om-spacing-2); border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); text-align: left; border-radius: var(--om-radius-1); }

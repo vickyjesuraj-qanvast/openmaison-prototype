@@ -44,7 +44,7 @@ import fin from './finance.module.css'
  * The old tabs' addresses land here on their kind (app/company/finance/<old>/page.tsx). **Vendors** is its own tab, as it was.
  * (the calm UI build 2026-10-27 — 5-06 · 5-27 · 5-28) the tab reads **Costs** and its kinds Purchase orders · Supplier bills · Expenses · Payments
  * made (the chip and its list's title the same words); one toolbar order on every Finance tab — search · kind chips (no counts) · Status pill ·
- * New ▾ at the end — and Vendors' chips without counts.
+ * New ▾ at the end — (Vicky 2026-10-29: brought back) Vendors' chips with their counts.
  */
 const STATUS: Record<MoneyOutKind, { value: string; label: string }[]> = {
   'purchase-orders': [{ value: 'todo', label: 'With the studio' }, { value: 'out', label: 'With the vendor' }, { value: 'done', label: 'Done' }],
@@ -151,11 +151,13 @@ export function FinanceWorkspace({ tab, data, todoCount, crew = null }: { tab: '
     const active = vendors.filter((v) => v.isActive && !v.mergedInto), inactive = vendors.filter((v) => !v.isActive || v.mergedInto)
     const onSite = active.filter((v) => !!v.contractor)   // (S45B · H-UHD-2 — 1.0's Contractors filter) the vendors who work on site
     const shown = chip === 'inactive' ? inactive : chip === 'all' ? active : chip === 'contractors' ? onSite : vendors
-    /* (the calm UI build 2026-10-27 — 5-27 · 5-43 · W-216, T-07) the chips without counts; Inactive (and All, which is then Active again) only while
-       a vendor is inactive — a choice that would show nothing is not offered; the Status column only where the list can hold more than one state */
+    /* (the calm UI build 2026-10-27 — 5-27 · 5-43 · W-216) Inactive (and All, which is then Active again) only while a vendor is inactive — a choice
+       that would show nothing is not offered; the Status column only where the list can hold more than one state. (Vicky 2026-10-29: brought back)
+       each chip says how many it lists, in the house count form "Contractors · 4" — none on an empty one (T-07) */
+    const count = (label: string, n: number) => (n > 0 ? `${label} · ${n}` : label)
     const offerInactive = inactive.length > 0 || chip === 'inactive' || chip === 'everyone'
-    const chipOptions = [{ value: 'all', label: 'Active' }, ...(onSite.length || chip === 'contractors' ? [{ value: 'contractors', label: 'Contractors' }] : []),
-      ...(offerInactive ? [{ value: 'inactive', label: 'Inactive' }, { value: 'everyone', label: 'All' }] : [])]
+    const chipOptions = [{ value: 'all', label: count('Active', active.length) }, ...(onSite.length || chip === 'contractors' ? [{ value: 'contractors', label: count('Contractors', onSite.length) }] : []),
+      ...(offerInactive ? [{ value: 'inactive', label: count('Inactive', inactive.length) }, { value: 'everyone', label: count('All', vendors.length) }] : [])]
     const counts = (id: string) => { const b = s.byVendor.find((x) => x.vendorId === id); return { pos: s.pos.filter((p) => p.vendorId === id).length, committed: b?.committedMinor ?? 0, owed: b?.owedMinor ?? 0, overdue: b?.overdueMinor ?? 0 } }
     return (
       <FinanceFrame tab="vendors" runs={runs} todoCount={todoCount}>
