@@ -32,6 +32,21 @@ the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's wor
 7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
 8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).
 9. dash-d1 — the Dashboard's Your day ghost after a meeting's time (seed whether a meeting still has its Directions line).
+10. **Removed by the calm build — Vicky picks which come back** (he asked 2026-10-29, after the Tasks "+ New task" bar came back, REG-3412).
+    Recommended back: (a), (b), (d). Each is small; read the row in `changes-for-developers.md` (grep the words) before restoring, and keep
+    the build's words.
+    a. the rail's red counts on Projects · Leads · Company · Tools (and the phone dock / More); Leads landing on "Not opened yet";
+    b. /tasks' "n approvals wait for you on the Dashboard" line (`tasks-approvals*` kept, unmounted; Dane's phone redesign of it is in `approvals-line.*`);
+    c. the bell's own Approve / Send back on an approval row (now opens the Dashboard's Review pane);
+    d. the quote editor's Create strip tiles Maison AI · Price book (only Templates left);
+    e. Finance › Vendors' chip counts ("Contractors · 4");
+    f. the template editor's Default and Edited since chips;
+    g. the ? panel's "You use n of N here" meter;
+    h. the ✕ on Deleted leads' band (the band is a plain line now);
+    i. the import wizard's duplicate Import history link.
+    Kept off as repeats unless he says: On Hold / Lost subtitles · Stage ▾'s Active / Inactive heads · New project's split helper · the plan's
+    Main tag · Messages' Direct / Group / Studio / Client tags · a choice's state tag on the client page · brand kit card helpers · X-Ray's legend
+    and row bar · an agency tag · the Qanvast table's inert sort arrows.
 The brief for these is kept at `.claude/calm-build/close/brief.md` on Vicky's machine; after each, the probes of its area and `npm run design:lint`.
 
 ## Left unbuilt because it would change figures or data
