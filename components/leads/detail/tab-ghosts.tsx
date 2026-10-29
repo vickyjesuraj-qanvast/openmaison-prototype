@@ -58,9 +58,9 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
            row that swipes, at the chips' word widths (tasks-toolbar.module.css `.todoGhost`) */
         <div className={tasksBar.bar} data-sources={sources || undefined}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={145} /><span className={tasksBar.todos} data-spelled>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
       ) : <Bar bar={tasksBar.bar} title={tasksBar.title} words="All tasks" head={title}><Slot kind="btnFold" w={119} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>}
-      {/* (the calm UI build 2026-10-27 — 1-07 · 2-19) no foot "+ Add Task" row; Status rests in Column settings; /tasks opens on Title · For ·
+      {/* (the calm UI build 2026-10-27 — 1-07 · 2-19; the foot "+ New task" row back, Vicky 2026-10-29) Status rests in Column settings; /tasks opens on Title · For ·
           Members · Due (Creator and Tags in Column settings) */}
-      <GhostTable className={tasksTable.ghostDesk} head={56} row={48} rows={rows} cols={[
+      <GhostTable className={tasksTable.ghostDesk} head={56} row={48} rows={rows} foot={53} cols={[
         { basis: 56, head: null, cell: { slot: 'check' } },
         { basis: 450, grow: 1, head: 32, cell: (r) => ({ node: <><Bone w={18} h={18} r="50%" /><Line w={cycle(TASK_W, r)} lh={20} h={12} /></> }) },
         ...(studio ? [{ basis: 200, head: 36, cell: (r: number) => cycle([88, 72, 96, 80, 104], r) }] : []),

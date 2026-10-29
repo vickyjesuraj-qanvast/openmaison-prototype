@@ -75,8 +75,7 @@ export type TasksTableProps = {
   onAddTags: (task: TaskRow, anchor: HTMLElement) => void
   onRowMenu: (task: TaskRow, action: TaskRowAction) => void
   onEdit: (task: TaskRow) => void
-  /** Bottom bar "+ Add Task" (902:26450) — (the calm UI build 2026-10-27, 1-11 · 2-13 · 2-19) only where nothing else adds: a phone with no
-      quick add. The desk's second add under the table went; New task ▾ in the toolbar (or the page header) is the one way in. */
+  /** Bottom bar "+ New task" (902:26450) — under the list at every width, beside the toolbar's New task ▾ (Vicky 2026-10-29). */
   onAddClick?: () => void
   /** (Dane UAT 11.02) The task the add row just created — brought into view and pulsed once; `n` changes per add. */
   pulse?: { id: string; n: number } | null
@@ -172,6 +171,17 @@ export function TasksTable({
      anchor is the last row clicked, with or without shift. */
   const lastTouched = useRef<number | null>(null)
 
+  /* The Add Task bar is docked whenever the card's end sits below the fold; the 1px sentinel after it says so. (Vicky 2026-10-29: back —
+     the calm build had taken it; the quick way to add under the list stays beside the toolbar's New task ▾) */
+  const cardEnd = useRef<HTMLDivElement>(null)
+  const [floating, setFloating] = useState(false)
+  useEffect(() => {
+    const el = cardEnd.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([entry]) => setFloating(!entry?.isIntersecting), { rootMargin: '0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   const toggleOne = (id: string, index: number, range: boolean) => {
     const next = new Set(selected)
     const from = lastTouched.current
@@ -287,9 +297,17 @@ export function TasksTable({
     </div>
     </div>
 
-      {/* (the calm UI build 2026-10-27, 1-11 · 2-13 · 2-19) The desk's bottom bar "+ Add Task" (902:26450) went — the toolbar's (or the header's)
-          New task ▾ is the one add; its Blank task opens this table's own add row at the top. (L4 — P-10) A touch tablet docks the quick add here. */}
-      {composer ?? null}
+      {/* Bottom bar 902:26450 — Link text Primary leading icon add, "New task" (the calm build's word for "Add Task"). Sticks to the viewport
+          bottom while the card runs past it; `data-floating` adds the lift only while it is actually docked. (L4 — P-10) A touch tablet docks the
+          quick add there. (Vicky 2026-10-29: back — the calm build's 1-11 · 2-13 had taken it as a second add) */}
+      {composer ?? (
+      <div className={styles.foot} data-floating={floating || undefined} data-testid="task-foot-add">
+        <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>
+          New task
+        </Link>
+      </div>
+      )}
+      <div className={styles.footEnd} ref={cardEnd} aria-hidden />
     </div>
   )
 }
