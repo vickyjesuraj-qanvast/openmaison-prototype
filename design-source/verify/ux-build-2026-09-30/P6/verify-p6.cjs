@@ -220,7 +220,7 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await page.getByTestId('new-template').click(); await page.getByRole('menuitem', { name: 'Import from a spreadsheet…' }).click(); await page.getByTestId('import-dialog').waitFor()
     await page.getByTestId('import-dialog').getByLabel('Or paste the rows here').fill('Item\tUnit\tCost\nProbe tile A\tsqft\t3.50\nProbe tile B\tsqft\t4.20\nPainting, whole unit\tLot\t1999')
     await page.getByRole('dialog', { name: 'Import from a spreadsheet' }).getByRole('button', { name: 'Next' }).click()
-    const map = page.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor(); await page.waitForTimeout(400)
+    const map = page.getByRole('dialog', { name: 'Import into the Price book' }); await map.waitFor(); await page.waitForTimeout(400)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('S7 the mapping step asks the Kind for rows without one', await page.getByTestId('import-kind').getByRole('combobox').count() === 1)
     await pick(page, page.getByTestId('import-kind').getByRole('combobox'), 'Labour')
     await shot('s7-01-mapping-default-kind')

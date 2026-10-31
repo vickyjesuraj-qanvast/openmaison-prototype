@@ -157,13 +157,13 @@ const minutes = (t) => { const m = TIME.exec(t) ? /^(\d{1,2}):(\d{2}) ([AP])M$/.
     const seen = new Set()
     for (const q of [p, (await page(1440, `/leads/${KEVIN}/activity`)).p]) {
       for (const [chip, re] of Object.entries(kinds)) {
-        await q.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: chip }).click(); await q.waitForTimeout(400)
+        await q.locator('[data-testid="activity-chips"] button').click(); await q.waitForTimeout(250); await q.getByRole('menuitemradio', { name: new RegExp(`^${chip} · \\d+$`) }).click(); await q.waitForTimeout(400)   // (the close-out round 2026-10-31, a deliberate change) C-43: the kinds are the Show pill's menu
         const rs = (await readDesk(q, '[data-testid="activity-timeline"] ol')) ?? []
         if (!rs.length) { ok(await q.locator('[data-testid="search-empty"]').isVisible(), `${chip}: none on this feed — the No-results card`); continue }
         seen.add(chip)
         ok(rs.every((r) => re.test(r.glyph)) && rs[0].day !== null, `${chip}: ${rs.length} rows, every glyph ${re.source.replace(/[\^$()]/g, '')} — and still by day`, [...new Set(rs.map((r) => r.glyph))].join(','))
       }
-      await q.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: 'All' }).click(); await q.waitForTimeout(400)
+      await q.locator('[data-testid="activity-chips"] button').click(); await q.waitForTimeout(250); await q.getByRole('menuitemradio', { name: /^All · \d+$/ }).click(); await q.waitForTimeout(400)   // (the close-out round 2026-10-31, a deliberate change)
       if (q !== p) await q.context().close()
     }
     ok(seen.size === 4, `each of the four kinds was read on a feed (${[...seen].join(' · ')})`)

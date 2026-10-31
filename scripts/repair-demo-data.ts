@@ -1527,8 +1527,10 @@ async function main() {
       VALUES ('pb-proposal-skirting', 'Skirting, PVC 80 mm', 'White, clipped to the wall', 'purchase', 'ft run', 320, 130, 'Flooring', NULL, NULL, ?, ?, 'proposed', 'sarah', 'sarah')`, args: [at, at] })
     if (p.rowsAffected) {
       const runners = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE role IN ('Owner', 'Admin') AND is_active = 1`))
-      for (const r of runners) await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'price_book_proposed', 'Sarah proposed “Skirting, PVC 80 mm” for My Items', 'Approve it, or send it back with a note', '/company/price-book?open=pb-proposal-skirting', NULL, NULL, 'in_app,email', 'sarah', ?, NULL)`, args: [`n-pb-proposal-skirting-${r.id}`, r.id, at] })
+      for (const r of runners) await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'price_book_proposed', 'Sarah proposed “Skirting, PVC 80 mm” for the Price book', 'Approve it, or send it back with a note', '/company/price-book?open=pb-proposal-skirting', NULL, NULL, 'in_app,email', 'sarah', ?, NULL)`, args: [`n-pb-proposal-skirting-${r.id}`, r.id, at] })
     }
+    /* (the close-out round 2026-10-31, C-122) the library is the Price book on screen — the demo's notice already written says so too */
+    await client.execute(`UPDATE notifications SET title = replace(title, ' for My Items', ' for the Price book') WHERE kind = 'price_book_proposed' AND id LIKE 'n-pb-proposal-skirting-%' AND title LIKE '% for My Items'`)
     /* (UX audit V11) the bell's notice opens the proposed item itself (REG-709's ?open=), not the grid — the rows already written too */
     await client.execute(`UPDATE notifications SET href = '/company/price-book?open=pb-proposal-skirting' WHERE id LIKE 'n-pb-proposal-skirting-%' AND href = '/company/price-book'`)
     const h = await client.execute(`INSERT INTO price_book_changes (id, item_id, kind, changes, note, by, at)
@@ -7046,8 +7048,118 @@ async function main() {
     console.log(`  ${say.length ? say.join(' · ') : 'already in step'}`)
   }
 
+  /* ── R180 · a signed contract's kept copy prints its own date (the close-out round 2026-10-31 — call C-04, the UI audit's 4-05) ─────────
+     R50 kept each demo contract's copy as it read on its signing day. Every restore since moved the contract's date with the demo day while the
+     copy kept the day it was made, so the base of 2026-10-26 printed "22 July 2026" on a contract dated 3 August — 12 days apart, one for every
+     day the base had been restored and taken again. A restore now moves the days a copy's fields print with their records (lib/db/demo-day.ts
+     `shiftDateFields`); this brings back the copies already apart: a kept copy whose Contract date field is not its contract's date (else whose
+     Today's date is not its signing day) moves every printed day by that gap — the drift is the restores', the same for every field — and its
+     fingerprint is made again over the copy it now holds (lib/db/demo-fingerprints.ts). Every other word stays as signed. Idempotent: a copy
+     in step is left. */
+  console.log('\nR180 a signed contract’s kept copy prints its own date')
+  {
+    const { fieldDay, shiftDateFields } = await import('../lib/db/demo-day')
+    const { refingerprint } = await import('../lib/db/demo-fingerprints')
+    const all = rows<Record<string, unknown>>(await client.execute(`SELECT * FROM contracts`))
+    const bundles = rows<Record<string, unknown>>(await client.execute(`SELECT * FROM contract_bundles`))
+    const dayOf = (sec: unknown) => { const d = new Date(Number(sec) * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() }
+    const gaps: string[] = []
+    const after = all.map((c) => {
+      if (c.status !== 'Signed' || c.source === 'uploaded' || typeof c.signed_body !== 'string') return c
+      const body = c.signed_body
+      const anchors: [string, unknown][] = [['date.contract', c.contract_date ?? c.created_at], ['date.today', c.signed_at]]
+      for (const [key, sec] of anchors) {
+        const printed = sec == null ? null : fieldDay(body, key)
+        if (printed == null) continue
+        const gap = Math.round((dayOf(sec) - printed) / 86_400_000)
+        if (!gap) return c
+        gaps.push(`${String(c.recipient_name || c.title)} ${gap > 0 ? '+' : ''}${gap} days`)
+        return { ...c, signed_body: shiftDateFields(body, gap, null) }
+      }
+      return c
+    })
+    const fixed = refingerprint({ contracts: all, contract_bundles: bundles }, { contracts: after, contract_bundles: bundles })
+    const batch: InStatement[] = []
+    for (const c of fixed.contracts ?? []) {
+      const o = all.find((x) => x.id === c.id)!
+      if (c.signed_body !== o.signed_body || c.document_hash !== o.document_hash) batch.push({ sql: `UPDATE contracts SET signed_body = ?, document_hash = ? WHERE id = ?`, args: [c.signed_body as string, c.document_hash as string | null, String(c.id)] })
+    }
+    for (const b of fixed.contract_bundles ?? []) {
+      const o = bundles.find((x) => x.id === b.id)!
+      if (b.signing_hash !== o.signing_hash) batch.push({ sql: `UPDATE contract_bundles SET signing_hash = ? WHERE id = ?`, args: [b.signing_hash as string, String(b.id)] })
+    }
+    if (batch.length) await client.batch(batch, 'write')
+    note(gaps.length ? `${gaps.length} kept cop${gaps.length === 1 ? 'y' : 'ies'} back on ${gaps.length === 1 ? 'its' : 'their'} own date (${gaps.join(' · ')}), fingerprints made again` : 'every kept copy prints its own date')
+  }
+
+  /* ── R181 · the Default Quote's Letter words (the close-out round 2026-10-31 — call C-07, the UI audit's 4-33 · W-205 · W-348) ─────────────
+     The calm UI build gave the Letter house style a quote's words: "Quotation" over the page and "QUOTATION FOR RENOVATION AND CARPENTRY WORKS
+     AT THE ABOVE PREMISES" under it, where Dyel's paper said "Sales Contract" and "CONTRACT FOR …" (the client confirms a quote, not a contract);
+     "GST {gst_rate}:" for "Gst {gst_rate}:"; no "Fax:{studio_fax}" on the studio's line. R31 had stored the design before that, so the demo's
+     Default Quote PDF still printed the old words. Every stored copy of it — the template, its draft, its versions — takes the new words, and
+     only where a text still reads exactly as R31 seeded it: a studio keeps its own words once it edits, and no repair writes a studio's own
+     template (R37's rule — the deleted "Copy of Default Quote PDF" someone made is theirs, and is left). Idempotent: once the words are the
+     Letter style's, nothing matches. */
+  console.log('\nR181 the Default Quote’s Letter words')
+  /* each text as R31 stored it → the Letter style's words now (lib/templates/presets.ts `letter`); its check reads the same list */
+  const LETTER_WORDS = new Map<string, string>([
+    ['Sales Contract', 'Quotation'],
+    ['CONTRACT FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES', 'QUOTATION FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES'],
+    ['Gst {gst_rate}:', 'GST {gst_rate}:'],
+    ['{studio_name}\n{studio_address} Tel:{studio_phone} Fax:{studio_fax}\n{studio_website}\nGST Reg. No : {studio_gst}', '{studio_name}\n{studio_address} Tel:{studio_phone}\n{studio_website}\nGST Reg. No : {studio_gst}'],
+  ])
+  {
+    const id = sid('Default Quote PDF', 'quote_template')
+    const NEW = LETTER_WORDS
+    type Block = { kind?: string; elements?: { kind?: string; text?: unknown }[]; lines?: { key?: string; label?: unknown }[] }
+    type Design = { blocks?: Block[] }
+    /* the seeded texts in a design's elements and its totals' GST line put in the new words, in place — how many it changed */
+    const reword = (design: Design | null | undefined): number => {
+      let n = 0
+      for (const b of design?.blocks ?? []) {
+        for (const e of b.elements ?? []) { const to = e.kind === 'text' && typeof e.text === 'string' ? NEW.get(e.text) : undefined; if (to !== undefined) { e.text = to; n++ } }
+        if (b.kind === 'totals') for (const l of b.lines ?? []) { const to = l.key === 'gst' && typeof l.label === 'string' ? NEW.get(l.label) : undefined; if (to !== undefined) { l.label = to; n++ } }
+      }
+      return n
+    }
+    const readJson = <T>(s: string | null): T | null => { if (!s) return null; try { return JSON.parse(s) as T } catch { return null } }
+    let texts = 0
+    const where: string[] = []
+    const [t] = rows<{ design_json: string | null; draft_json: string | null }>(await client.execute({ sql: `SELECT design_json, draft_json FROM quote_templates WHERE id = ?`, args: [id] }))
+    if (t) {
+      const design = readJson<Design>(t.design_json)
+      const draft = readJson<{ design?: Design }>(t.draft_json)
+      const a = reword(design), b = reword(draft?.design)
+      if (a || b) {
+        await client.execute({ sql: `UPDATE quote_templates SET design_json = ?, draft_json = ? WHERE id = ?`, args: [a ? JSON.stringify(design) : t.design_json, b ? JSON.stringify(draft) : t.draft_json, id] })
+        texts += a + b
+        if (a) where.push('the published design')
+        if (b) where.push('its draft')
+      }
+      for (const v of rows<{ id: string; version: number; design_json: string }>(await client.execute({ sql: `SELECT id, version, design_json FROM quote_template_versions WHERE template_id = ? ORDER BY version`, args: [id] }))) {
+        const d = readJson<Design>(v.design_json)
+        const n = reword(d)
+        if (!n) continue
+        await client.execute({ sql: `UPDATE quote_template_versions SET design_json = ? WHERE id = ?`, args: [JSON.stringify(d), v.id] })
+        texts += n
+        where.push(`v${v.version}`)
+      }
+    }
+    note(!t ? 'no Default Quote PDF — nothing to change' : texts ? `${texts} text(s) of the Default Quote PDF in the Letter style’s words (${where.join(' · ')})` : 'the Default Quote PDF already says the Letter style’s words')
+  }
+
   /* (pending modules S43C, R162) the labels each sample room has now — a version on it lists only those */
   const SAMPLE_LABEL_CHECK = SAMPLE_ROOMS.map((r) => `SELECT j.id FROM render_jobs j JOIN project_rooms pr ON pr.id = j.room_id, json_each(j.variants_json) v, json_each(json_extract(v.value, '$.applied.surfaces')) s WHERE pr.sample_key = '${r.key}' AND json_extract(s.value, '$.id') LIKE '${r.key}-s%' AND json_extract(s.value, '$.label') NOT IN (${r.surfaces.map((x) => `'${x.label.replace(/'/g, "''")}'`).join(', ')})`).join(' UNION ALL ')
+
+  /* (the close-out round 2026-10-31 — C-04, R180) a day as the app prints it on a contract (lib/contracts/model.ts `longDate`, "22 July 2026", the
+     process's own zone as the app's), and the signed copies whose fingerprint is not their copy's — SQLite has no SHA-256, so it is worked out
+     here and the check names them */
+  const LONG_DAY_SQL = (x: string) => `(CAST(strftime('%d', ${x}, 'unixepoch', 'localtime') AS INTEGER) || ' ' || CASE strftime('%m', ${x}, 'unixepoch', 'localtime') ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => `WHEN '${String(i + 1).padStart(2, '0')}' THEN '${m}'`).join(' ')} END || ' ' || strftime('%Y', ${x}, 'unixepoch', 'localtime'))`
+  const FINGERPRINT_OFF = rows<{ id: string; title: string; signed_body: string; document_hash: string | null }>(await client.execute(`SELECT id, title, signed_body, document_hash FROM contracts WHERE status = 'Signed' AND source <> 'uploaded' AND signed_body IS NOT NULL`))
+    .filter((c) => c.document_hash !== documentHashOf(c.title, c.signed_body)).map((c) => `'${c.id}'`).join(', ') || "''"
+  /* (C-07, R181) the words R31 seeded in the Default Quote PDF before the Letter style said Quotation */
+  const OLD_LETTER = [...LETTER_WORDS.keys()].map((w) => `'${w.replace(/'/g, "''")}'`).join(', ')
+  const DEFAULT_QUOTE = sid('Default Quote PDF', 'quote_template')
 
   /* (S44O — C3, R163) a quote this run seeded with its client since R163 ran keeps the GST its amount was worked out by */
   { const late = await stampSentGst(); if (late.line + late.rate) note(`R163 again: ${late.line + late.rate} quote(s) seeded since stamped`) }
@@ -7718,6 +7830,11 @@ async function main() {
        lead it belongs to (a project's meeting on that project's lead), and a meeting is never before it was planned */
     ['R179 meeting without its open reminder on its hour for each of its people (Dashboard D3, R179)', `SELECT m.id FROM meetings m WHERE m.id IN ('${sid('2b6d6bfc-5d25-48c8-904a-6f7a7c85cec3', 'r179:meeting:site_visit_debrief')}', '${sid('a7fa05e9-6c32-478f-9db9-c9a3e7deb47c', 'r179:meeting:first_consultation')}') AND m.status = 'planned' AND m.deleted_at IS NULL AND (SELECT count(*) FROM json_each(m.member_ids) j WHERE NOT EXISTS (SELECT 1 FROM lead_tasks t JOIN task_assignees a ON a.task_id = t.id WHERE t.meeting_id = m.id AND t.done = 0 AND t.due_at = m.starts_at / 1000 AND a.member_id = j.value)) > 0`],
     ['meeting on a project that is not its lead’s, or planned after it starts (Dashboard D3, R179)', `SELECT m.id FROM meetings m JOIN projects p ON p.id = m.project_id WHERE p.lead_id <> m.lead_id UNION ALL SELECT id FROM meetings WHERE created_at > starts_at AND status = 'planned' AND id IN ('${sid('2b6d6bfc-5d25-48c8-904a-6f7a7c85cec3', 'r179:meeting:site_visit_debrief')}', '${sid('a7fa05e9-6c32-478f-9db9-c9a3e7deb47c', 'r179:meeting:first_consultation')}')`],
+    /* (the close-out round 2026-10-31 — C-04, R180) a signed contract's kept copy prints its own contract date, and its fingerprint is its copy's */
+    ['signed contract whose kept copy prints another date than its own (C-04, R180)', `SELECT title FROM contracts WHERE status = 'Signed' AND source <> 'uploaded' AND instr(coalesce(signed_body, ''), 'data-token="date.contract">') > 0 AND instr(signed_body, 'data-token="date.contract">' || ${LONG_DAY_SQL('coalesce(contract_date, created_at)')} || '<') = 0`],
+    ['signed contract whose fingerprint is not its kept copy’s (C-04, R180)', `SELECT title FROM contracts WHERE id IN (${FINGERPRINT_OFF})`],
+    /* (C-07, R181) the Default Quote PDF — its design, its draft, its versions — says the Letter style's words */
+    ['Default Quote PDF still printing “Sales Contract”, “Gst {gst_rate}:” or “Fax:” as R31 seeded it (C-07, R181)', `SELECT 'design' FROM quote_templates t, json_tree(t.design_json) j WHERE t.id = '${DEFAULT_QUOTE}' AND j.key IN ('text', 'label') AND j.value IN (${OLD_LETTER}) UNION ALL SELECT 'draft' FROM quote_templates t, json_tree(t.draft_json) j WHERE t.id = '${DEFAULT_QUOTE}' AND t.draft_json IS NOT NULL AND j.key IN ('text', 'label') AND j.value IN (${OLD_LETTER}) UNION ALL SELECT 'v' || v.version FROM quote_template_versions v, json_tree(v.design_json) j WHERE v.template_id = '${DEFAULT_QUOTE}' AND j.key IN ('text', 'label') AND j.value IN (${OLD_LETTER})`],
   ]
   let failed = 0
   for (const [label, sql] of checks) {

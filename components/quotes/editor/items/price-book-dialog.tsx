@@ -102,12 +102,12 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
       <div className={styles.body} data-testid="price-book-dialog">
         <div className={styles.toolbar}>
           <SegmentedButton aria-label="Price book" selectedKeys={[tab]} onSelectionChange={(keys) => { const k = [...keys][0]; if (k === 'items' || k === 'sections') onTab(k) }}>
-            <SegmentedButtonItem id="items">My Items · {items.length}{n ? ` (${n} ticked)` : ''}</SegmentedButtonItem>
-            <SegmentedButtonItem id="sections">My Sections · {sections.length}{m ? ` (${m} ticked)` : ''}{sectionsLocked ? ' · Pro' : ''}</SegmentedButtonItem>
+            <SegmentedButtonItem id="items">Items · {items.length}{n ? ` (${n} ticked)` : ''}</SegmentedButtonItem>
+            <SegmentedButtonItem id="sections">Sections · {sections.length}{m ? ` (${m} ticked)` : ''}{sectionsLocked ? ' · Pro' : ''}</SegmentedButtonItem>
           </SegmentedButton>
           {/* The Templates modal's way (REG-528): Manage … opens the Company page, with this quote as the way back (REG-465). */}
           <Button appearance="text" iconStart={<Icon name="list_alt" size={20} weight={300} />} onPress={onManage}>Manage Price book</Button>
-          <span className={styles.search}><SearchBar appearance="outlined" size="md" placeholder={tab === 'items' ? 'Search items, vendors, categories' : 'Search sections and tags'} aria-label={tab === 'items' ? 'Search My Items' : 'Search My Sections'} value={query} onChange={setQuery} /></span>
+          <span className={styles.search}><SearchBar appearance="outlined" size="md" placeholder={tab === 'items' ? 'Search items, vendors, categories' : 'Search sections and tags'} aria-label={tab === 'items' ? 'Search items' : 'Search sections'} value={query} onChange={setQuery} /></span>
         </div>
         {tab === 'items' && kinds.length > 1 ? (
           <Chips label="Kind" options={[{ value: 'all', label: 'All' }, ...kinds.map((k) => ({ value: k, label: ITEM_KIND_LABEL[k] }))]} value={kind} onChange={(v) => setKind(v)} />
@@ -118,11 +118,11 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
 
         {tab === 'items' ? (
           items.length === 0 ? (
-            <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="list_alt" size={40} weight={300} /></span><span className={styles.emptyTitle}>Nothing in My Items yet</span><span className={styles.emptyHelp}>Add items under Company › Price book, or save a line from a quote’s Items table (⋯ › Save to My Items).</span></div>
+            <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="list_alt" size={40} weight={300} /></span><span className={styles.emptyTitle}>No items yet</span><span className={styles.emptyHelp}>Add items under Company › Price book, or save a line from a quote’s Items table (⋯ › Price book › Save to Price book).</span></div>
           ) : shownItems.length === 0 && itemBrowse.hereFolders.length === 0 && itemBrowse.finding ? <TabSearchEmpty noun="items" searching={q !== ''} onClearAll={clear} /> : (
             <>
-            {!itemBrowse.finding && itemBrowse.openAt ? <FolderCrumbs root="My Items" trail={itemBrowse.trail} onGo={itemBrowse.go} /> : null}
-            <div className={styles.list} role="list" aria-label="My Items">
+            {!itemBrowse.finding && itemBrowse.openAt ? <FolderCrumbs root="Items" trail={itemBrowse.trail} onGo={itemBrowse.go} /> : null}
+            <div className={styles.list} role="list" aria-label="Items">
               {itemBrowse.hereFolders.map((f) => <div key={f.id} role="listitem" className={styles.folderItem}><FolderPickRow name={f.name} holds={itemBrowse.holds(f, 'item', 'items')} onOpen={() => itemBrowse.go(f.id)} /></div>)}
               {shownItems.map((p) => {
                 const on = isOn('items', p.id)
@@ -148,11 +148,11 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
           /* (pending modules S19) My Sections are Pro: on Free the tab is the lock — the studio's sections are kept */
           <ProLocked feature="package_creation" kept={sections.length ? `Your ${sections.length} ${sections.length === 1 ? 'section is' : 'sections are'} kept` : null} testId="book-sections-locked" />
         ) : sections.length === 0 ? (
-          <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="format_list_bulleted" size={40} weight={300} /></span><span className={styles.emptyTitle}>No saved sections yet</span><span className={styles.emptyHelp}>In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote.</span></div>
+          <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="format_list_bulleted" size={40} weight={300} /></span><span className={styles.emptyTitle}>No saved sections yet</span><span className={styles.emptyHelp}>In a quote’s Items table, a section’s ⋯ › Save to Price book keeps it here for the next quote.</span></div>
         ) : shownSections.length === 0 && sectionBrowse.hereFolders.length === 0 && (q !== '' || !allTypes) ? <TabSearchEmpty noun="sections" searching={q !== ''} onClearAll={() => { setQuery(''); setAllTypes(true) }} /> : (
           <>
-          {!sectionBrowse.finding && sectionBrowse.openAt ? <FolderCrumbs root="My Sections" trail={sectionBrowse.trail} onGo={sectionBrowse.go} /> : null}
-          <div className={styles.list} role="list" aria-label="My Sections">
+          {!sectionBrowse.finding && sectionBrowse.openAt ? <FolderCrumbs root="Sections" trail={sectionBrowse.trail} onGo={sectionBrowse.go} /> : null}
+          <div className={styles.list} role="list" aria-label="Sections">
             {sectionBrowse.hereFolders.map((f) => <div key={f.id} role="listitem" className={styles.folderItem}><FolderPickRow name={f.name} holds={sectionBrowse.holds(f, 'section', 'sections')} onOpen={() => sectionBrowse.go(f.id)} /></div>)}
             {shownSections.map(({ s, tags, count, total }) => {
               const on = isOn('sections', s.id)

@@ -246,8 +246,12 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
     }
     if (TASK_TPL) {
       const { c, p } = await page(768, `/templates/tasks/${TASK_TPL}`)
+      /* (the close-out round 2026-10-31, a deliberate change) C-123 · 4-17: the name is the header's — at rest the title's press, typing the field in its place; each 44 under a finger */
+      const rest = await p.getByTestId('title-field').first().evaluate((e) => e.getBoundingClientRect().height).catch(() => 0)
+      await p.getByTestId('title-field').first().tap().catch(() => {}); await p.waitForTimeout(300)
       const h = await p.locator('input[class*="contract-editor-module__"][class*="__titleInput"]').first().evaluate((e) => e.getBoundingClientRect().height).catch(() => 0)
-      ok(h >= 44, `768 · W4-29 the library editor's name field stands ${Math.round(h)} under a finger`)
+      ok(rest >= 44 && h >= 44, `768 · W4-29 the library editor's name stands ${Math.round(rest)} under a finger, its field ${Math.round(h)} while typing`)   // (the close-out round 2026-10-31, a deliberate change)
+      await p.keyboard.press('Escape').catch(() => {})
       await c.close()
     }
     /* found by the closing sweep: a project's document links, a review's Read more, the Visualizer's Compare · mic · the client's notes badge */

@@ -93,7 +93,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
     const d2 = (m: number) => (m / 100).toFixed(2)
     const list = exportable(scope === 'shown' && exportShown ? exportShown : items)
     const body = list.map((i) => [i.name, ITEM_KIND_LABEL[kindOf(i)], i.description ?? '', i.unit, ...(costs ? [d2(i.costMinor), d2(i.markupMinor)] : []), d2(unitPrice(i)), String(i.wastePct ?? 0), i.category ?? '', i.vendor ?? '', i.link ?? '', String(i.usedBy), ...(withProposed ? [i.status === 'proposed' ? 'Proposed' : 'Approved'] : [])])
-    return downloadBlob(buildTable('OpenMaison — My Items', head, body, format), `my-items.${format.toLowerCase()}`)
+    return downloadBlob(buildTable('OpenMaison — Price book items', head, body, format), `price-book-items.${format.toLowerCase()}`)
   }
   /* (REG-653, price book parity Q-15) The list's bulk changes: Set category · Set vendor · Set markup · Delete — the Owners' and Admins'. */
   const [bulkEdit, setBulkEdit] = useState<{ kind: BulkEdit; ids: string[]; clear: () => void } | null>(null)
@@ -144,19 +144,19 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       ...(undoId ? { actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await settle(bringBackPriceBookItem(t.id, undoId, 'Undo')); router.refresh() }, { key: 'price-book-bring-back', message: 'Change undone' }) } } : {}) })
   }
   const approve = async (t: PriceBookItemRow, edited: PriceBookItemInput | null = null) => {
-    const ok = await run('approve the item', async () => { if (edited) await settle(updatePriceBookItem(t.id, edited)); await settle(approvePriceBookItem(t.id)); router.refresh() }, `${edited?.name ?? t.name} ${edited ? 'saved and approved' : 'approved'} — it’s in My Items for the studio`)
+    const ok = await run('approve the item', async () => { if (edited) await settle(updatePriceBookItem(t.id, edited)); await settle(approvePriceBookItem(t.id)); router.refresh() }, `${edited?.name ?? t.name} ${edited ? 'saved and approved' : 'approved'} — it’s in the Price book for the studio`)
     if (ok) setEdit({ open: false, item: null })
   }
   const askSendBack = (t: PriceBookItemRow) => { setEdit({ open: false, item: null }); setSendBack(t) }
   return (
     <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.items} shell={shell} noun={{ one: 'item', many: 'items' }} nameLabel="Item" deletedLabel="Deleted items"
-      from={from} folders={{ library: 'book-items', list: folders, block: folderBlock(data.viewer) }} items={items.map(toRow)} deleted={deletedItems.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Items" tableKey="price-book-items"
+      from={from} folders={{ library: 'book-items', list: folders, block: folderBlock(data.viewer) }} items={items.map(toRow)} deleted={deletedItems.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="Items" tableKey="price-book-items"
       newMenu={(close, place) => (<>
         <DropdownItem onSelect={() => { close(); setEdit({ open: true, item: null, folderId: place.folderId }) }}>{runsBook ? 'New item' : 'Propose an item'}</DropdownItem>
         <DropdownDivider />
         <DropdownItem onSelect={() => { close(); setImportOpen(true) }} disabled={!runsBook} help={runsBook ? undefined : BOOK_RULE}>Import from a spreadsheet…</DropdownItem>   {/* (REG-728) the reason in the row, not a native title */}
       </>)}
-      pageMenu={(shown) => [{ label: 'Export My Items…', onSelect: () => { setWithProposed(false); setExportShown(shown) } }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
+      pageMenu={(shown) => [{ label: 'Export items…', onSelect: () => { setWithProposed(false); setExportShown(shown) } }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
       facets={[
         { key: 'category', label: 'Trade', options: categories.filter((c) => items.some((i) => (i.category ?? '').toLowerCase() === c.toLowerCase())), test: (t, v) => (t.category ?? '').toLowerCase() === v.toLowerCase() },
         { key: 'vendor', label: 'Vendor', options: data.vendors, test: (t, v) => t.vendor === v },
@@ -217,7 +217,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
         : t.usedBy === 1 ? 'It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted items.' : 'You can restore it from Deleted items.')}
       onRestore={(ids) => restorePriceBookItems(ids)} onDeleteForever={(ids) => deletePriceBookItemsForever(ids)} onEmptyTrash={() => emptyPriceBookItemTrash()}
       deletedMeta={{ label: 'Unit price', value: (t) => `${money2(unitPrice(t))} / ${t.unit}` }}
-      empty={{ title: 'Nothing in My Items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Save to My Items).' : 'Propose an item — an Owner or an Admin approves it for the studio.',
+      empty={{ title: 'No items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Price book › Save to Price book).' : 'Propose an item — an Owner or an Admin approves it for the studio.',
         /* (REG-735) the first run carries New ▾'s rows: a studio moving in has its list already, so Import leads; a Designer proposes */
         start: (place) => (runsBook
           ? { primary: { label: 'Import from a spreadsheet', icon: 'upload_file', onPress: () => setImportOpen(true) }, secondary: { label: 'New item', icon: 'add', onPress: () => setEdit({ open: true, item: null, folderId: place.folderId }) } }
@@ -228,10 +228,10 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
                   proposal={editItem && editItem.status === 'proposed' ? { by: editItem.proposer, at: editItem.createdAt.getTime(), canReview: runsBook, onApprove: (edited) => { if (editItem) return approve(editItem, edited) }, onSendBack: () => { if (editItem) askSendBack(editItem) } } : null} />
       {/* (REG-652, price book parity Q-04) Sending a proposal back needs its reason — it reaches the proposer in the bell and stays in the item's History. */}
       <NoteDialog open={!!sendBack} title="Send back" label="What should change?" action="Send back" busy={false} required maxLength={300}
-                  help={`Goes to ${sendBack?.proposer ?? 'whoever proposed it'} in the bell. The item leaves My Items; lines already on their quotes keep their figures.`}
+                  help={`Goes to ${sendBack?.proposer ?? 'whoever proposed it'} in the bell. The item leaves the Price book; lines already on their quotes keep their figures.`}
                   onClose={() => setSendBack(null)} onSubmit={(note) => { const t = sendBack; setSendBack(null); if (t) void run('send the item back', async () => { await settle(sendBackPriceBookItem(t.id, note)); router.refresh() }, `${t.name} sent back to ${t.proposer ?? 'its proposer'}`) }} />
       {/* (REG-627, parity Q-18) Export My Items — 1.0's CSV export, on the house Export dialog: every live item with the columns the list shows. */}
-      <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: exportable(items).length, shown: exportable(exportShown).length, noun: 'items' } : undefined}
+      <ExportDialog open={!!exportShown} title="Export items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: exportable(items).length, shown: exportable(exportShown).length, noun: 'items' } : undefined}
                     option={proposedCount ? { label: 'Include items waiting for approval', checked: withProposed, onChange: setWithProposed } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items} trades={data.trades} units={data.units} costs={costs}

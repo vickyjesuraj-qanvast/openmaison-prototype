@@ -50,7 +50,7 @@ import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's r
 import type { QuoteItemComment } from '@/lib/db/schema'
 import { NoteDialog } from '@/components/templates/editor/review-bar'
 import { readiness } from '@/lib/templates/readiness'
-import { canDeleteQuote, DELETE_RULE, offersQuoteSent, STATUS_BLOCK_META, statusBlock, validityPassed } from '@/lib/quotes/policy'
+import { canDeleteQuote, DELETE_RULE, keepsItsTemplate, offersQuoteSent, SIGNED_TEMPLATE_RULE, STATUS_BLOCK_META, statusBlock, validityPassed } from '@/lib/quotes/policy'
 import { confirmKeyOf, confirmLink } from '@/lib/quotes/confirm'
 import { useQuoteSend } from '@/components/quotes/send/use-quote-send'
 import { SendButton } from '@/components/quotes/send/send-button'
@@ -249,6 +249,9 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
 
   /* ── state ── */
   const [status, setStatus] = useState(quote.status)
+  /* (the close-out round 2026-10-31) a signed quote keeps its template: the card, the Quote screen's ⋮ and the print note offer no picker; a
+     way in that stays (the Create strip's Templates) says why instead of opening one — and the server refuses it too */
+  const openTemplates = () => { if (keepsItsTemplate(status)) { snackbar({ message: couldnt('change the template', SIGNED_TEMPLATE_RULE) }); return } openPicker() }
   /* (REG-624, parity Q-22 · Q-04) The approval on the record — who sent it, the approver's last note — and when the client got it. */
   const [record, setRecord] = useState(() => ({
     submittedBy: quote.submittedBy, submittedAt: quote.submittedAt?.getTime() ?? null, sentAt: quote.sentAt?.getTime() ?? null,
@@ -513,7 +516,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (templateId === templateState.current?.id) return
     setTemplateBusy(true)
     void run('change the template', async () => {
-      await setQuoteTemplate(quote.id, templateId)
+      await orThrow(setQuoteTemplate(quote.id, templateId))   // (the close-out round 2026-10-31) a refusal says its rule, never "Template changed"
       const t = templateState.picker.templates.find((x) => x.id === templateId) ?? null
       setTemplateState((st) => ({ ...st, current: t ? { id: t.id, name: t.name, pinned: t.version, latest: t.version, note: '', design: t.design, defaults: t.defaults, deleted: false } : null }))
       setBannerKept(false); stamp(Date.now())
@@ -658,7 +661,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} variation={!!data.variation} extra={<>{data.variation ? <VariationReasonField quoteId={quote.id} value={data.variation.reason ?? null} approved={status === 'Confirmed' || status === 'Signed'} /> : null}
       {/* (P-02) on the move the template's newer version is offered where the template is — the General info screen (the desk keeps it under the tabs) */}
       {mode !== 'desk' && templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} /> : null}
-      {data.variation ? null : <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} signed={status === 'Signed'}
+      {data.variation ? null : <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} signed={keepsItsTemplate(status)}
                     printsBy={mode === 'desk' && printsBy ? { view: printsBy.view, sections: itemsHaveSections } : null} />}</>} />   // (gaps build B, item 7) a VO’s reason for the change
     if (k === 'activity') return <ActivityBody events={activity} now={now} />
     return (
@@ -807,7 +810,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (p === 'revise') onMenu('revise')
   }
   const onScreenMenu = (a: ScreenMenuAction) => {
-    if (a === 'changeTemplate') { openPicker(); return }
+    if (a === 'changeTemplate') { openTemplates(); return }
     if (a === 'editTemplate') { editTemplate(); return }
     if (a === 'requestChanges') { setChangesOpen(true); return }
     onMenu(a)
@@ -869,7 +872,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                          primarySlot={<SendButton kind={quoteSend.kind} canSend={quoteSend.canSend} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={!!data.variation} side="up" align="right" />}
                          onEdit={openEdit} onBack={close} backLabel={backLabel(from, { leadName: lead.name, fallback: `Back to ${lead.name}` })}
                          onMenu={onScreenMenu}
-                         menu={{ canApprove, waitingApproval: status === 'Sent for Approval', deleteBlock: deleteWhy, viewLink: viewLinkUi.offered, tplLocked: tplLock.locked, xrayLocked: xrayLock.locked, hasTemplate: !!templateState.current, templateDeleted: !!templateState.current?.deleted }}
+                         menu={{ canApprove, waitingApproval: status === 'Sent for Approval', deleteBlock: deleteWhy, viewLink: viewLinkUi.offered, tplLocked: tplLock.locked, xrayLocked: xrayLock.locked, hasTemplate: !!templateState.current, templateDeleted: !!templateState.current?.deleted, keepsTemplate: keepsItsTemplate(status) }}
                          reading={reading} onAsPrinted={() => { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?paper=1`, from)) }}
                          folds={folds} onComments={() => setCommentsView({ open: true, focus: null })} totalMinor={amountMinor} />
             {/* (P-02 · Q-02) Edit is the section list, every time; a landscape tablet keeps it as the left pane */}
@@ -892,7 +895,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount} command={itemsCommand}
                        onTotal={setAmountMinor} onLines={setLines} onPricing={(p) => { setGstOn(p.gstEnabled); setLivePricing(p) }} clientColumns={clientColumns} forceView={forceView} bookTick={bookTick} propertyType={general.propertyType || null}
                        commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} changes={lineChangeMap}
-                       printsBy={printsBy} onChangeTemplate={openPicker} onPreview={() => onMenu('preview')} />
+                       printsBy={printsBy} onChangeTemplate={keepsItsTemplate(status) ? undefined : openPicker} onPreview={() => onMenu('preview')} />
             </VariationContext.Provider>
             </SectionHost>
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
@@ -929,7 +932,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                               templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
             </aside>
           ) : null}
-          {mode === 'desk' ? <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') openPicker(); else { if (!openOf('items')) toggle('items'); setBookTick((t) => t + 1) } }} /> : null}
+          {mode === 'desk' ? <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') openTemplates(); else { if (!openOf('items')) toggle('items'); setBookTick((t) => t + 1) } }} /> : null}
         </div>
         {/* (Q-07) Remind — a nudge on WhatsApp with the same confirmation link; nothing changes on the quote */}
         <SendContractDialog open={remindOpen} onClose={() => setRemindOpen(false)} link={confirmLink(confirmKeyOf(quote))} defaults={{ name: lead.name, phone: lead.phone }}

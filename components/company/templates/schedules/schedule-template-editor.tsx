@@ -20,7 +20,6 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { ReadOnlyScope } from '@/components/om/read-only'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
-import { TitleInput } from '@/components/contracts/editor/title-input'
 import { savedLabel } from '@/lib/contracts/model'
 import { isRefusal, templateChangeBlock } from '@/lib/company/template-rules'
 import { TEMPLATE_DESCRIPTION_MAX, draftsFromTemplate, followsOf, type TemplateItem } from '@/lib/projects/schedule-phases'
@@ -121,17 +120,16 @@ export function ScheduleTemplateEditor({ data, from }: { data: ScheduleTemplateE
   return (
     <PageReveal skeleton={<ScheduleTemplateGhost />}>
       <div className={page.page} data-testid="schedule-template-editor">
-        <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Project schedules', href: '/company/templates/schedules' }]} title={name.trim() || 'Untitled schedule'}   /* (the calm UI build 2026-10-27, the UI audit's 4-06 · 4-11) the tab's name; no tags — the count is the meta row's, the usage the gallery card's */
+        <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Project schedules', href: '/company/templates/schedules' }]} title={name.trim() || 'Untitled schedule'}   /* (the calm UI build 2026-10-27, the UI audit's 4-06 · 4-11) the tab's name; no tags — the usage is the gallery card's */
+                       /* (the close-out round 2026-10-31, C-123 · 4-17) the name once, renamed in the header (read-only for a member who may not change
+                          it) — the second row is gone: its count and length were the card's own rows and its "Handover about n weeks after works start" */
+                       titleEdit={{ value: name, label: 'Schedule name', placeholder: 'Schedule name', maxLength: 80, disabled: !!readOnly, onChange: (v) => { if (readOnly) return; setName(v); queue() }, onDone: () => { void flushRef.current() } }}
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateScheduleTemplate(template.id)).then((r) => { if (typeof r !== 'string') { snackbar({ message: couldnt('duplicate the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template duplicated' }); router.push(`/templates/schedules/${r}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                          <DropdownDivider />
                          <DropdownItem tone="danger" disabled={!!readOnly} help={readOnly ?? undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                        </>} onClose={close} />
-        <div className={page.meta} data-testid="library-meta">
-          <TitleInput value={name} placeholder="Schedule name" aria-label="Schedule name" maxLength={80} disabled={!!readOnly} onChange={(e) => { if (readOnly) return; setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={page.metaEnd}><span className={lib.note}>{plural(items.length, 'milestone')} · about {weeks} {weeks === 1 ? 'week' : 'weeks'} from works start to handover</span></div>
-        </div>
         <div className={lib.body}>
           {/* (B-11) a member who may not change it reads it — the house read-only look and its note; the server refuses the save too */}
           {readOnly ? <ReadOnlyNote text={`${readOnly.replace(/renames or deletes it$/, 'changes it')}.`} /> : null}
@@ -145,12 +143,14 @@ export function ScheduleTemplateEditor({ data, from }: { data: ScheduleTemplateE
                   <div key={i} className={styles.row} role="row" data-testid="schedule-item">
                     {/* (parity map, SC-016) the number wears the bar's colour when the item has one */}
                     <span className={styles.no} data-colored={colorOf(it.color) ? '' : undefined} style={colorOf(it.color) ? { ['--item-color' as string]: colorOf(it.color)!.hex } : undefined}>{i + 1}</span>
-                    <TextField label="Milestone" size="s" value={it.title} maxLength={80} onChange={(v) => patch(i, { title: v })} />
-                    <TextField label="Days" size="s" inputMode="numeric" value={typing?.i === i && typing.key === 'days' ? typing.text : String(it.days)}
+                    {/* (the close-out round 2026-10-31, C-123 · 4-17) a cell under its column's head draws no label of its own (`hideLabel`); a phone's
+                        stacked row has no head over Days and Gap, so those keep theirs there (`'wide'`) */}
+                    <TextField label="Milestone" hideLabel size="s" value={it.title} maxLength={80} onChange={(v) => patch(i, { title: v })} />
+                    <TextField label="Days" hideLabel="wide" size="s" inputMode="numeric" value={typing?.i === i && typing.key === 'days' ? typing.text : String(it.days)}
                                onChange={(v) => { const t = intTyped(v, false); setTyping({ i, key: 'days', text: t }); const n = Number(t); if (t && n >= 1) patch(i, { days: Math.min(365, n) }) }} onBlur={() => setTyping(null)} />
                     {i === 0 ? <span className={styles.firstGap}>Works start</span> : (
                       /* (B-60) one row height for every row: the overlap is said in its laid-out line below, not under the field */
-                      <TextField label="Gap (days)" size="s" inputMode="numeric" value={typing?.i === i && typing.key === 'gap' ? typing.text : String(it.gap)}
+                      <TextField label="Gap (days)" hideLabel="wide" size="s" inputMode="numeric" value={typing?.i === i && typing.key === 'gap' ? typing.text : String(it.gap)}
                                  onChange={(v) => { const t = intTyped(v, true); setTyping({ i, key: 'gap', text: t }); const n = Number(t); if (t && t !== '-' && Number.isFinite(n)) patch(i, { gap: Math.max(-60, Math.min(60, n)) }) }} onBlur={() => setTyping(null)} />
                     )}
                     <span className={styles.confirm}><Switch size="sm" isSelected={it.askConfirm} isDisabled={!!readOnly} onChange={(v: boolean) => patch(i, { askConfirm: v })} aria-label={`Ask the client to confirm ${it.title}`} /></span>

@@ -35,7 +35,7 @@ export const COMPARE: { group: string; rows: CompareRow[] }[] = [
     /* (S42 D-09) one name per thing, and only what each plan keeps: Free prints every quote with the studio's default; making your own
        templates is the lock's own words (`FEATURE_WORDS.template_editor`) */
     { label: 'Quotes print with the studio’s default', free: true, pro: true, max: true },
-    { label: 'My Sections (packages)', free: false, pro: true, max: true, flag: 'package_creation' },   // (pending modules S19) 2.0's name for 1.0's packages
+    { label: 'Price book sections (packages)', free: false, pro: true, max: true, flag: 'package_creation' },   // (pending modules S19) 2.0's name for 1.0's packages
     { label: 'Your own quote templates', free: false, pro: true, max: true, flag: 'template_editor' },
     { label: 'Internal approvals', free: false, pro: true, max: true, flag: 'internal_approvals' },
     { label: 'Quote X-Ray', free: false, pro: true, max: true, flag: 'quote_xray' },

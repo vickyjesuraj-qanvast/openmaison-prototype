@@ -290,9 +290,14 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       : []
     entries.forEach((e, i) => push({ id: `stage-${log.id}-log-${i + 1}`, at: parseInputDateTime(e.when) ?? log.createdAt, icon: 'swap_horiz', text: e.text, link: overview, actor: 'System', group: 'stage' }))
   }
-  /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
+  /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead.
+     (the close-out round 2026-10-31, C-08) A deleted reading keeps its history, as a deleted quote's and contract's do: its lines stay, and
+     while it waits in Deleted comparisons they open the lead's Quote X-Ray page with that sheet (its record answers not found). Deleted
+     forever, the row and its lines go; the event log's lines below say who deleted it, brought it back or deleted it for good. */
+  const xrayDeleted = { label: 'See deleted comparisons', href: `/quote-x-ray?lead=${leadId}&deleted=1&from=${encodeURIComponent(`${base}/activity`)}` }   // (invented copy, C-08)
+  const xrayOf = (id: string | undefined) => (id ? cmps.find((c) => c.id === id) ?? null : null)
   for (const c of cmps) {
-    const seeIt = { label: 'See comparison', href: `/quote-x-ray/${c.id}?from=${encodeURIComponent(`${base}/activity`)}` }
+    const seeIt = c.deletedAt ? xrayDeleted : { label: 'See comparison', href: `/quote-x-ray/${c.id}?from=${encodeURIComponent(`${base}/activity`)}` }
     pushDoc({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: seeIt, actor: who(c.createdBy) })
     /* (REG-640, X-Ray parity Q-16) what went to the client — the last send the reading keeps */
     if (c.sentAt) pushDoc({ id: `xray-sent-${c.id}`, at: c.sentAt, icon: 'send', text: c.sentVia === 'copy' ? `${who(c.sentBy ?? c.createdBy)} copied the comparison with ${c.otherStudio}'s quote to send to the client.` : `${who(c.sentBy ?? c.createdBy)} sent the comparison with ${c.otherStudio}'s quote to the client on WhatsApp.`, link: seeIt, actor: who(c.sentBy ?? c.createdBy) })
@@ -1004,6 +1009,8 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       : e.kind === 'invite_sent' ? `${actor} invited ${lead.name} to the portal.`
       : e.kind === 'questionnaire_asked' ? (d.ids?.length ? `${actor} asked ${lead.name} to answer ${d.ids.length === 1 ? '1 question' : `${d.ids.length} questions`}.` : `${actor} asked ${lead.name} to answer the questionnaire.`)   // (T12) the ask names what it asked
       : e.kind === 'comparison_deleted' ? `${actor} deleted the Quote X-Ray comparison ${q(d.title ?? '')}.`   // (REG-641)
+      : e.kind === 'comparison_restored' ? `${actor} brought back the Quote X-Ray comparison ${q(d.title ?? '')}.`   // (C-08, invented copy) the AI Visualizer's "brought back"
+      : e.kind === 'comparison_purged' ? `${actor} deleted the Quote X-Ray comparison ${q(d.title ?? '')} for good.`   // (C-08, invented copy)
       : e.kind === 'meeting_deleted' ? `${actor} deleted the meeting ${q(d.title ?? 'Meeting')}${d.when ? ` of ${displayDate(new Date(d.when))}` : ''}.`   // (pending modules S23)
       : e.kind === 'contract_unsigned' ? `${actor} moved the contract ${q(d.title ?? '')} back to ${d.kind ?? 'Draft'} — its signature was cleared.`   // (REG-634)
       : e.kind === 'contract_archived' ? `${actor} archived the contract ${q(d.title ?? '')}.`
@@ -1029,13 +1036,17 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       : e.kind === 'task_sent_outside' ? `${actor} sent the task ${q(d.title ?? '')} to ${d.name ?? 'the outside person'} on WhatsApp.`
       : null
     if (!text) continue
-    const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' || e.kind === 'return_evidence_removed' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : e.kind.startsWith('contract_') ? 'contract' : e.kind === 'comparison_deleted' ? 'scan' : e.kind === 'meeting_deleted' ? 'event'
+    const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' || e.kind === 'return_evidence_removed' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : e.kind.startsWith('contract_') ? 'contract' : e.kind.startsWith('comparison_') ? 'scan' : e.kind === 'meeting_deleted' ? 'event'
       : e.kind === 'design_deleted' || e.kind === 'design_purged' || e.kind === 'room_deleted' || e.kind === 'version_deleted' ? 'delete' : e.kind === 'design_restored' || e.kind === 'room_restored' || e.kind === 'version_restored' ? 'restore'
       : e.kind === 'share_stopped' ? 'link_off' : e.kind === 'share_renewed' ? 'schedule' : e.kind === 'share_reopened' ? 'link' : e.kind.startsWith('task_') ? 'ballot' : 'help'
     const vizLink = e.kind === 'design_purged' ? overview : e.kind.startsWith('room_') || e.kind.startsWith('version_') ? viz(d.roomId ?? null, e.kind.startsWith('version_') ? d.id ?? null : null) : viz(null)
     const liveTask = e.kind.startsWith('task_') && e.kind !== 'task_deleted' && d.id && tasks.some((t) => t.id === d.id)
     const link = e.kind === 'questionnaire_asked' ? { label: 'See Questionnaire', href: `${base}/questionnaire` } : liveTask ? { label: 'See Task', href: `${base}/tasks?open=${d.id}` } : e.kind.startsWith('task_') ? { label: 'See Tasks', href: `${base}/tasks` } : e.kind === 'file_trashed' ? { label: 'See Files', href: `${base}/files` }
-      : e.kind.startsWith('design_') || e.kind.startsWith('room_') || e.kind.startsWith('version_') || e.kind.startsWith('share_') ? vizLink : overview
+      : e.kind.startsWith('design_') || e.kind.startsWith('room_') || e.kind.startsWith('version_') || e.kind.startsWith('share_') ? vizLink
+      /* (C-08) a reading's delete opens Deleted comparisons while it is still there; its restore opens the reading while it is live */
+      : e.kind === 'comparison_deleted' && xrayOf(d.id)?.deletedAt ? xrayDeleted
+      : e.kind === 'comparison_restored' && xrayOf(d.id) && !xrayOf(d.id)!.deletedAt ? { label: 'See comparison', href: `/quote-x-ray/${d.id}?from=${encodeURIComponent(`${base}/activity`)}` }
+      : overview
     const group: ActivityGroup | undefined = e.kind.startsWith('task_') ? 'tasks' : e.kind.startsWith('file_') ? 'files' : e.kind === 'note_deleted' ? 'notes' : undefined
     push({ id: `ev-${e.id}`, at: e.at, icon, text, link, actor, group })
   }
@@ -1200,7 +1211,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     const back = (href: string) => { const [path, query = ''] = href.split('?'); const params = new URLSearchParams(query); params.set('from', here); return `${path}?${params.toString()}` }
     const kindOf = new Map(events.map((x) => [`ev-${x.id}`, x.kind]))
     /* the lead's own history — how it came in, its stage moves, who was put on it, its edits — opens the lead's record, not the project's Overview */
-    const LEAD_KINDS = new Set(['member_removed', 'field_edited', 'return_undone', 'return_evidence_removed', 'invite_sent', 'questionnaire_asked', 'comparison_deleted', 'contract_unsigned', 'contract_archived', 'contract_restored', 'meeting_deleted'])
+    const LEAD_KINDS = new Set(['member_removed', 'field_edited', 'return_undone', 'return_evidence_removed', 'invite_sent', 'questionnaire_asked', 'comparison_deleted', 'comparison_restored', 'comparison_purged', 'contract_unsigned', 'contract_archived', 'contract_restored', 'meeting_deleted'])
     const leadHistory = (e: ActivityEvent) => /^(lead|assign|stage|ret)-/.test(e.id) || LEAD_KINDS.has(kindOf.get(e.id) ?? '')
     const quoteOf = (e: ActivityEvent) => (e.id.startsWith('quote-') ? qs.find((x) => e.id.endsWith(x.id)) ?? null : null)
     for (const e of ev) {
@@ -1209,7 +1220,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
       if (rest === null) {
         if (e.link.href === `/projects/${pid}`) e.link = undefined
         /* the quote and contract editors, X-Ray and the AI Visualizer: Back returns to this Activity, not the lead's tab */
-        else if (/^\/(quotes|contracts|quote-x-ray|visualizer)\//.test(e.link.href)) e.link = { ...e.link, href: back(e.link.href) }
+        else if (/^\/(quotes|contracts|quote-x-ray|visualizer)\//.test(e.link.href) || e.link.href.startsWith('/quote-x-ray?')) e.link = { ...e.link, href: back(e.link.href) }   // (C-08) …and Deleted comparisons
         continue
       }
       const seg = rest.replace(/^\//, '').split(/[/?]/)[0] ?? ''

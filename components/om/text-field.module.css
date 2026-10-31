@@ -96,3 +96,11 @@
    padding above is covered so no option shows through). */
 .menuSearch { position: sticky; top: calc(-1 * var(--om-spacing-1)); z-index: 1; margin-top: calc(-1 * var(--om-spacing-1)); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); background: var(--om-color-surface-default); }
 .noMatches { color: var(--om-color-on-surface-secondary); cursor: default; pointer-events: none; }   /* a word where the options were, not one of them */
+
+/* (the close-out round 2026-10-31, C-123 · the UI audit's 4-17) `hideLabel` — a table cell's field under its column's head: the label is not
+   drawn, at rest or floated (no notch in the border), and stays in the page as the field's accessible name. `wide` from 768 up only — a
+   phone's stacked row has no head over the cell, so it keeps the label. Last in the sheet: it outranks the floated label's place above. */
+.field[data-hide-label='all'] .label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (min-width: 768px) {
+  .field[data-hide-label='wide'] .label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}

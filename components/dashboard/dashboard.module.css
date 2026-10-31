@@ -82,6 +82,9 @@
 .helloLine { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
 .helloNeeds { font: var(--om-type-subtitle-l); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* kept whole on a narrow line */
 .helloDate { white-space: nowrap; }
+/* (the close-out round 2026-10-31, dash-d1) the ghost's news on a line of its own where the page's line wrapped last time on a phone ("Saturday
+   31 October" over "· 4 new since Wednesday" — the day's name and the news's are as long as the day makes them) */
+@media (max-width: 767px) { .helloSinceWrap.helloSinceWrap { display: block; } }
 .helloEnd { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
 @media (max-width: 1024px) { .helloTitle { font: var(--om-type-heading-h2); } }
 @media (max-width: 767px) {

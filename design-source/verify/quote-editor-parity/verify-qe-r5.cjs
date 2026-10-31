@@ -127,8 +127,8 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   await step('Export My Items', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     await page.getByRole('button', { name: 'More options', exact: true }).last().click()   // (REG-653, price book parity Q-14) export sits in the page kebab
-    await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
-    const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
+    await page.getByRole('menuitem', { name: 'Export items…' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    const dlg = page.getByRole('dialog', { name: 'Export items' }); await dlg.waitFor()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await shot('06-export-my-items')
     const [dl] = await Promise.all([page.waitForEvent('download'), dlg.getByRole('button', { name: 'Export' }).click()])
     const file = await dl.path(); const text = fs.readFileSync(file, 'utf8')

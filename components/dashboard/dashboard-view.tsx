@@ -7,7 +7,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { useMaisonAi } from '@/lib/maison-ai'
 import { CARD_LABEL, HIDEABLE, type DashCardKey, type DashScope } from '@/lib/dashboard/frame'
 import type { DashboardData } from '@/lib/dashboard/model'
-import type { AgendaItem } from '@/lib/dashboard/cards'
+import { dayActOf, dayExtrasOf, encodeDayActs, type AgendaItem } from '@/lib/dashboard/cards'
 import type { InboxData } from '@/lib/dashboard/inbox'
 import { markDashboardVisit, setDashboardPrefs } from '@/app/dashboard/frame-actions'
 import { Greeting } from './frame/greeting'
@@ -21,6 +21,7 @@ import { TeamCard } from './cards/team-card'
 import { OnSiteCard } from './cards/on-site-card'
 import { MaisonDock } from '@/components/maison-ai/dock/maison-dock'
 import { CARD_COUNT_KEYS, DashboardGhost, NEEDS_COUNT_KEY, SINCE_COUNT_KEY, SINCE_SHAPE } from './dashboard-ghost'
+import { DAY_SHOWN_GHOST, DAY_SHOWN_PHONE_GHOST } from './cards/card-ghosts'
 import { shapeKey } from '@/lib/ghost-shape'
 import { setCountPref, setFlagPref } from '@/lib/prefs'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -52,6 +53,13 @@ const STALE_MS = 5 * 60_000
  * Pulse is four white cards; the two columns stand 2 : 1 at a desk — Needs you · Your day · On site on the left, Pipeline · Projects · Team load
  * on the right (the option's own). Phones and tablets keep the first pass's layouts, with the calmer cards.
  */
+/** (the close-out round 2026-10-31, dash-d1) How many lines the greeting's line took on a phone (0 off a phone: not this memory's). */
+function phoneLinesOf(el: Element | null): number {
+  if (!el || !window.matchMedia('(max-width: 767px)').matches) return 0
+  const lh = parseFloat(getComputedStyle(el).lineHeight) || 20
+  return Math.max(1, Math.round(el.getBoundingClientRect().height / lh))
+}
+
 export function DashboardView({ data }: { data: DashboardData }) {
   useMaisonAi(data.dock.asks)
   const router = useRouter()
@@ -118,19 +126,26 @@ export function DashboardView({ data }: { data: DashboardData }) {
   /* (REG-708) the loader and the reveal draw one ghost — the shell's seed and what this browser saw last; the page tells the NEXT loader what it
      held (the Needs you rows, the Since chips, each glance card's rows) as it leaves, never while its own reveal is on screen (the reveal would
      change under the eye) */
-  const memory = useRef({ needs: 0, since: 0, day: 0, week: 0, projects: 0, team: 0, crew: 0, site: 0 })
+  const memory = useRef({ needs: 0, since: 0, day: 0, week: 0, projects: 0, team: 0, crew: 0, site: 0, dayActs: 0, dayMenus: 0, helloLines: 0 })
   useEffect(() => {
+    /* (the close-out round 2026-10-31, dash-d1) …and Your day's rows as drawn: each row's one action (Call · Directions · none — a meeting's
+       Directions go once its time has passed) and whether the rows keep a ⋮ column (a phone's four), so the ghost's rows wrap where the page's do */
+    const todays = data.day ? data.day.items.filter((x) => x.day === data.day!.today) : []
     memory.current = {
       needs: data.needs.rows.length, since: data.since?.chips.length ?? 0,
-      day: data.day ? data.day.items.filter((x) => x.day === data.day!.today).length : 0, week: data.day?.items.length ?? 0, projects: data.projects?.lines.length ?? 0,
+      day: todays.length, week: data.day?.items.length ?? 0, projects: data.projects?.lines.length ?? 0,
       team: (data.team?.lines.length ?? 0) + (data.team?.nobody ? 1 : 0), crew: data.team?.contractors ? 1 : 0, site: data.site?.photos.length ?? 0,
+      dayActs: encodeDayActs(todays.slice(0, DAY_SHOWN_GHOST).map(dayActOf)), dayMenus: todays.slice(0, DAY_SHOWN_PHONE_GHOST).some(dayExtrasOf) ? 1 : 0,
+      /* (dash-d1) the greeting's line on a phone — the day's name and the news's words decide whether it wraps; 0 = not read here (a wider screen) */
+      helloLines: phoneLinesOf(document.querySelector('[data-testid="greeting-line"]')),
     }
   })
   useEffect(() => {
     const save = () => {
       const m = memory.current
       setCountPref(NEEDS_COUNT_KEY, m.needs); setCountPref(SINCE_COUNT_KEY, m.since); setFlagPref(shapeKey(SINCE_SHAPE), m.since === 0)
-      for (const k of ['day', 'week', 'projects', 'team', 'crew', 'site'] as const) setCountPref(CARD_COUNT_KEYS[k], m[k])
+      for (const k of ['day', 'week', 'projects', 'team', 'crew', 'site', 'dayActs', 'dayMenus'] as const) setCountPref(CARD_COUNT_KEYS[k], m[k])
+      if (m.helloLines > 0) setCountPref(CARD_COUNT_KEYS.helloLines, m.helloLines)
     }
     window.addEventListener('pagehide', save)
     return () => { window.removeEventListener('pagehide', save); save() }

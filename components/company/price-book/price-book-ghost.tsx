@@ -30,7 +30,7 @@ export function PriceBookItemsGhost({ todo }: { /** the page's own count of item
   const tracks = costs ? TRACKS : TRACKS.filter((_, i) => i !== 3 && i !== 4)
   const cells = costs ? CELLS : CELLS.filter((_, i) => i !== 2 && i !== 3)
   return (
-    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading My Items">
+    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading the Price book’s items">
       {/* (the calm UI build 2026-10-27 — the closing regression) the pill says its noun at every width now ("Type: All", 4-24) and the to-do
           chip stands before it while an item waits ("1 approval", "1" ≤1024): on a phone the two push the tools onto a second line, as the page's do */}
       <LibraryGhostFor page="price-book-items" pill="Type: All" todos={waiting > 0 ? [{ label: `${waiting} ${waiting === 1 ? 'approval' : 'approvals'}`, short: String(waiting) }] : []}
@@ -51,7 +51,7 @@ const SECTION_CELLS = [32, 72, 80, 72, 84, 40, 96]
 export function PriceBookSectionsGhost() {
   const [list] = useFlagPref('om.price-book-sections.list', true)
   return (
-    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading My Sections">
+    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading the Price book’s sections">
       <LibraryGhostFor page="price-book-sections" folders={1} cards={4} list={list ? { tracks: SECTION_TRACKS, rows: 4, select: true, cells: SECTION_CELLS } : undefined} />
     </CompanyGhostFrame>
   )

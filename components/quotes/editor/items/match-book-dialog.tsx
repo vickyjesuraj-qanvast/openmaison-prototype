@@ -75,20 +75,20 @@ export function MatchBookDialog({ open, items, book, runsBook, busy, onClose, on
   const n = plan.matches.filter((m) => ticked.has(m.lineId)).length
   const m = plan.fresh.filter((l) => adding.has(l.id)).length
   const addWord = runsBook ? 'add' : 'propose'
-  const label = busy ? 'Matching…' : n && m ? `Match ${n} · ${addWord} ${m}` : n ? `Match ${plural(n, 'line', 'lines')}` : m ? (runsBook ? `Add ${m} to My Items` : `Propose ${m} for My Items`) : 'Match lines'
+  const label = busy ? 'Matching…' : n && m ? `Match ${n} · ${addWord} ${m}` : n ? `Match ${plural(n, 'line', 'lines')}` : m ? (runsBook ? `Add ${m} to the Price book` : `Propose ${m} for the Price book`) : 'Match lines'
   const apply = () => { if (!busy && (n || m)) onApply({ matches: plan.matches.filter((x) => ticked.has(x.lineId)).map((x) => ({ lineId: x.lineId, itemId: x.item.id })), add: plan.fresh.filter((l) => adding.has(l.id)).map((l) => l.id) }) }
   const onRow = (fn: () => void) => (e: MouseEvent) => { if ((e.target as HTMLElement).closest('label, input, button, a')) return; fn() }
   const allMatches = plan.matches.length > 0 && plan.matches.every((x) => ticked.has(x.lineId))
   const allFresh = plan.fresh.length > 0 && plan.fresh.every((l) => adding.has(l.id))
   return (
     <Dialog open={open} onClose={onClose} title="Match lines to the Price book" size="modal" width={800} portal
-            subtitle={`Lines not taken from My Items, each beside the item it reads like. ${costs ? 'A ticked line takes the item’s cost' : 'A ticked line is linked to its item, so the studio knows what it costs'} — the client’s price stays as it is.${plan.fresh.length ? runsBook ? ' A line not in My Items can be added to it.' : ' A line not in My Items can be proposed for it — an Owner or an Admin approves it.' : ''}`}
+            subtitle={`Lines not taken from the Price book, each beside the item it reads like. ${costs ? 'A ticked line takes the item’s cost' : 'A ticked line is linked to its item, so the studio knows what it costs'} — the client’s price stays as it is.${plan.fresh.length ? runsBook ? ' A line not in the Price book can be added to it.' : ' A line not in the Price book can be proposed for it — an Owner or an Admin approves it.' : ''}`}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={apply} isDisabled={busy || !(n || m)} data-testid="match-apply">{label}</Button></>}>
       <div className={styles.body} data-testid="match-dialog">
         {!plan.matches.length && !plan.fresh.length ? (
           <div className={styles.empty} role="status">
             <span className={styles.emptyGlyph} aria-hidden><Icon name="list_alt" size={40} weight={300} /></span>
-            <span className={styles.emptyTitle}>Every priced line is from My Items</span>
+            <span className={styles.emptyTitle}>Every priced line is from the Price book</span>
             <span className={styles.emptyHelp}>Lines added from the Price book already carry its cost.</span>
           </div>
         ) : (
@@ -97,7 +97,7 @@ export function MatchBookDialog({ open, items, book, runsBook, busy, onClose, on
               <div role="presentation">
                 <div className={styles.groupHead} role="presentation">
                   <Checkbox isSelected={allMatches} isIndeterminate={!allMatches && plan.matches.some((x) => ticked.has(x.lineId))} onChange={() => setTicked(allMatches ? new Set() : new Set(plan.matches.map((x) => x.lineId)))} aria-label="Tick every match" />
-                  <span>{`In My Items (${plan.matches.length})`}</span>
+                  <span>{`In the Price book (${plan.matches.length})`}</span>
                 </div>
                 {plan.matches.map((x) => {
                   const on = ticked.has(x.lineId)
@@ -108,7 +108,7 @@ export function MatchBookDialog({ open, items, book, runsBook, busy, onClose, on
                       <Checkbox isSelected={on} onChange={() => setTicked((s) => flip(s, x.lineId))} aria-label={`Match ${x.line.name} to ${x.item.name}`} />
                       <span className={styles.text}>
                         <span className={styles.name}>{x.line.name}{x.tier === 'close' ? <MetaChip>Close match</MetaChip> : null}</span>
-                        <span className={styles.meta}>{`My Items: ${x.item.name}${x.item.vendor ? ` · by ${x.item.vendor}` : ''}`}</span>
+                        <span className={styles.meta}>{`Price book: ${x.item.name}${x.item.vendor ? ` · by ${x.item.vendor}` : ''}`}</span>
                         <span className={styles.meta}>{costs ? `Cost ${money2(x.item.costMinor)}${per(x.item.unit)}${gap}` : `Sells for ${money2(unitPriceOf(x.item))}${per(x.item.unit)}${gap}`}</span>
                       </span>
                       <span className={styles.price} data-tone={margin !== null && margin < 0 ? 'below' : undefined}>{margin === null ? '' : margin < 0 ? 'Below cost' : `${margin}% margin`}</span>
@@ -120,14 +120,14 @@ export function MatchBookDialog({ open, items, book, runsBook, busy, onClose, on
             {plan.fresh.length ? (
               <div role="presentation">
                 <div className={styles.groupHead} role="presentation">
-                  <Checkbox isSelected={allFresh} isIndeterminate={!allFresh && plan.fresh.some((l) => adding.has(l.id))} onChange={() => setAdding(allFresh ? new Set() : new Set(plan.fresh.map((l) => l.id)))} aria-label={runsBook ? 'Tick every line to add to My Items' : 'Tick every line to propose for My Items'} />
-                  <span>{`Not in My Items yet (${plan.fresh.length})`}</span>
+                  <Checkbox isSelected={allFresh} isIndeterminate={!allFresh && plan.fresh.some((l) => adding.has(l.id))} onChange={() => setAdding(allFresh ? new Set() : new Set(plan.fresh.map((l) => l.id)))} aria-label={runsBook ? 'Tick every line to add to the Price book' : 'Tick every line to propose for the Price book'} />
+                  <span>{`Not in the Price book yet (${plan.fresh.length})`}</span>
                 </div>
                 {plan.fresh.map((l) => {
                   const on = adding.has(l.id)
                   return (
                     <div key={l.id} className={styles.row} role="listitem" data-selected={on || undefined} data-testid="fresh-row" data-line={l.id} onClick={onRow(() => setAdding((s) => flip(s, l.id)))}>
-                      <Checkbox isSelected={on} onChange={() => setAdding((s) => flip(s, l.id))} aria-label={`${runsBook ? 'Add' : 'Propose'} ${l.name} ${runsBook ? 'to' : 'for'} My Items`} />
+                      <Checkbox isSelected={on} onChange={() => setAdding((s) => flip(s, l.id))} aria-label={`${runsBook ? 'Add' : 'Propose'} ${l.name} ${runsBook ? 'to' : 'for'} the Price book`} />
                       <span className={styles.text}>
                         <span className={styles.name}>{l.name}</span>
                         <span className={styles.meta}>{`${money2(unitPriceOf(l))}${per(l.unit)}${l.category ? ` · ${l.category}` : ''}${l.vendor ? ` · by ${l.vendor}` : ''}`}</span>

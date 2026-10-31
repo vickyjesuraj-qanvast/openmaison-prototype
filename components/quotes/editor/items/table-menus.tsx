@@ -298,7 +298,7 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selec
                 (an Owner's or an Admin's) or add a new one; a Designer proposes. (The calm UI build, W-608) "the Price book" — the book is the studio's. */}
             {source ? <div className={styles.menuHead} data-testid="line-source">From the Price book · {source.name}</div> : null}
             {source ? <DropdownItem onSelect={() => act('libraryUpdate')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : BOOK_RULE}>Update the item from this line</DropdownItem> : null}
-            <DropdownItem onSelect={() => act('library')}>{source ? (bookRule.runsBook ? 'Save as a new item' : 'Propose as a new item') : bookRule.runsBook ? 'Save to My Items' : 'Propose to My Items'}</DropdownItem>
+            <DropdownItem onSelect={() => act('library')}>{source ? (bookRule.runsBook ? 'Save as a new item' : 'Propose as a new item') : bookRule.runsBook ? 'Save to Price book' : 'Propose to Price book'}</DropdownItem>
           </>
         ) : sub === 'more' ? (
           <>

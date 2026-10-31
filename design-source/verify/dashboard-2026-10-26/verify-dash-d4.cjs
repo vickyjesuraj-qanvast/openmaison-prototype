@@ -233,9 +233,11 @@ const DAY = 86_400_000
       await go(d, '/dashboard', 1600)
       const first3 = await suggestions(d)   // (the calm pass 2026-10-26, a deliberate change) with the field in use
       /* (2026-10-27, a deliberate change) the rule, read from the records: the NEXT planned meeting of Dane's later today leads — the seeded
-         one, or the demo's own when it comes first (after noon the demo's 2 PM consultation does; the check failed in the afternoon) */
+         one, or the demo's own when it comes first (after noon the demo's 2 PM consultation does; the check failed in the afternoon) — (the close-out
+         round 2026-10-31) "next" by the dock's own window: a meeting is still offered for half an hour after it starts (lib/dashboard/dock-queries.ts
+         `fetchDock`), so between 2 and 2:30 PM the demo's consultation still leads (the check failed at 2:20 PM) */
       const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999)
-      const next = json(`select m.starts_at as at, l.name as name, l.phone as phone from meetings m join leads l on l.id = m.lead_id where m.status = 'planned' and m.member_ids like '%"dane"%' and m.starts_at > ${Date.now()} and m.starts_at <= ${endOfDay.getTime()} order by m.starts_at limit 1`)[0] ?? { at: at.getTime(), name: kelvin.name, phone: kelvin.phone }
+      const next = json(`select m.starts_at as at, l.name as name, l.phone as phone from meetings m join leads l on l.id = m.lead_id where m.status = 'planned' and m.member_ids like '%"dane"%' and m.starts_at >= ${Date.now() - 30 * 60e3} and m.starts_at <= ${endOfDay.getTime()} order by m.starts_at limit 1`)[0] ?? { at: at.getTime(), name: kelvin.name, phone: kelvin.phone }
       const nx = new Date(next.at), hh = (nx.getHours() % 12) || 12, mm = nx.getMinutes()
       const prep = first3[0] ?? ''
       ok(new RegExp(`^Prepare me for ${hh}${mm ? `:${String(mm).padStart(2, '0')}` : ''} ${nx.getHours() < 12 ? 'AM' : 'PM'} with ${next.name.split(' ')[0]}`).test(prep), `Q-03 · a meeting later today leads the three — the next one: “${prep}”`)

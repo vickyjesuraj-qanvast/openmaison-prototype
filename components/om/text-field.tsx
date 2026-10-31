@@ -73,6 +73,10 @@ export type TextFieldProps = {
    *  opens what makes it, the field keeps its value until the caller picks the new one. `help` is its second line — the rule, when the
    *  viewer may not (the row then reads disabled and says why, REG-728). */
   action?: { label: string; onSelect: () => void; disabled?: boolean; help?: string; testId?: string }
+  /** (the close-out round 2026-10-31, C-123 · the UI audit's 4-17) A table cell's field under its column's head: the label is not drawn
+   *  (the head says it — "PAYMENT" over a box labelled "Payment" read twice) and stays the field's accessible name. `'wide'` hides it from
+   *  768 up only, where the table keeps its heads; a phone's stacked row (no head over the cell) keeps the label. */
+  hideLabel?: boolean | 'wide'
 }
 
 /**
@@ -83,7 +87,7 @@ export type TextFieldProps = {
 export function TextField({
   label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, below, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
-  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps, searchable = false, multiline, action,
+  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps, searchable = false, multiline, action, hideLabel = false,
 }: TextFieldProps) {
   const id = useId()
   const readOnlyScope = useReadOnly()
@@ -179,7 +183,8 @@ export function TextField({
     <div className={className ? `${styles.field} ${className}` : styles.field}
          data-kind={mode} data-size={size === 's' ? 's' : undefined} data-floated={floated || undefined} data-active={(focused || open) || undefined}
          data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}
-         data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined} data-multiline={multiline && mode === 'text' && !below ? '' : undefined}>
+         data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined} data-multiline={multiline && mode === 'text' && !below ? '' : undefined}
+         data-hide-label={hideLabel === true ? 'all' : hideLabel === 'wide' ? 'wide' : undefined}>
       <div ref={setBox} className={styles.box}
            onMouseDown={(e) => { if (mode !== 'text') { e.preventDefault(); (e.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus(); activate() } }}>
         {/* The control row. It only gets a wrapper when `below` is in play — otherwise the DOM is exactly as it was. */}

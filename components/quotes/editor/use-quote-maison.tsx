@@ -34,8 +34,8 @@ export function useQuoteMaison(o: { lines: QuoteItem[]; onGoTo: (ids: string[]) 
   const book: MaisonSuggestion[] = []
   if (plan && o.onMatch) {
     const match = o.onMatch
-    if (plan.matches.length) book.push({ label: `${plural(plan.matches.length, 'line matches an item', 'lines match items')} in My Items — ${costs ? 'take their cost' : 'link them'}`, run: () => match() })   // (pending modules S41b-1)
-    else if (plan.fresh.length) book.push({ label: `${plural(plan.fresh.length, 'line isn’t', 'lines aren’t')} in My Items yet — add them`, run: () => match() })
+    if (plan.matches.length) book.push({ label: `${plural(plan.matches.length, 'line matches an item', 'lines match items')} in the Price book — ${costs ? 'take their cost' : 'link them'}`, run: () => match() })   // (pending modules S41b-1)
+    else if (plan.fresh.length) book.push({ label: `${plural(plan.fresh.length, 'line isn’t', 'lines aren’t')} in the Price book yet — add them`, run: () => match() })
   }
   const out: MaisonSuggestion[] = []
   if (costs && hints.below.length) out.push({ label: `${plural(hints.below.length, 'line sells', 'lines sell')} below cost`, answer: {

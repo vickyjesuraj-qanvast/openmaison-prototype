@@ -1,6 +1,8 @@
 // Quote X-Ray parity round 4 (REG-641) — who may and what is kept: Who sees leads on every X-Ray read (the setup's leads, quotes and
 // Recent, the record by URL), no phone numbers in the setup's payload; delete by its maker, an Owner or an Admin, logged on the lead;
 // a deleted lead's comparisons leave Recent and come back with it, Delete forever takes them; the same file twice is one quote.
+// (the close-out round 2026-10-31, C-08) The delete is soft: Undo, Deleted comparisons (Restore · Delete forever by the delete's own rule), every
+// read skips a deleted reading, and the lead's Activity keeps the trail (deleted · brought back · deleted for good).
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const fs = require('fs')
@@ -68,7 +70,7 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     await page.getByRole('menuitem', { name: 'Delete' }).click()
     await page.getByRole('dialog', { name: 'Delete this comparison?' }).getByRole('button', { name: 'Delete' }).click()
     await page.waitForURL((u) => u.pathname === '/quote-x-ray', { timeout: 10000 }); await ready(page)
-    ok('she deletes her own', sql(`select count(*) from quote_comparisons where id='${mine}'`) === '0')
+    ok('she deletes her own', sql(`select deleted_at is not null from quote_comparisons where id='${mine}'`) === '1')   // (the close-out round 2026-10-31, a deliberate change) C-08: soft — the row waits in Deleted comparisons
     ok('the lead’s event log keeps it', sql(`select count(*) from lead_events where lead_id='${VIV}' and kind='comparison_deleted' and actor_id='sarah'`) === '1')
     as('dane'); sql(`delete from settings where key='lead_visibility'`)
     await page.goto(`${BASE}/leads/${VIV}/activity`); await ready(page)
@@ -78,6 +80,65 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     await page.getByTestId('xray-recent').first().getByRole('button', { name: /^More options for/ }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) — 6-15
     ok('an Owner may delete anyone’s', (await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled')) !== 'true')
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
+  })
+
+  /* (the close-out round 2026-10-31) C-08 — X-Ray deletes softly */
+  await step('a deleted reading: Undo, Deleted comparisons, Restore and Delete forever by the rule, the trail', async () => {
+    const mine = sql(`select id from quote_comparisons where lead_id='${VIV}' and created_by='sarah' and deleted_at is not null order by created_at desc limit 1`)
+    await page.goto(`${BASE}/quote-x-ray?lead=${VIV}`); await ready(page)
+    ok('Recent no longer lists it', (await page.locator(`[data-testid="xray-recent"] a[href*="${mine}"]`).count()) === 0 && !(await page.getByTestId('xray-recent').allInnerTexts()).some((t) => /Cove Interior/.test(t)))
+    const gone = await page.request.get(`${BASE}/quote-x-ray/${mine}`)
+    ok('its record answers not found', /This page isn’t here|not found|404/i.test(await gone.text()))
+    // Dane deletes his own reading on its record — Undo puts it back and takes the delete's line away
+    await page.goto(`${BASE}/quote-x-ray/${VIV_X}`); await ready(page)
+    await page.getByRole('button', { name: 'More options', exact: true }).click(); await page.waitForTimeout(300)
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
+    const dlg = page.getByRole('dialog', { name: 'Delete this comparison?' })
+    ok('the confirm says where it goes', /moves to Deleted comparisons, where you can restore it/.test(await dlg.innerText()))
+    await dlg.getByRole('button', { name: 'Delete' }).click()
+    await page.waitForURL((u) => u.pathname === '/quote-x-ray', { timeout: 10000 }); await ready(page)
+    ok('deleted softly, with Undo', sql(`select deleted_at is not null from quote_comparisons where id='${VIV_X}'`) === '1' && await page.getByRole('button', { name: 'Undo' }).isVisible())
+    await page.getByRole('button', { name: 'Undo' }).click(); await page.waitForTimeout(1500); await ready(page)
+    ok('Undo: back in Recent, and no delete line on the lead', sql(`select deleted_at is null from quote_comparisons where id='${VIV_X}'`) === '1' && (await page.locator(`[data-testid="xray-recent"] a[href*="${VIV_X}"]`).count()) === 1
+      && sql(`select count(*) from lead_events where kind='comparison_deleted' and json_extract(detail, '$.id')='${VIV_X}'`) === '0')
+    // deleted again from Recent's row
+    await page.locator(`[data-testid="xray-recent"]`).filter({ has: page.locator(`a[href*="${VIV_X}"]`) }).getByRole('button', { name: /^More options for/ }).click(); await page.waitForTimeout(300)
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await page.getByRole('dialog', { name: 'Delete this comparison?' }).getByRole('button', { name: 'Delete' }).click(); await page.waitForTimeout(1500)
+    ok('a Recent row deletes softly too', sql(`select deleted_at is not null from quote_comparisons where id='${VIV_X}'`) === '1')
+    // the lead's Activity: the reading's lines stay and open Deleted comparisons
+    await page.goto(`${BASE}/leads/${VIV}/activity`); await ready(page)
+    const toTrash = page.locator('main a[href*="/quote-x-ray?"][href*="deleted=1"]')
+    ok('Activity keeps a deleted reading’s lines, opening Deleted comparisons', (await toTrash.count()) > 0 && /compared OM-10008 · Whole-home renovation with Flo Design's quote in Quote X-Ray/.test(await page.locator('main').innerText()))
+    await toTrash.first().click(); await page.waitForURL(/deleted=1/, { timeout: 10000 }); await ready(page)
+    const sheet = page.getByRole('dialog', { name: 'Deleted comparisons' })
+    ok('…and the sheet opens on arrival', await sheet.isVisible() && (await sheet.getByTestId('deleted-comparison').count()) === 2)
+    await shot('04-deleted-comparisons')
+    await sheet.getByRole('button', { name: /^Close/ }).click(); await page.waitForTimeout(500)
+    ok('closing it drops the arrival mark', !new URL(page.url()).searchParams.has('deleted'))
+    // Sarah, a Designer: her own may come back; Dane's stays out of her reach
+    assigned(); as('sarah')
+    sql(`update lead_events set at = at - 600 where kind='comparison_deleted' and json_extract(detail, '$.id')='${mine}'`)   // past the Undo's window: a restore gets its own line
+    await page.goto(`${BASE}/quote-x-ray?lead=${VIV}`); await ready(page)
+    await page.getByTestId('xray-recents-menu').click(); await page.waitForTimeout(300)
+    await page.getByRole('menuitem', { name: 'Deleted comparisons' }).click(); await sheet.waitFor(); await page.waitForTimeout(800)
+    const danes = sheet.getByTestId('deleted-comparison').filter({ hasText: 'Flo Design' }), hers = sheet.getByTestId('deleted-comparison').filter({ hasText: 'Cove Interior' })
+    ok('Dane’s: Restore and Delete forever out of her reach', await danes.getByRole('button', { name: 'Restore' }).isDisabled() && await danes.getByRole('button', { name: 'Delete forever' }).isDisabled())
+    ok('the sheet says the rule', /Only its creator, an Owner or an Admin restores or deletes a comparison/.test(await sheet.innerText()))
+    await hers.getByRole('button', { name: 'Restore' }).click(); await page.waitForTimeout(1500)
+    ok('she restores her own — back in Recent', sql(`select deleted_at is null from quote_comparisons where id='${mine}'`) === '1' && (await sheet.getByTestId('deleted-comparison').count()) === 1)
+    ok('…and the lead keeps both lines (deleted, then brought back)', sql(`select count(*) from lead_events where kind='comparison_restored' and actor_id='sarah' and json_extract(detail, '$.id')='${mine}'`) === '1')
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300)
+    // Dane, the Owner: Delete forever
+    as('dane'); sql(`delete from settings where key='lead_visibility'`)
+    await page.goto(`${BASE}/quote-x-ray?lead=${VIV}&deleted=1`); await ready(page)
+    await sheet.getByTestId('deleted-comparison').first().getByRole('button', { name: 'Delete forever' }).click()
+    await page.getByRole('dialog', { name: 'Delete forever?' }).getByRole('button', { name: 'Delete forever' }).click(); await page.waitForTimeout(1500)
+    ok('Delete forever removes the row', sql(`select count(*) from quote_comparisons where id='${VIV_X}'`) === '0' && /No deleted comparisons/.test(await sheet.innerText()))
+    await page.goto(`${BASE}/leads/${VIV}/activity`); await ready(page)
+    const feed = await page.locator('main').innerText()
+    ok('Activity: brought back by Sarah, deleted for good by Dane', /Sarah brought back the Quote X-Ray comparison “OM-10008 · Whole-home renovation · vs Cove Interior”/.test(feed) && /(You|Dane) deleted the Quote X-Ray comparison “OM-10008 · Whole-home renovation · vs Flo Design” for good/.test(feed))
+    await shot('05-activity-trail')
   })
 
   await step('a deleted lead’s readings leave Recent and come back with it; Delete forever takes them', async () => {

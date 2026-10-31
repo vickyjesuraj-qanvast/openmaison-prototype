@@ -70,7 +70,7 @@ For a studio, the shift shows in its own enquiries: a growing share of them name
 
 ## On the quote
 
-Studios that do both kinds of job keep two starting points: one for a new flat, one for resale. In OpenMaison, save the resale lines once in [My Sections](/company/price-book/sections) and add them to any quote in one step.`,
+Studios that do both kinds of job keep two starting points: one for a new flat, one for resale. In OpenMaison, save the resale lines once as a section in the [Price book](/company/price-book/sections) and add them to any quote in one step.`,
   },
   {
     id: 'demo-budget-benchmark', category: 'reports', daysAgo: 14, read_time_minutes: 6, cover_image_url: pic('benchmark-kitchen'),
@@ -259,7 +259,7 @@ A homeowner who takes three months to decide signs a quote whose prices were set
 
 ## Where the Price book helps
 
-When a cost changes, change it once in [My Items](/company/price-book) — every new quote takes the new cost, and a revision can take it line by line.`,
+When a cost changes, change it once in the [Price book](/company/price-book) — every new quote takes the new cost, and a revision can take it line by line.`,
   },
   {
     id: 'demo-where-budget-goes', category: 'reports', daysAgo: 33, read_time_minutes: 5, cover_image_url: pic('budget-bedroom'),

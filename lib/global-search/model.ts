@@ -329,6 +329,8 @@ export const PAGES: SearchPage[] = [
   { id: 'deleted-leads', title: 'Deleted leads', sub: 'Leads › ⋮ · restore a deleted lead',   /* (the calm UI build 2026-10-27, T-13) the sheet's own title */ icon: 'delete', href: '/leads', words: 'deleted delete trash bin restore removed' },
   { id: 'completed-projects', title: 'Completed projects', sub: 'Projects · every project handed over', icon: 'business_center', href: '/projects?scope=completed', words: 'completed complete finished done handed over closed archived archive archived projects past' },
   { id: 'deleted-projects', title: 'Deleted projects', sub: 'Projects › ⋮ · restore a deleted project', icon: 'delete', href: '/projects', words: 'deleted delete trash bin restore removed' },
+  /* (the close-out round 2026-10-31, C-08) X-Ray deletes softly now — its sheet is found the way the other two are */
+  { id: 'deleted-comparisons', title: 'Deleted comparisons', sub: 'Quote X-Ray › Recent comparisons ⋮ · restore a deleted comparison', icon: 'delete', href: '/quote-x-ray?deleted=1', words: 'deleted delete trash bin restore removed xray x-ray comparison comparisons' },
   /* (S46A — P-3 · P-5) (invented copy) a project's own steps, found by 1.0's words and said where they are: Close project (Complete handover, in a
      project's ⋮ and Stage ▾) and Materials / Selections (Design › Choices) */
   { id: 'project-handover', title: 'Complete handover', sub: 'Projects · a project’s ⋮, or Stage ▾ › Completed — once its checklist is met', icon: 'task_alt', href: '/projects', words: 'close project closure close complete finish wrap up end handover hand over completion letter' },

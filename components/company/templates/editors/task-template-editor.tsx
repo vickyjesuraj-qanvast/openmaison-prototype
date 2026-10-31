@@ -31,7 +31,6 @@ import { LibraryHeader } from '../library-header'
 import { isRefusal } from '@/lib/company/template-rules'
 import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
-import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import styles from './library-editor.module.css'
 
 const AUTOSAVE_MS = 600
@@ -133,6 +132,8 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
     <PageReveal skeleton={<LibraryEditorGhost kind="tasks" />}>
       <div className={page.page} data-testid="task-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Tasks', href: '/company/templates/tasks' }]} title={name.trim() || 'Untitled template'}
+                       /* (the close-out round 2026-10-31, C-123 · 4-17) the name once, renamed in the header — the second row that repeated it is gone */
+                       titleEdit={{ value: name, label: 'Template name', placeholder: 'Template name', maxLength: 120, onChange: (v) => { setName(v); queue() }, onDone: () => { void flushRef.current() } }}
                        chips={null}   /* (the calm UI build 2026-10-27, the UI audit's 4-11) no tags: the steps are the card below, the usage is the gallery card's */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
@@ -142,17 +143,16 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
                          <DropdownDivider />
                          <DropdownItem tone="danger" onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                        </>} onClose={close} />
-        <div className={page.meta} data-testid="library-meta">
-          <TitleInput value={name} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={`${page.metaEnd} ${styles.switches}`}>
-            <label className={styles.switchRow}>Keep team members <Switch size="sm" isSelected={keepMembers} onChange={(v: boolean) => { setKeepMembers(v); queue() }} aria-label="Keep team members" /></label>
-            <label className={styles.switchRow}>Keep descriptions <Switch size="sm" isSelected={keepDescription} onChange={(v: boolean) => { setKeepDescription(v); queue() }} aria-label="Keep descriptions" /></label>
-          </div>
-        </div>
         <div className={styles.body}>
           <div className={styles.card}>
             <div className={styles.cardHead}><span className={styles.cardTitle}>Steps</span><span className={styles.cardHelp}>Use Template adds these to a lead as open tasks, in this order.</span></div>
             <div className={styles.cardBody}>
+              {/* (the close-out round 2026-10-31, C-123 · 4-17) the two Keep switches lead the steps they shape (each step's members, its
+                  description) — they sat on the name row, which is gone now the name is the header's */}
+              <div className={styles.switches} data-testid="task-template-keeps">
+                <label className={styles.switchRow}>Keep team members <Switch size="sm" isSelected={keepMembers} onChange={(v: boolean) => { setKeepMembers(v); queue() }} aria-label="Keep team members" /></label>
+                <label className={styles.switchRow}>Keep descriptions <Switch size="sm" isSelected={keepDescription} onChange={(v: boolean) => { setKeepDescription(v); queue() }} aria-label="Keep descriptions" /></label>
+              </div>
               {steps.length === 0 ? <div className={styles.stepsEmpty}>No steps yet. Add the first one.</div> : (
                 <Reorder.Group as="ol" axis="y" values={steps} onReorder={(next: Step[]) => { setSteps(next); queue() }} className={styles.steps}>
                   {steps.map((s, i) => <StepRow key={s.key} step={s} index={i} team={team} tags={tags} keepMembers={keepMembers} keepDescription={keepDescription} onPatch={(p) => patch(s.key, p)} onRemove={() => remove(s.key)} onDrop={() => queue()}

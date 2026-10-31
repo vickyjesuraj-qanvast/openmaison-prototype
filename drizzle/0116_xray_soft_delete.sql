@@ -1,0 +1,1 @@
+ALTER TABLE `quote_comparisons` ADD `deleted_at` integer;

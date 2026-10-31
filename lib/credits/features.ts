@@ -18,7 +18,7 @@ export type ProFeature = (typeof PRO_FEATURES)[number]
 export const FEATURE_WORDS: Record<ProFeature, { name: string; plural?: true; what: string }> = {
   quote_xray: { name: 'Quote X-Ray', what: 'Compare another studio’s quote with yours, line by line, and see where you win.' },
   template_editor: { name: 'Your own quote templates', plural: true, what: 'Design your quote paper — your layout, your brand, what new quotes start with — and pick it for any quote.' },
-  package_creation: { name: 'My Sections', plural: true, what: 'Save a section of lines once and drop it into any quote.' },
+  package_creation: { name: 'Price book sections', plural: true, what: 'Save a section of lines once and drop it into any quote.' },
   custom_stages: { name: 'Lead stage rules', plural: true, what: 'Decide what each lead stage asks for before a lead moves on.' },
   internal_approvals: { name: 'Approvals', plural: true, what: 'Have quotes, templates, invoices, orders and updates checked by an Owner or an Admin before they go.' },
   whatsapp_notifications: { name: 'WhatsApp notifications', plural: true, what: 'Get the studio’s notices, and send your clients’ messages, on WhatsApp as well as in the app and by email.' },

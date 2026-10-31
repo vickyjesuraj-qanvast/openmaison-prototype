@@ -363,7 +363,7 @@ const projectOf = (name) => sql(`select p.id from projects p join leads l on l.i
     await d.getByTestId('billing-change-plan').click(); await settle(d, 900)
     await d.getByRole('button', { name: 'Compare everything' }).click(); await settle(d, 400)
     const table = await text(d.getByRole('dialog', { name: 'Plans' }))
-    ok(/Lead stage rules/.test(table) && !/Custom stage definitions/.test(table) && /My Sections \(packages\)/.test(table), 'Plans › Compare everything names what 2.0 locks — Lead stage rules, My Sections (packages)')
+    ok(/Lead stage rules/.test(table) && !/Custom stage definitions/.test(table) && /Price book sections \(packages\)/.test(table), 'Plans › Compare everything names what 2.0 locks — Lead stage rules, Price book sections (packages)')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await d.keyboard.press('Escape'); await settle(d, 500)
     /* Usage: a quiet month after a busy one */
     await go(d, '/company/plan')
@@ -399,7 +399,7 @@ const projectOf = (name) => sql(`select p.id from projects p join leads l on l.i
     const tplId = sql(`select id from quote_templates where deleted_at is null limit 1`)
     const LOCKS = [
       ['X-Ray', '/quote-x-ray', 'Quote X-Ray comes with Pro'], ['a comparison', `/quote-x-ray/${cmpId}`, 'Quote X-Ray comes with Pro'],
-      ['Templates › Quotes', '/company/templates/quotes', 'Your own quote templates come with Pro'], ['My Sections', '/company/price-book/sections', 'My Sections come with Pro'],
+      ['Templates › Quotes', '/company/templates/quotes', 'Your own quote templates come with Pro'], ['Price book › Sections', '/company/price-book/sections', 'Price book sections come with Pro'],   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ['the template editor', `/templates/${tplId}`, 'Your own quote templates come with Pro'], ['Money out › Expenses', '/company/finance/money-out?kind=expenses', 'Expenses come with Pro'],
     ]
     for (const [vw, vh, touch] of [[1440, 1024, false], [390, 844, true]]) {

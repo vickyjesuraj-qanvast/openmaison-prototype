@@ -6,8 +6,8 @@ import styles from './library-editor.module.css'
 
 /**
  * (REG-708) The template libraries' editors' ghost — Tasks, T&Cs & Notes, Payments — which drew the quote editor's (its tab strip and
- * General Info card): the editor header (Done, the kebab, close), the name row with what sits at its right (the two Keep switches · the
- * kind · the split), then the one centred card in its own words — Steps, Text or Milestones — and its rows, on the editors' own classes
+ * General Info card): the editor header (the name and its pencil, Done, the kebab, close — C-123: no name row under it), then the one centred
+ * card in its own words — Steps (its two Keep switches first), Text or Payments — and its rows, on the editors' own classes
  * (the steps grid, the milestones grid), so a phone reflows them as it reflows the page. `loading.tsx` and the editor's PageReveal draw
  * the same one.
  */
@@ -22,21 +22,17 @@ export function LibraryEditorGhost({ kind }: { kind: keyof typeof CARD }) {
   return (
     <GhostSheet label="Loading the template">
       <div className={page.page}>
-        <EditorHeadGhost crumb={170} title={kind === 'terms' ? 300 : 110} chips={kind === 'terms' ? [110] : []} />   {/* (the calm UI build 2026-10-27, the UI audit's 4-11) the headers keep their standing mark only — the kind of a text */}
-        <div className={page.meta}>
-          <Line w={kind === 'terms' ? 260 : 90} lh={36} h={14} />
-          {kind === 'tasks' ? (
-            <div className={`${page.metaEnd} ${styles.switches}`}>
-              {['Keep team members', 'Keep descriptions'].map((label) => <span key={label} className={styles.switchRow}><Words>{label}</Words><Slot kind="switch" /></span>)}
-            </div>
-          ) : kind === 'terms' ? <div className={page.metaEnd}><Slot kind="chip" w={118} /></div> : null}   {/* (4-17) the payment schedule's name row says its name alone */}
-        </div>
+        {/* (the calm UI build 2026-10-27, the UI audit's 4-11) the headers keep their standing mark only — the kind of a text. (the close-out round
+            2026-10-31, C-123 · 4-17) the name is the header's, its pencil after it (+24); no name row under the header */}
+        <EditorHeadGhost crumb={170} title={kind === 'terms' ? 324 : 134} chips={kind === 'terms' ? [110] : []} />
         <div className={styles.body}>
           <div className={styles.card}>
             <div className={styles.cardHead}><Words className={styles.cardTitle}>{c.title}</Words><Words className={styles.cardHelp}>{c.help}</Words></div>
             <div className={kind === 'terms' ? `${styles.cardBody} ${styles.textEditor}` : styles.cardBody}>
               {kind === 'tasks' ? (
                 <>
+                  {/* (C-123) the two Keep switches lead the steps */}
+                  <div className={styles.switches}>{['Keep team members', 'Keep descriptions'].map((label) => <span key={label} className={styles.switchRow}><Words>{label}</Words><Slot kind="switch" /></span>)}</div>
                   <ol className={styles.steps}>
                     {[0, 1].map((i) => (
                       <li key={i} className={styles.step}>

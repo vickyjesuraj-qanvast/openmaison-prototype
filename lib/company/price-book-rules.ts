@@ -8,7 +8,7 @@ type Viewer = { id: string | null; role: string | null | undefined }
 type Item = { status: string; createdBy: string | null }
 
 export const BOOK_RULE = 'Only an Owner or an Admin changes the price book'
-export const SECTION_RULE = 'Only an Owner or an Admin saves or changes My Sections'
+export const SECTION_RULE = 'Only an Owner or an Admin saves or changes the Price book’s sections'
 export const PROPOSED_LINE = 'Proposed — an Owner or an Admin approves it before the studio uses it'
 export const runsBook = (v: Viewer) => v.role === 'Owner' || v.role === 'Admin'
 const own = (v: Viewer, i: Item) => i.status === 'proposed' && !!v.id && i.createdBy === v.id

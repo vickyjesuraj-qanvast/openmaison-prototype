@@ -73,7 +73,7 @@ export function AddProductDialog({ product, brand, vendor, trades, units = UNITS
       onAdded({ itemId: r.item.id, vendor: r.vendor })
       router.refresh()
       const also = r.vendor.added ? `, and ${r.vendor.name} is in your vendors` : ''
-      snack({ message: r.item.proposed ? `${r.item.name} is proposed for My Items${also}` : `${r.item.name} is in My Items${also}`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/company/price-book?open=${encodeURIComponent(r.item.id)}`, here)) })
+      snack({ message: r.item.proposed ? `${r.item.name} is proposed for the Price book${also}` : `${r.item.name} is in the Price book${also}`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/company/price-book?open=${encodeURIComponent(r.item.id)}`, here)) })
     } catch (e) {
       snack({ message: couldnt('add it to the Price book', refusalOf(e)) })
     } finally { setBusy(false) }

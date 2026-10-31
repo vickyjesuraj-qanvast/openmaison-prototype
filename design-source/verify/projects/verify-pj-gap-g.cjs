@@ -291,7 +291,7 @@ const W = 1600, H = 1150
     // ── 10 · Activity, Settings, the first run ───────────────────────────────────────────────────────────────────────────────────
     console.log('10 · Activity, Settings › Notifications, a first run')
     await go(d, `/projects/${ben}/activity`)
-    await d.locator('[data-testid="activity-chips"]').getByRole('radio', { name: 'Floor plan' }).click(); await settle(d, 400)
+    await d.locator('[data-testid="activity-chips"] button').click(); await settle(d, 250); await d.getByRole('menuitemradio', { name: /^Floor plan · \d+$/ }).click(); await settle(d, 400)   // (the close-out round 2026-10-31, a deliberate change) C-43: the kinds are the Show pill's menu
     const act = await d.locator('[data-testid="activity-feed"]').innerText()
     ok(/confirmed the layout/.test(act) && /made the task/.test(act), 'the project’s Activity files the floor plan under its own chip')
     await go(d, '/settings?section=notifications')

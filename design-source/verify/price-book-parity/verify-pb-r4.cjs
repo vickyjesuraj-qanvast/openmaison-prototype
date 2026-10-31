@@ -43,12 +43,12 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(XLS); await snack(page, 'Save the sheet as XLSX or CSV first')
     ok('an old .xls is refused with the way out', true)
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(CSV)
-    const map = page.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor(); await page.waitForTimeout(500)
+    const map = page.getByRole('dialog', { name: 'Import into the Price book' }); await map.waitFor(); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('it says where the rows came from', /from “supplier-list\.csv”/.test(await map.innerText()))
     // exact: REG-796 (UX audit S7) added the mapping's "Rows with no Kind" select
     ok('Kind is a mapping', (await map.getByRole('combobox', { name: 'Kind', exact: true }).innerText()).includes('Kind') || (await map.getByRole('combobox', { name: 'Kind', exact: true }).inputValue().catch(() => '')) === 'Kind')
     const notes = await page.getByTestId('import-notes').innerText()
-    ok('the preview says what matches, what repeats, which trade is new', /2 rows match items already in My Items/.test(notes) && /1 row repeats an item earlier in the file/.test(notes) && /New trade for Settings › Quotes & pricing: Glass works/.test(notes), notes.replace(/\n/g, ' / '))
+    ok('the preview says what matches, what repeats, which trade is new', /2 rows match items already in the Price book/.test(notes) && /1 row repeats an item earlier in the file/.test(notes) && /New trade for Settings › Quotes & pricing: Glass works/.test(notes), notes.replace(/\n/g, ' / '))   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const states = await page.getByTestId('import-row').evaluateAll((rows) => rows.map((r) => r.firstElementChild?.textContent ?? ''))   // (sweep S5 #8) In My Items leads the row
     ok('each row reads its state', states[0] === 'Updates its price' && states[1] === 'New' && states[2] === 'Repeats — skipped' && states[3] === 'Updates its price', states.join(' | '))
     await shot('01-import-preview')
@@ -71,8 +71,8 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     const f = page.getByTestId('library-facets'); await f.waitFor()
     await f.getByRole('combobox', { name: 'Trade' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await page.waitForTimeout(300)   // (the calm UI build 2026-10-27, a deliberate change) the filter is Trade
     await page.getByRole('dialog', { name: 'Filters' }).getByRole('button', { name: 'Done' }).click(); await page.waitForTimeout(300)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
-    const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export items…' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    const dlg = page.getByRole('dialog', { name: 'Export items' }); await dlg.waitFor()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('the two sets, counted', /All items \(\d+\)/.test(await dlg.innerText()) && /What the list shows \(2\)/.test(await dlg.innerText()))
     await dlg.getByText('What the list shows (2)').click()
     await shot('02-export-scope')
@@ -82,8 +82,8 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     fs.writeFileSync(`${FILES}/export.csv`, text)
     await openImport(page)
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(`${FILES}/export.csv`)
-    const map = page.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor(); await page.waitForTimeout(500)
-    ok('the export comes back: both rows match, Kind and Link mapped by name', /2 rows match items already in My Items/.test(await page.getByTestId('import-notes').innerText()) && /Website link/.test(await map.innerText()))
+    const map = page.getByRole('dialog', { name: 'Import into the Price book' }); await map.waitFor(); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    ok('the export comes back: both rows match, Kind and Link mapped by name', /2 rows match items already in the Price book/.test(await page.getByTestId('import-notes').innerText()) && /Website link/.test(await map.innerText()))   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await map.getByRole('button', { name: 'Cancel' }).click()
   })
 
@@ -148,7 +148,7 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
   await step('the small truths', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page); await listView(page)
     ok('zero use, said one way', /Not on a quote yet/.test(await page.getByTestId('library-row').filter({ hasText: 'Tempered glass shelf' }).innerText()))
-    ok('the tab names itself: My Items', /My Items/.test(await page.title()), await page.title())
+    ok('the tab names itself: Price book · Items', /Price book · Items/.test(await page.title()), await page.title())   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await page.getByRole('radio', { name: 'Grid view' }).click().catch(async () => { await page.getByRole('button', { name: 'Grid view' }).click() }); await page.waitForTimeout(400)
     ok('an Owner’s card says Edit, as its menu does', await page.getByRole('button', { name: 'Edit Painting, whole unit', exact: true }).count() === 1)
     await page.getByRole('button', { name: /^Company/ }).first().click(); await page.waitForTimeout(400)

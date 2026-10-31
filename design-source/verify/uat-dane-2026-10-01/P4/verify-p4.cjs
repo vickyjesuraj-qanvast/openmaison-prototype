@@ -126,14 +126,17 @@ function slowNextAction(ctx, ms = 1600) {
 
   /* ── g-pencil (UAT 3.18): the title's pencil at rest, gone while typing, in all five editors; none on a signed contract ── */
   await step('g-pencil', async () => {
+    /* (the close-out round 2026-10-31, a deliberate change) C-123 · 4-17: the library editors' name is said once, in the header — at rest the title with its pencil after it (one press, no
+       name row under the header), a press types into it in place and the pencil steps aside while typing */
     const check = async (label, url) => {
       await page.goto(url); await page.getByTestId('title-field').waitFor(); await ready(page)
       const field = page.getByTestId('title-field')
-      const rest = await field.evaluate((f) => { const i = f.querySelector('input'); const p = f.lastElementChild; const s = getComputedStyle(p); const ir = i.getBoundingClientRect(); const pr = p.getBoundingClientRect(); return { shown: s.visibility === 'visible' && s.display !== 'none' && Number(s.opacity) > 0.9, glyph: p.textContent.trim(), gap: Math.round(pr.left - ir.right), w: Math.round(pr.width) } })
-      await field.locator('input').focus(); await page.waitForTimeout(250)
-      const typing = await field.evaluate((f) => getComputedStyle(f.lastElementChild).visibility)
-      ok(`g-pencil ${label}: a pencil at rest after the title, hidden while typing`, rest.shown && rest.glyph === 'edit' && rest.gap >= 0 && rest.gap <= 8 && typing === 'hidden', JSON.stringify({ ...rest, typing }))
-      await page.locator('body').click({ position: { x: 5, y: 1000 } }).catch(() => {})
+      const rest = await field.evaluate((f) => { const words = f.firstElementChild; const p = f.lastElementChild; const s = getComputedStyle(p); const ir = words.getBoundingClientRect(); const pr = p.getBoundingClientRect(); return { shown: s.visibility === 'visible' && s.display !== 'none' && Number(s.opacity) > 0.9, glyph: p.textContent.trim(), gap: Math.round(pr.left - ir.right), w: Math.round(pr.width), header: !!f.closest('header') } })
+      ok(`g-pencil ${label}: the name is the header's, no name row under it`, rest.header && await page.getByTestId('library-meta').count() === 0)   // (the close-out round 2026-10-31, a deliberate change)
+      await field.click(); await page.waitForTimeout(250)
+      const typing = await page.getByTestId('title-field').evaluate((f) => ({ pencil: getComputedStyle(f.lastElementChild).visibility, focused: document.activeElement === f.querySelector('input') }))
+      ok(`g-pencil ${label}: a pencil at rest after the title, hidden while typing`, rest.shown && rest.glyph === 'edit' && rest.gap >= 0 && rest.gap <= 8 && typing.pencil === 'hidden' && typing.focused, JSON.stringify({ ...rest, typing }))   // (the close-out round 2026-10-31, a deliberate change)
+      await page.keyboard.press('Escape'); await page.waitForTimeout(250)
       return rest
     }
     /* (the calm UI build 2026-10-27, a deliberate change) 4-17 · 4-18: a contract's and a contract template's name is said once, in the header —

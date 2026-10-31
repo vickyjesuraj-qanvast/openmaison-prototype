@@ -19,7 +19,6 @@ import summary from '@/components/leads/questionnaire/summary-card.module.css'
 import activity from '@/components/leads/activity/lead-activity.module.css'
 import tl from '@/components/om/timeline.module.css'   // (activity by date 2026-10-24) the house timeline the desk's feed draws
 import chipRow from '@/components/om/chips.module.css'
-import rail from '@/components/om/chip-rail.module.css'   // (parity P-15)
 import emptyStyles from '@/components/om/empty-state.module.css'   // (pending modules S23)
 import tasksTable from '@/components/leads/tasks/tasks-table.module.css'   // (Leads on the move, L4 — REG-708 at every width)
 import taskCard from '@/components/leads/tasks/task-card.module.css'
@@ -232,6 +231,9 @@ export function QuestionnaireTabGhost({ title }: { title?: ReactNode } = {}) {
   )
 }
 
+/** (the close-out round 2026-10-31, C-43) The Activity toolbar's "Show: All ▾" pill (the house ScopePill), measured on the page. */
+const SHOW_PILL_W = 121
+
 /** (activity by date 2026-10-24) A line's type glyph as a bone: the house glyph's 24 circle (components/om/timeline.module.css). */
 function GhostGlyph({ className }: { className?: string }) {
   return <span className={className ? `${tl.glyph} ${className}` : tl.glyph}><Bone w={24} h={24} r="var(--om-radius-full)" /></span>
@@ -241,10 +243,9 @@ export function ActivityTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
       {/* the house tab toolbar's search — the 280 box, its glyph at ≤1024 — as the tab draws it (the classes it named were gone) */}
-      <div className={activity.bar}>{title ?? <Words as="h2" className={activity.title}>All activities</Words>}<span className={activity.actions}><Slot kind="search" /></span></div>
-      {/* (UX audit 2026-09-30, T10) the chips above the timeline — All · Tasks · Files · Notes · Stage (house Chips, 32 tall, 12 apart) */}
-      {/* (parity P-15) the chips ride the house ChipRail — one row that never wraps, as the tab draws them */}
-      <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[41, 60, 53, 60, 68, 60].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div></div>   {/* (the calm UI build — 2-50) + Quotes */}   {/* the page's own nesting: a plain div holds the rail, so the rail's flex: 1 never stretches the row */}
+      {/* (the close-out round 2026-10-31, C-43) the "Show: All ▾" pill between the title and the search, on the tab's own `.show` box — the row
+          under the toolbar on a phone, as the page draws it (was the chips' own row on the house ChipRail) */}
+      <div className={activity.bar}>{title ?? <Words as="h2" className={activity.title}>All activities</Words>}<span className={activity.show}><Slot kind="btn" w={SHOW_PILL_W} /></span><span className={activity.actions}><Slot kind="search" /></span></div>
       {/* (L4 — P-12 · C-12) by day where the page groups it: the day's words over a card of rows — (activity by date 2026-10-24) the type glyph,
           the time, the sentence */}
       <div className={`${activity.days} ${activity.ghostDays}`}>

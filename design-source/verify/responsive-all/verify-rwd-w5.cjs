@@ -311,7 +311,7 @@ const SENT = 'rwdw5sent000000000001'
     {
       const C = await touchCtx(390, 844); const p = await page(C, 'links')
       await go(p, `/sign/${SENT}/quote`, 1600)
-      const back = p.locator('a, button').filter({ hasText: /Agreement/ }).first()
+      const back = p.getByTestId('sign-quote-back')   // (the close-out round 2026-10-31, a deliberate change) C-52: the link reads "← Contract" (REG-3411) — the locator had kept "Agreement"; read by its handle
       const bb = await box(back)
       ok(bb.h >= 44 && await lands(p, back, bb.cx, bb.cy - 20) && await lands(p, back, bb.cx, bb.cy + 20), `/sign/<token>/quote: "← Contract" is a 44 target (${Math.round(bb.h)})`)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
       if (SIGNEDQ) {

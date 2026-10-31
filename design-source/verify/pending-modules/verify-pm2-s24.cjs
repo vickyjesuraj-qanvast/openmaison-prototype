@@ -396,7 +396,7 @@ async function measure(b, opts, url, blocks, max = 30) {
       const item = one(`select * from price_book_items where marketplace_product_id = '${OSLO}' and deleted_at is null`)
       ok(item && item.status === 'live' && item.vendor === 'Oak & Linen' && item.link === prod.link && item.thumb === prod.picture && item.cost_minor === prod.price_minor && item.unit === 'Pieces', 'an Owner’s lands in My Items, live: the brand as vendor, the product’s page and picture, its cost', JSON.stringify(item && { status: item.status, vendor: item.vendor, unit: item.unit }))
       ok(Number(sql(`select count(*) from price_book_changes where item_id = '${item.id}' and kind = 'created'`)) === 1, '…with its History line, as any new item')
-      ok(/Oslo 3-seater sofa is in My Items/.test(await waitSnack(p, /My Items/)), '…said in one line, with Open')
+      ok(/Oslo 3-seater sofa is in the Price book/.test(await waitSnack(p, /Price book/)), '…said in one line, with Open')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await settle(p, 800)
       ok(await p.locator(`[data-product="${OSLO}"]`).getByTestId('product-open').isVisible(), '…the product now opens it: Open in My Items')
       await p.locator(`[data-product="${OSLO}"]`).getByTestId('product-open').click(); await settle(p, 2400)
@@ -415,10 +415,10 @@ async function measure(b, opts, url, blocks, max = 30) {
       await waitFor(() => Number(sql(`select count(*) from price_book_items where marketplace_product_id = '${pid}'`)) === 1)
       const prop = one(`select * from price_book_items where marketplace_product_id = '${pid}'`)
       ok(prop && prop.status === 'proposed' && prop.created_by === 'germaine' && Number(sql(`select count(*) from vendors where marketplace_brand_id = '${KAYA}'`)) === kv0 + 1, '…lands proposed (the book’s rule), and Kaya Paints is a vendor now')
-      ok(/is proposed for My Items, and Kaya Paints is in your vendors/.test(await waitSnack(p, /proposed/)), '…said in one line')
+      ok(/is proposed for the Price book, and Kaya Paints is in your vendors/.test(await waitSnack(p, /proposed/)), '…said in one line')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       as('michelle')
       await go(p, `/marketplace/${KAYA}`, 1400)
-      ok(/Proposed for My Items by Germaine/.test(await p.getByTestId('brand-product').first().innerText()) && await p.getByTestId('brand-product').first().getByTestId('product-add').count() === 0, 'another Designer sees it proposed by Germaine — no second Add')
+      ok(/Proposed for the Price book by Germaine/.test(await p.getByTestId('brand-product').first().innerText()) && await p.getByTestId('brand-product').first().getByTestId('product-add').count() === 0, 'another Designer sees it proposed by Germaine — no second Add')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       as('huimin')
       await go(p, `/marketplace/${KAYA}`, 1400)
       ok(await p.getByTestId('brand-product').first().getByTestId('product-open').isVisible(), 'an Admin opens the proposal (the book shows every proposal to Owners and Admins)')

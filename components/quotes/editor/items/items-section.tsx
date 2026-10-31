@@ -814,7 +814,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const saveToBook = async (item: QuoteItem, mode: 'new' | 'update') => {
     const box: { r: SavedToBook | null } = { r: null }
     /* (wave E, E7) a refusal answered as `{ error }` — the rule ("only an Owner or an Admin changes the price book") reaches the snackbar */
-    if (!(await run(mode === 'update' ? 'update the item' : 'save to My Items', async () => { const a = await saveItemToPriceBook(item.id, mode); if (isRefusal(a)) return a; box.r = a })) || !box.r) return
+    if (!(await run(mode === 'update' ? 'update the item' : 'save to the Price book', async () => { const a = await saveItemToPriceBook(item.id, mode); if (isRefusal(a)) return a; box.r = a })) || !box.r) return
     const r = box.r
     setPriceBook((b) => [...b.filter((p) => p.id !== r.item.id), r.item].sort((a, c) => a.name.localeCompare(c.name)))
     linkLine(item.id, r.item.id)
@@ -822,8 +822,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       const u = await undoSaveToPriceBook(item.id, { mode: r.mode, itemId: r.item.id, prevLink: r.prevLink, previous: r.previous }); if (isRefusal(u)) return u
       if (r.mode === 'update' && r.previous) { const prev = r.previous; setPriceBook((b) => b.map((p) => (p.id === prev.id ? prev : p))) }
       else { setPriceBook((b) => b.filter((p) => p.id !== r.item.id)); linkLine(item.id, r.prevLink) }
-    }, r.mode === 'update' ? `${r.item.name} is back as it was` : 'Taken back out of My Items') }
-    snackbar({ message: r.mode === 'update' ? `${r.item.name} updated in My Items — new picks take this line’s figures` : r.item.status === 'proposed' ? 'Proposed to My Items — an Owner or an Admin approves it before the studio uses it' : 'Saved to My Items as a new item', actionLabel: 'Undo', onAction: undo })
+    }, r.mode === 'update' ? `${r.item.name} is back as it was` : 'Taken back out of the Price book') }
+    snackbar({ message: r.mode === 'update' ? `${r.item.name} updated in the Price book — new picks take this line’s figures` : r.item.status === 'proposed' ? 'Proposed to the Price book — an Owner or an Admin approves it before the studio uses it' : 'Saved to the Price book as a new item', actionLabel: 'Undo', onAction: undo })
   }
   /* (S44I, B6 — REG-653's rule, REG-662's surface) ⋮ › Add Item › From Price book… opens the Price book modal with this row's place: Below a
      line (Above beside it), At the top of a section (Above beside it); a pick lands there. */
@@ -841,7 +841,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'addFromBook': case 'addFromBookHere': askFromBook(item); break
       case 'pasteHere': askPaste(item); break
       case 'addSub': if (item.collapsed) patchItem(item.id, { collapsed: false }); void structural('add the sub-section', () => addQuoteItem(quoteId, { kind: 'group', parentId: item.id }), 'Sub-section added').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) }); break   /* (S44I, B3) */
-      case 'saveSection': if (sectionsLock.locked) { sectionsLock.open(); break } void run('save the section to My Sections', async () => { const p = await saveSectionToPriceBook(item.id); if (isRefusal(p)) return p; setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Sections — find it in the Add Item box'); break   /* REG-566 · (REG-653, Q-18) the book's own names */
+      case 'saveSection': if (sectionsLock.locked) { sectionsLock.open(); break } void run('save the section to the Price book', async () => { const p = await saveSectionToPriceBook(item.id); if (isRefusal(p)) return p; setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to the Price book — find it in the Add Item box'); break   /* REG-566 · (REG-653, Q-18) the book's own names */
       case 'noNumber': patchItem(item.id, { noNumber: !item.noNumber }); snackbar({ message: item.noNumber ? 'The line is numbered again' : 'The line prints without a number' }); break   /* REG-558 */
       case 'ungroup': void structural('ungroup the section', async () => { const r = await orThrow(ungroupQuoteItem(item.id)); onSaved(r.updatedAt, r.amountMinor) }, 'Section removed — its lines stay. Undo with ⌘Z'); break   /* REG-558 */
       case 'subtotalLabel': setLabelling(item); break   /* REG-555 (T-3) */
@@ -988,7 +988,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     setMatchBusy(true)
     const before = itemsRef.current.map((i) => ({ ...i }))
     const box: { r: Awaited<ReturnType<typeof matchQuoteLinesToBook>> | null } = { r: null }
-    const res = await structural(o.add.length && !o.matches.length ? 'add the lines to My Items' : 'match the lines', async () => { const r = await matchQuoteLinesToBook(quoteId, o); box.r = r; if (isRefusal(r)) throw new Error(r.error); onSaved(r.updatedAt, r.amountMinor) })
+    const res = await structural(o.add.length && !o.matches.length ? 'add the lines to the Price book' : 'match the lines', async () => { const r = await matchQuoteLinesToBook(quoteId, o); box.r = r; if (isRefusal(r)) throw new Error(r.error); onSaved(r.updatedAt, r.amountMinor) })
     setMatchBusy(false)
     const r = box.r
     if (!res.ok || !r || isRefusal(r)) return
@@ -996,15 +996,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const added = r.added
     if (added.length) setPriceBook((b) => [...b.filter((p) => !added.some((a) => a.id === p.id)), ...added].sort((a, c) => a.name.localeCompare(c.name)))
     const proposed = added.some((a) => a.status === 'proposed')
-    const said = [r.matched ? `${r.matched} ${r.matched === 1 ? 'line took its' : 'lines took their'} cost from My Items` : null,
-      added.length ? `${added.length} ${proposed ? 'proposed for' : 'added to'} My Items` : null].filter(Boolean).join(' · ')
+    const said = [r.matched ? `${r.matched} ${r.matched === 1 ? 'line took its' : 'lines took their'} cost from the Price book` : null,
+      added.length ? `${added.length} ${proposed ? 'proposed for' : 'added to'} the Price book` : null].filter(Boolean).join(' · ')
     const matchSeq = editSeq.current   // (NB-05) the Undo takes back the match only while nothing changed since
     snackbar({ key: 'match-lines', message: said, actionLabel: 'Undo', onAction: () => { if (editSeq.current !== matchSeq) { snackbar({ key: 'match-lines', message: 'Couldn’t undo — the table changed since' }); return } void (async () => {
       await restore(before, true)
       let stayed: string[] = []
       if (added.length) { const ok = await run('take the new items back out', async () => { const u = await undoBookAdds({ added: added.map((a) => a.id) }); if (isRefusal(u)) return u; stayed = u.keptIds }); if (ok) setPriceBook((b) => b.filter((p) => stayed.includes(p.id) || !added.some((a) => a.id === p.id))) }
       /* an entry another quote line took meanwhile stays in My Items — said, never silently */
-      snackbar({ key: 'match-lines', message: stayed.length ? `Match undone — ${stayed.length} ${stayed.length === 1 ? 'entry stays' : 'entries stay'} in My Items, another line takes from ${stayed.length === 1 ? 'it' : 'them'}` : 'Match undone' })
+      snackbar({ key: 'match-lines', message: stayed.length ? `Match undone — ${stayed.length} ${stayed.length === 1 ? 'entry stays' : 'entries stay'} in the Price book, another line takes from ${stayed.length === 1 ? 'it' : 'them'}` : 'Match undone' })
     })() } })
   }
   const savePrefs = (patch: Parameters<typeof updateItemsPrefs>[1]) => { void run('save the view', () => updateItemsPrefs(quoteId, patch)) }
@@ -1395,7 +1395,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             onToggleAllBuckets={toggleAllBuckets}
             onCreate={(name) => { void create({ name }, !name) }}
             onPickPriceBook={(id) => { void create({ priceBookItemId: id }) }}
-            onPickSection={(id) => { if (sectionsLock.locked) { sectionsLock.open(); return } void structural('insert the section', () => insertPriceBookSection(quoteId, id, {}), 'Section added from My Sections').then((r) => { if (r.ok) attention([r.value.id]) }) }}
+            onPickSection={(id) => { if (sectionsLock.locked) { sectionsLock.open(); return } void structural('insert the section', () => insertPriceBookSection(quoteId, id, {}), 'Section added from the Price book').then((r) => { if (r.ok) attention([r.value.id]) }) }}
             onViewPriceBook={() => setBookOpen('items')}   /* (REG-662) the Price book modal, over the editor */
             matchCount={bookPlan.matches.length} onMatch={() => setMatchOpen(true)}   /* (pending modules S12) Match lines */
             onExport={() => setExportOpen(true)}

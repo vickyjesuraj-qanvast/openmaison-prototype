@@ -237,7 +237,7 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     ok('Q7 … and opens the Price book modal', await dlg.isVisible())
     const name = sql(`select name from price_book_items where id='${PB}'`)
-    await dlg.getByRole('searchbox', { name: 'Search My Items' }).fill('Kitchen carpentry'); await page.waitForTimeout(400)   // (REG-664) the book keeps folders: search finds it wherever it is filed
+    await dlg.getByRole('searchbox', { name: 'Search items' }).fill('Kitchen carpentry'); await page.waitForTimeout(400)   // (REG-664) the book keeps folders: search finds it wherever it is filed   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await dlg.getByRole('checkbox', { name: `Add ${name}` }).check({ force: true }); await page.waitForTimeout(200)
     await dlg.getByRole('button', { name: /^Add 1 item$/ }).click(); await page.waitForTimeout(2200)
     const s = await snack(page)

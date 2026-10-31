@@ -55,7 +55,7 @@ const Q1 = sql(`select id from quotes where number='OM-10001'`)
     await page.getByRole('button', { name: /^Search items/ }).click().catch(() => {}); await page.getByRole('searchbox').first().fill('zzqq none'); await page.waitForTimeout(400)
     ok('a search with nothing shows the house empty state', await page.getByTestId('search-empty').isVisible())
     // #26 Export (0) waits
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click(); await page.waitForTimeout(400)
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export items…' }).click(); await page.waitForTimeout(400)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('What the list shows (0) cannot be picked', await page.getByRole('radio', { name: /What the list shows \(0\)/ }).isDisabled())
     await shot(page, '01-export-zero')
     await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
@@ -85,7 +85,7 @@ const Q1 = sql(`select id from quotes where number='OM-10001'`)
     await page.getByRole('button', { name: 'New', exact: true }).click(); await page.getByRole('menuitem', { name: 'New item' }).click(); await page.waitForTimeout(400)
     const dlg = page.getByTestId('item-dialog')
     await dlg.getByLabel('Item name').fill('Probe item'); await abortActions(page)
-    await page.getByRole('button', { name: 'Add to My Items' }).click(); await page.waitForTimeout(1200)
+    await page.getByRole('button', { name: 'Add to Price book' }).click(); await page.waitForTimeout(1200)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('a refused save says so and keeps the dialog', /Couldn’t add the item/.test(await snack(page)) && await dlg.isVisible() && (await dlg.getByLabel('Item name').inputValue()) === 'Probe item')
     await page.unroute('**/*'); await page.getByRole('button', { name: 'Cancel' }).click()
     await ctx.close()
@@ -126,9 +126,9 @@ const Q1 = sql(`select id from quotes where number='OM-10001'`)
     await shot(page, '02-card-tick')
     await page.getByRole('button', { name: 'New', exact: true }).click(); await page.getByRole('menuitem', { name: /Import from a spreadsheet/ }).click(); await page.waitForTimeout(400)
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(csv); await page.waitForTimeout(1200)
-    const map = page.getByRole('dialog', { name: 'Import into My Items' })
+    const map = page.getByRole('dialog', { name: 'Import into the Price book' })   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const heads = await map.getByRole('columnheader').allInnerTexts()
-    ok('In My Items leads the mapping', /In My Items/.test(heads[0] ?? ''), (heads[0] ?? '').slice(0, 30))
+    ok('In the Price book leads the mapping', /In the Price book/.test(heads[0] ?? ''), (heads[0] ?? '').slice(0, 30))   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await shot(page, '03-import-mapping')
     await map.getByRole('button', { name: 'Back' }).click(); await page.waitForTimeout(400)
     // REG-835 (Dane UAT 3.11): the file row counts items, not the header line — "supplier.csv · 2 items"

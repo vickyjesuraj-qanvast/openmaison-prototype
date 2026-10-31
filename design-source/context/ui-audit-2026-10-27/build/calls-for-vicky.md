@@ -14,7 +14,7 @@ The register rows are REG-3075…3333 (`reg-map.json`).
 
 ## Decisions — 2026-10-28 (every call closed)
 
-**Every call below stands as built and is closed**, except the nine in *Next build* — those are the only open work, kept as one list.
+**Every call below stands as built and is closed.** *Next build* was finished 2026-10-31, and the two calls under it were decided the same day. On 2026-10-31 he also asked for everything the build removed to come back (`removed-list.md`, all 379 rows): the restore round, record `build/restore-2026-10-31/`.
 
 **Closed by decision (kept as they are):** C-01 two named profit bases (moving one would change the Payments figure) · C-02 rolling
 ranges for activity reports, calendar periods for Finance · C-03 stored units stay; Settings › Units owns how they read · C-05 the demo's
@@ -22,16 +22,24 @@ phone-photo names are how a client's photos arrive · C-06 a lead's On Hold keep
 one · C-09 "Mid-Project" stays stored, shown "Mid-project" · C-10 an empty portal section shows its own empty state. C-50 was done in
 the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's word.
 
-**Next build** (stopped 2026-10-28 for the week's usage limit — nothing half-done is in the tree; each is a small, separate job):
-1. C-04 — a restore moves the date inside the demo's signed contracts (`lib/db/demo-day.ts` `EMBEDDED`).
-2. C-07 — a repair brings the demo's Default Quote design to the Letter style's words ("Quotation", no "Fax:").
-3. C-08 — X-Ray deletes softly: `quote_comparisons.deleted_at`, Undo, a Deleted comparisons sheet, restore / delete forever.
-4. C-122 — "My Items" / "My Sections" → "Items" / "Sections" in every sentence (⌘K keeps the old words; ~114 probe lines).
+**Next build** — **all done 2026-10-31** (the close-out round, resumed: four worktree packages, record `build/close-out-2026-10-31/`, rows REG-3422…3443):
+1. ~~C-04~~ — **done (REG-3422 · 3423):** a restore moves the days a signed contract's kept copy prints and rebuilds its fingerprint; repair R180 put the drifted copies back.
+2. ~~C-07~~ — **done (REG-3424):** repair R181. Left: the deleted "Copy of Default Quote PDF" a studio made keeps "Sales Contract" (R37: no repair writes a studio's own template) — one more id in R181 if you want it.
+3. ~~C-08~~ — **done (REG-3428…3432 · 3442):** migration 0116, Undo, Deleted comparisons (Recent's ⋮ and ⌘K), restore / delete forever on the delete's rule.
+4. ~~C-122~~ — **done (REG-3433…3435):** "Items" / "Sections" inside the Price book, "the Price book" everywhere else (in the quote editor "Items" alone reads as the quote's own table); ⌘K still finds "my items". Left for you (your files): the UAT story steps (`ch3` · `ch6` · `ch10` · `ch11` · `ch3-files`), `FROM-1.0-TO-2.0.md`, `DESIGN.md`.
 5. ~~C-52~~ — **done 2026-10-28 (REG-3411).**
 6. ~~C-88~~ — **done 2026-10-28 (REG-3410).**
-7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
-8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).
-9. dash-d1 — the Dashboard's Your day ghost after a meeting's time (seed whether a meeting still has its Directions line).
+7. ~~C-43~~ — **done (REG-3436).**
+8. ~~C-123~~ — **done (REG-3437…3439):** `ContractHeader titleEdit` (not used on the contract editor, whose title is the switcher — renames stay in ⋮ as a quote's; the template editor takes it with R-207 if you pick it), the four library editors name themselves once, `TextField hideLabel`.
+9. ~~dash-d1~~ — **done (REG-3440 · 3441):** the ghost reads the actions the page last drew, not the seed (no server cost on the first byte).
+**Two calls from the close-out round (2026-10-31), decided the same day ("yes" to the recommendations):**
+- **A signed quote's client view: locked.** "What your client sees" no longer changes on a signed quote, as its template doesn't
+  (REG-3425…3427). 1.0 locks a quote's sections from Submitted and fixes the signed snapshot "for legal integrity"; 2.0 keeps a signed
+  contract's copy. To show the client something else after signing, Revise. Built in the restore round (record `build/restore-2026-10-31/`).
+- **The deleted "Copy of Default Quote PDF": left as it is.** A studio's own template is the studio's (R37; 1.0's port never rewrites one).
+  It is deleted, and whoever restores it can edit it.
+- His 29 Oct picks stand: the ✕ on Deleted leads' band and the import wizard's second Import history link stay off.
+
 10. ~~**Removed by the calm build — Vicky picks which come back**~~ — **done 2026-10-29 (REG-3413…3420).** His pick: "bring back most of it
     and only change is for count badge just show the red dot instead of numbers which looked too much". Back: (a) every navigation count on
     the rail, the dock and More as a red dot (Projects · Leads · Company · Tools again, Issues red, Tasks as it was; the number in the item's

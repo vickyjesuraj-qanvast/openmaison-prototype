@@ -476,7 +476,7 @@ const KEPT = ['project_updates', 'project_update_files', 'expenses', 'project_pa
       await reviewOf(p, row); await settle(p, 700)   // (the calm pass 2026-10-26, a deliberate change) from the row's ⋮
       await p.locator('[data-testid="review-approve"]').click(); await settle(p, 1800)
       ok(json(`select status from price_book_items where id = '${pb.id}'`)[0]?.status === 'live', `${pb.name}: approved from its pane (the Price book’s own action)`)
-      ok(/in My Items for the studio/.test(await snack(p)), 'its sentence: the Price book’s own')
+      ok(/in the Price book for the studio/.test(await snack(p)), 'its sentence: the Price book’s own')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     }
 
     console.log('7 · by role and scope')

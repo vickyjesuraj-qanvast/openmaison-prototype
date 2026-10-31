@@ -12,6 +12,8 @@
 //       the General info screen types at 16; the template card on a phone has no page and one action; a deep link `?edit=payment` lands
 //  - 3: the other states — Sent to Client → Remind (the reminder sheet with its WhatsApp draft); validity passed (set and put back) → Revise;
 //       Signed → Open contract (→ /contracts/<id>); a variation order's hero
+//       (the close-out round 2026-10-31) a signed quote keeps its template: no Change template in its ⋮ (390), none on its Template card and
+//       the Create strip's Templates says why (1440)
 //  - 4: the approval loop — Germaine (Designer) sends for approval from the foot; Dane sees Approve, approves; Send ▾ returns (put back)
 //  - 5: 768 portrait touch — the Quote screen, the list, a section screen full width; the foot's Send ▾ opens upward (a menu, not a sheet)
 //  - 6: 1024×768 touch — `?edit=…` is a split: the list as a 360 pane, the open section beside it; rows swap the pane; Done → the Quote screen
@@ -270,6 +272,11 @@ const moneyRound = (minor) => `S$${new Intl.NumberFormat('en-SG', { maximumFract
     await go(s, `/quotes/${SIGNED.id}`, 2200)
     ok((await s.getByTestId('quote-primary').innerText()) === 'Open contract' && (await s.getByTestId('screen-contract-row').count()) === 1, 'Signed with a contract: the primary is Open contract, the contract row under the client (contracts on the move, a deliberate change of this rule — C4 · P-11)')
     ok(/signed on .* version 1 is the agreed quote/.test((await sNext()).replace(/\n/g, ' ')), 'the line names the signed version')
+    /* (the close-out round 2026-10-31) a signed quote keeps its template: its ⋮ offers no Change template, as the desk's Template card offers none */
+    await s.getByTestId('quote-more').tap(); await settle(s, 800)
+    const signedMore = await s.getByRole('menu', { name: SIGNED.number }).innerText().catch(() => '')
+    ok(/Save as template/.test(signedMore) && !/Change template|Choose a template/.test(signedMore), 'a signed quote’s ⋮ offers no Change template (it keeps the template it was signed with)')
+    await s.keyboard.press('Escape'); await settle(s, 500)
     await shot(s, '11-signed-390')
     await s.getByTestId('quote-primary').tap(); await s.waitForURL(/\/contracts\//, { timeout: 15000 }); await settle(s, 500)
     ok(rel(s).startsWith(`/contracts/${CONTRACT}`), `Open contract opens it (${rel(s).slice(0, 60)})`)
@@ -334,6 +341,14 @@ const moneyRound = (minor) => `S$${new Intl.NumberFormat('en-SG', { maximumFract
     ok(await d.locator('#section-general').evaluate((el) => getComputedStyle(el.parentElement).display === 'contents'), 'a section’s host has no box on the desk')
     await go(d, `/quotes/${DRAFT.id}?edit=items`, 2200)
     ok((await d.getByTestId('section-screen').count()) === 0 && await d.getByRole('tablist', { name: 'Quote sections' }).isVisible(), '…and `?edit=` means nothing to the desk')
+    /* (the close-out round 2026-10-31) a signed quote keeps its template at the desk too: its Template card offers no Change, and the Create
+       strip's Templates says why instead of opening the picker (the server refuses a change as well) */
+    await go(d, `/quotes/${SIGNED.id}`, 2200)
+    const signedCard = d.getByTestId('template-card')
+    ok(await signedCard.count() === 1 && await signedCard.getByRole('button').count() === 0, 'a signed quote’s Template card offers no Change')
+    await d.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Templates' }).click(); await settle(d, 900)
+    ok(await d.getByRole('dialog', { name: 'Choose a template' }).count() === 0 && await d.getByText('Couldn’t change the template — a signed quote keeps the template it was signed with').count() === 1, '…and the Create strip’s Templates says why instead of opening the picker')
+    await shot(d, '18b-signed-templates-1440')
     await D.close()
 
     // ── 8 · 320 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -25,6 +25,13 @@ export function deletedLine(r: { deleted: number; refused: number }): string {
   return r.refused ? `${done} — ${r.refused} left: only its creator, an Owner or an Admin deletes a quote` : done
 }
 
+/* ── (the close-out round 2026-10-31 — the calm UI build's "found on the way") A signed quote keeps its paper ── */
+
+/** The Template card's test (the calm UI build's 4-10): a signed quote keeps the template it was signed with — the card offers no Change, the
+    Preview and the editor offer no picker, and `setQuoteTemplate` refuses it on the server. */
+export const keepsItsTemplate = (status: string) => status === 'Signed'
+export const SIGNED_TEMPLATE_RULE = 'A signed quote keeps the template it was signed with'
+
 /* ── (UX audit 2026-09-30, Q1 · Q3) The quote's status and the lead's next stage ── */
 
 /** The statuses the client holds the quote in — past the studio's own approval. */

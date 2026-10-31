@@ -121,8 +121,8 @@ export async function addProductToPriceBook(productId: string, input: ProductToB
   if (markup < -cost) return { error: 'The markup can’t take the price below nothing' }
   /* one entry per product: a second press opens the first (a Designer's own proposal included) */
   const had = await db.select().from(priceBookItems).where(and(eq(priceBookItems.marketplaceProductId, p.id), isNull(priceBookItems.deletedAt)))
-  if (had.some((i) => itemVisible({ id: viewer.id, role: viewer.role }, i))) return { error: 'It’s in My Items already — open it there' }
-  if (had.length) return { error: 'Someone has proposed it for My Items already — an Owner or an Admin approves it' }
+  if (had.some((i) => itemVisible({ id: viewer.id, role: viewer.role }, i))) return { error: 'It’s in the Price book already — open it there' }
+  if (had.length) return { error: 'Someone has proposed it for the Price book already — an Owner or an Admin approves it' }
   const v = await vendorForBrand(b, viewer.id)
   const category = typeof input?.category === 'string' && input.category.trim() ? input.category.trim().slice(0, 60) : null
   const item = await orThrow(createPriceBookItem({ name, description: p.description, kind: 'purchase', unit, costMinor: cost, markupMinor: markup, category, vendor: v.vendor.name, link: p.link, thumb: p.picture }))

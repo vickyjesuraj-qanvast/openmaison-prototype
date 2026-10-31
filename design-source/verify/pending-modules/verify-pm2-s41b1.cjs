@@ -278,8 +278,8 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
     await shot(g, '03-price-book-item-designer-1440')
     await g.keyboard.press('Escape'); await settle(g, 600)
     await g.getByRole('button', { name: 'More options' }).first().click(); await settle(g, 500)
-    await g.getByRole('menuitem', { name: /Export My Items/ }).click(); await settle(g, 700)
-    const bcsv = await download(g, () => g.getByRole('dialog', { name: 'Export My Items' }).getByRole('button', { name: 'Export' }).click())
+    await g.getByRole('menuitem', { name: /Export items/ }).click(); await settle(g, 700)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    const bcsv = await download(g, () => g.getByRole('dialog', { name: 'Export items' }).getByRole('button', { name: 'Export' }).click())   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const bhd = csvHead(bcsv)
     ok(bhd.includes('Unit price') && !bhd.includes('Cost') && !bhd.includes('Markup'), 'Export My Items: no Cost or Markup column', bhd.join(' | '))
 

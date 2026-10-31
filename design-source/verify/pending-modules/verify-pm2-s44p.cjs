@@ -92,7 +92,7 @@ const TABLES = ['price_book_items', 'price_book_changes', 'price_book_sections',
       ok(await box(dlg, 'Markup (S$)').inputValue() === '-50.00', `a unit price of 0 takes the markup to −S$50.00 (${await box(dlg, 'Markup (S$)').inputValue()})`)
       ok(/Below cost by S\$\s?50\.00/.test(await dlg.innerText()), 'the markup says "Below cost by S$50.00"')
       await shot(p, '01-item-sells-at-zero-1440')
-      await itemDlg(p).getByRole('button', { name: 'Add to My Items' }).click()
+      await itemDlg(p).getByRole('button', { name: 'Add to Price book' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await until(() => sql(`select count(*) from price_book_items where name = 'Probe S44P gifted handles'`) === '1', 8000)
       const r = json(`select id, cost_minor, markup_minor from price_book_items where name = 'Probe S44P gifted handles'`)[0] ?? {}
       ok(r.cost_minor === 5000 && r.markup_minor === -5000, `saved: costs S$50, sells at S$0 (cost ${r.cost_minor}, markup ${r.markup_minor})`)

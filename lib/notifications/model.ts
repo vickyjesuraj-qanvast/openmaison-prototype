@@ -74,8 +74,8 @@ export const EVENTS: EventDef[] = [
   { key: 'hold_due', label: 'An On Hold date is reached', help: 'The follow-up date on a lead still on hold.', who: 'The lead’s members, else Owners and Admins', icon: 'timelapse' },
   { key: 'question_answered', label: 'A client answers the questionnaire', help: 'On their portal.', who: 'The lead’s or project’s members', icon: 'help' },
   /* (REG-652, price book parity Q-04) A Designer proposes an item for My Items; the answer goes back to them. */
-  { key: 'price_book_proposed', label: 'An item is proposed for My Items', help: 'A Designer’s new item, waiting to be approved or sent back.', who: 'Owners and Admins', icon: 'list_alt' },
-  { key: 'price_book_answered', label: 'Your proposed item is answered', help: 'Approved into My Items, or sent back with a note.', who: 'Whoever proposed it', icon: 'verified' },
+  { key: 'price_book_proposed', label: 'An item is proposed for the Price book', help: 'A Designer’s new item, waiting to be approved or sent back.', who: 'Owners and Admins', icon: 'list_alt' },
+  { key: 'price_book_answered', label: 'Your proposed item is answered', help: 'Approved into the Price book, or sent back with a note.', who: 'Whoever proposed it', icon: 'verified' },
   /* (REG-676, AI Visualizer Q-34) The client answers on a render link: a favourite, a note, a pin, a call back. */
   { key: 'render_feedback', label: 'A client responds to shared versions', help: 'A favourite, a note, a pin or a call back on the versions link.',   /* (the calm UI build 2026-10-27, 6-07) "version" — the app's word */ who: 'The lead’s or project’s members and whoever shared the link', icon: 'wand_shine' },
   /* (REG-703, AI credits Q-35 · Q-38) The heads-up and the asks: steps at 75% and 90% of the month and at 0, a member's ask and its answer,
@@ -324,9 +324,9 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('question_answered', 'email', '{lead_name} answered the questionnaire', 'Hi {member},\n\n{lead_name} answered the questionnaire on their portal. Read the answers: {link}\n\n{studio}'),
   T('question_answered', 'whatsapp', '', '{lead_name} answered the questionnaire at {studio}: {link}'),
   /* (REG-652) */
-  T('price_book_proposed', 'email', '{actor} proposed an item for My Items', 'Hi {member},\n\n{actor} proposed “{item}” for the studio’s price book. Approve it, or send it back with a note: {link}\n\n{studio}'),
-  T('price_book_proposed', 'whatsapp', '', '{actor} proposed “{item}” for My Items at {studio}: {link}'),
-  T('price_book_answered', 'email', 'Your proposed item: {item}', 'Hi {member},\n\n{actor} answered your proposal “{item}”. Open My Items to see it: {link}\n\n{studio}'),
+  T('price_book_proposed', 'email', '{actor} proposed an item for the Price book', 'Hi {member},\n\n{actor} proposed “{item}” for the studio’s price book. Approve it, or send it back with a note: {link}\n\n{studio}'),
+  T('price_book_proposed', 'whatsapp', '', '{actor} proposed “{item}” for the Price book at {studio}: {link}'),
+  T('price_book_answered', 'email', 'Your proposed item: {item}', 'Hi {member},\n\n{actor} answered your proposal “{item}”. Open the Price book to see it: {link}\n\n{studio}'),
   T('price_book_answered', 'whatsapp', '', '{actor} answered your proposal “{item}”: {link}'),
   T('render_feedback', 'whatsapp', '', '{lead_name} responded to the versions you shared from {studio}: {link}'),   // (the calm UI build 2026-10-27, 6-07)
   T('render_feedback', 'email', '{lead_name} responded to your versions', 'Hi {member},\n\n{lead_name} responded to the versions you shared. Open the design to see what they said: {link}\n\n{studio}'),

@@ -200,7 +200,7 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(eq(leadNotes.kind, 'contact')),   // (REG-600)
-    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(isNotNull(quoteComparisons.leadId)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
+    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(and(isNotNull(quoteComparisons.leadId), isNull(quoteComparisons.deletedAt))).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640) (C-08) a deleted reading names no competitor
     db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, type: projects.projectType }).from(projects).where(isNull(projects.deletedAt)),   // (fix-E, A-01)
     db.select({ leadId: quotes.leadId, number: quotes.number, status: quotes.status }).from(quotes).where(and(eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)),   // (pending modules S05)
     heldMeetings(),   // (pending modules S27)
@@ -225,7 +225,7 @@ export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; t
     db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, id)).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(and(eq(leadNotes.leadId, id), eq(leadNotes.kind, 'contact'))),
-    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(eq(quoteComparisons.leadId, id)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
+    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(and(eq(quoteComparisons.leadId, id), isNull(quoteComparisons.deletedAt))).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640) (C-08)
     db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, type: projects.projectType }).from(projects).where(and(eq(projects.leadId, id), isNull(projects.deletedAt))),   // (fix-E, A-01)
     db.select({ leadId: quotes.leadId, number: quotes.number, status: quotes.status }).from(quotes).where(and(eq(quotes.leadId, id), eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)),   // (pending modules S05)
     heldMeetings([id]),   // (pending modules S27)

@@ -166,7 +166,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     ok((await hit(m, prb.cx, prb.cy, '[data-testid="sign-bar-primary"]')) === 'sign-bar-primary', 'a tap at its centre lands on it')
     await shot(m, '04-m390-sign-ready')
     await tap(m, prb.cx, prb.cy); await settle(m, 1100)
-    const sheet = m.getByRole('dialog', { name: 'Accept the agreement' })
+    const sheet = m.getByRole('dialog', { name: 'Accept the contract' })   // (the close-out round 2026-10-31, a deliberate change) C-52: the sheet's head says "Accept the contract" (REG-3411) — the locator had kept the old word
     ok(await sheet.isVisible(), 'Accept and sign opens the sheet at its first screen')
     const sb = await box(sheet)
     ok(Math.abs(sb.bottom - 844) < 2 && sb.w >= 388, `a bottom sheet (${Math.round(sb.w)} wide on the screen's bottom edge)`)
@@ -340,7 +340,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     const tp = await box(t.getByTestId('sign-bar-primary'))
     ok(tp.h >= 48 && tp.w >= 700, `768: Accept and sign spans the bar (${Math.round(tp.w)}×${Math.round(tp.h)})`)
     await tap(t, tp.cx, tp.cy); await settle(t, 1100)
-    const ts = t.getByRole('dialog', { name: 'Accept the agreement' })
+    const ts = t.getByRole('dialog', { name: 'Accept the contract' })   // (the close-out round 2026-10-31, a deliberate change) C-52: the sheet's head says "Accept the contract" (REG-3411) — the locator had kept the old word
     const tsb = await box(ts)
     ok(await ts.isVisible() && Math.abs(tsb.w - 400) < 4, `768: the signing sheet is a centred 400 dialog (${Math.round(tsb.w)} wide)`)
     await shot(t, '20-t768-sheet-accept')

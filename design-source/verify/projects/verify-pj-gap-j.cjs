@@ -242,7 +242,9 @@ const planOf = (id) => JSON.parse(sql(`select plan from space_layouts where id='
     // ── 12 · Activity, search, Settings ───────────────────────────────────────────────────────────────────────────────────────────
     console.log('12 · Activity, search, Settings › Notifications')
     await go(d, `/projects/${ben}/activity`, 1500)
-    ok(await d.getByRole('radio', { name: '3D layouts' }).count() + await d.getByRole('button', { name: '3D layouts' }).count() > 0, 'Activity has a 3D layouts chip')
+    await d.locator('[data-testid="activity-chips"] button').click(); await d.waitForTimeout(250)   // (the close-out round 2026-10-31, a deliberate change) C-43: the kinds are the Show pill's menu
+    ok(await d.getByRole('menuitemradio', { name: /^3D layouts · \d+$/ }).count() > 0, 'Activity has a 3D layouts kind (the Show pill’s menu)')   // (the close-out round 2026-10-31, a deliberate change)
+    await d.keyboard.press('Escape'); await d.waitForTimeout(200)
     ok(await d.getByText(/opened the 3D layout/).count() > 0, 'the client’s first open is on Activity')
     ok(Number(sql(`select count(*) from notifications where kind='layout_viewed' and member_id='germaine'`)) >= 1, 'the bell told whoever shared it')
     await go(d, '/settings?section=notifications', 1500)

@@ -141,14 +141,28 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   ok(acts.some((t) => t.includes(`Sarah completed the task “${T_SITE}”.`)), 'Activity (seen as Dane): "Sarah completed the task …" — not "You"')
   ok(!acts.some((t) => t.includes(`You completed the task “${T_SITE}”`)), '…and no "You completed" line for it')
   ok(!acts.some((t) => t.includes(`“${T_MAT}” was updated`)), 'an undone press leaves no line behind (the task keeps its own last-change stamp)')
-  const chipNames = (await p.locator('[data-testid="activity-chips"] [role="radio"]').allInnerTexts()).map((s) => s.trim())
-  ok(chipNames.join(' · ') === 'All · Tasks · Files · Notes · Quotes · Stage', `chips above the timeline: ${chipNames.join(' · ')}`)   // (the calm UI build 2026-10-27, a deliberate change) — 2-50's Quotes chip
+  /* (the close-out round 2026-10-31, a deliberate change) C-43 · 3-08: the kinds are one "Show: All ▾" pill (the house ScopePill) — its menu holds
+     the same kinds, each with its count; a pick keeps the same lines the chip did */
+  const showPill = p.locator('[data-testid="activity-chips"] button')
+  const pillWords = async () => (await showPill.innerText()).split('\n')[0].trim()   // the pill's words (its chevron's glyph name and the applied dot's words follow)
+  ok(await pillWords() === 'Show: All', `the kinds are one pill: “${await pillWords()}”`)   // (the close-out round 2026-10-31, a deliberate change)
+  const pickKind = async (kind) => { await showPill.click(); await p.waitForTimeout(250); await p.getByRole('menuitemradio', { name: new RegExp(`^${kind} · \\d+$`) }).click(); await p.waitForTimeout(300) }
+  await showPill.click(); await p.waitForTimeout(250)
+  const kindRows = (await p.getByRole('menuitemradio').allInnerTexts()).map((s) => s.trim())
+  const chipNames = kindRows.map((s) => s.replace(/ · \d+$/, ''))
+  ok(chipNames.join(' · ') === 'All · Tasks · Files · Notes · Quotes · Stage', `the Show pill's kinds: ${chipNames.join(' · ')}`)   // (the close-out round 2026-10-31, a deliberate change) — 2-50's Quotes kind, in the pill's menu
+  ok(kindRows.length > 0 && kindRows.every((t) => / · \d+$/.test(t)), `…each with its count (${kindRows.join(' | ')})`)   // (the close-out round 2026-10-31, a deliberate change)
+  const allCount = Number((kindRows[0] ?? '').replace(/^.* · /, ''))
   await shot('t10-activity-chips-all')
-  await p.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: 'Tasks' }).click(); await p.waitForTimeout(300)
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200)
+  ok(allCount === await p.locator('[data-testid="activity-row"]').count(), `…All's count is the rows the feed draws (${allCount})`)   // (the close-out round 2026-10-31, a deliberate change)
+  const tasksCount = Number((kindRows.find((t) => t.startsWith('Tasks · ')) ?? '').replace(/^.* · /, ''))
+  await pickKind('Tasks')
   const taskLines = await p.locator('[data-testid="activity-row"]').allInnerTexts()
   ok(taskLines.length > 0 && taskLines.every((t) => /task/i.test(t)), `Tasks keeps only task lines (${taskLines.length})`)
+  ok(taskLines.length === tasksCount && await pillWords() === 'Show: Tasks', `…as many as its count (${tasksCount}), and the pill says “Show: Tasks”`)   // (the close-out round 2026-10-31, a deliberate change)
   await shot('t10-activity-chips-tasks')
-  await p.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: 'Files' }).click(); await p.waitForTimeout(300)
+  await pickKind('Files')
   const fileLines = await p.locator('[data-testid="activity-row"]').allInnerTexts()
   ok(fileLines.length > 0 && fileLines.every((t) => /file|folder|trash/i.test(t)), `Files keeps only file lines (${fileLines.length})`)
 
@@ -342,12 +356,13 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   }
   {
     const { c, g } = await ghostOf(`/leads/${OLIVIA}/activity`)
-    const bones = (await g.locator('[class*="chips-module__"][class*="__chips"] > *').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return r.width > 0 ? Math.round(r.y) : null }))).filter((y) => y !== null)
+    /* (the close-out round 2026-10-31, a deliberate change) C-43: the loader draws the one Show pill where the page draws it — x, y and width */
+    const bones = (await g.locator('[class*="lead-activity-module__"][class*="__show"] > *').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return r.width > 0 ? [Math.round(r.x), Math.round(r.y), Math.round(r.width)] : null }))).filter((x) => x !== null)
     await g.screenshot({ path: path.join(dir, 'ghost-activity-loader.png') }); await c.close()
     await go(`/leads/${OLIVIA}/activity`)
-    const real = await p.locator('[data-testid="activity-chips"] [role="radio"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().y)))
-    ok(bones.length === 6, `the Activity loader draws the six chips (${bones.length})`)   // (the calm UI build 2026-10-27, a deliberate change) — 2-50's Quotes chip, as the page
-    ok(bones.length > 0 && real.length > 0 && Math.abs(bones[0] - real[0]) <= 4, `…on the page's chip row (ghost y ${bones[0]} · page y ${real[0]})`)
+    const real = await p.locator('[data-testid="activity-chips"] button').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width)] }))
+    ok(bones.length === 1, `the Activity loader draws the one Show pill (${bones.length})`)   // (the close-out round 2026-10-31, a deliberate change) — C-43, as the page
+    ok(bones.length > 0 && real.length > 0 && bones[0].every((v, i) => Math.abs(v - real[0][i]) <= 4), `…where the page draws it (ghost ${JSON.stringify(bones[0])} · page ${JSON.stringify(real[0])})`)   // (the close-out round 2026-10-31, a deliberate change)
   }
 
   /* ── 390 · the to-do chips on a phone ── */

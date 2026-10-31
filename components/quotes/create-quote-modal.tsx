@@ -300,7 +300,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                 </section>
               ) : mode.kind === 'draft' ? (
                 <section className={styles.block} aria-label="Draft with Maison AI" data-testid="draft-quote">
-                  <p className={styles.uploadHelp}>Describe the works in your own words. Maison AI drafts the quote from your price book — My Sections first, then My Items by trade. Anything it can’t price comes in at S$0 for you to price.</p>
+                  <p className={styles.uploadHelp}>Describe the works in your own words. Maison AI drafts the quote from your Price book — its sections first, then its items by trade. Anything it can’t price comes in at S$0 for you to price.</p>
                   <TextArea label="What’s the job?" value={brief} onChange={(v: string) => setBrief(v)} maxLength={BRIEF_MAX} autoFocus data-testid="draft-brief"
                             placeholder="Hack and re-tile both bathrooms, new kitchen cabinets, paint the whole flat" />
                   {!asked ? null : reading ? (
@@ -315,7 +315,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                       <div className={styles.uploadTable} role="table" aria-label="The lines drafted">
                         <div className={styles.uploadRow} role="row" data-head=""><span role="columnheader">Section</span><span role="columnheader">Item</span><span role="columnheader">Qty</span><span role="columnheader">Unit</span><span role="columnheader">Price</span></div>
                         {shown.plan.groups.map((g) => (g.kind === 'section' ? (
-                          <div key={`s:${g.sectionId}`} className={styles.uploadRow} role="row" data-testid="draft-row"><span role="cell">{g.name}</span><span role="cell">{`From My Sections · ${g.lineCount} ${g.lineCount === 1 ? 'line' : 'lines'}`}</span><span role="cell" /><span role="cell" /><span role="cell">{money2(g.totalMinor)}</span></div>
+                          <div key={`s:${g.sectionId}`} className={styles.uploadRow} role="row" data-testid="draft-row"><span role="cell">{g.name}</span><span role="cell">{`From the Price book’s sections · ${g.lineCount} ${g.lineCount === 1 ? 'line' : 'lines'}`}</span><span role="cell" /><span role="cell" /><span role="cell">{money2(g.totalMinor)}</span></div>
                         ) : g.lines.map((l, i) => (
                           <div key={`${g.name}:${i}`} className={styles.uploadRow} role="row" data-testid="draft-row"><span role="cell">{i === 0 ? g.name : ''}</span><span role="cell">{l.name}</span><span role="cell">{l.qty}</span><span role="cell">{l.unit ?? '—'}</span>
                             <span role="cell">{l.needsPrice ? <MetaChip color="yellow">To price</MetaChip> : money2(l.unitPriceMinor)}</span></div>
@@ -341,7 +341,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                     <>
                       <UploadReadingView read={mode.read} />   {/* (pending modules S41b-3) shared with the website's free trial */}
                       {/* (pending modules S12) a line My Items knows surely takes the item's cost on creation (lib/quotes/book-fill.ts) — said before the press */}
-                      <p className={styles.uploadHelp}>{costs ? 'Each amount comes in as the line’s price. A line that is in My Items takes its cost from there; the rest start at cost with no markup — set your markup on the quote.' : 'Each amount comes in as the line’s price.'} The quote starts from the studio’s default template.</p>
+                      <p className={styles.uploadHelp}>{costs ? 'Each amount comes in as the line’s price. A line that is in the Price book takes its cost from there; the rest start at cost with no markup — set your markup on the quote.' : 'Each amount comes in as the line’s price.'} The quote starts from the studio’s default template.</p>
                     </>
                   ) : (
                     <>

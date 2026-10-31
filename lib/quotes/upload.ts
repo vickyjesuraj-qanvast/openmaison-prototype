@@ -147,4 +147,4 @@ export function textRead(t: QuoteText, fileName: string): UploadRead {
 /** The snackbar once the quote is made: its lines and where they came from — (pending modules S12) or, when some took their cost from My Items
     at once (their sure match, lib/quotes/book-fill.ts), how many did; the rest wait in the Items table's *Match lines*. */
 export const uploadedLine = (read: { count: number; source: string }, matched: number) =>
-  matched ? `Quote created with ${read.count} lines — ${matched} took ${matched === 1 ? 'its' : 'their'} cost from My Items` : `Quote created with ${read.count} lines from ${read.source}`
+  matched ? `Quote created with ${read.count} lines — ${matched} took ${matched === 1 ? 'its' : 'their'} cost from the Price book` : `Quote created with ${read.count} lines from ${read.source}`

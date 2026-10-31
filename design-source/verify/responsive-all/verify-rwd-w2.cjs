@@ -74,6 +74,9 @@ const SIZE = {
   const leadId = (name) => sql(`select id from leads where name = '${name}' and deleted_at is null limit 1`)
   const KEVIN = leadId('Kevin Ng')
   const PLANNED = sql(`select id from meetings where status = 'planned' and lead_id is not null and deleted_at is null order by starts_at limit 1`)
+  /* (the close-out round 2026-10-31) the client's link reads a planned meeting whose time has passed as held, with no place (lib/meetings/client.ts
+     `linkStateOf`) — so its check takes the first planned meeting with a place still an hour ahead (the earliest one is at 10 AM: the check failed in the afternoon) */
+  const INVITE = sql(`select id from meetings where status = 'planned' and lead_id is not null and deleted_at is null and ifnull(place, '') <> '' and where_kind in ('In person', 'Showroom') and starts_at > ${Date.now() + 3600e3} order by starts_at limit 1`)
   const HELD = sql(`select id from meetings where status = 'held' and brief_json is not null and brief_saved_at is null and lead_id is not null and deleted_at is null limit 1`)
   const FOLDER = sql(`select parent_id from lead_files where lead_id = '${KEVIN}' and kind != 'folder' and parent_id is not null and deleted_at is null group by parent_id having count(*) > 1 limit 1`)
   const FILES = sql(`select id from lead_files where lead_id = '${KEVIN}' and parent_id = '${FOLDER}' and kind != 'folder' and deleted_at is null order by name`).split('\n').filter(Boolean)
@@ -379,7 +382,7 @@ const SIZE = {
     }
     {
       /* the client's meeting link: set here, put back at the end */
-      if (PLANNED) sql(`update meetings set client_token = 'rwd-w2-invite' where id = '${PLANNED}'`)
+      if (INVITE) sql(`update meetings set client_token = 'rwd-w2-invite' where id = '${INVITE}'`)
       const c = await ctx('390'); const p = await page(c)
       await go(p, '/meeting/rwd-w2-invite')
       await tall44(p, '[class*="meeting-link-page-module"][class*="__placeLink"]', '390 the client’s meeting link: the place is 44 tall')

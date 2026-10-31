@@ -233,7 +233,7 @@ const noOverflow = (p) => p.evaluate(() => document.documentElement.scrollWidth 
       ok(await dd.getByTestId('description-writing').count() === 1, 'the Description dialog carries Write with AI in its foot')
       await dd.getByTestId('description-writing').click(); await settle(p, 300)
       let rows = await menuRows(p)
-      ok(!row(rows, 'Use My Items’ words')?.disabled && /My Items’ words for “Painting, whole unit”/.test(row(rows, 'Use My Items’ words').text), 'a line from My Items: Use My Items’ words, named')
+      ok(!row(rows, 'Use the Price book’s words')?.disabled && /Price book’s words for “Painting, whole unit”/.test(row(rows, 'Use the Price book’s words').text), 'a line from the Price book: Use the Price book’s words, named')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ok(!row(rows, 'Improve the writing')?.disabled, '…Improve offered on the typed words')
       await p.screenshot({ path: `${dir}/09-desc-menu.png` })
       await p.locator('[role=menu] [role=menuitem]').filter({ hasText: 'Improve the writing' }).click(); await settle(p, 500)
@@ -241,7 +241,7 @@ const noOverflow = (p) => p.evaluate(() => document.documentElement.scrollWidth 
       ok((await p.getByTestId('writing-paper').innerText()).trim() === 'Two coats paint with sealer', 'Improve on a description: “Two coats paint with sealer” — a phrase keeps no full stop')
       await dialogOf(p).getByRole('button', { name: 'Not now' }).click(); await settle(p, 300)
       await dd.getByTestId('description-writing').click(); await settle(p, 300)
-      await p.locator('[role=menu] [role=menuitem]').filter({ hasText: 'Use My Items’ words' }).click(); await settle(p, 500)
+      await p.locator('[role=menu] [role=menuitem]').filter({ hasText: 'Use the Price book’s words' }).click(); await settle(p, 500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await p.getByTestId('writing-view').getByRole('radio', { name: 'After' }).click(); await settle(p, 200)
       const prop = await proposal(p).innerText()
       const money = (n) => `S$${(n / 100).toLocaleString('en-SG', { minimumFractionDigits: 2 })}`
@@ -254,7 +254,7 @@ const noOverflow = (p) => p.evaluate(() => document.documentElement.scrollWidth 
       await open(TV_LINE)
       await p.getByRole('dialog', { name: 'Words on this line' }).getByTestId('description-writing').click(); await settle(p, 300)   // (S44I — call C2)
       rows = await menuRows(p)
-      ok(row(rows, 'Use My Items’ words')?.disabled && /My Items has no words for a line like this/.test(row(rows, 'Use My Items’ words').text), 'a line My Items has nothing for: the row says so')
+      ok(row(rows, 'Use the Price book’s words')?.disabled && /The Price book has no words for a line like this/.test(row(rows, 'Use the Price book’s words').text), 'a line the Price book has nothing for: the row says so')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await p.keyboard.press('Escape'); await c.close()
       sql(`update quote_items set description = ${lit(kept.find(([t]) => t === 'quote_items')[1].find((r) => r.id === PAINT_LINE).description)} where id = '${PAINT_LINE}'`)
     }

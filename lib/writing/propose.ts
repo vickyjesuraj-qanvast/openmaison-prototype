@@ -76,7 +76,7 @@ export function actionLabel(a: WritingAction, kind: WritingKind, blank: boolean)
     case 'plain': return 'Plain English'
     case 'rewrite':
       if (kind === 'terms' || kind === 'notes') return blank ? 'Write from this quote' : 'Rewrite from this quote'
-      if (kind === 'description') return 'Use My Items’ words'
+      if (kind === 'description') return 'Use the Price book’s words'
       if (kind === 'section-note') return 'Use the trade’s note'
       return 'Back to the template’s wording'
   }
@@ -153,7 +153,7 @@ export function proposeWriting(input: WritingInput): Proposal {
         return { ...base, after: s.rewrite.html, lines: [blank ? `Written from ${what}` : `Written again from ${what} — what you wrote is replaced`], short: `From ${s.rewrite.from}`, none: null }
       }
       if (kind === 'description' || kind === 'section-note') {
-        if (!s.words) return none(kind === 'description' ? 'My Items has no words for a line like this' : 'This section’s trade has no note in Settings › Quotes & pricing')
+        if (!s.words) return none(kind === 'description' ? 'The Price book has no words for a line like this' : 'This section’s trade has no note in Settings › Quotes & pricing')
         if (same(s.words.html, html)) return none(`It already says ${s.words.from}`)
         return { ...base, after: s.words.html, lines: [`${s.words.from.charAt(0).toUpperCase()}${s.words.from.slice(1)}${blank ? '' : ' — what you wrote is replaced'}`], short: s.words.from, none: null }
       }
@@ -183,7 +183,7 @@ export function proposeWriting(input: WritingInput): Proposal {
         return { ...base, after: r.html, lines: [`Adds ${list(names)}`, `From ${list(froms)}`], short: names.length <= 2 ? `Adds ${list(names)}` : `Adds ${names.length} points: ${names.slice(0, 2).join(', ')}…`, none: null, added: r.added.length }
       }
       if (kind === 'description' || kind === 'section-note') {
-        if (!s.words) return none(kind === 'description' ? 'My Items has no words for a line like this' : 'This section’s trade has no note in Settings › Quotes & pricing')
+        if (!s.words) return none(kind === 'description' ? 'The Price book has no words for a line like this' : 'This section’s trade has no note in Settings › Quotes & pricing')
         const r = addWords(html, s.words.html)
         if (!r.added.length) return none(`It already has ${s.words.from}`)
         return { ...base, after: r.html, lines: [`Adds ${s.words.from}`], short: `Adds ${s.words.from}`, none: null }

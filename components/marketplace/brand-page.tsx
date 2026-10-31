@@ -198,10 +198,10 @@ function ProductRow({ p, brand, onAdd, onOpen }: { p: ProductView; brand: string
         {p.inBook ? (
           p.inBook.visible ? (
             <>
-              <Button variant="secondary" appearance="text" size="sm" onPress={() => onOpen(p.inBook!.id)} data-testid="product-open">Open in My Items</Button>
+              <Button variant="secondary" appearance="text" size="sm" onPress={() => onOpen(p.inBook!.id)} data-testid="product-open">Open in Price book</Button>
               <span className={styles.productState}>{p.inBook.proposed ? 'Proposed — waits for an Owner or an Admin' : 'In your Price book'}</span>
             </>
-          ) : <span className={styles.productState}>{`Proposed for My Items${p.inBook.by ? ` by ${p.inBook.by}` : ''}`}</span>
+          ) : <span className={styles.productState}>{`Proposed for the Price book${p.inBook.by ? ` by ${p.inBook.by}` : ''}`}</span>
         ) : (
           /* (6-11) the row's one verb, quiet — its accessible name says which product and where it goes */
           <Button variant="secondary" appearance="text" size="sm" iconStart={<Icon name="add" size={16} />} onPress={onAdd} aria-label={`Add ${p.name} to the Price book`} data-testid="product-add">Add</Button>

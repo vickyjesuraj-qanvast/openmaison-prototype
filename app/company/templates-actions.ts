@@ -27,6 +27,7 @@ import { requirePlan } from '@/lib/credits/plan-gate'
 import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 import { deskRefusal, offDesk } from '@/lib/quotes/desk'   // (S45C) the editors' role rule (S44Z)
 import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
+import { SIGNED_TEMPLATE_RULE, keepsItsTemplate } from '@/lib/quotes/policy'   // (the close-out round 2026-10-31) a signed quote keeps its paper
 
 /* Company › Templates › Quote templates (REG-485 / REG-489): the template lifecycle — Draft → Published vN → Default —
    and the quote-side touchpoints (which template a quote prints through, at which version, with which client view). */
@@ -311,8 +312,9 @@ async function printedDesign(templateId: string | null, version: number | null):
 export async function setQuoteTemplate(quoteId: string, templateId: string | null): Promise<void | Refusal> {
   { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   await tplOrThrow()
-  const [q] = await db.select({ id: quotes.id, templateId: quotes.templateId, templateVersion: quotes.templateVersion, clientViewJson: quotes.clientViewJson }).from(quotes).where(eq(quotes.id, quoteId))
+  const [q] = await db.select({ id: quotes.id, status: quotes.status, templateId: quotes.templateId, templateVersion: quotes.templateVersion, clientViewJson: quotes.clientViewJson }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
+  if (keepsItsTemplate(q.status)) return refuse(SIGNED_TEMPLATE_RULE)   // (the close-out round 2026-10-31) the Template card's test, kept here too: a page left open while the quote was signed can't change its paper
   let version: number | null = null
   if (templateId) { const t = await templateRow(templateId); if (t.deletedAt) throw new Error('deleted'); if (t.status !== 'published') throw new Error('unpublished'); version = t.version }
   const clientViewJson = q.clientViewJson ? carryClientView(q.clientViewJson, await printedDesign(q.templateId, q.templateVersion), await printedDesign(templateId, version)) : null

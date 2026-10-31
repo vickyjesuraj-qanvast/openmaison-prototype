@@ -105,7 +105,7 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     ok(closed.status() === 200 && pngSize(await closed.body())?.[0] === 1200, 'a link that no longer opens draws the closed card (still a picture, in the studio’s name)')
     ok((await get(A, '/card/nothing/abc')).status() === 404, 'a kind that is no client link answers 404')
     const draftHtml = await (await A.request.get(`${BASE}/sign/${C_DRAFT}`)).text()
-    ok(/still preparing this agreement/.test(meta(draftHtml, 'og:description') ?? ''), 'a Draft contract’s card says it is not ready — never its words')
+    ok(/still preparing this contract/.test(meta(draftHtml, 'og:description') ?? ''), 'a Draft contract’s card says it is not ready — never its words')   // (the close-out round 2026-10-31, a deliberate change) C-52: the card says "contract" (REG-3411) — this line had kept the old word
     const plain = await (await H.request.get(`${BASE}/confirm/${Q_SENT}`)).text()
     ok(!/·\s*OpenMaison/.test(titleOf(plain) ?? '') && /Demo Studio/.test(titleOf(plain) ?? ''), `a person's tab names the studio too — "${titleOf(plain)}"`)
 

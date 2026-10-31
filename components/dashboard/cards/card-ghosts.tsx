@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { Slot, Words, cycle, deskOnly, phoneOnly } from '@/components/shell/ghost-kit'
 import { Bone } from '@/components/shell/skeleton'
-import { PROJECTS_SHOWN, PROJECTS_SHOWN_PHONE, SITE_SHOWN, TEAM_SHOWN } from '@/lib/dashboard/cards'
+import { PROJECTS_SHOWN, PROJECTS_SHOWN_PHONE, SITE_SHOWN, TEAM_SHOWN, encodeDayActs, type DayAct } from '@/lib/dashboard/cards'
 import styles from './cards.module.css'
 
 /*
@@ -19,8 +19,12 @@ const DAY_WHEN = ['5 days late', '10:00 AM', '11:00 AM', '2:00 PM', 'by 4:30 PM'
 const DAY_TITLES = ['Order the kitchen cabinets', 'Site visit · Benjamin Han', 'Qanvast Hangout · Marina Bay', 'First consultation · Priya Nair', 'Call Cheryl back about her budget']
 const DAY_CAPTIONS = ['HDB 5-Room — Benjamin Han', 'SkyOasis @ Dawson, Queenstown · with Germaine · 45 min', 'Marina Bay Sands Expo, Hall B · until 7:00 PM', 'Showroom · 1 h', 'Cheryl Lim']
 const DAY_TICK = [true, false, false, false, true]
-/** each sample row's one action at a desk: Directions (a link's width) or Call (the outlined button) */
-const DAY_ACT: (number | null)[] = [null, 70, 70, null, 84]   // (the calm pass — lane C1, the ghost's fit on a phone) a site visit has its Directions too
+/** each sample row's one action: Directions (a link's width) or Call (the text button at a desk, a 36 glyph button on a phone) — (the calm pass —
+    lane C1, the ghost's fit on a phone) a site visit has its Directions too. (the close-out round 2026-10-31, dash-d1) The demo morning's, as
+    one remembered number (`encodeDayActs`): a browser that has seen the page draws what its rows held last instead — a meeting past its time
+    has no Directions, and its row is a line shorter on a phone. */
+const DAY_ACT_SAMPLE: DayAct[] = [null, 'link', 'link', null, 'call']
+export const DAY_ACTS_SAMPLE = encodeDayActs(DAY_ACT_SAMPLE)
 const STAGES = [['New', 100], ['Contacted', 86], ['Met', 43], ['Quote Sent', 43], ['Won', 43]] as const
 const PROJECT_NAMES = ['HDB 5-Room — Benjamin Han', 'Executive Condo — Ryan D’Souza', 'Condo 3-bedder — Marcus Teo', 'HDB 5-Room — Aisha Rahman']
 const PROJECT_STATES = ['Late', 'Late', 'Starts 4 Nov', 'On hold']
@@ -49,8 +53,9 @@ export function CardGhost({ card, title, count, legend, wide = false, hideable: 
   )
 }
 
-/** Your day: the week in the head, then `rows` of the agenda (none: the quiet day's words). */
-export function DayGhost({ rows, quietWeek = false }: { rows: number; quietWeek?: boolean }) {
+/** Your day: the week in the head, then `rows` of the agenda (none: the quiet day's words) — (dash-d1) each with the action the page's row
+    drew last (`acts`), and the ⋮ column when its rows had one (`menus`). */
+export function DayGhost({ rows, quietWeek = false, acts = DAY_ACT_SAMPLE, menus = true }: { rows: number; quietWeek?: boolean; acts?: readonly DayAct[]; menus?: boolean }) {
   const week = (
     <span className={styles.week}>
       <span className={styles.ghostTrack}>
@@ -65,7 +70,7 @@ export function DayGhost({ rows, quietWeek = false }: { rows: number; quietWeek?
   const shown = Math.min(rows, DAY_SHOWN_GHOST)
   return (
     <CardGhost card="day" title="Your day" count={rows ? String(Math.min(rows, 9)) : undefined} legend={week} wide>
-      <div className={styles.agenda} data-menus="">
+      <div className={styles.agenda} data-menus={menus ? '' : undefined}>
         {/* (the calm pass — lane C1, the ghost's fit) a quiet week is its line and its "Add a task" verb, as the card draws it */}
         {!rows ? (quietWeek
           ? <div className={styles.quiet}><Words as="p" className={styles.quietLine}>Nothing planned this week</Words><Slot kind="btn" w={104} className={styles.verb} /></div>
@@ -76,7 +81,7 @@ export function DayGhost({ rows, quietWeek = false }: { rows: number; quietWeek?
             <span className={styles.mark}>{cycle(DAY_TICK, i) ? <Bone w={20} h={20} r="50%" /> : <span className={styles.dot} />}</span>
             {/* a narrow card leads the caption with the time, as the page does */}
             <span className={styles.words}><Words className={styles.title}>{cycle(DAY_TITLES, i)}</Words><span className={styles.caption}><Words className={styles.whenInline}>{`${cycle(DAY_WHEN, i)} · `}</Words><Words>{cycle(DAY_CAPTIONS, i)}</Words></span></span>
-            <span className={styles.act}>{cycle(DAY_ACT, i) ? <Bone w={cycle(DAY_ACT, i)!} h={i % 5 === 4 ? 36 : 20} r={4} /> : null}</span>
+            <span className={styles.act}><ActBone act={acts[i] ?? null} /></span>
             <span className={styles.rowMore} />
           </span>
         ))}
@@ -87,6 +92,13 @@ export function DayGhost({ rows, quietWeek = false }: { rows: number; quietWeek?
       </div>
     </CardGhost>
   )
+}
+
+/** A row's one action as a bone: Directions a link's width; Call the text button with its glyph at a desk (62 — the house Row's text button since 2026-10-27, was the outlined 84), the 36 glyph button on a phone (the card's own). */
+function ActBone({ act }: { act: DayAct }) {
+  if (act === 'link') return <Bone w={70} h={20} r={4} />
+  if (act === 'call') return <><span className={`${deskOnly} ${styles.actSlot}`}><Bone w={62} h={36} r={4} /></span><span className={phoneOnly}><Bone w={36} h={36} r={4} /></span></>
+  return null
 }
 
 /** Pipeline: its five stage rows and the line under them (`quietDoor` — an Owner's or an Admin's "going quiet" is a door, a finger's 44). */

@@ -104,6 +104,7 @@
 .agendaRow[data-done] .title { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
 .agendaRow[data-ended] .when, .agendaRow[data-ended] .title { color: var(--om-color-on-surface-secondary); }
 .act { display: inline-flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.actSlot { display: flex; }   /* (dash-d1) the ghost's desk Call bone: a box, not a line (a phone hides it — the kit's doubled .desk) */
 /* the row's ⋮ — at a desk only while the row is under the pointer or holds the keyboard (or its menu is open) */
 .rowMore { display: inline-flex; align-items: center; justify-content: center; opacity: 0; transition: opacity var(--motion-hover); }
 .agendaRow:hover .rowMore, .agendaRow:focus-within .rowMore, .rowMore[data-open] { opacity: 1; }

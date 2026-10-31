@@ -67,7 +67,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
   return (
     <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.sections} shell={SHELL} noun={{ one: 'section', many: 'sections' }} nameLabel="Section" deletedLabel="Deleted sections" openLabel={runsBook ? 'Edit' : 'Open'} defaultView="list"
       byColumn mayChange={block} duplicateBlock={block} restoreBlock={block} purgeBlock={block()}
-      from={from} folders={{ library: 'book-sections', list: folders, block: folderBlock(data.viewer) }} items={sections.map(toRow)} deleted={deletedSections.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Sections" tableKey="price-book-sections"
+      from={from} folders={{ library: 'book-sections', list: folders, block: folderBlock(data.viewer) }} items={sections.map(toRow)} deleted={deletedSections.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="Sections" tableKey="price-book-sections"
       newMenu={(close, place) => (<DropdownItem onSelect={() => { close(); setEdit({ open: true, section: null, folderId: place.folderId }) }}>New section</DropdownItem>)} newBlock={runsBook ? null : block()}   /* (REG-653, Q-10 · E-70) written on Save — Cancel leaves nothing behind */
       searchText={(t) => [...names(t), ...t.tagList, t.propertyType ?? ''].join(' ')}   // (REG-619) a tag or the property type finds it
       thumb={(t) => (
@@ -96,7 +96,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the lines. You can restore the section from Deleted sections.` : 'You can restore it from Deleted sections.')}
       onRestore={(ids) => restorePriceBookSections(ids)} onDeleteForever={(ids) => deletePriceBookSectionsForever(ids)} onEmptyTrash={() => emptyPriceBookSectionTrash()}
       deletedMeta={{ label: 'Items', value: (t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'}` }}
-      empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',
+      empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save to Price book keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',
         /* (REG-735) the first run carries New ▾'s row for whoever runs the book; anyone else reads who does */
         start: (place) => (runsBook ? { primary: { label: 'New section', icon: 'add', onPress: () => setEdit({ open: true, section: null, folderId: place.folderId }) } } : {}) }}>   {/* (sweep S5 #22) */}
       <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()} units={data.units}

@@ -853,6 +853,9 @@ export const quoteComparisons = sqliteTable('quote_comparisons', {
   sentBy: text('sent_by'),
   sentText: text('sent_text'),
   sentVia: text('sent_via'),
+  /** (the close-out round 2026-10-31, C-08) A delete is soft: the reading leaves every list and its record, and waits in Deleted
+      comparisons (Undo, Restore, Delete forever). Who deleted it is the lead's event log (`comparison_deleted`); null = live. */
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 }, (t) => [index('quote_comparisons_lead_idx').on(t.leadId)])
 
 /** (REG-485) Every published version of a template, for History and Roll back — the design as it was, whole. */

@@ -106,7 +106,7 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null,
   }
   return (
     <Dialog open={open} onClose={onClose} title={readOnly ? 'Section details' : section ? 'Edit section' : 'New section'} size="modal" width={800}
-            subtitle={readOnly ? undefined : section ? 'Quotes that already carry this section keep their lines; the next insert takes what is here.' : 'Its lines land together when a quote picks it from My Sections.'}
+            subtitle={readOnly ? undefined : section ? 'Quotes that already carry this section keep their lines; the next insert takes what is here.' : 'Its lines land together when a quote picks it from the Price book.'}
             footer={readOnly ? <>{summary}<span style={{ flex: 1 }} /><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button></>
               : <>{summary}<span style={{ flex: 1 }} /><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={busy} onPress={() => { void save() }}>{busy ? 'Saving…' : 'Save'}</Button></>}>
       <div className={styles.fields} data-testid="section-dialog">

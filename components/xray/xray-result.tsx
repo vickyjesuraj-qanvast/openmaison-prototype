@@ -24,7 +24,7 @@ import { setFollowUp as setLeadFollowUp } from '@/app/leads/actions'
 import { draftMessage, money, type XrayRow } from '@/lib/xray/compare'
 import type { XrayRecord } from '@/lib/xray/queries'
 import { COMPARISON_DELETE_RULE } from '@/lib/xray/policy'
-import { correctComparison, deleteComparison, rerunComparison, setComparisonOverrides } from '@/app/quote-x-ray/actions'
+import { correctComparison, deleteComparison, rerunComparison, restoreComparisons, setComparisonOverrides } from '@/app/quote-x-ray/actions'
 import { SendDialog } from './send-dialog'
 import { answerLock } from '@/components/credits/credits-client'
 import { XrayRecordSkeleton } from './xray-skeletons'
@@ -138,8 +138,16 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
     try {
       const res = await deleteComparison(record.id)
       if ('error' in res) { if ('locked' in res) { answerLock(res.error, 'quote_xray'); return } snackbar({ message: res.error === 'not-allowed' ? COMPARISON_DELETE_RULE : 'That comparison is already gone' }); return }
-      router.push(scopedSetup); snackbar({ message: `${name} deleted` })
+      /* (the close-out round 2026-10-31, C-08) softly: it waits in Deleted comparisons, and Undo puts it back in Recent (⌘Z too) */
+      router.push(scopedSetup); snackbar({ message: `${name} deleted`, actionLabel: 'Undo', onAction: () => { void undoDelete() } })
     } catch { fail('delete') }
+  }
+  const undoDelete = async () => {
+    try {
+      const r = await restoreComparisons([record.id])
+      if ('error' in r) { if ('locked' in r) answerLock(r.error, 'quote_xray'); else snackbar({ message: r.error }); return }
+      router.refresh()
+    } catch { fail('restore the comparison') }
   }
 
   return (
@@ -197,7 +205,7 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
                        placeholder={pairing?.row.yourIds?.length ? `Choose one of ${r.otherStudio}’s lines` : 'Choose one of your lines'} empty="No line to pair with"
                        load={async () => pairing?.options ?? []} confirmLabel="Pair" onPick={(id) => pairWith(id)} />
         <ConfirmDialog open={deleting} title="Delete this comparison?" confirmLabel="Delete"
-                       message={`${name} will be deleted permanently. This can’t be undone.`}
+                       message={`${name} moves to Deleted comparisons, where you can restore it.`}   /* (C-08) where it goes, not "can’t be undone" */
                        onCancel={() => setDeleting(false)} onConfirm={() => { void remove() }} />
       </div>
     </PageReveal>

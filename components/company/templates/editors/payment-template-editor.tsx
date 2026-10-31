@@ -25,7 +25,6 @@ import { LibraryHeader } from '../library-header'
 import { isRefusal } from '@/lib/company/template-rules'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
-import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import styles from './library-editor.module.css'
 import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
 
@@ -104,6 +103,10 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
     <PageReveal skeleton={<LibraryEditorGhost kind="payments" />}>
       <div className={page.page} data-testid="payment-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Payment schedules', href: '/company/templates/payments' }]} title={name.trim() || 'Untitled split'}
+                       /* (the close-out round 2026-10-31, C-123 · 4-17) the name once, renamed in the header — the second row that repeated it is gone.
+                          Typing the seeded default's shown name back ("10/30/30/30") leaves its stored name as it was (W-509) */
+                       titleEdit={{ value: name, label: 'Split name', placeholder: 'Split name', maxLength: 80, onDone: () => { void flushRef.current() },
+                                    onChange: (v) => { named.current = v !== paymentScheduleName(template.id, template.name); setName(v); queue() } }}
                        chips={isDefault ? <MetaChip kind="fact">Studio default</MetaChip> : null}   /* (the calm UI build 2026-10-27, the UI audit's 4-11 · 4-17) the one standing mark; the split is the name and the table, the usage the gallery card's (and Maison AI's "Where is it used?") */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
@@ -111,9 +114,6 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
                          <DropdownDivider />
                          <DropdownItem tone="danger" disabled={isDefault} help={isDefault ? 'The studio default cannot be deleted' : undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>   {/* (REG-728) the reason in the row */}
                        </>} onClose={close} />
-        <div className={page.meta} data-testid="library-meta">
-          <TitleInput value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { named.current = true; setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-        </div>
         <div className={styles.body}>
           <div className={styles.card}>
             <div className={styles.cardHead}><span className={styles.cardTitle}>Payments</span><span className={styles.cardHelp}>Shares of the quote’s total. The first is due on signing; the rest are estimated across the renovation.</span></div>
@@ -124,9 +124,10 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
                 {rows.map((r, i) => (
                   <div key={i} className={styles.mRow} role="row" data-testid="milestone-row">
                     <span className={styles.stepNo}>{i + 1}</span>
-                    <TextField label="Payment" size="s" value={r.name} onChange={(v) => patch(i, { name: v })} />
-                    <TextField label="Description" size="s" value={r.description ?? ''} onChange={(v) => patch(i, { description: v || null })} />
-                    <TextField label="Share (%)" size="s" numeric="amount" maxLength={6} value={draftPct?.i === i ? draftPct.text : fmtPct(r.pct)}
+                    {/* (the close-out round 2026-10-31, C-123 · 4-17) a cell under its column's head draws no label of its own (`hideLabel`) — its name stays */}
+                    <TextField label="Payment" hideLabel size="s" value={r.name} onChange={(v) => patch(i, { name: v })} />
+                    <TextField label="Description" hideLabel size="s" value={r.description ?? ''} onChange={(v) => patch(i, { description: v || null })} />
+                    <TextField label="Share (%)" hideLabel size="s" numeric="amount" maxLength={6} value={draftPct?.i === i ? draftPct.text : fmtPct(r.pct)}
                                onChange={(v) => { setDraftPct({ i, text: v }); const n = Number(v); if (v.trim() !== '' && Number.isFinite(n)) patch(i, { pct: Math.max(0, Math.min(100, n)) }) }}
                                onBlur={() => setDraftPct(null)} />
                     <span className={styles.mDue}>{i === 0 ? 'On signing' : 'Estimated'}</span>

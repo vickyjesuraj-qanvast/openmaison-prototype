@@ -7,18 +7,16 @@ import styles from './schedules.module.css'
 
 /**
  * (REG-708, Projects round 2) The schedule template editor's ghost — its own layout, on its own classes: the editor header (Done, ⋮, close),
- * the name row with its count, the Milestones card in its own words and its rows (name · days · after the one before · the switch · delete),
+ * (C-123) the name in the header, the Milestones card in its own words and its rows (name · days · after the one before · the switch · delete),
  * then the preview's bars. `loading.tsx` and the editor's PageReveal draw this one.
  */
 export function ScheduleTemplateGhost() {
   return (
     <GhostSheet label="Loading the template">
       <div className={page.page}>
-        <EditorHeadGhost crumb={170} title={180} chips={[]} />   {/* (the calm UI build 2026-10-27, the UI audit's 4-11) no tags in the header */}
-        <div className={page.meta}>
-          <Line w={180} lh={36} h={14} />
-          <div className={page.metaEnd}><Line w={260} lh={20} h={10} /></div>
-        </div>
+        {/* (the calm UI build 2026-10-27, the UI audit's 4-11) no tags in the header — (the close-out round 2026-10-31, C-123) the name and its
+            pencil are the header's; no name row under it */}
+        <EditorHeadGhost crumb={170} title={204} chips={[]} />
         <div className={lib.body}>
           <div className={lib.card}>
             <div className={lib.cardHead}><Words className={lib.cardTitle}>Milestones</Words><Words className={lib.cardHelp}>Gap = days between one milestone and the next. Use a minus number to overlap.</Words></div>

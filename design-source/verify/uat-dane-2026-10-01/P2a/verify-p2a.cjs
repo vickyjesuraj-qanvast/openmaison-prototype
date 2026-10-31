@@ -38,8 +38,8 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
   let withTick = null, plain = null
   await step('b-proposals export', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
-    const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export items…' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    const dlg = page.getByRole('dialog', { name: 'Export items' }); await dlg.waitFor()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const tick = dlg.getByTestId('export-option')
     ok('3.11 the export offers "Include proposed items", off', (await tick.innerText()).includes('Include items waiting for approval') && !(await tick.locator('input[type=checkbox]').isChecked()))   // (the calm UI build 2026-10-27, a deliberate change) T-01: proposals read Waiting for approval
     ok('3.11 untick: All items counts the approved ones only', (await dlg.innerText()).includes(`All items (${liveCount})`), (await dlg.innerText()).split('\n').find((l) => /All items/.test(l)))
@@ -49,7 +49,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     let lines = csvLines(plain)
     ok('3.11 the default export leaves the proposal out, no Status column', !plain.includes(PROPOSAL) && !/Status/.test(lines[0]) && lines.length === liveCount + 1, `${lines.length - 1} rows`)
     await page.waitForTimeout(500)
-    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export My Items…' }).click()
+    await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.getByRole('menuitem', { name: 'Export items…' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await dlg.waitFor(); await dlg.getByText('Include items waiting for approval').click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) T-01: proposals read Waiting for approval
     ok('3.11 ticked: All items counts the proposal too', (await dlg.innerText()).includes(`All items (${liveCount + 1})`))
     await shot(page, 'b1-export-tick')
@@ -66,11 +66,11 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     await openNew(page, 'Import from a spreadsheet…'); await page.getByTestId('import-dialog').waitFor()
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(`${FILES}/my-items.csv`)
-    const map = page.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor(); await page.waitForTimeout(500)
+    const map = page.getByRole('dialog', { name: 'Import into the Price book' }); await map.waitFor(); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const cap = await map.locator('p').first().innerText()
     ok('3.12 the caption counts items, not the header line', cap.startsWith(`${liveCount} items · 12 columns from “my-items.csv”`), cap)   // (pending modules S12, a deliberate change of this rule) the export's + Waste % column
     await page.getByTestId('import-match').getByText('Skip', { exact: true }).click(); await page.waitForTimeout(250)
-    ok('3.12 nothing new: the summary says so', (await page.getByTestId('import-nothing-new').innerText()).includes('Nothing new to import — every row is already in My Items or waiting for approval'))
+    ok('3.12 nothing new: the summary says so', (await page.getByTestId('import-nothing-new').innerText()).includes('Nothing new to import — every row is already in the Price book or waiting for approval'))   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('3.12 the primary is Done', await map.getByTestId('import-done').isVisible() && (await map.getByRole('button', { name: /^Import/ }).count()) === 0)
     await shot(page, 'b2-import-nothing-new')
     await map.getByTestId('import-done').click(); await page.waitForTimeout(500)
@@ -110,7 +110,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     await openNew(page, 'New item')
     const dlg = page.getByRole('dialog', { name: 'New item' }); await dlg.waitFor()
     await dlg.getByLabel('Item name').fill('Probe grout, epoxy')
-    await dlg.getByRole('button', { name: 'Add to My Items' }).click()
+    await dlg.getByRole('button', { name: 'Add to Price book' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const t = await snack(page, /added to/)
     ok('3.03 the snackbar names the folder', t.includes('Probe grout, epoxy added to Wet works'), t)
     ok('3.03 the new item is in Wet works', sql(`select folder_id from price_book_items where name = 'Probe grout, epoxy'`) === 'lf-items-wet')
@@ -123,7 +123,7 @@ const csvLines = (t) => t.trim().split(/\r?\n/)
     await openNew(page, 'New item')
     const dlg = page.getByRole('dialog', { name: 'New item' }); await dlg.waitFor()
     await dlg.getByLabel('Item name').fill('Probe sealant')
-    await dlg.getByRole('button', { name: 'Add to My Items' }).click()
+    await dlg.getByRole('button', { name: 'Add to Price book' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const t = await snack(page, /added to/)
     ok('3.03 at the top, it lands at the top and says My Items', t.includes('Probe sealant added to Items') && sql(`select ifnull(folder_id, '-') from price_book_items where name = 'Probe sealant'`) === '-', t)   // (the calm UI build 2026-10-27, a deliberate change) the top of the library is the tab's own name, "Items" (4-39, LIBRARY_ROOT)
   })

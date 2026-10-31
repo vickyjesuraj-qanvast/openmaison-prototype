@@ -24,7 +24,6 @@ import { isRefusal, orThrow } from '@/lib/company/template-rules'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import modal from '@/components/quotes/editor/text/templates-modal.module.css'
 import page from '@/components/contracts/editor/contract-editor.module.css'
-import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import { WritingHelp } from '@/components/writing/writing-help'
 import { textTemplateSources } from '@/lib/writing/sources'
 import styles from './library-editor.module.css'
@@ -93,6 +92,8 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
     <PageReveal skeleton={<LibraryEditorGhost kind="terms" />}>
       <div className={page.page} data-testid="text-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'T&Cs & Notes', href: '/company/templates/terms' }]} title={title.trim() || 'Untitled template'}
+                       /* (the close-out round 2026-10-31, C-123 · 4-17) the name once, renamed in the header — the second row that repeated it is gone */
+                       titleEdit={{ value: title, label: 'Template name', placeholder: 'Template name', maxLength: 120, onChange: (v) => { setTitle(v); queue() }, onDone: () => { void flushRef.current() } }}
                        chips={<MetaChip kind="fact">{label}</MetaChip>}   /* (the calm UI build 2026-10-27, the UI audit's 4-11) the kind stays; the usage is the gallery card's */
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
@@ -100,10 +101,6 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
                          <DropdownDivider />
                          <DropdownItem tone="danger" onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                        </>} onClose={close} />
-        <div className={page.meta} data-testid="library-meta">
-          <TitleInput value={title} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setTitle(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={page.metaEnd}><MetaChip kind="fact">{label}</MetaChip></div>   {/* (REG-729) the house tag, as the sibling editors' chips */}
-        </div>
         <div className={styles.body}>
           <div className={styles.card}>
             <div className={styles.cardHead}><span className={styles.cardTitle}>Text</span><span className={styles.cardHelp}>Fields fill in from the quote when a studio adds this to one.</span></div>

@@ -13,6 +13,13 @@
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex: 1 1 auto; flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }
+/* (the close-out round 2026-10-31, C-43 · the UI audit's 3-08) The "Show: All ▾" pill (the house ScopePill) after the title — or a project's
+   view switch, which fills like the title — before the search. On a phone it takes the row under the toolbar, where the chips' rail was:
+   the bar wraps there (tab-toolbar.module.css), the pill keeps its own width at the row's start. */
+.show { display: inline-flex; align-items: center; flex: 0 0 auto; margin-left: auto; min-width: 0; }
+@media (max-width: 767px) {
+  .show.show { order: 3; flex: 1 0 100%; margin-left: 0; }
+}
 
 /* (activity by date 2026-10-24 — his "group the activities by date and add type icons …") The desk's timeline is the house one
    (components/om/timeline.module.css: the day's marker on the rail, the type glyph in the dot's place, the time, the sentence); this sheet keeps
@@ -73,7 +80,5 @@
 .ghostDays { display: none; }
 @media (max-width: 1024px) { .ghostDays { display: flex; } .ghostTimeline { display: none; } }
 
-/* (L4 — P-13 · C-17) the chips above the feed read at 14 on a finger (a kind is a value); the desk keeps the house chip's 12 */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .tab [role='radio'] { font: var(--om-type-subheading-m); }
-}
+/* (L4 — P-13 · C-17) the chips above the feed read at 14 on a finger — (the close-out round 2026-10-31, C-43) gone with the chips: the
+   Show pill is the house ScopePill, 14 at every width */

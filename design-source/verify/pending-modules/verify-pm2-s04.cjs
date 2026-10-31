@@ -186,7 +186,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR
     const summary = await modal.getByTestId('draft-summary').innerText().catch(() => '')
     ok(/\d+ lines drafted · \d+ from your price book · \d+ to price/.test(summary), `the lines draft as you type: "${summary}"`)
     const rowsText = await modal.locator('[data-testid="draft-row"]').allInnerTexts()
-    ok(rowsText.some((t) => /Bathrooms — full works/.test(t) && /From My Sections/.test(t)), 'a saved section for the room goes in whole (My Sections first)')
+    ok(rowsText.some((t) => /Bathrooms — full works/.test(t) && /From the Price book’s sections/.test(t)), 'a saved section for the room goes in whole (My Sections first)')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok(rowsText.some((t) => /Painting/.test(t) && /S\$/.test(t)), 'a trade’s My Items come at the book’s price')
     ok(rowsText.some((t) => /To price/i.test(t)), 'what the book can’t price comes in "To price"')
     await shot(p, 'pm2-s04-draft-1440')

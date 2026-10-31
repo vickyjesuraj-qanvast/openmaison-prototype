@@ -1,5 +1,5 @@
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
-import { GhostField, GhostHead2, GhostTextButton, Line, phoneOnly, Words } from '@/components/shell/ghost-kit'
+import { GhostField, GhostHead2, GhostTextButton, Line, phoneOnly, Slot, Words } from '@/components/shell/ghost-kit'
 import { DROP_HELP, RECENTS_HEAD, SETUP_WORDS, XRAY_INTRO } from './intro-copy'
 import cc from '@/components/om/choice-card.module.css'
 import fields from '@/components/leads/move-stage/fields.module.css'
@@ -67,7 +67,8 @@ export function XraySetupSkeleton({ scoped = false, intro = true, locked = false
             <div className={ws.foot}><Line w={180} lh={20} /><Bone w={94} h={36} r={4} /></div>
           </div>}
           <div className={styles.recents}>
-            <Words as="div" className={ws.recentsHead}>{RECENTS_HEAD}</Words>   {/* (the calm UI build) the page's own head, its words as bars */}
+            {/* (the calm UI build) the page's own head, its words as bars; (the close-out round 2026-10-31, C-08) and its ⋮ */}
+            <div className={ws.recentsHead}><Words className={ws.recentsTitle}>{RECENTS_HEAD}</Words><Slot kind="icon" /></div>
             {[196, 164, 212, 180].map((w, i) => <div key={i} className={styles.recent}><Bone w={w} h={16} /><Bone w={Math.round(w * 0.6)} h={12} /></div>)}
           </div>
         </div>

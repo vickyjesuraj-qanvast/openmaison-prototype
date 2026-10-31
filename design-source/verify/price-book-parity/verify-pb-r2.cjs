@@ -140,8 +140,8 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     const r = page.locator(`[data-item-id="${HAUL}"]`).first(); await r.scrollIntoViewIfNeeded(); await r.hover()
     await r.getByRole('button', { name: 'More options for Haulage and debris disposal' }).click()
     await page.getByRole('menu').last().getByRole('menuitem', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(200)   // (the calm UI build 2026-10-27, a deliberate change) 4-07: a line's saves to the book sit under Price book ›
-    await page.getByRole('menu').last().getByRole('menuitem', { name: 'Propose to My Items' }).click()   // (REG-653, Q-18) the book's own name
-    await snack(page, 'Proposed to My Items'); await page.waitForTimeout(500)
+    await page.getByRole('menu').last().getByRole('menuitem', { name: 'Propose to Price book' }).click()   // (REG-653, Q-18) the book's own name   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+    await snack(page, 'Proposed to the Price book'); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('the line’s item is her proposal', sql(`select b.status || '|' || b.created_by from quote_items i join price_book_items b on b.id = i.price_book_item_id where i.id='${HAUL}'`) === 'proposed|sarah')
     await shot('07-save-line-proposed')
     const g = page.locator(`[data-item-id="${BATHS}"]`).first(); await g.scrollIntoViewIfNeeded(); await g.hover()
@@ -155,7 +155,7 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     ok('the Proposed to-do gathers all three', await page.getByRole('button', { name: '3 approvals', exact: true }).count() === 1)   // (the calm UI build 2026-10-27, a deliberate change)
     await page.getByRole('button', { name: /^(Open|Edit) Probe\ proposal,\ glass\ shelf$/ }).click(); await page.getByTestId('proposal-bar').waitFor()
-    await page.getByTestId('proposal-bar').getByRole('button', { name: 'Approve' }).click(); await snack(page, 'approved — it’s in My Items for the studio'); await page.waitForTimeout(600)
+    await page.getByTestId('proposal-bar').getByRole('button', { name: 'Approve' }).click(); await snack(page, 'approved — it’s in the Price book for the studio'); await page.waitForTimeout(600)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('approved: live, with who approved it', sql(`select status || '|' || reviewed_by from price_book_items where id='${mine}'`) === 'live|dane')
     ok('History keeps the approval', sql(`select count(*) from price_book_changes where item_id='${mine}' and kind='approved' and by='dane'`) === '1')
     ok('Sarah hears it', sql(`select count(*) from notifications where member_id='sarah' and kind='price_book_answered' and title like 'Dane approved “Probe proposal, glass shelf”%'`) === '1')

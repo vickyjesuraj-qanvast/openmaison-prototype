@@ -321,7 +321,9 @@ const restore = (d) => {
     const body = await lp.locator('body').innerText()
     const done = sql(`select contract_date from contracts where id = '${LID}'`)
     const long = (s) => new Date(Number(s) * 1000).toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' })
-    const end = new Date(Number(done) * 1000); end.setMonth(end.getMonth() + 18)
+    /* (the close-out round 2026-10-31) 18 months on, held to the month's last day as the letter prints it (31 Oct → 30 April) — `setMonth` alone
+       rolls into the next month, so the check failed on a 31st */
+    const end = (() => { const s = new Date(Number(done) * 1000), last = new Date(s.getFullYear(), s.getMonth() + 19, 0).getDate(); return new Date(s.getFullYear(), s.getMonth() + 18, Math.min(s.getDate(), last)) })()
     ok(body.includes(`handed over to you on ${long(done)}`) && /within 18 months of completion/.test(body) && body.includes(end.toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' })), 'filled from the project: the completion day, 18 months and the day they end')
     await shot(lp, 'c9-letter-to-read-1440')
     await c2.close()

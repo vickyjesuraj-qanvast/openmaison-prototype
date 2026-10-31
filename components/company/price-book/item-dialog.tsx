@@ -173,7 +173,7 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
     /* (Dane UAT 3.10) An item's History sits beside its form, in its own column — the dialog takes the house l (800); a phone keeps it below */
     <Dialog open={open} onClose={onClose} title={title} size="modal" width={item ? 800 : 600} subtitle={subtitle}
             footer={readOnly ? <Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>
-              : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={busy || (!nameOk && touched)} onPress={() => { void save() }}>{busy ? 'Saving…' : item ? 'Save' : proposing ? 'Propose' : 'Add to My Items'}</Button></>}>
+              : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={busy || (!nameOk && touched)} onPress={() => { void save() }}>{busy ? 'Saving…' : item ? 'Save' : proposing ? 'Propose' : 'Add to Price book'}</Button></>}>
       <div className={item ? styles.withHistory : styles.fields} data-testid="item-dialog">
       <div className={styles.fields}>
         {proposal ? <ProposalBar by={proposal.by} at={proposal.at} now={now} canReview={proposal.canReview} onApprove={() => { void approveNow() }} onSendBack={proposal.onSendBack} /> : null}

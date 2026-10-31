@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { feedDays } from './activity-days'
 import type { ActivityEvent } from '@/lib/leads/activity'
 import Link from 'next/link'
-import { Chips } from '@/components/om/chips'
-import { ChipRail } from '@/components/om/chip-rail'   // (parity P-15)
+import { ScopePill } from '@/components/om/scope-pill'   // (the close-out round 2026-10-31, C-43 · the UI audit's 3-08) the kinds as one pill
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { displayTime } from '@/lib/format'
@@ -53,7 +54,8 @@ function DayRow({ event: e, time }: { event: ActivityEvent; time: string }) {
   ) : <div className={styles.dayRow} data-static="">{body}</div>
 }
 
-/** (UX audit 2026-09-30, T10) The chips above the timeline — the house `Chips` (REG-614), one at a time. */
+/** (UX audit 2026-09-30, T10) The kinds a reader keeps, one at a time — (the close-out round 2026-10-31, C-43 · 3-08) the options of the
+    toolbar's "Show: All ▾" pill (the house ScopePill over PortalMenu, as the galleries' "Status: All ▾"), each row with its count. */
 type Show = 'all' | ActivityGroup
 const SHOW: { value: Show; label: string }[] = [
   { value: 'all', label: 'All' }, { value: 'tasks', label: 'Tasks' }, { value: 'files', label: 'Files' }, { value: 'notes', label: 'Notes' },
@@ -71,17 +73,29 @@ const SHOW: { value: Show; label: string }[] = [
  * (every sentence opens with its actor). Newest first (REG-191); the feed derives from the lead's records
  * (lib/leads/activity.ts), so unfiltered it is never empty: the lead's creation is its last row.
  * (UX audit 2026-09-30, T10 — extends REG-191 · REG-245) Chips above the timeline keep one kind of line — All · Tasks · Files · Notes ·
- * Stage — and a task's lines name whoever made each change (the lead's event log).
+ * Stage — and a task's lines name whoever made each change (the lead's event log). (the close-out round 2026-10-31, C-43) The chips are one
+ * "Show: All ▾" pill in the toolbar now, its menu the same kinds with their counts.
  * (activity by date 2026-10-24 — his "group the activities by date and add type icons for the ones we have (Tasks · Files · Notes · Stage)";
  * brings back REG-190's two pieces on REG-245's timeline) At every width the feed reads by day through one grouping (`feedDays`): at a desk the
  * house timeline (components/om/timeline.tsx) — each day opened by the mock's marker on the rail, each row its type glyph in the dot's place,
  * its time ("4:42 PM") and its sentence; every row stays (no folding at a desk: the room is there, and a name is what a reader scans for). On a
  * phone or a tablet L4's day cards keep their runs and Show older, each row led by the same glyph.
  */
-export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivityData; /** (fix-A, A-16) the chips above the timeline — a project passes its own (`PROJECT_ACTIVITY_CHIPS`) */ chips?: readonly { value: string; label: string }[]
-  /** (simplify S-03 · Q-02) on a project: the Files & notes view switch in the title's place; the kinds' chips stay on the row below */ views?: ReactNode }) {
+export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivityData; /** (fix-A, A-16) the kinds a reader keeps — a project passes its own (`PROJECT_ACTIVITY_CHIPS`); (C-43) the Show pill's menu rows */ chips?: readonly { value: string; label: string }[]
+  /** (simplify S-03 · Q-02) on a project: the Files & notes view switch in the title's place; (C-43) the Show pill sits after it */ views?: ReactNode }) {
   const [query, setQuery] = useState('')
   const [show, setShow] = useState<Show>('all')
+  /* (the close-out round 2026-10-31, C-43 · the UI audit's 3-08) one "Show: All ▾" pill for the kinds — fourteen chips on a project were a wall.
+     Its menu counts what each kind keeps (the same filter as the chips: All = every line but a twin, a kind = its own lines, twins included),
+     counted before the search, as a gallery's pill counts. */
+  const [showOpen, setShowOpen] = useState(false)
+  const showRef = useRef<HTMLButtonElement | null>(null)
+  const kindCounts = useMemo(() => {
+    const m = new Map<string, number>([['all', data.events.filter((e) => !e.twin).length]])
+    for (const e of data.events) if (e.group) m.set(e.group, (m.get(e.group) ?? 0) + 1)   // a line with no kind shows under All only, as the chips kept it
+    return m
+  }, [data.events])
+  const showLabel = chips.find((c) => c.value === show)?.label ?? 'All'
 
   const q = query.trim().toLowerCase()
   /* (simplify round 2 — each fact once) under All a twin line steps back: a task or an order made from a client's ask is said by the ask's own line;
@@ -102,15 +116,24 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
     <div className={styles.tab} data-testid="activity-feed">
       <div className={styles.bar}>
         {views ?? <h2 className={styles.title}>All activities</h2>}   {/* (the calm UI build 2026-10-27 — T-13) */}
+        {/* (the close-out round 2026-10-31, C-43 · 3-08) the kinds as one pill in the toolbar, before the search (a gallery's order: what narrows
+            the list, then the search); on a phone it takes the row under the toolbar, where the chips were. Was: the house Chips on a ChipRail
+            of their own row (parity P-15). The hook `activity-chips` stays on the pill's box. */}
+        <span className={styles.show} data-testid="activity-chips">
+          <ScopePill ref={showRef} label={`Show: ${showLabel}`} open={showOpen} scoped={show !== 'all'} onClick={() => setShowOpen((o) => !o)} />
+        </span>
         {/* (REG-729) The house toolbar search (the rail's search tile and "/" still reach it). (REG-275) The box matches the sentence
             each row prints, so what a reader actually types is a person, a task or a file name — the placeholder says so. */}
         <div className={styles.actions}>
           <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search people, tasks, files…" label="Search activities" />
         </div>
       </div>
-      {/* (parity P-15 · Q-22) one row on every record and every width — the house ChipRail (page-checklist: a chip row that can overflow): the
-          project's fourteen kinds scroll sideways with the rail's pagers instead of wrapping into four rows on a phone */}
-      <div><ChipRail label="Show"><Chips label="Show" options={[...chips]} value={show} onChange={(v) => setShow(v as Show)} testId="activity-chips" /></ChipRail></div>
+      {/* (REG-728) a kinds list: the width scale's 240; a bottom sheet on a phone */}
+      <PortalMenu open={showOpen} anchor={showRef} onClose={() => setShowOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Show">
+        {chips.map((c) => (
+          <DropdownItem key={c.value} role="menuitemradio" checked={show === c.value} onSelect={() => { setShowOpen(false); setShow(c.value as Show) }}>{`${c.label} · ${kindCounts.get(c.value) ?? 0}`}</DropdownItem>
+        ))}
+      </PortalMenu>
 
       {events.length === 0 ? (
         /* a search, or a chip, that keeps nothing — the tabs' shared No-results card ("No activities match this filter."), Clear All back to All */

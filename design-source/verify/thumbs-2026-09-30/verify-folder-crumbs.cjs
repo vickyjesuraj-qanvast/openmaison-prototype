@@ -25,7 +25,7 @@ const measure = (p) => p.evaluate(() => {
   const openBook = async () => { await p.locator('#section-items').getByRole('button', { name: 'Create', exact: true }).click(); await p.waitForTimeout(300); await p.getByRole('menuitem', { name: 'From Price book' }).click() }
   await check('price-book-wet-works', openBook, 'Wet works')
   await check('price-book-kitchen', openBook, 'Kitchen')
-  await check('price-book-sections', async () => { await openBook(); await p.waitForTimeout(500); await dlg().getByRole('radio', { name: /My Sections/ }).or(dlg().getByRole('button', { name: /My Sections/ })).first().click() }, 'Bathrooms')
+  await check('price-book-sections', async () => { await openBook(); await p.waitForTimeout(500); await dlg().getByRole('radio', { name: /^Sections/ }).or(dlg().getByRole('button', { name: /^Sections/ })).first().click() }, 'Bathrooms')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
   /* (the calm UI build 2026-10-27, a deliberate change) W-270: the Terms card's "My Templates" reads "Templates" — the Create strip's tile shares the word, so the card's own */
   await check('terms-templates', async () => { await p.locator('button:not(aside[aria-label="Create"] button)', { hasText: /^Templates$/ }).first().click() }, 'HDB')
   /* (S46 closing regression, 2026-10-19) since S44Q a Draft quote is pinned to Blank Quote (R173), so the Template card's button reads "Change";

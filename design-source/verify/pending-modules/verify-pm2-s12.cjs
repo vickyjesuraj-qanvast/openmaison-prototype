@@ -88,17 +88,17 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
     if (want(1) || want(2) || want(3)) {
       console.log('1 · Upload a quote: the lines My Items surely knows take its cost — the price kept')
       await go(p, `/leads/${SERENA}/quotes`)
-      await p.getByRole('button', { name: 'Create Quote' }).first().click()
+      await p.getByRole('button', { name: /^New quote/ }).first().click()   // (the close-out round 2026-10-31, a deliberate change — found running this probe for C-122) the calm UI build's "New quote" (1-11 · W-011)
       await p.getByTestId('create-quote').waitFor()
       await p.getByTestId('upload-quote-file').setInputFiles({ name: 'serena-old-quote.csv', mimeType: 'text/csv', buffer: Buffer.from(UPLOAD) })
       await p.getByTestId('upload-quote').waitFor(); await settle(p, 1500)
       const box = await p.getByTestId('upload-quote').innerText()
-      ok(/5 lines/.test(box) && /A line that is in My Items takes its cost from there/.test(box), 'the reading says what a match will do before the press')
+      ok(/5 items/.test(box) && /A line that is in the Price book takes its cost from there/.test(box), 'the reading says what a match will do before the press')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"; and (the calm UI build 2026-10-27, T-01) the reading counts "5 items"
       await shot(p, '01-upload-read-1440')
       await p.getByRole('button', { name: 'Create the quote' }).click()
       await p.waitForURL(/\/quotes\/[0-9a-f-]{36}/, { timeout: 20000 }); await p.getByTestId('quote-editor').waitFor(); await settle(p, 1500)
       Q = /\/quotes\/([0-9a-f-]{36})/.exec(p.url())[1]
-      ok(/Quote created with 5 lines — 1 took its cost from My Items/.test(await waitSnack(p, /Quote created/)), 'the snackbar: "Quote created with 5 lines — 1 took its cost from My Items"')
+      ok(/Quote created with 5 lines — 1 took its cost from the Price book/.test(await waitSnack(p, /Quote created/)), 'the snackbar: "Quote created with 5 lines — 1 took its cost from the Price book"')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       const v = json(`select price_book_item_id, cost_minor, markup_minor, vendor from quote_items where quote_id = '${Q}' and name like 'Vinyl flooring%'`)[0] ?? {}
       ok(v.price_book_item_id === VINYL && v.cost_minor === 550 && v.cost_minor + v.markup_minor === 700 && v.vendor === 'Floor Xpert Pte Ltd', `the vinyl line points at My Items' vinyl, costs its S$5.50, still sells at S$7.00, and names its vendor (${JSON.stringify(v)})`)
       ok(sql(`select count(*) from quote_items where quote_id = '${Q}' and kind = 'item' and name in ('Painting to the entire unit, Dulux', 'Lay homogeneous floor tiles', 'Wardrobe, master bedroom') and price_book_item_id is null and markup_minor = 0`) === '3', 'the three lines no item surely matches keep their price as their cost, untouched')
@@ -118,18 +118,18 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       const paint = rows.filter({ hasText: 'Painting to the entire unit' }), tiles = rows.filter({ hasText: 'Lay homogeneous floor tiles' })
       const elec = rows.filter({ hasText: 'Electrical point, new' })
       ok(await elec.getAttribute('data-tier') === 'sure' && await elec.getAttribute('data-selected') === null && /Below cost/.test(await elec.innerText()), 'a sure match that would sell below cost says "Below cost" and waits unticked')
-      ok(await rows.count() === 3 && await paint.getAttribute('data-tier') === 'close' && /close match/i.test(await paint.innerText()) && /My Items: Painting, whole unit/.test(await paint.innerText()), 'a close match says so and names the item it reads like')
+      ok(await rows.count() === 3 && await paint.getAttribute('data-tier') === 'close' && /close match/i.test(await paint.innerText()) && /Price book: Painting, whole unit/.test(await paint.innerText()), 'a close match says so and names the item it reads like')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ok(await paint.getAttribute('data-selected') !== null && /Cost S\$1,500\.00 a Lot/.test(await paint.innerText()) && /21\.1% margin/.test(await paint.innerText()), 'its price within 15% of the item\'s: ticked, with the item\'s cost and the margin it leaves')
       ok(await tiles.getAttribute('data-selected') === null && /priced 18% below it/.test(await tiles.innerText()), 'a close match far off in price starts unticked and says how far')
       const fresh = dlg.getByTestId('fresh-row')
-      ok(await fresh.count() === 1 && /Wardrobe, master bedroom/.test(await fresh.innerText()) && await fresh.getAttribute('data-selected') === null, 'the line no item matches waits under "Not in My Items yet", unticked')
+      ok(await fresh.count() === 1 && /Wardrobe, master bedroom/.test(await fresh.innerText()) && await fresh.getAttribute('data-selected') === null, 'the line no item matches waits under "Not in the Price book yet", unticked')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ok((await dlg.getByTestId('match-apply').innerText()).trim() === 'Match 1 line', 'the button says what it does: "Match 1 line"')
       await fresh.click(); await settle(p, 200)
       ok((await dlg.getByTestId('match-apply').innerText()).trim() === 'Match 1 · add 1', '…and with the wardrobe ticked: "Match 1 · add 1"')
       await shot(p, '03-match-review-1440')
       await dlg.getByTestId('match-apply').click()
       const said = await waitSnack(p, /1 line took its cost/)
-      ok(/1 line took its cost from My Items · 1 added to My Items/.test(said), `the snackbar: "1 line took its cost from My Items · 1 added to My Items" (${said})`)
+      ok(/1 line took its cost from the Price book · 1 added to the Price book/.test(said), `the snackbar: "1 line took its cost from the Price book · 1 added to the Price book" (${said})`)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await settle(p, 600)
       ok(await dlg.count() === 0 || !(await dlg.isVisible()), 'the review closes once the server has it')
       const pl = json(`select price_book_item_id, cost_minor, markup_minor from quote_items where quote_id = '${Q}' and name like 'Painting to the entire unit%'`)[0] ?? {}
@@ -154,8 +154,8 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       await go(p, `/quotes/${Q}`)
       await p.locator('button[aria-label="Maison AI"]').last().click(); await settle(p, 700)
       const sheet = p.getByRole('dialog', { name: 'Maison AI suggestions' })
-      const sug = sheet.getByRole('button', { name: /3 lines match items in My Items — take their cost/ })
-      ok(await sug.count() === 1, 'Maison AI: "3 lines match items in My Items — take their cost"')
+      const sug = sheet.getByRole('button', { name: /3 lines match items in the Price book — take their cost/ })   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+      ok(await sug.count() === 1, 'Maison AI: "3 lines match items in the Price book — take their cost"')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ok(/Check the margins|under a 10% margin|below cost|no price yet/.test(await sheet.innerText()), '…beside the margin hints, never in their place')
       await shot(p, '04-maison-ai-1440')
       await sug.click(); await settle(p, 900)
@@ -163,13 +163,13 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       ok(await dlg.isVisible() && /proposed for it — an Owner or an Admin approves it/.test(await dlg.innerText()), 'the press opens the review, which says her additions are proposed')
       await dlg.getByTestId('match-row').filter({ hasText: 'Painting to the entire unit' }).click(); await settle(p, 150)   // untick the match
       await dlg.getByTestId('fresh-row').click(); await settle(p, 150)
-      ok((await dlg.getByTestId('match-apply').innerText()).trim() === 'Propose 1 for My Items', 'only an addition ticked: "Propose 1 for My Items"')
+      ok((await dlg.getByTestId('match-apply').innerText()).trim() === 'Propose 1 for the Price book', 'only an addition ticked: "Propose 1 for the Price book"')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await dlg.getByTestId('match-apply').click()
-      ok(/1 proposed for My Items/.test(await waitSnack(p, /proposed for My Items/)), 'the snackbar: "1 proposed for My Items"')
+      ok(/1 proposed for the Price book/.test(await waitSnack(p, /proposed for the Price book/)), 'the snackbar: "1 proposed for the Price book"')   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       const prop = json(`select id, status, created_by from price_book_items where name = 'Wardrobe, master bedroom'`)
       ok(prop.length === 1 && prop[0].status === 'proposed' && prop[0].created_by === 'germaine', 'the wardrobe waits as Germaine\'s proposal (REG-652)')
       const heard = json(`select member_id, title from notifications where kind = 'price_book_proposed' order by created_at desc limit ${Math.max(1, Number(sql(`select count(*) from notifications where kind = 'price_book_proposed'`)) - before)}`)
-      ok(heard.length >= 1 && heard.every((n) => /Germaine proposed “Wardrobe, master bedroom” for My Items/.test(n.title)) && new Set(heard.map((n) => n.member_id)).size === heard.length && heard.every((n) => ['dane', 'huimin'].includes(n.member_id)), `the Owners and Admins hear once each, by name (${heard.map((n) => n.member_id).join(', ')})`)
+      ok(heard.length >= 1 && heard.every((n) => /Germaine proposed “Wardrobe, master bedroom” for the Price book/.test(n.title)) && new Set(heard.map((n) => n.member_id)).size === heard.length && heard.every((n) => ['dane', 'huimin'].includes(n.member_id)), `the Owners and Admins hear once each, by name (${heard.map((n) => n.member_id).join(', ')})`)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       await undo(p)
       ok(await until(() => sql(`select count(*) from price_book_items where name = 'Wardrobe, master bedroom'`) === '0'), 'her Undo withdraws her proposal')
       as('dane')
@@ -248,8 +248,8 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       await p.keyboard.press('Escape'); await settle(p, 400)
       /* the export carries it */
       await p.getByRole('button', { name: 'More options', exact: true }).last().click()
-      await p.getByRole('menuitem', { name: 'Export My Items…' }).click()
-      const ex = p.getByRole('dialog', { name: 'Export My Items' }); await ex.waitFor()
+      await p.getByRole('menuitem', { name: 'Export items…' }).click()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
+      const ex = p.getByRole('dialog', { name: 'Export items' }); await ex.waitFor()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       const [dl] = await Promise.all([p.waitForEvent('download'), ex.getByRole('button', { name: 'Export' }).click()])
       const csv = fs.readFileSync(await dl.path(), 'utf8').split(/\r?\n/)
       const head = cells(csv[0].replace(/^\uFEFF/, '')), wi = head.indexOf('Waste %'), vinylRow = csv.map(cells).find((r) => r[0] === 'Vinyl flooring, supply and install')
@@ -261,7 +261,7 @@ const TABLES = ['quotes', 'quote_items', 'quote_payments', 'quote_versions', 'qu
       ok(/Hafary/.test(await p.getByTestId('import-vendor-list').innerText().catch(() => '')), '6 · the import\'s Vendor lists Company › Finance › Vendors as you type ("haf" → Hafary)')
       await p.getByTestId('import-dialog').getByLabel('Vendor (optional)').fill(''); await p.keyboard.press('Tab'); await settle(p, 300)   // focus leaves the field: its list shuts
       await p.getByTestId('import-dialog').locator('input[type=file]').setInputFiles({ name: 'probe-s12.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT) }); await settle(p, 1200)
-      const map = p.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor()
+      const map = p.getByRole('dialog', { name: 'Import into the Price book' }); await map.waitFor()   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       ok(/Waste %/.test(await map.innerText()), 'the mapping reads the Waste % column by its name')
       await map.getByRole('button', { name: 'Import 1 row' }).click()
       ok(/1 item added/.test(await waitSnack(p, /item added/)), '"1 item added"')

@@ -82,6 +82,17 @@ export const dotsOf = (count: number) => Math.min(3, Math.max(0, count))
 export const ringWords = (done: number, total: number) => (total ? `${done} of ${total} done` : '')
 /** (the calm pass) The head's count beside "Your day": what is still ahead of you on the day shown — its rows not ticked, not held, not over. */
 export const leftOf = (items: Pick<AgendaItem, 'done' | 'ended'>[]) => items.filter((x) => !x.done && !x.ended).length
+/** (the close-out round 2026-10-31, dash-d1) A row's one action as Your day draws it: Call (a call due, not done, with a number), Directions (a
+    place to go — a meeting still ahead, a Hangout), or none. A meeting's Directions go once its time has passed, so the row's words take the
+    room: the card draws by this rule and the page tells its next loader by it, so the ghost's rows carry the actions the page's did. */
+export type DayAct = 'call' | 'link' | null
+export const dayActOf = (x: Pick<AgendaItem, 'kind' | 'done' | 'tel' | 'maps'>): DayAct => (x.kind === 'call' && !x.done && x.tel ? 'call' : x.maps ? 'link' : null)
+/** …and whether its ⋮ holds more (WhatsApp on a call, Prepare me on a meeting ahead): the rows keep a ⋮ column when any of them has one. */
+export const dayExtrasOf = (x: Pick<AgendaItem, 'kind' | 'done' | 'wa' | 'prepare'>): boolean => (x.kind === 'call' && !x.done && !!x.wa) || !!x.prepare
+/** The rows' actions as one remembered number (lib/prefs `useCountPref`): each row a base-3 digit — 0 none · 1 Directions · 2 Call — the
+    first row the lowest. */
+export const encodeDayActs = (acts: readonly DayAct[]): number => acts.reduce<number>((n, a, i) => n + (a === 'link' ? 1 : a === 'call' ? 2 : 0) * 3 ** i, 0)
+export const decodeDayActs = (n: number, rows: number): DayAct[] => Array.from({ length: rows }, (_, i) => { const d = Math.floor(Math.max(0, n) / 3 ** i) % 3; return d === 1 ? 'link' : d === 2 ? 'call' : null })
 /** A day's agenda in the card's order: what is ours and late first, then the clock, then the rest (milestones, untimed tasks) by title. */
 export function agendaOrder(a: AgendaItem, b: AgendaItem): number {
   return a.day - b.day || Number(!!b.late) - Number(!!a.late) || Number(!a.time) - Number(!b.time) || clock(a.time) - clock(b.time) || a.title.localeCompare(b.title)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button, SearchBar, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
@@ -26,10 +26,11 @@ import { SlashSlot } from '@/components/om/slash-slot'
 import { displayDate } from '@/lib/format'
 import { money } from '@/lib/xray/compare'
 import { FILE_GLYPH, fileKind, readSide, totalCheck, XRAY_ACCEPT, XRAY_MAX_BYTES, type SideRead } from '@/lib/xray/reading'
-import { deleteComparison, runComparison } from '@/app/quote-x-ray/actions'
+import { deleteComparison, deleteComparisonsForever, emptyComparisonTrash, listDeletedComparisons, restoreComparisons, runComparison } from '@/app/quote-x-ray/actions'
 import type { XrayData } from '@/lib/xray/queries'
 import { COMPARISON_DELETE_RULE } from '@/lib/xray/policy'
 import { XraySetupGhost } from './xray-setup-ghost'
+import { DeletedComparisonsSheet } from './deleted-comparisons-sheet'
 import { answerLock, usePlanLock } from '@/components/credits/credits-client'
 import { ProLocked } from '@/components/credits/pro-tag'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -100,7 +101,9 @@ export function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void 
  * Create a quote or Upload your quote instead, and Upload two quotes stays with the lead it was opened for (Q-11); every
  * way back keeps the lead's scope (Q-12); Recent lists every comparison, with a search once it grows long (Q-13).
  */
-export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote, from }: { data: XrayData; leadId: string | null; quoteId: string | null; from: string | undefined }) {
+export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote, from, openDeleted = false }: { data: XrayData; leadId: string | null; quoteId: string | null; from: string | undefined
+  /** (the close-out round 2026-10-31, C-08) `?deleted=1` — a deleted reading's Activity line opens Deleted comparisons on arrival */
+  openDeleted?: boolean }) {
   const router = useRouter()
   const xrayLock = usePlanLock('quote_xray')   // (pending modules S19) Quote X-Ray is Pro
   const snackbar = useSnackbar()
@@ -130,6 +133,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
   const [running, setRunning] = useState<number | null>(null)   // the progress step, null = the setup
   const [del, setDel] = useState<{ payload: XrayData['recents'][number] | null; open: boolean }>({ payload: null, open: false })
   const [busy, setBusy] = useState(false)
+  const [deletedOpen, setDeletedOpen] = useState(openDeleted && !xrayLock.locked)   // (C-08) the Deleted comparisons sheet — on Free, its ⋮ row opens the lock instead
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
   /* (sweep S3) a run in flight belongs to this page: leaving it (a Recent row, the rail) means it never pulls the person back */
@@ -213,13 +217,31 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
       setRunning(null); snackbar({ message: 'Couldn’t run the comparison — please try again' })
     } finally { setBusy(false) }
   }
+  /* (the close-out round 2026-10-31, C-08) the delete is soft: it says so with Undo (the house's, ⌘Z too), and Deleted comparisons keeps it */
+  const said = (r: { error: string; locked?: true }, what: string) => { if ('locked' in r && r.locked) answerLock(r.error, 'quote_xray'); else snackbar({ message: r.error || `Couldn’t ${what} — please try again` }) }
+  const undoDelete = async (id: string) => {
+    try { const r = await restoreComparisons([id]); if ('error' in r) { said(r, 'restore the comparison'); return } router.refresh() }
+    catch { snackbar({ message: 'Couldn’t restore the comparison — please try again' }) }
+  }
   const remove = async (id: string, label: string) => {
     try {
       const res = await deleteComparison(id)
       if ('error' in res) { if ('locked' in res) { answerLock(res.error, 'quote_xray'); return } snackbar({ message: res.error === 'not-allowed' ? COMPARISON_DELETE_RULE : 'That comparison is already gone' }); router.refresh(); return }
-      snackbar({ message: `${label} deleted` }); router.refresh()
+      snackbar({ message: `${label} deleted`, actionLabel: 'Undo', onAction: () => { void undoDelete(id) } }); router.refresh()
     } catch { snackbar({ message: 'Couldn’t delete the comparison — please try again' }) }
   }
+  /* (C-08) the sheet's three answers: a refusal says the rule, a success says what happened and the page reads again; a throw is the sheet's
+     own "Couldn’t … — please try again" */
+  const trash = async (what: string, act: () => Promise<Awaited<ReturnType<typeof restoreComparisons>>>, done: (n: number) => string) => {
+    const r = await act()
+    if ('error' in r) { said(r, what); return }
+    snackbar({ message: done('restored' in r ? r.restored : r.deleted) }); router.refresh()
+  }
+  const sheetLead = scoped?.id ?? null
+  const loadDeleted = useCallback(() => listDeletedComparisons(sheetLead), [sheetLead])
+  const openTrash = () => { if (xrayLock.locked) { xrayLock.open(); return } setDeletedOpen(true) }
+  /* the arrival mark goes once the sheet closes, so a reload doesn't open it again */
+  const closeTrash = () => { setDeletedOpen(false); if (openDeleted) router.replace(here, { scroll: false }) }
 
   const dropzone = (side: 'other' | 'yours', title: string) => {
     const s = side === 'other' ? other : mine
@@ -347,7 +369,12 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
             )}
 
             <aside className={styles.recents} aria-label="Recent comparisons">
-              <span className={styles.recentsHead}>{scoped ? `${RECENTS_HEAD} · ${scoped.name}` : RECENTS_HEAD}</span>   {/* (sweep S3) a lead's page lists only its readings — the head says so */}
+              {/* (sweep S3) a lead's page lists only its readings — the head says so. (C-08) Its ⋮ holds Deleted comparisons, as a list's ⋮ holds its
+                  Deleted sheet (Tools › Quotes · Contracts) */}
+              <div className={styles.recentsHead}>
+                <span className={styles.recentsTitle}>{scoped ? `${RECENTS_HEAD} · ${scoped.name}` : RECENTS_HEAD}</span>
+                <RecentsMenu onDeleted={openTrash} />
+              </div>
               {recents.length > SEARCH_FROM ? <RecentSearch query={query} onQuery={setQuery} inputRef={searchRef} /> : null}
               {recents.length === 0 ? (
                 <span className={styles.recentsEmpty}>{scoped ? `Nothing compared for ${scoped.name} yet.` : 'Nothing compared yet. Your comparisons will be kept here.'}</span>
@@ -381,10 +408,15 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
           </div>
         </Drawer>
 
+        {/* (C-08) the words say where it goes, not that it can't be undone (Deleted quotes' rule, sweep S1 · U-05) */}
         <ConfirmDialog open={del.open} title="Delete this comparison?" confirmLabel="Delete"
-                       message={`${del.payload ? `${del.payload.leadName ?? del.payload.yourLabel} · vs ${del.payload.otherStudio}` : 'It'} will be deleted permanently. This can’t be undone.`}
+                       message={`${del.payload ? `${del.payload.leadName ?? del.payload.yourLabel} · vs ${del.payload.otherStudio}` : 'It'} moves to Deleted comparisons, where you can restore it.`}
                        onCancel={() => setDel((d) => ({ ...d, open: false }))}
                        onConfirm={() => { const r = del.payload; setDel((d) => ({ ...d, open: false })); if (r) void remove(r.id, `${r.leadName ?? r.yourLabel} · vs ${r.otherStudio}`) }} />
+        <DeletedComparisonsSheet open={deletedOpen} onClose={closeTrash} load={loadDeleted} crumb={scoped ? `${scoped.name} / Quote X-Ray` : 'Tools / Quote X-Ray'}
+                                 onRestore={(ids) => trash('restore the comparison', () => restoreComparisons(ids), (n) => (n === 1 ? 'Comparison restored' : `${n} comparisons restored`))}
+                                 onDeleteForever={(ids) => trash('delete the comparison forever', () => deleteComparisonsForever(ids), (n) => (n === 1 ? 'Comparison deleted forever' : `${n} comparisons deleted forever`))}
+                                 onEmptyTrash={() => trash('delete the comparisons forever', () => emptyComparisonTrash(sheetLead), (n) => (n === 1 ? 'Comparison deleted forever' : `${n} comparisons deleted forever`))} />
       </div>
     </PageReveal>
   )
@@ -420,6 +452,23 @@ function RecentRow({ recent: r, href, number, onOpenQuote, onDelete }: { recent:
         <DropdownItem tone="danger" disabled={!r.canDelete} help={r.canDelete ? undefined : COMPARISON_DELETE_RULE} onSelect={() => { setOpen(false); onDelete() }}>Delete</DropdownItem>   {/* (REG-728) the rule in the row */}
       </PortalMenu>
     </li>
+  )
+}
+
+/** (the close-out round 2026-10-31, C-08) Recent comparisons' ⋮ — Deleted comparisons, the list's own Deleted sheet (a Recent row's ⋮ is its
+    row's: Open the quote · Delete). */
+function RecentsMenu({ onDeleted }: { onDeleted: () => void }) {
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  return (
+    <>
+      <span ref={anchor} className={styles.recentMenu}>
+        <Tooltip label="More options" disabled={open}><IconButton icon="more_vert" label={`More options for ${RECENTS_HEAD}`} size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="xray-recents-menu" /></Tooltip>
+      </span>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={RECENTS_HEAD}>
+        <DropdownItem onSelect={() => { setOpen(false); onDeleted() }}>Deleted comparisons</DropdownItem>
+      </PortalMenu>
+    </>
   )
 }
 

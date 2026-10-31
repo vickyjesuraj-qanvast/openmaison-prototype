@@ -122,7 +122,7 @@ export async function searchStudio(query: string, scope: SearchScope): Promise<S
 
   if (kinds.has('xray')) jobs.push((async () => {
     const rows = await db.select({ id: quoteComparisons.id, leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, yourLabel: quoteComparisons.yourLabel, createdAt: quoteComparisons.createdAt }).from(quoteComparisons)
-      .where(or(anyLike(quoteComparisons.otherStudio, quoteComparisons.yourLabel), byLead(quoteComparisons.leadId)))
+      .where(and(isNull(quoteComparisons.deletedAt), or(anyLike(quoteComparisons.otherStudio, quoteComparisons.yourLabel), byLead(quoteComparisons.leadId))))   // (C-08) a deleted reading waits in Deleted comparisons
     for (const r of rows) {
       const lead = r.leadId ? leadById.get(r.leadId) : null; if (!lead) continue
       push({ kind: 'xray', id: r.id, title: `${lead.name} · vs ${r.otherStudio ?? 'another studio'}`, sub: [r.yourLabel, displayDate(r.createdAt)].filter(Boolean).join(' · '), href: `/quote-x-ray/${r.id}`, icon: 'scan' })
@@ -260,9 +260,9 @@ export async function searchStudio(query: string, scope: SearchScope): Promise<S
     ])
     for (const i of items) {
       if (!itemVisible(viewer, i)) continue
-      push({ kind: 'book', id: i.id, title: i.name, sub: ['My Items', i.category, i.vendor].filter(Boolean).join(' · '), chip: i.status === 'proposed' ? 'Proposed' : null, href: `/company/price-book?open=${i.id}`, icon: 'list_alt' }, [strip(i.description)])
+      push({ kind: 'book', id: i.id, title: i.name, sub: ['Items', i.category, i.vendor].filter(Boolean).join(' · '), chip: i.status === 'proposed' ? 'Proposed' : null, href: `/company/price-book?open=${i.id}`, icon: 'list_alt' }, [strip(i.description)])
     }
-    for (const s of sections) push({ kind: 'book', id: s.id, title: s.name, sub: 'My Sections', href: `/company/price-book/sections?open=${s.id}`, icon: 'format_list_bulleted' }, [strip(s.description), s.tags])
+    for (const s of sections) push({ kind: 'book', id: s.id, title: s.name, sub: 'Sections', href: `/company/price-book/sections?open=${s.id}`, icon: 'format_list_bulleted' }, [strip(s.description), s.tags])
   })())
 
   if (kinds.has('material')) jobs.push((async () => {

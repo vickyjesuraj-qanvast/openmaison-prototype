@@ -6,7 +6,7 @@ import { fetchFolders } from '@/lib/company/folders'
 import { AccessGate } from '@/components/shell/access-gate'
 import { refusesPath } from '@/lib/leads/visibility'
 
-export const metadata: Metadata = { title: 'My Items' }   // (REG-653, Q-18) each tab names itself, as My Sections does
+export const metadata: Metadata = { title: 'Price book · Items' }   // (REG-653, Q-18) each tab names itself, as Sections does · (the close-out round 2026-10-31, C-122) the tabs' own names
 export const dynamic = 'force-dynamic'
 
 /** Company › Price book › My Items (REG-594): every product and service the studio prices, as a library. */

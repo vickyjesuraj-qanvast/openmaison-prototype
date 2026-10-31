@@ -56,7 +56,7 @@ export function InboxBackDialogs({ back, onClose, onDone }: { back: InboxBack | 
     } finally { setBusy(false) }
   }
   const help = !note ? '' : note.kind === 'quote' ? `Goes back to ${note.who ?? 'whoever sent it'} at the top of the quote; the quote returns to Draft.`
-    : note.kind === 'price-book' ? `Goes to ${note.who ?? 'whoever proposed it'} in the bell. The item leaves My Items; lines already on their quotes keep their figures.`
+    : note.kind === 'price-book' ? `Goes to ${note.who ?? 'whoever proposed it'} in the bell. The item leaves the Price book; lines already on their quotes keep their figures.`
     : `${note.who ?? 'Whoever logged it'} reads your note and can change it — it waits for approval again.`
   return (
     <>

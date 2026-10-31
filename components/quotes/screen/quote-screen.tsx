@@ -70,7 +70,8 @@ export function QuoteScreen({
   onBack: () => void
   backLabel: string
   onMenu: (a: ScreenMenuAction) => void
-  menu: { canApprove: boolean; waitingApproval: boolean; deleteBlock: string | null; viewLink: { block: string | null } | null; tplLocked: boolean; xrayLocked: boolean; hasTemplate: boolean; templateDeleted: boolean }
+  menu: { canApprove: boolean; waitingApproval: boolean; deleteBlock: string | null; viewLink: { block: string | null } | null; tplLocked: boolean; xrayLocked: boolean; hasTemplate: boolean; templateDeleted: boolean
+    /** (the close-out round 2026-10-31) a signed quote keeps its template — no Change template, as the desk's Template card */ keepsTemplate?: boolean }
   reading: Reading | null
   onAsPrinted: () => void
   folds: ScreenFolds
@@ -109,7 +110,7 @@ export function QuoteScreen({
                        <DropdownItem onSelect={pick('revise')}>Revise — new version</DropdownItem>
                        {menu.waitingApproval && menu.canApprove ? <DropdownItem onSelect={pick('requestChanges')}>Request changes</DropdownItem> : null}
                        {variation ? null : <DropdownItem onSelect={pick('duplicate')}>Duplicate and edit</DropdownItem>}
-                       {variation ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('changeTemplate')}>{menu.hasTemplate ? 'Change template' : 'Choose a template'}</DropdownItem>}
+                       {variation || menu.keepsTemplate ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('changeTemplate')}>{menu.hasTemplate ? 'Change template' : 'Choose a template'}</DropdownItem>}
                        {variation || !menu.hasTemplate || menu.templateDeleted ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('editTemplate')}>Edit template</DropdownItem>}
                        {variation ? null : <DropdownItem meta={menu.tplLocked ? <ProTag /> : undefined} onSelect={pick('template')}>Save as template</DropdownItem>}
                        <DropdownDivider />

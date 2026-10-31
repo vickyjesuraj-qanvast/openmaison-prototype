@@ -469,7 +469,7 @@ export function TemplateLibraryGhost() {
 /** Company › Price book: My Items (the Kind pill and Filters) or My Sections (neither). */
 export function PriceBookGhost({ sections = false }: { sections?: boolean }) {
   return (
-    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label={sections ? 'Loading My Sections' : 'Loading My Items'}>
+    <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label={sections ? 'Loading the Price book’s sections' : 'Loading the Price book’s items'}>
       <LibraryGhostFor page={sections ? 'price-book-sections' : 'price-book-items'} pill={!sections} filters={!sections} folders={sections ? 1 : 2} cards={sections ? 4 : 5} />
     </CompanyGhostFrame>
   )

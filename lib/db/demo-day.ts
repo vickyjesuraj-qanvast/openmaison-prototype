@@ -16,7 +16,9 @@
  * read keys, a date answer, and the dates the app itself wrote into a bell row, its WhatsApp / email copy, an Activity line's from → to and
  * a meeting brief. Every gap between two records is kept to the second, so every "n days ago", "new for 7 days", "this week" and "overdue
  * by 2 days" reads exactly as it did on the snapshot's day. What people typed (a message, a quote's notes, an update's words) and what was
- * signed (a contract's frozen copy and its fingerprint) keep their words.
+ * signed (a contract's frozen copy) keep their words — (the close-out round 2026-10-31, call C-04) all but the days a signed copy's fields
+ * print from its records (`DATE_FIELDS`: the contract's date, the signing day, Valid until, the handover's days), which ride with those
+ * records; its fingerprint is then made again over the copy it holds (lib/db/demo-fingerprints.ts, in lib/db/baseline.ts).
  *
  * The AI credits story keeps its own move (lib/credits/demo-month.ts — normally the same days; more when the snapshot's own month had
  * already ended): its rows are left to it here (`skip`), and their other stamps move by its days (`daysFor`).
@@ -74,9 +76,10 @@ export const PLAIN_TIMES: TimeColumns = {
  *  · `words` — plain text the app wrote with dates spelled out.
  *  · `rowKey` — a derived row's key ending in its moment in ms (`update:<id>:<ms>`), so a read row stays read.
  *  · `inputDate` — the whole value is an input date (a questionnaire's date answer, picked in the date field).
+ *  · `fields` — a signed contract's kept copy: only the days its fields print from the records (`DATE_FIELDS`); every other word as signed.
  * `anchor` names the row's own stamp, to tell the year of a date spelled without one.
  */
-export const EMBEDDED: { table: string; column: string; kind: 'json' | 'words' | 'rowKey' | 'inputDate'; words?: boolean; anyNumber?: boolean; anchor?: string; unless?: { column: string; values: readonly string[] } }[] = [
+export const EMBEDDED: { table: string; column: string; kind: 'json' | 'words' | 'rowKey' | 'inputDate' | 'fields'; words?: boolean; anyNumber?: boolean; anchor?: string; unless?: { column: string; values: readonly string[] } }[] = [
   { table: 'stage_logs', column: 'payload', kind: 'json', anchor: 'created_at' },
   { table: 'lead_events', column: 'detail', kind: 'json', words: true, anchor: 'at' },
   { table: 'project_schedule_shares', column: 'snapshot', kind: 'json' },
@@ -95,6 +98,7 @@ export const EMBEDDED: { table: string; column: string; kind: 'json' | 'words' |
   { table: 'notification_outbox', column: 'body', kind: 'words', anchor: 'created_at' },
   { table: 'portal_bell_reads', column: 'row_key', kind: 'rowKey' },
   { table: 'questions', column: 'answer', kind: 'inputDate' },
+  { table: 'contracts', column: 'signed_body', kind: 'fields', anchor: 'contract_date' },   // (the close-out round 2026-10-31, C-04) the kept copy's printed days
 ]
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'bigint' ? Number(v) : null)
@@ -172,6 +176,36 @@ export function shiftDateWords(text: string, days: number, nearMs: number | null
   })
 }
 
+/**
+ * (the close-out round 2026-10-31 — call C-04, the UI audit's 4-05) The fields of a signed contract's kept copy that print a day its records
+ * hold (lib/contracts/snapshot.ts `tokenValuesFor`): the contract's date, Today's date (the signing day), the quote's Valid until and the
+ * handover's completion and defects days. Those records ride the demo day, so the days they printed ride with them.
+ */
+export const DATE_FIELDS: readonly string[] = ['date.contract', 'date.today', 'quote.validUntil', 'project.completedOn', 'project.defectsUntil']
+/* One resolved field of a kept copy (lib/contracts/tokens.ts `resolveTokens`): <span class="om-token-value" data-token="key">value</span> */
+const FIELD = /(<span\b[^>]*\bdata-token="([a-zA-Z.]+)"[^>]*>)([^<]*)(<\/span>)/g
+const isValue = (open: string) => /\bom-token-value\b/.test(open)
+
+/** A kept copy with the day each of its `DATE_FIELDS` prints moved by whole days, in its own words ("22 July 2026"); every other word as it was. */
+export function shiftDateFields(html: string, days: number, nearMs: number | null): string {
+  if (!days || !html) return html
+  return html.replace(FIELD, (all, open: string, key: string, value: string, close: string) =>
+    (DATE_FIELDS.includes(key) && isValue(open) ? `${open}${shiftDateWords(value, days, nearMs)}${close}` : all))
+}
+
+/** The day a kept copy's field prints (local midnight, ms) — null when the copy has no such field or it prints no whole date ("22 July 2026"). */
+export function fieldDay(html: string, key: string): number | null {
+  for (const m of html.matchAll(FIELD)) {
+    if (m[2] !== key || !isValue(m[1]!)) continue
+    const d = /^(\d{1,2}) ([A-Z][a-z]+) (\d{4})$/.exec(m[3]!.trim())
+    const mi = d ? MONTHS_FULL.indexOf(d[2]!) : -1
+    if (!d || mi < 0) return null
+    const at = new Date(Number(d[3]), mi, Number(d[1]))
+    return at.getMonth() === mi ? at.getTime() : null
+  }
+  return null
+}
+
 /** A JSON value with every moment inside it moved (see `EMBEDDED`) — a key naming a planned moment keeps whole days. */
 function shiftJsonValue(v: unknown, days: number, o: { words: boolean; anyNumber: boolean; nearMs: number | null; mover: Mover }, key: string | null): unknown {
   const move = key !== null && PLANNED.test(key) ? o.mover.planned : o.mover.happened
@@ -244,6 +278,7 @@ export function shiftDemoRows(base: SnapshotRows, days: number, times: TimeColum
         if (e.kind === 'json') n[e.column] = shiftJsonText(v, d, { words: e.words, anyNumber: e.anyNumber, nearMs, mover: mv })
         else if (e.kind === 'words') n[e.column] = typeof v === 'string' ? shiftDateWords(v, d, nearMs) : v
         else if (e.kind === 'rowKey') n[e.column] = shiftRowKey(v, d, mv.happened)
+        else if (e.kind === 'fields') n[e.column] = typeof v === 'string' ? shiftDateFields(v, d, nearMs) : v
         else if (typeof v === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v.trim())) n[e.column] = shiftDateString(v.trim(), d) ?? v
       }
       return n

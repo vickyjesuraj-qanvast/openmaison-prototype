@@ -24,6 +24,9 @@ import { clientViewDiff, type ClientView } from '@/lib/templates/client-view'
 import { fallbackDesignClient } from '@/lib/templates/presets'
 import type { QuotePreviewData } from '@/lib/templates/queries'
 import { saveQuoteClientView, setQuoteTemplate } from '@/app/company/templates-actions'
+import { isRefusal } from '@/lib/company/template-rules'
+import { keepsItsTemplate } from '@/lib/quotes/policy'   // (the close-out round 2026-10-31) a signed quote keeps its paper
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { Dialog } from '@/components/om/dialog'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
@@ -98,8 +101,15 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
   const onFit = useCallback((w: number) => setFitW(w), [])
   const [pickerOpen, setPickerOpen] = useState(false)   /* (REG-496) the template chip opens the picker; a change re-pins and re-renders */
   const [status, setStatus] = useState(quote.status)
+  /* (the close-out round 2026-10-31) a refresh brings the record's own status — a quote signed elsewhere while this page was open reads Signed */
+  const [seenStatus, setSeenStatus] = useState(quote.status)
+  if (quote.status !== seenStatus) { setSeenStatus(quote.status); setStatus(quote.status) }
+  /* (the close-out round 2026-10-31, the calm UI build's "found on the way") the template's words open the picker only where the quote may change
+     its paper: never on a signed quote (the editor's Template card offers no Change there, 4-10 · the server refuses it), never on a kept or
+     compared version (nothing here changes the quote), never for a read-only viewer */
+  const picks = !fixed && !readOnly && !keepsItsTemplate(status)
   const [busy, setBusy] = useState(false)
-  const ready = useMemo(() => readiness(data.data, design, view), [data.data, design, view])
+  const ready =useMemo(() => readiness(data.data, design, view), [data.data, design, view])
   const totals = useMemo(() => docTotals(data.data), [data.data])
   const versionQuery = [kept ? `version=${kept.version}` : '', compare ? `against=${compare.against}` : ''].filter(Boolean).join('&')
   const link = typeof window === 'undefined' ? '' : `${window.location.origin}/quotes/${quote.id}/preview${versionQuery ? `?${versionQuery}` : ''}`
@@ -222,7 +232,10 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
   /* (REG-518) The picker's selection lives here; the dialog footer acts on it. */
   const [pickedTpl, setPickedTpl] = useState<string | null>(null)
   const pickerSel = defaultPick(data.picker, pickedTpl, template?.id ?? null)
-  const applyTemplate = (id: string) => { setPickerOpen(false); setPickedTpl(null); setBusy(true); void setQuoteTemplate(quote.id, id).then(() => { snackbar({ message: 'Template changed' }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }
+  const applyTemplate = (id: string) => { setPickerOpen(false); setPickedTpl(null); setBusy(true); void setQuoteTemplate(quote.id, id).then((r) => {
+    /* (the close-out round 2026-10-31) a refusal says its rule ("…a signed quote keeps the template it was signed with") and the page reads the record again */
+    snackbar({ message: isRefusal(r) ? couldnt('change the template', refusalOf(r.error)) : 'Template changed' }); router.refresh()
+  }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }
   const openPicker = () => { if (tplLock.locked) { tplLock.open(); return } setPickerOpen(true) }
 
   /* (K3 — C-20) Share PDF on a phone: the file through the system share sheet once a PDF renderer is plugged in (lib/services/pdf.ts, the S34
@@ -251,7 +264,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
         {(costs || (!fixed && !readOnly)) ? <DropdownDivider /> : null}
         {costs ? <DropdownItem role="menuitemcheckbox" checked={internal} onSelect={() => { setMenuOpen(false); setInternal((v) => !v) }} help="Cost and margin on the page — never printed for the client">Internal copy</DropdownItem> : null}
         {!fixed && !readOnly ? <DropdownItem onSelect={() => { setMenuOpen(false); setPanel(true) }} help={changed ? `${changed} setting${changed === 1 ? '' : 's'} differ from the template` : 'Columns, descriptions, the schedule, the terms'}>What your client sees</DropdownItem> : null}
-        {!fixed && !readOnly ? <DropdownItem onSelect={() => { setMenuOpen(false); openPicker() }} help={template ? `${template.name} · v${template.version}` : 'Studio default'}>Change template</DropdownItem> : null}
+        {picks ? <DropdownItem onSelect={() => { setMenuOpen(false); openPicker() }} help={template ? `${template.name} · v${template.version}` : 'Studio default'}>Change template</DropdownItem> : null}
         {fixed && !readOnly && !(compare && !kept) ? <DropdownItem onSelect={() => { setMenuOpen(false); router.push(withFrom(`/quotes/${quote.id}/preview`, from)) }} help={kept ? `This is version ${kept.version} of ${kept.current}` : undefined}>Open the current version</DropdownItem> : null}
       </Dropdown>
     </span>
@@ -410,7 +423,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
             <span className={styles.chips}>
               <MetaChip>{quoteStatusLabel(status)}</MetaChip>
               {fixed ? <MetaChip>Read-only</MetaChip> : null}
-              {readOnly ? <span className={styles.templateWords}><Icon name="style" size={16} weight={300} />{template ? `${template.name} · v${template.version}` : 'Studio default'}</span> : <Tooltip label="Change template">
+              {!picks ? <span className={styles.templateWords}><Icon name="style" size={16} weight={300} />{template ? `${template.name} · v${template.version}` : 'Studio default'}</span> : <Tooltip label="Change template">
                 <button type="button" className={`${styles.chipBtn} ${styles.templateWords}`} onClick={openPicker} aria-haspopup="dialog" aria-label={tplLock.locked ? 'Change template, Pro feature' : 'Change template'}><Icon name="style" size={16} weight={300} />{template ? `${template.name} · v${template.version}` : 'Studio default'}</button>
               </Tooltip>}
               {pages ? <span className={styles.pageWords}>{pages} page{pages === 1 ? '' : 's'}</span> : null}

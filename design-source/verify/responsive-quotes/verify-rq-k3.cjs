@@ -14,6 +14,8 @@
 //  - the editor's Client view at ≤1024 (C-21 · B-08): wherever the pane renders there, it is the door to the Preview, never a 4px paper
 //  - 1440: the desk's bar as it was (the four buttons, the switch, Send) and no touch bar — the byte-identical comparison runs beside this probe
 //  - Accounting (read-only): no Send, no foot, the ⋮ keeps only the copy rows
+//  - (the close-out round 2026-10-31) a signed quote keeps its template: no Change template in its ⋮ (390), its template words not a press
+//    (1440); a Preview left open while the quote is signed elsewhere — the choice is refused with the rule and the words stop being a press
 //  - no page errors
 // Run against `next start` on a scratch copy of the demo DB — never local.db. Everything it writes is put back in `finally`.
 // Usage: BASE=http://localhost:3173 NODE_PATH=<repo>/node_modules node verify-rq-k3.cjs <scratch.db> [shotDir] [base]
@@ -328,6 +330,35 @@ const near = (a, b, tol = 2) => Math.abs(a - b) <= tol
       } else ok(true, 'Priya cannot open this quote’s Preview — the gate stands (nothing to check here)')
       await P.close()
       as('dane')
+    } else ok(true, 'no signed quote in the demo — skipped')
+
+    // ── 10 · a signed quote keeps its template (the close-out round 2026-10-31) ───────────────────────────────────────────────────
+    console.log('10 · a signed quote keeps its template: no picker on its Preview, and a Preview left open is refused')
+    if (SIGNED) {
+      const S = await touchCtx(); const sm = await page(S, 'signed-390')
+      await go(sm, `/quotes/${SIGNED.id}/preview`)
+      await sm.getByTestId('preview-more').tap(); await settle(sm, 700)
+      const srows = (await sm.getByRole('menuitem').allInnerTexts()).map((r) => r.split('\n')[0])
+      ok(srows.length === 3 && /^Copy preview link/.test(srows[0]) && /^Share PDF/.test(srows[1]) && /^What your client sees/.test(srows[2]), `390: a signed quote’s ⋮ has no Change template (${srows.join(' · ')})`)
+      await S.close()
+      const SD = await desk(); const sd = await page(SD, 'signed-1440')
+      await go(sd, `/quotes/${SIGNED.id}/preview`, 1800)
+      const words = sql(`select coalesce((select t.name || ' · v' || q.template_version from quotes q join quote_templates t on t.id = q.template_id where q.id = '${SIGNED.id}'), 'Studio default')`)
+      ok(await sd.getByRole('button', { name: /Change template/ }).count() === 0 && (await sd.locator('header').first().innerText()).includes(words), `1440: its template is words, not a press (“${words}” still reads)`)
+      await shot(sd, '14-signed-1440')
+      /* a Preview open on a Draft while the quote is signed elsewhere: the choice is refused with the rule, nothing changes, and the page reads the record again */
+      const was = json(`select status, coalesce(template_id, '') as tpl from quotes where id = '${DRAFT}'`)[0]
+      await go(sd, `/quotes/${DRAFT}/preview`, 1800)
+      await sd.getByRole('button', { name: 'Change template' }).click(); await settle(sd, 900)
+      const picker = sd.getByRole('dialog', { name: 'Choose a template' })
+      await picker.getByRole('option', { name: /Open folder HDB/ }).first().click(); await settle(sd, 500)   // the demo files the BTO templates in HDB
+      await picker.getByRole('option').filter({ hasText: '4-Room BTO' }).first().click(); await settle(sd, 300)
+      sql(`update quotes set status = 'Signed' where id = '${DRAFT}'`)
+      await picker.getByRole('button', { name: 'Use this template' }).click(); await settle(sd, 2200)
+      ok(sql(`select coalesce(template_id, '') from quotes where id = '${DRAFT}'`) === was.tpl && await sd.getByText('Couldn’t change the template — a signed quote keeps the template it was signed with').count() === 1, 'a Preview left open while the quote was signed: the server refuses the new template and the snackbar says why')
+      ok(await sd.getByRole('button', { name: 'Change template' }).count() === 0, '…and the page reads the record again — the template is words now')
+      sql(`update quotes set status = '${was.status}' where id = '${DRAFT}'`)
+      await SD.close()
     } else ok(true, 'no signed quote in the demo — skipped')
 
     ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`)

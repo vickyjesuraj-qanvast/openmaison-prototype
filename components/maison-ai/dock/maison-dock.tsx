@@ -34,6 +34,13 @@ const SLOW_MS = 500
 /** A finger's jitter is not a scroll (the floating button's own dead zone, components/shell/maison-fab.tsx). */
 const DEADZONE = 6
 const UPRIGHT_TABLET = '(min-width: 768px) and (max-width: 1023px)'
+/** (the close-out round 2026-10-31) Runs once the press under way has landed — after its pointerup and the click that follows it. */
+function afterPress(run: () => void) {
+  let done = false
+  const go = () => { if (done) return; done = true; window.removeEventListener('pointerup', go, true); window.removeEventListener('pointercancel', go, true); window.setTimeout(run, 0) }
+  window.addEventListener('pointerup', go, true)
+  window.addEventListener('pointercancel', go, true)
+}
 
 /** (the Dashboard redesigned 2026-10-26 — the contract, brief § 4) A card's Ask: puts that card in the docked field's context — its questions
     replace the three suggestions, and the next question is read in its words — and, given a question, asks it about that card straight away
@@ -232,7 +239,9 @@ export function MaisonDock({ data }: { data: DockData }) {
       const t = e.target as Element | null
       if (!t || root.current?.contains(t)) return
       if (t.closest('[role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [data-snackbar]')) return
-      setFolded(true)
+      /* (the close-out round 2026-10-31, bug fix) folded once the press has landed — folding lets the band go to rest (the suggestions leave),
+         the page's end loses their height and, scrolled to the end, the page moved under the pointer: the click missed what was pressed */
+      afterPress(() => setFolded(true))
     }
     /* (the Dashboard's closing pass, 2026-10-26) Esc folds the thread wherever the keyboard is — a question asked from a card (Your day's
        Prepare me) leaves focus on that card's button, and the thread's own key handlers never heard it; an open dialog, menu or sheet takes
@@ -262,14 +271,18 @@ export function MaisonDock({ data }: { data: DockData }) {
   const engaged = desk && (focused || plusOpen || inThread)
   const holdsFocus = () => !!root.current?.contains(document.activeElement)
   useEffect(() => {
-    /* a press inside the band settles after its click (Safari never focuses a pressed button): only then is "the focus left" read */
+    /* a press inside the band settles after its click (Safari never focuses a pressed button): only then is "the focus left" read —
+       (the close-out round 2026-10-31, bug fix) and a press anywhere else too: the field let go mid-press brought the band to rest and the
+       page's end lost the suggestions' height, so a page scrolled to its end moved under the pointer and the click missed (a Your day row's ⋮) */
+    const down = () => { pressing.current = true }
     const up = () => {
       if (!pressing.current) return
       window.setTimeout(() => { pressing.current = false; if (!root.current?.contains(document.activeElement)) setFocused(false) }, 0)
     }
+    window.addEventListener('pointerdown', down, true)
     window.addEventListener('pointerup', up, true)
     window.addEventListener('pointercancel', up, true)
-    return () => { window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', up, true) }
+    return () => { window.removeEventListener('pointerdown', down, true); window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', up, true) }
   }, [])
   /* the field let go with nothing asked: a card's context goes with the suggestions (asked about, it stays for the answers' return) */
   const [engagedWas, setEngagedWas] = useState(engaged)
@@ -415,7 +428,6 @@ export function MaisonDock({ data }: { data: DockData }) {
            data-engaged={engaged || undefined}
            onFocus={() => setFocused(true)}
            onBlur={(e) => { if (pressing.current || root.current?.contains(e.relatedTarget as Node | null)) return; setFocused(false) }}
-           onPointerDownCapture={() => { pressing.current = true }}
            onKeyDown={(e) => { if (e.key === 'Escape' && escape()) { e.preventDefault(); e.stopPropagation() } }}>
         {desk && inThread ? (
           /* the answers above the field, at its width, over a wash the width of the page's column (a press on the wash folds them) */

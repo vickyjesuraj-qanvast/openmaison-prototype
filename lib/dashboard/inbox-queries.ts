@@ -430,7 +430,7 @@ async function priceBookProposals(ctx: DashCtx): Promise<InboxRow[]> {
   return rows.map((i) => {
     const by = i.createdBy ? people.find((p) => p.id === i.createdBy)?.name ?? null : null
     const rate = i.costMinor + i.markupMinor
-    const done = `${i.name} approved — it’s in My Items for the studio`   // the Price book's own sentence
+    const done = `${i.name} approved — it’s in the Price book for the studio`   // the Price book's own sentence (the close-out round 2026-10-31, C-122)
     const run = { kind: 'approve-price-book' as const, ref: i.id, done }
     const open = dash(`/company/price-book?open=${encodeURIComponent(i.id)}`)
     return row({
@@ -438,7 +438,7 @@ async function priceBookProposals(ctx: DashCtx): Promise<InboxRow[]> {
       caption: fitCaption([i.category ?? 'Price book', agoWords(i.createdAt.getTime(), ctx.now), `${moneyCard(rate)} / ${i.unit.toLowerCase()}`]), tone: 'approve', open,
       verbs: [{ label: 'Approve', do: { kind: 'run', run }, testId: 'need-approve' }, { label: 'Review', do: { kind: 'review' }, testId: 'need-review' }],
       menu: [{ label: 'Send back', do: { kind: 'review' }, testId: 'need-send-back' }],
-      review: { title: 'Price book · My Items', icon: 'list_alt', heading: i.name, byline: by ? `${by} proposed it ${agoWords(i.createdAt.getTime(), ctx.now)}` : undefined,
+      review: { title: 'Price book · Items', icon: 'list_alt', heading: i.name, byline: by ? `${by} proposed it ${agoWords(i.createdAt.getTime(), ctx.now)}` : undefined,
         body: plainOf(i.descriptionHtml ?? i.description) || undefined, photos: i.thumb ? [{ src: i.thumb, alt: i.name }] : [],
         facts: [...(i.category ? [{ label: 'Trade', value: i.category }] : []), { label: 'Unit', value: i.unit }, { label: 'Unit price', value: money2(rate) },   // (T-01) a line's grouping is its Trade
           ...(costs ? [{ label: 'Cost', value: money2(i.costMinor) }, { label: 'Mark-up', value: money2(i.markupMinor) }] : []), ...(i.vendor ? [{ label: 'Vendor', value: i.vendor }] : [])],   // Viewer.costs (S41b-1)

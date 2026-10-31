@@ -28,6 +28,29 @@
 @supports (field-sizing: content) {
   .titleField > .titleInput { flex: 0 1 auto; field-sizing: content; min-width: 0; }
 }
+/* (the close-out round 2026-10-31, C-123 · the UI audit's 4-17) A library editor's name in its header (title-input.tsx HeaderTitle, through
+   ContractHeader `titleEdit`): at rest the header's title (20 bold, the quote header's `.title`) and the pencil after it, the pair one press
+   with the row's hover tint; typing, the field above at the title's size, its box hanging 4 past the title's 24 line so the header keeps its 76.
+   On a phone the name wraps to two lines as every editor title does (T-01); under a finger the press is 44 tall, paid back as margin. */
+.headTitle { margin: 0; min-width: 0; display: flex; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.headTitleWords { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headTitleButton {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-width: 0;
+  padding: 0 var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-1)); border: 0; border-radius: var(--om-radius-1);
+  background: none; font: inherit; color: inherit; text-align: left; cursor: text; transition: background-color var(--motion-hover);
+}
+.headTitleButton:hover { background: var(--om-color-hover-04p); }
+.headTitleButton:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.headTitleField.headTitleField { flex: 0 1 auto; max-width: none; }
+.headTitleInput.headTitleInput { height: 32px; margin-block: -4px; font: var(--om-type-heading-h3); }
+@media (hover: none) {
+  .headTitleButton { min-height: 44px; margin-block: -10px; }
+  .headTitleInput.headTitleInput { height: 44px; margin-block: -10px; }
+}
+@media (max-width: 767px) {
+  .headTitleWords { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .headTitleField.headTitleField { flex: 1 1 100%; }
+}
 .metaEnd { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; margin-left: auto; }
 .metaEnd.metaStart { margin-left: 0; }   /* (the calm UI build 2026-10-27, 4-18) the title left the row (it renames from the header's ⋮): the row starts with the recipient */
 .headWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (4-11) an upload's kind, a bundle — words beside the title, not tags */

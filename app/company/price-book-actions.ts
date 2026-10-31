@@ -44,7 +44,7 @@ async function changer(ids: string[]) {
   return { v, block: rows.some((r) => itemChangeBlock(v, r)) ? BOOK_RULE : null }
 }
 const GONE = 'That item is gone from the price book'
-const SECTION_GONE = 'That section is gone from My Sections'
+const SECTION_GONE = 'That section is gone from the Price book'
 const nameOf = async (id: string | null) => (id ? (await db.select({ name: members.name }).from(members).where(eq(members.id, id)))[0]?.name ?? 'Someone' : 'Someone')
 const clean = (v: string | null | undefined, max = 200) => { const s = (v ?? '').trim().slice(0, max); return s || null }
 const minor = (v: number | undefined, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : fallback)
@@ -348,7 +348,7 @@ async function proposeNotice(itemId: string, by: string | null) {
   const { notify } = await import('@/lib/notifications/emit')
   const { studioRunnerIds } = await import('@/lib/notifications/queries')
   const [it] = await db.select({ name: priceBookItems.name }).from(priceBookItems).where(eq(priceBookItems.id, itemId))
-  await notify('price_book_proposed', await studioRunnerIds(), { title: `${await nameOf(by)} proposed “${it?.name ?? 'an item'}” for My Items`, body: 'Approve it, or send it back with a note', href: `/company/price-book?open=${encodeURIComponent(itemId)}`, actorId: by })   // (UX audit V11) the item itself, not the grid (REG-709's ?open=)
+  await notify('price_book_proposed', await studioRunnerIds(), { title: `${await nameOf(by)} proposed “${it?.name ?? 'an item'}” for the Price book`, body: 'Approve it, or send it back with a note', href: `/company/price-book?open=${encodeURIComponent(itemId)}`, actorId: by })   // (UX audit V11) the item itself, not the grid (REG-709's ?open=)
 }
 export async function approvePriceBookItem(id: string): Promise<void | Refusal> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
@@ -359,7 +359,7 @@ export async function approvePriceBookItem(id: string): Promise<void | Refusal> 
   await db.update(priceBookItems).set({ status: 'live', reviewedBy: v.id, reviewedAt: now, reviewNote: null, updatedAt: now, updatedBy: v.id }).where(eq(priceBookItems.id, id))
   await logBookChange(id, 'approved', v.id, null, null, now)
   const { notify } = await import('@/lib/notifications/emit')
-  if (cur.createdBy) await notify('price_book_answered', [cur.createdBy], { title: `${await nameOf(v.id)} approved “${cur.name}” — it’s in My Items for the studio`, href: `/company/price-book?open=${encodeURIComponent(cur.id)}`, actorId: v.id })   // (UX audit V11) the item itself
+  if (cur.createdBy) await notify('price_book_answered', [cur.createdBy], { title: `${await nameOf(v.id)} approved “${cur.name}” — it’s in the Price book for the studio`, href: `/company/price-book?open=${encodeURIComponent(cur.id)}`, actorId: v.id })   // (UX audit V11) the item itself
   touch()
 }
 export async function sendBackPriceBookItem(id: string, note: string): Promise<void | Refusal> {

@@ -606,7 +606,9 @@ const minorOf = (s) => { const neg = /^[−-]/.test(String(s).trim()); const n =
         const list = (root) => [...root.querySelectorAll('[data-slot]')].filter((s) => getComputedStyle(s).display !== 'none').map((s) => ({ k: s.getAttribute('data-slot'), x: Math.round(s.getBoundingClientRect().left), y: Math.round(s.getBoundingClientRect().top), h: Math.round(s.getBoundingClientRect().height) }))
         /* a card the page holds but that had nothing to say this time (its slot empty) is one the loader can't know ahead */
         const empty = [...page.querySelectorAll('[data-slot]')].filter((s) => getComputedStyle(s).display === 'none').map((s) => s.getAttribute('data-slot'))
-        return { g: list(ghost), p: list(page), empty, gf: ghost.querySelectorAll('[class*="__figure"]').length, pf: page.querySelectorAll('[data-testid^="figure-"]').length, gbg: getComputedStyle(ghost.querySelector('[data-om-l1-header]') ?? ghost).backgroundColor }
+        /* (the close-out round 2026-10-31, dash-d1) Your day's rows: which of them draw an action (Call · Directions) — a meeting past its time has none */
+        const acts = (root) => [...root.querySelectorAll('[data-slot="day"] [class*="__agendaRow"]')].filter((r) => r.getBoundingClientRect().height > 0).map((r) => { const a = r.querySelector('[class*="__act"]'); return !!a && a.getBoundingClientRect().width > 0 })
+        return { g: list(ghost), p: list(page), empty, gf: ghost.querySelectorAll('[class*="__figure"]').length, pf: page.querySelectorAll('[data-testid^="figure-"]').length, gbg: getComputedStyle(ghost.querySelector('[data-om-l1-header]') ?? ghost).backgroundColor, ga: acts(ghost), pa: acts(page) }
       })
       const gk = m ? m.g.map((x) => x.k).filter((k) => !m.empty.includes(k)) : []
       ok(!!m && JSON.stringify(gk) === JSON.stringify(m.p.map((x) => x.k)), `${tag}: the ghost draws the page’s regions in its order (${m && m.p.map((x) => x.k).join(' · ')}${m && m.empty.length ? ` — and ${m.empty.join(' · ')}, which had nothing to say` : ''})`, m ? gk.join(' · ') : 'no reveal')
@@ -619,6 +621,9 @@ const minorOf = (s) => { const neg = /^[−-]/.test(String(s).trim()); const n =
          classes) and the five cards (lane C3's own ghosts) — stands where the page's does and is as tall, within 6 px, for Dane at both widths */
       const fit = m ? m.p.map((x) => { const g = m.g.find((y) => y.k === x.k); return { k: x.k, dy: (g?.y ?? 0) - x.y, dh: (g?.h ?? 0) - x.h } }) : []
       ok(!!m && fit.every((x) => Math.abs(x.dh) <= 6 && Math.abs(x.dy) <= 6), `${tag}: every region stands where the page’s does, as tall (${fit.map((x) => `${x.k} ${x.dy >= 0 ? '+' : ''}${x.dy}/${x.dh >= 0 ? '+' : ''}${x.dh}`).join(' · ')})`)
+      /* (the close-out round 2026-10-31, dash-d1 — a new check) the page tells its next loader each Your day row's action, so the ghost's rows draw
+         them where the page's did (a meeting past its time keeps no Directions, its words take the room and a phone's row is a line shorter) */
+      ok(!!m && JSON.stringify(m.ga.slice(0, m.pa.length)) === JSON.stringify(m.pa), `${tag}: Your day's ghost rows carry the page's actions (${m && (m.pa.map((x) => (x ? 'action' : '—')).join(' · ') || 'no rows today')})`, m ? JSON.stringify(m.ga) : '')
       await shot(p, `08-ghost-${tag}`)
       await c.close()
     }

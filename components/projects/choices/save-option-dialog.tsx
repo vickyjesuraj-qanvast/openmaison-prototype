@@ -80,7 +80,7 @@ export function SaveOptionDialog({ open, option, to, choiceTitle, trades, units 
   const book = to === 'price_book'
   return (
     <Dialog open={open} onClose={onClose} closeOnScrim={false} size="form" width={600} title={book ? 'Save to the Price book' : 'Save to Materials'}
-            subtitle={book ? 'It joins My Items: its words, vendor and picture as they are. The next quote can pick it.' : 'It joins Company › Materials with its picture — the next choice and the AI Visualizer can pick it.'}
+            subtitle={book ? 'It joins the Price book: its words, vendor and picture as they are. The next quote can pick it.' : 'It joins Company › Materials with its picture — the next choice and the AI Visualizer can pick it.'}
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button>
               <Button onPress={() => { void save() }} isDisabled={busy} data-testid="save-option">{busy ? 'Saving…' : 'Save'}</Button>

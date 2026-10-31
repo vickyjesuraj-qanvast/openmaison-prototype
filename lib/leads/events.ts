@@ -14,7 +14,8 @@ export type LeadEventKind = 'member_removed' | 'field_edited' | 'task_deleted' |
   | 'return_evidence_removed'   // (pending modules S05) a file taken off a return still with Qanvast (its Undo takes the line away)
   | `parity_${string}`   // (parity map 2026-10-10) each package's own lines, read in its region of lib/leads/activity.ts
   | 'contract_unsigned' | 'contract_archived' | 'contract_restored'   // (REG-634, contracts parity E-128) what a contract's own stamps can't show
-  | 'comparison_deleted'   // (REG-641, X-Ray parity Q-20) a Quote X-Ray reading removed — the row goes, the trail stays
+  | 'comparison_deleted'   // (REG-641, X-Ray parity Q-20) a Quote X-Ray reading removed — the trail stays; (C-08) it waits in Deleted comparisons now
+  | 'comparison_restored' | 'comparison_purged'   // (the close-out round 2026-10-31, C-08) brought back (an Undo takes the delete's line away instead), or deleted forever
   | 'meeting_deleted'   // (pending modules S23) a meeting deleted — its row leaves the lists, the trail stays (a restore takes the line away)
   | 'trial_claimed'   // (pending modules S41b-3) what a visitor made in the website's free trial, brought into the studio at sign-up (`kind` lead · quote · reading)
   /* (audit 2026-09-26, F093 · F106 · F207) the AI Visualizer's removals and its link's stops and renewals, which leave no row of their own;
@@ -80,7 +81,7 @@ export type LeadEventKind = 'member_removed' | 'field_edited' | 'task_deleted' |
   | 'project_layout_created' | 'project_layout_shared' | 'project_layout_share_updated' | 'project_layout_unshared' | 'project_layout_viewed' | 'project_layout_linked' | 'project_layout_deleted' | 'project_layout_restored'   // (gaps build J)
 export const LEAD_EVENT_KINDS: readonly LeadEventKind[] = ['member_removed', 'field_edited', 'task_deleted', 'note_deleted', 'file_trashed', 'file_deleted', 'return_undone', 'invite_sent', 'questionnaire_asked',
   'return_evidence_removed',   // (pending modules S05)
-  'contract_unsigned', 'contract_archived', 'contract_restored', 'comparison_deleted', 'meeting_deleted', 'trial_claimed',
+  'contract_unsigned', 'contract_archived', 'contract_restored', 'comparison_deleted', 'comparison_restored', 'comparison_purged', 'meeting_deleted', 'trial_claimed',
   'design_deleted', 'design_restored', 'design_purged', 'room_deleted', 'room_restored', 'version_deleted', 'version_restored', 'share_stopped', 'share_renewed', 'share_reopened',
   'task_completed', 'task_reopened', 'task_edited', 'task_assigned',
   'project_created', 'project_renamed', 'project_started', 'project_edited',

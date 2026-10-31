@@ -17,7 +17,7 @@ import { useAfterCall } from '@/components/dashboard/after-call'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { setTasksDone, undoTasksDone } from '@/app/leads/tasks-actions'
 import { askMaisonAi } from '@/lib/maison-ai'
-import { dotsOf, leftOf, type AgendaItem, type DayData } from '@/lib/dashboard/cards'
+import { dayActOf, dayExtrasOf, dotsOf, leftOf, type AgendaItem, type DayData } from '@/lib/dashboard/cards'
 import { CardFrame } from './card-frame'
 import styles from './cards.module.css'
 
@@ -61,8 +61,8 @@ export function YourDayCard({ data }: { data: DayData | null }) {
   const left = leftOf(list)
   const weekQuiet = !items.length
   const dayName = data.week.find((w) => w.day === day)
-  /* the rows keep one column for a ⋮ when any of them has one, so their actions line up */
-  const menus = shown.some((x) => extrasOf(x).length > 0)
+  /* the rows keep one column for a ⋮ when any of them has one, so their actions line up — (dash-d1) `dayExtrasOf`, the rule the ghost is told by */
+  const menus = shown.some(dayExtrasOf)
 
   const tick = async (x: AgendaItem) => {
     if (!x.taskId) return
@@ -149,8 +149,10 @@ function AgendaRow({ x, phone, onTick, onCall }: { x: AgendaItem; phone: boolean
   const anchor = useRef<HTMLSpanElement>(null)
   const when = x.when ?? x.time ?? ''
   const extras = extrasOf(x, onCall)
-  const call = x.kind === 'call' && !x.done && x.tel ? x.tel : null
-  const maps = !call && x.maps ? x.maps : null
+  /* (the close-out round 2026-10-31, dash-d1) the row's one action by the rule the page tells its ghost (`dayActOf`) */
+  const act = dayActOf(x)
+  const call = act === 'call' ? x.tel ?? null : null
+  const maps = act === 'link' ? x.maps ?? null : null
   const whenWords = when ? <span className={styles.whenInline} data-late={x.late || undefined}>{when}<span aria-hidden> · </span></span> : null
   return (
     <div className={styles.agendaRow} data-kind={x.kind} data-late={x.late || undefined} data-done={x.done || undefined} data-ended={x.ended || undefined} data-testid="day-row" data-key={x.key}>

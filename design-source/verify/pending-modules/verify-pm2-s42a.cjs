@@ -3,6 +3,8 @@
 //  A-03  the demo rides the demo day: a restore moves EVERY stamp of every table by the same whole days (and the moments written inside text),
 //        so every gap is kept; repair R125 brought today's recent moments back (the floor plan shown inside the portal's 7 days, the newest site
 //        update inside the Dashboard's fortnight, each Activity line on its record's moment) and moves nothing once they are back
+//        (the close-out round 2026-10-31, C-04) a signed contract's kept copy prints its Contract date with its contract, every other word as
+//        signed, its fingerprint made again over it; R180 · R181 (C-07) run again change nothing
 //  A-01  on Free the set-up list's Quote template step is done by the default (his call A·2)
 //  A-02  a landline is no way to send an invitation (WhatsApp goes to a mobile only); the Phone helper says what a mobile is for
 //  A-04  the first page after a sign-in is the front door (the Dashboard); Reset lands there too
@@ -171,11 +173,27 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     ok(JSON.stringify(gap(same).map((r) => r.g >= 0)) === JSON.stringify(gap(early).map((r) => r.g >= 0)), '…and no lead’s first move lands before the lead')
     const keyOk = jsonOn(early, `select count(*) as n from portal_bell_reads r join project_updates u on r.row_key = 'update:' || u.id || ':' || (u.published_at * 1000)`)[0]?.n
     ok(keyOk === Number(sqlOn(early, `select count(*) from portal_bell_reads where row_key like 'update:%'`)), '…and a client’s read update keeps its key')
+    /* (the close-out round 2026-10-31 — C-04, R180) a signed contract's kept copy prints its days with its records: 40 days later its Contract
+       date field reads its contract's moved date, every other word is as signed, and its fingerprint is made again over the copy it now holds */
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const keptCopies = (db) => jsonOn(db, `select id, title, coalesce(contract_date, created_at) as day, signed_body as body, document_hash as hash from contracts where status = 'Signed' and source <> 'uploaded' and signed_body is not null order by id`)
+    const fieldDay = (body) => { const m = /data-token="date\.contract">(\d{1,2}) ([A-Za-z]+) (\d{4})</.exec(body); return m ? new Date(+m[3], MONTHS.indexOf(m[2]), +m[1]).getTime() : null }
+    const ownDay = (sec) => { const d = new Date(sec * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() }
+    const asSigned = (body) => body.replace(/(data-token="(?:date\.contract|date\.today|quote\.validUntil|project\.completedOn|project\.defectsUntil)">)[^<]*</g, '$1<')
+    const sha = (title, body) => require('crypto').createHash('sha256').update(`html\n${title}\n${body}`).digest('hex')
+    const kc0 = keptCopies(same), kc40 = keptCopies(later)
+    const paired = kc0.length > 0 && kc0.length === kc40.length && kc0.every((c, i) => kc40[i].id === c.id && fieldDay(c.body) !== null)
+    ok(paired && kc40.every((c, i) => Math.round((fieldDay(c.body) - fieldDay(kc0[i].body)) / 864e5) === 40), `C-04: 40 days later a signed contract’s kept copy prints its Contract date 40 days on (${kc0.length} copies)`)
+    ok(paired && kc40.every((c) => fieldDay(c.body) === ownDay(c.day)), '…the day its contract is dated (the base’s copies are in step — R180)', kc40.filter((c) => fieldDay(c.body) !== ownDay(c.day)).map((c) => c.id.slice(0, 8)).join(', '))
+    ok(paired && kc40.every((c, i) => asSigned(c.body) === asSigned(kc0[i].body)), '…every other word of the copy as signed')
+    ok(paired && kc0.every((c) => c.hash === sha(c.title, c.body)) && kc40.every((c) => c.hash === sha(c.title, c.body)), '…and its fingerprint is the copy it holds, before and after')
     fs.rmSync(fixture, { force: true })
     // R125 once more: nothing to move
     const rep = copy('repair')
     const out = execSync(`DATABASE_URL=file:${rep} npm run db:repair 2>&1`, { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }).toString()
     ok(/R125[^\n]*\n\s+the floor plan is still new to him — nothing to move · his newest updates are as R70 dated them — nothing to move/.test(out) && /all checks pass/.test(out), 'R125 run again moves nothing; all checks pass')
+    /* (the close-out round 2026-10-31 — C-04 · C-07) R180 and R181 too: the base is in step, so run again they change nothing */
+    ok(/R180[^\n]*\n\s+every kept copy prints its own date/.test(out) && /R181[^\n]*\n\s+the Default Quote PDF already says the Letter style’s words/.test(out), 'R180 · R181 run again change nothing (every kept copy on its own date; the Default Quote PDF in the Letter style’s words)')
 
     console.log('A-01 · Free: the Quote template step is done by the default')
     sql(`update subscriptions set plan_id = 'free' where cancelled_at is null`)
@@ -262,9 +280,11 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     ok(await option(p, 'Add a member').count() === 1, '“invite” finds it too')
     await closeSearch(p)
     await search(p, 'open to new leads')
-    ok(await option(p, 'Open to new leads').count() === 1, 'Go to › Open to new leads')
-    await option(p, 'Open to new leads').first().click(); await p.waitForURL(/\/company\/members/, { timeout: 8000 }).catch(() => {}); await settle(p, 1500)
-    ok(/\/company\/members/.test(p.url()) && await p.locator('[data-member-id="dane"]').count() === 1, 'it lands on your own row on Members', p.url())
+    /* (the calm UI build 2026-10-27, a deliberate change — the audit's 1-39; restated in the close-out round 2026-10-31, the probe runs directly only)
+       your own switch's one home is Your profile › New leads, its row "Take new leads" — "open to new leads" still finds it */
+    ok(await option(p, 'Take new leads').count() === 1, 'Go to › Take new leads (“open to new leads” finds it)')
+    await option(p, 'Take new leads').first().click(); await p.waitForURL(/\/profile/, { timeout: 8000 }).catch(() => {}); await settle(p, 1500)
+    ok(/\/profile/.test(p.url()) && await p.getByTestId('profile-new-leads').count() === 1, 'it lands on your own switch — Your profile › New leads', p.url())
     await search(p, 'log out')
     ok(await option(p, 'Sign out').count() === 1, '“log out” finds Sign out')
     await closeSearch(p)
@@ -349,7 +369,11 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
     as('priya')
     await go(p, '/profile', 2000)
     const prof = (await p.getByTestId('your-profile').innerText()).replace(/\s+/g, ' ')
-    ok(/on the invoices, orders and payments you handle/.test(prof) && !/the quotes you prepare/.test(prof), 'Your details: “… on the invoices, orders and payments you handle …”, no quotes')
+    /* (the calm UI build 2026-10-27, a deliberate change — its regression fix F; restated in the close-out round 2026-10-31, the probe runs directly
+       only) Your details' line is the card's info tip now: its press says it in the house snackbar */
+    await p.getByTestId('profile-details-help').click(); await settle(p, 700)
+    const tip = (await p.locator('body').innerText()).replace(/\s+/g, ' ')
+    ok(/on the invoices, orders and payments you handle/.test(tip) && !/the quotes you prepare/.test(tip), 'Your details: “… on the invoices, orders and payments you handle …”, no quotes')
     ok(/Shown on the papers you send/.test(prof), 'Email: “Shown on the papers you send”')
     ok(/A mobile signs you in and gets WhatsApp (notices|notifications)/.test(prof) /* (the calm UI build 2026-10-27, a deliberate change) 1-41: "notifications" */ && !/clients see it on their portal/.test(prof), 'Phone: “A mobile signs you in and gets WhatsApp notices”')
     await shot(p, 'a15-profile-accounting-1440')
@@ -377,7 +401,8 @@ const dayOf = (sec) => { const d = new Date(sec * 1000); return `${d.getFullYear
         await sp2.waitForFunction(() => { const e = document.querySelector('[data-testid="sign-in"]'); return !!e && !e.closest('[inert]') }, null, { timeout: 15000 }).catch(() => {})
         await sp2.getByLabel(/^Mobile number or (work )?email/).fill('dane@demostudio.sg'); await sp2.getByTestId('sign-in-send').click(); await sp2.waitForTimeout(1500)
         /* (pending modules S43A, a deliberate change of this rule) A·1 is built: a code signs in this browser alone, so the fallback line is gone */
-        ok(await sp2.getByTestId('sign-in-one-at-a-time').count() === 0 && /Demo only/.test(await sp2.getByTestId('sign-in-demo').innerText().catch(() => '')), 'the sign-in code step no longer says “one signed-in member at a time” (S43A built A·1) — the demo line stays')
+        /* (the calm UI build 2026-10-27, a deliberate change — 1-46; restated in the close-out round 2026-10-31) the demo line reads "Demo: any 6 digits work" */
+        ok(await sp2.getByTestId('sign-in-one-at-a-time').count() === 0 && /Demo: any 6 digits work/.test(await sp2.getByTestId('sign-in-demo').innerText().catch(() => '')), 'the sign-in code step no longer says “one signed-in member at a time” (S43A built A·1) — the demo line stays')
         await sp2.getByTestId('sign-in-digit').first().click(); await sp2.keyboard.type('123456'); await sp2.waitForTimeout(300)
         await sp2.getByTestId('sign-in-go').click()
         await sp2.waitForURL((u) => !/\/sign-in/.test(String(u)), { timeout: 15000 }).catch(() => {})

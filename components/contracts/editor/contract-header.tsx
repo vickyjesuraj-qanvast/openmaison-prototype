@@ -11,6 +11,7 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { contractStatusLabel } from '@/lib/contracts/status-words'
 import styles from '@/components/quotes/editor/editor-header.module.css'
 import own from './contract-editor.module.css'
+import { HeaderTitle, type HeaderTitleEdit } from './title-input'
 
 /**
  * The contract editor's header (REG-534) = the quote editor's Page Header (1201:33834, its own stylesheet reused): crumb over
@@ -18,10 +19,14 @@ import own from './contract-editor.module.css'
  * The reference's row (Actions ▾ · comment · automation · link · download · Preview · Send) maps onto ours: Preview and
  * the icon buttons in `actions`, the rest in the kebab. ≤1024 the foldable actions live in the kebab, as the quote's do.
  */
-export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, chips, savedLabel, statusSlot, primary, actions, foldedItems, menu, onClose }: {
+export function ContractHeader({ crumbs, title, titleEdit, siblings, currentId, onSwitch, chips, savedLabel, statusSlot, primary, actions, foldedItems, menu, onClose }: {
   /** (REG-536) Every segment with an href is a link. */
   crumbs: CrumbItem[]
   title: string
+  /** (the close-out round 2026-10-31, C-123 · 4-17) The title renamed in place — the library editors' name, said once (`HeaderTitle`: the title
+      and its pencil, a press types into it). Not with `siblings`: there the title is the switcher, and a contract renames from ⋮ › Rename…
+      as a quote does. */
+  titleEdit?: HeaderTitleEdit
   siblings?: { id: string; title: string; status?: string }[]
   currentId?: string
   onSwitch?: (id: string) => void
@@ -50,7 +55,7 @@ export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, c
                 <h1 className={styles.title}>{title}</h1>
                 <span className={styles.chev} data-open={open === 'switch' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
               </button>
-            ) : <h1 className={styles.title}>{title}</h1>}
+            ) : titleEdit ? <HeaderTitle title={title} edit={titleEdit} /> : <h1 className={styles.title}>{title}</h1>}
             {/* (REG-728) the editor switchers' width */}
             {canSwitch ? (
               <Dropdown open={open === 'switch'} onClose={() => setOpen(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Contracts">

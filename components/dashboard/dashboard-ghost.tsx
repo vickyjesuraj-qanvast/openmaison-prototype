@@ -9,7 +9,8 @@ import { CARD_LABEL, cardsFor, type DashCardKey } from '@/lib/dashboard/frame'
 import { INBOX_SHOWN, INBOX_SHOWN_PHONE } from '@/lib/dashboard/inbox'
 import { profitLabel, pulseKeysFor, pulseLabel, pulseShapeOf, type PulseKey } from '@/lib/dashboard/pulse'
 /* (the calm pass) the five cards' ghosts are lane C3's own, on the cards' own classes; Needs you's is drawn below on lane C2's */
-import { DayGhost, PipelineGhost, ProjectsGhost, SiteGhost, TeamGhost } from './cards/card-ghosts'
+import { DAY_ACTS_SAMPLE, DAY_SHOWN_GHOST, DayGhost, PipelineGhost, ProjectsGhost, SiteGhost, TeamGhost } from './cards/card-ghosts'
+import { decodeDayActs } from '@/lib/dashboard/cards'
 import cc from './cards/cards.module.css'
 import inbox from './inbox/inbox.module.css'
 import overview from '@/components/projects/project-overview.module.css'
@@ -26,7 +27,11 @@ export const NEEDS_COUNT_KEY = 'om.count.dashboard.needs'
 export const SINCE_SHAPE = 'dashboard.since'
 export const SINCE_COUNT_KEY = 'om.count.dashboard.since'
 /** …and each card's rows (Your day's today, the project lines, the team lines, the contractors' line, the site photos). */
-export const CARD_COUNT_KEYS = { day: 'om.count.dashboard.day', week: 'om.count.dashboard.week', projects: 'om.count.dashboard.projects', team: 'om.count.dashboard.team', crew: 'om.count.dashboard.crew', site: 'om.count.dashboard.site' } as const
+export const CARD_COUNT_KEYS = { day: 'om.count.dashboard.day', week: 'om.count.dashboard.week', projects: 'om.count.dashboard.projects', team: 'om.count.dashboard.team', crew: 'om.count.dashboard.crew', site: 'om.count.dashboard.site',
+  /* (the close-out round 2026-10-31, dash-d1) Your day's rows' actions (`encodeDayActs`) and whether they kept a ⋮ column */
+  dayActs: 'om.count.dashboard.day.acts', dayMenus: 'om.count.dashboard.day.menus',
+  /* …and the greeting's line on a phone: one line, or two where the day's and the news's words wrapped it */
+  helloLines: 'om.count.dashboard.hello.lines.phone' } as const
 /** Each figure's words of the demo's lengths (never shown — the kit hides the letters), so a value and a caption wrap where the page's do. */
 const PULSE_VALUE: Record<PulseKey, string> = { leads: '4', sales: 'S$ 121.1K', response: '26 hours', owed: 'S$ 34.8K', coming: 'S$ 648', profit: 'S$ 47.5K', owe: 'S$ 9.1K', gst: 'S$ 362', projects: '3', commission: 'S$ 1.2K' }
 const PULSE_LINE: Record<PulseKey, string> = {
@@ -67,6 +72,11 @@ export function DashboardGhost() {
   const weekSeed = useSeedFlag('dashboard.week', true)
   const dayRows = useCountPref(CARD_COUNT_KEYS.day, weekSeed ? (accounting ? 2 : 3) : 0)
   const weekQuiet = useCountPref(CARD_COUNT_KEYS.week, weekSeed ? 1 : 0) === 0
+  /* (the close-out round 2026-10-31, dash-d1) …and each row's one action as the page drew it — a meeting past its time has no Directions, so its
+     words take the room and a phone's row is a line shorter; a browser that hasn't seen the page draws the demo morning's (`DAY_ACTS_SAMPLE`) */
+  const dayActs = decodeDayActs(useCountPref(CARD_COUNT_KEYS.dayActs, DAY_ACTS_SAMPLE), DAY_SHOWN_GHOST)
+  const dayMenus = useCountPref(CARD_COUNT_KEYS.dayMenus, 1) > 0
+  const helloWrap = useCountPref(CARD_COUNT_KEYS.helloLines, 1) > 1
   const projectRows = useCountPref(CARD_COUNT_KEYS.projects, 4)
   const teamRows = useCountPref(CARD_COUNT_KEYS.team, 5)
   const crew = useCountPref(CARD_COUNT_KEYS.crew, 1) > 0
@@ -85,7 +95,12 @@ export function DashboardGhost() {
             <div className={styles.helloText}>
               {/* the title and its line in the greeting's own classes, words of the demo's length — so they wrap where the page's do */}
               <Words as="h2" className={styles.helloTitle}>Good evening, Dane</Words>
-              <Words as="p" className={styles.helloLine}>{/* the day and the link each kept whole, as the page keeps them (no-break spaces) — (the calm UI build 2026-10-27) the count is the card's */ noSince ? 'Monday\u00a026\u00a0October' : 'Monday\u00a026\u00a0October\u00a0· 4\u00a0new\u00a0since\u00a0Friday'}</Words>
+              {/* the day and the link each kept whole, as the page keeps them (no-break spaces) — (the calm UI build 2026-10-27) the count is the card's.
+                  (the close-out round 2026-10-31, dash-d1) on a phone the news takes the next line where the page's did last time */}
+              <p className={styles.helloLine}>
+                <Words>{'Monday\u00a026\u00a0October'}</Words>
+                {noSince ? null : <Words className={helloWrap ? styles.helloSinceWrap : undefined}>{'\u00a0· 4\u00a0new\u00a0since\u00a0Friday'}</Words>}
+              </p>
             </div>
             <div className={styles.helloEnd}>
               {/* Studio / Mine: the track's own box (its height is the page's `--dash-track-h`: 40, 44 on touch) */}
@@ -118,7 +133,7 @@ export function DashboardGhost() {
         <div className={styles.grid}>
           <div className={styles.act}>
             {slot('needs', <NeedsGhost rows={needs} />)}
-            {on('day') ? slot('day', <DayGhost rows={dayRows} quietWeek={weekQuiet} />) : null}
+            {on('day') ? slot('day', <DayGhost rows={dayRows} quietWeek={weekQuiet} acts={dayActs} menus={dayMenus} />) : null}
             {on('site') ? slot('site', <SiteGhost tiles={siteTiles} />) : null}
           </div>
           <div className={styles.glance}>

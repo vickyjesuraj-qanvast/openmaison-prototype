@@ -12,6 +12,8 @@
 //  - C1 a section priced after the contract (the row's ⋮): out of the total and the split, printed after the items with its own total
 //  - C2's print side: a name's emphasis and the kit's colours print; the allowlist drops what it must; an underline takes its run's colour
 //  - M11 no repair writes a studio's own template (R37 only on the seeded three)
+//  - C-07 (the close-out round 2026-10-31) the demo's Default Quote PDF prints the Letter style's words — "Quotation", "QUOTATION FOR …",
+//    "GST {gst_rate}:", no "Fax:" — and R181 writes only the template R31 seeded
 // Run against `next start` on a scratch copy of the repaired demo DB — never local.db. Everything it writes is put back in `finally`.
 // Usage: BASE=http://localhost:3160 NODE_PATH=<repo>/node_modules node verify-pm2-s44t.cjs <scratch.db> [shotDir] [base]
 const { chromium } = require('playwright')
@@ -376,7 +378,21 @@ const putDesign = () => { const f = writeJson('design.json', design); sql(`updat
     const r37 = repair.slice(repair.indexOf('R37 · the Letter design'), repair.indexOf('R20 · prove it'))
     ok(/FROM quote_templates WHERE id IN \$\{inSeeded\}/.test(r37) && /FROM quote_template_versions WHERE template_id IN \$\{inSeeded\}/.test(r37), 'M11: R37 reads only the three templates R31 seeded')
 
-    ok(errors.length === 0, `no page errors (${errors.slice(0, 3).join(' · ')})`)
+    // ── C-07 the demo's Default Quote PDF in the Letter style's words (the close-out round 2026-10-31, R181) ─────────────────────────────
+    console.log('C-07 · the Default Quote PDF prints the Letter style’s words')
+    const DQ = sql(`select id from quote_templates where name = 'Default Quote PDF' and deleted_at is null limit 1`)
+    ok(sql(`select template_id from quotes where id = '${Q_SENT}'`) === DQ, 'C-07: OM-10007 prints through the Default Quote PDF (the page read below)')
+    await preview(d, Q_SENT)
+    const letter = (await d.locator('[data-page]').allInnerTexts()).join('\n')
+    ok(/^\s*Quotation\s*$/m.test(letter) && /QUOTATION FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES/.test(letter) && !/Sales Contract|CONTRACT FOR RENOVATION/.test(letter), 'C-07: the paper is headed “Quotation” over “QUOTATION FOR RENOVATION AND CARPENTRY WORKS …” — no “Sales Contract”')
+    ok(!/Fax:/.test(letter) && /Tel:/.test(letter), 'C-07: the studio’s line keeps Tel: and prints no “Fax:”')
+    const gstLabels = (t) => sql(`select group_concat(json_extract(j.value, '$.label'), '|') from ${t} r, json_each(json_extract(r.design_json, '$.blocks')) b, json_each(json_extract(b.value, '$.lines')) j where r.${t === 'quote_templates' ? 'id' : 'template_id'} = '${DQ}' and json_extract(b.value, '$.kind') = 'totals' and json_extract(j.value, '$.key') = 'gst'`)
+    ok(gstLabels('quote_templates') === 'GST {gst_rate}:' && gstLabels('quote_template_versions').split('|').every((l) => l === 'GST {gst_rate}:'), `C-07: its totals' GST line reads “GST {gst_rate}:” in the design and every version (${gstLabels('quote_templates')} · ${gstLabels('quote_template_versions')})`)
+    const r181 = repair.slice(repair.indexOf('R181 · the Default Quote'), repair.indexOf('(pending modules S43C, R162) the labels'))
+    ok(/sid\('Default Quote PDF', 'quote_template'\)/.test(r181) && /FROM quote_templates WHERE id = \?/.test(r181) && /FROM quote_template_versions WHERE template_id = \?/.test(r181) && !/UPDATE quote_templates SET[^`]*WHERE (?!id = \?)/.test(r181), 'M11 · C-07: R181 reads and writes only the Default Quote PDF R31 seeded')
+    await shot(d, 'c07-default-quote-1440')
+
+    ok(errors.length === 0,`no page errors (${errors.slice(0, 3).join(' · ')})`)
   } catch (e) {
     fail++; console.log('  ✗ probe stopped:', String(e).slice(0, 400))
   } finally {

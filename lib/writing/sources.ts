@@ -68,7 +68,7 @@ export function bookItemFor(line: { name: string; priceBookItemId?: string | nul
 /** A quote line's description: My Items' words for it (null when My Items has none). */
 export function descriptionSources(line: { name: string; priceBookItemId?: string | null; category?: string | null }, book: readonly BookWords[], names: readonly string[] = []): WritingSources {
   const item = bookItemFor(line, book)
-  return { words: item ? { html: item.descriptionHtml || plainToHtml(item.description ?? ''), from: `My Items’ words for “${item.name}”` } : null, names }
+  return { words: item ? { html: item.descriptionHtml || plainToHtml(item.description ?? ''), from: `the Price book’s words for “${item.name}”` } : null, names }
 }
 /** A section note: its trade's note from Settings › Quotes & pricing (null when the trade has none). */
 export function sectionNoteSources(tradeNote: string | null | undefined): WritingSources {

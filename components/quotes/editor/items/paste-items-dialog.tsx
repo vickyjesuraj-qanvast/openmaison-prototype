@@ -122,7 +122,7 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
   const add = () => { if (named && lines.length && (!isBook || writes > 0)) onAdd(lines, anchor && placeKey === 'after' ? 'after' : 'end', isBook ? match : undefined) }
 
   return (
-    <Dialog open={open} onClose={onClose} title={isBook ? 'Import into My Items' : typed ? 'Paste lines' : 'Paste from a spreadsheet'} width={800} size="modal"
+    <Dialog open={open} onClose={onClose} title={isBook ? 'Import into the Price book' : typed ? 'Paste lines' : 'Paste from a spreadsheet'} width={800} size="modal"
             footer={<>
               {place ? <PlaceFoot place={place} /> : clipPlace ? <PlaceFoot place={clipPlace} /> : null}
               {onBack ? <><Button variant="secondary" appearance="outlined" iconStart={<Icon name="arrow_back" size={20} />} onPress={onBack}>Back</Button><span style={{ flex: 1 }} /></> : null}
@@ -146,7 +146,7 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
       <div className={styles.sheet} role="table" aria-label={isBook ? 'Rows to import' : 'Pasted rows'}>
         <div className={styles.head} role="row">
           {/* (sweep S5 #8) what each row does to the book leads the row — last, it sat off-screen past seven columns */}
-          {isBook ? <div className={`${styles.pick} ${styles.stateHead}`} role="columnheader">In My Items</div> : null}
+          {isBook ? <div className={`${styles.pick} ${styles.stateHead}`} role="columnheader">In the Price book</div> : null}
           {map.map((f, c) => (
             <div key={c} className={styles.pick} role="columnheader">
               <TextField label={header ? rows[0]?.[c] || `Column ${colLetter(c)}` : `Column ${colLetter(c)}`} size="s" mode="select" options={fields.map((k) => fieldLabel(k, isBook))}
@@ -171,13 +171,13 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
         <div className={styles.notes} data-testid="import-notes">
           {matches ? (
             <div className={styles.note}>
-              <span>{matches === 1 ? '1 row matches an item' : `${matches} rows match items`} already in My Items — the same name from the same vendor.</span>
+              <span>{matches === 1 ? '1 row matches an item' : `${matches} rows match items`} already in the Price book — the same name from the same vendor.</span>
               <Chips label="Rows that match" options={MATCH_OPTIONS} value={match} onChange={(v) => setMatch(v as BookMatch)} testId="import-match" />
             </div>
           ) : null}
           {repeats ? <span className={styles.note}>{repeats === 1 ? '1 row repeats' : `${repeats} rows repeat`} an item earlier in the file — only the first is imported.</span> : null}
           {waiting ? <span className={styles.note} data-testid="import-waiting">{waiting === 1 ? '1 row matches an item' : `${waiting} rows match items`} waiting for approval — skipped until an Owner or an Admin approves {waiting === 1 ? 'it' : 'them'}.</span> : null}
-          {nothingNew ? <span className={styles.note} role="status" data-testid="import-nothing-new">Nothing new to import — every row is already in My Items or waiting for approval</span> : null}
+          {nothingNew ? <span className={styles.note} role="status" data-testid="import-nothing-new">Nothing new to import — every row is already in the Price book or waiting for approval</span> : null}
           {newTrades.length ? <span className={styles.note}>New {newTrades.length === 1 ? 'trade' : 'trades'} for Settings › Quotes & pricing: {newTrades.join(', ')}.</span> : null}
           {all.length > IMPORT_LIMIT ? <span className={styles.note} data-tone="warn">Only the first {IMPORT_LIMIT} rows are imported — the file has {all.length}.</span> : null}
         </div>

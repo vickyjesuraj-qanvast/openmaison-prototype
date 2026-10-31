@@ -28,16 +28,16 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)   // (Vicky 2026-10-29: brought back) the Create strip's Price book tile (the calm UI build had sent it to Create ▾ › From Price book, which the table's own check below still presses)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     ok('the strip’s My Items opens the Price book modal over the editor', await dlg.isVisible() && page.url().includes(`/quotes/${Q1}`))
-    ok('it lands on My Items', (await dlg.getByRole('radio', { name: /^My Items/ }).getAttribute('aria-checked')) === 'true' || /true/.test(await dlg.locator('[data-selected="true"], [aria-checked="true"]').first().innerText().catch(() => '')) || await dlg.getByTestId('book-item').count() > 0)
+    ok('it lands on Items', (await dlg.getByRole('radio', { name: /^Items/ }).getAttribute('aria-checked')) === 'true' || /true/.test(await dlg.locator('[data-selected="true"], [aria-checked="true"]').first().innerText().catch(() => '')) || await dlg.getByTestId('book-item').count() > 0)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('every pickable item is listed', await dlg.getByTestId('book-item').count() === Number(sql(`select count(*) from price_book_items where deleted_at is null and status='live'`)))
-    const reach = await dlg.getByRole('list', { name: 'My Items' }).evaluate((el) => {
+    const reach = await dlg.getByRole('list', { name: 'Items', exact: true }).evaluate((el) => {   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
       const hs = [...el.children].map((r) => r.getBoundingClientRect().height)
       el.scrollTop = el.scrollHeight
       const last = el.lastElementChild.getBoundingClientRect(), box = el.getBoundingClientRect()
       return { scrolls: el.scrollHeight > el.clientHeight, lastIn: last.bottom <= box.bottom + 1 && last.top >= box.top - 1, minH: Math.min(...hs) }
     })
     ok('the list scrolls to its last row inside the modal; no row is squeezed', reach.scrolls && reach.lastIn && reach.minH >= 64, JSON.stringify(reach))
-    await dlg.getByRole('list', { name: 'My Items' }).evaluate((el) => { el.scrollTop = 0 })
+    await dlg.getByRole('list', { name: 'Items', exact: true }).evaluate((el) => { el.scrollTop = 0 })   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await shot(page, '01-my-items-1440')
     await dlg.getByRole('searchbox').fill('tiles'); await page.waitForTimeout(250)
     const tiles = Number(sql(`select count(*) from price_book_items where deleted_at is null and status='live' and (lower(name) like '%tiles%' or lower(coalesce(description,'')) like '%tiles%' or lower(coalesce(vendor,'')) like '%tiles%' or lower(coalesce(category,'')) like '%tiles%')`))
@@ -49,10 +49,10 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     const before = lines()
     await dlg.getByTestId('book-item').filter({ hasText: 'Painting' }).click()
     ok('a press on a row ticks it', await dlg.getByTestId('book-item').filter({ hasText: 'Painting' }).getAttribute('data-selected') !== null)
-    await dlg.getByRole('radio', { name: /^My Sections/ }).click().catch(async () => dlg.getByText(/^My Sections/).click()); await page.waitForTimeout(300)
+    await dlg.getByRole('radio', { name: /^Sections/ }).click().catch(async () => dlg.getByText(/^Sections/).click()); await page.waitForTimeout(300)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const secName = (await dlg.getByTestId('book-section').first().locator('[class*="name"]').first().innerText()).trim()
     await dlg.getByTestId('book-section').first().click(); await page.waitForTimeout(200)
-    await dlg.getByRole('radio', { name: /^My Items/ }).click().catch(async () => dlg.getByText(/^My Items/).click()); await page.waitForTimeout(300)
+    await dlg.getByRole('radio', { name: /^Items/ }).click().catch(async () => dlg.getByText(/^Items/).click()); await page.waitForTimeout(300)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('ticks survive a change of tab', await dlg.getByTestId('book-item').filter({ hasText: 'Painting' }).getAttribute('data-selected') !== null)
     await dlg.getByTestId('book-item').filter({ hasText: 'Hafary' }).click(); await page.waitForTimeout(200)
     const hafary = sql(`select name from price_book_items where vendor like '%Hafary%' and deleted_at is null limit 1`)

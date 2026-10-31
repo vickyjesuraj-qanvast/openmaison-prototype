@@ -22,6 +22,6 @@ export function SectionsLocked({ count, from }: { count: number; from?: string }
 /** My Sections' ghost (REG-708) — the lock's while the studio is on Free. */
 export function SectionsLoading() {
   return useLockedNow('package_creation')
-    ? <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading My Sections"><ProLockedGhost feature="package_creation" /></CompanyGhostFrame>
+    ? <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label="Loading the Price book’s sections"><ProLockedGhost feature="package_creation" /></CompanyGhostFrame>
     : <PriceBookSectionsGhost />
 }

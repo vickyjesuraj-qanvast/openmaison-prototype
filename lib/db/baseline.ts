@@ -3,6 +3,7 @@ import path from 'node:path'
 import { client } from '@/lib/db'
 import { clampCreditBookkeeping, creditOwnership, reanchorDays, shiftCreditSnapshot, snapshotMonth, type SnapshotRows } from '@/lib/credits/demo-month'
 import { shiftDemoRows } from '@/lib/db/demo-day'
+import { refingerprint } from '@/lib/db/demo-fingerprints'
 import { timeColumns } from '@/lib/db/time-columns'
 
 /**
@@ -80,7 +81,9 @@ export async function restoreBaseline(opts: { file?: string; now?: Date } = {}):
   /* (S42 audit A-03) every other moment of the demo rides the demo day as one — the credits story's rows by its own days, left to it */
   const own = creditOwnership(base as SnapshotRows)
   const takenAt = typeof base.takenAt === 'string' ? Date.parse(base.takenAt) : NaN   // what happened never lands after now (lib/db/demo-day.ts)
-  const world = shiftDemoRows(base as SnapshotRows, shiftedDays, timeColumns(), { skip: own.owns, daysFor: (t, r) => (own.isStoryRow(t, r) ? creditDays : shiftedDays), clock: { takenAt, now: (opts.now ?? new Date()).getTime() } })
+  const moved = shiftDemoRows(base as SnapshotRows, shiftedDays, timeColumns(), { skip: own.owns, daysFor: (t, r) => (own.isStoryRow(t, r) ? creditDays : shiftedDays), clock: { takenAt, now: (opts.now ?? new Date()).getTime() } })
+  /* (the close-out round 2026-10-31, C-04) a signed contract's kept copy printed its days with them: its fingerprint is made again over it */
+  const world = refingerprint(base as SnapshotRows, moved)
   const tables = clampCreditBookkeeping(shiftCreditSnapshot(world, creditDays), Math.floor((opts.now ?? new Date()).getTime() / 1000))   // (S43B · F1-10) the balance's own stamp never ahead of now
   const stmts: { sql: string; args: (string | number | null)[] }[] = []
   for (const t of [...BASELINE_TABLES].reverse()) stmts.push({ sql: `DELETE FROM ${t}`, args: [] })

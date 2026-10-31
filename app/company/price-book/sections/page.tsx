@@ -8,7 +8,7 @@ import { SectionsLocked } from '@/components/company/price-book/sections-locked'
 import { AccessGate } from '@/components/shell/access-gate'
 import { refusesPath } from '@/lib/leads/visibility'
 
-export const metadata: Metadata = { title: 'My Sections' }
+export const metadata: Metadata = { title: 'Price book · Sections' }
 export const dynamic = 'force-dynamic'
 
 /** Company › Price book › My Sections (REG-594): whole sections saved from quotes, editable here. */

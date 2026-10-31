@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { nameDirectClients } from '@/lib/projects/direct-clients'   // (fix-A, A-02)
 import { db } from '@/lib/db'
 import { leads, members, quoteComparisons, quoteItems, quotes } from '@/lib/db/schema'
@@ -17,6 +17,9 @@ export type XrayQuote = { id: string; leadId: string; number: string; title: str
 export type XrayRecent = { id: string; leadId: string | null; leadName: string | null; yourLabel: string; otherStudio: string; createdAt: number; /** (Q-16) */ sentAt: number | null
   /** (REG-641, Q-20) this viewer may delete it */ canDelete: boolean }
 export type XrayData = { leads: XrayLead[]; quotes: XrayQuote[]; recents: XrayRecent[] }
+/** (the close-out round 2026-10-31, C-08) A row of Deleted comparisons: its name as Recent wrote it, your side (the quote's number or your
+    file), when it went, who ran it, and whether this viewer may restore it or delete it forever (the delete's own rule, lib/xray/policy.ts). */
+export type DeletedComparison = { id: string; leadId: string | null; title: string; yours: string; deletedAt: number; madeBy: string; mine: boolean }
 export type XrayRecord = { id: string; leadId: string | null; leadName: string | null; leadPhone: string | null; quoteId: string | null; yourLabel: string; otherStudio: string; otherFile: string; result: XrayResult; createdAt: number; createdBy: string
   /** (REG-640) The compared quote as it is now — `live` = neither archived nor deleted (Q-17 · Q-21); (sweep S3) which of the two it is. */
   quote: { id: string; number: string; live: boolean; gone: 'deleted' | 'archived' | null } | null
@@ -54,17 +57,18 @@ export async function fetchXrayData(): Promise<XrayData> {
   }
 }
 
-/** (REG-639, Q-13) Every comparison, newest first — Recent lists them all (with a search once the list is long), not the 20 newest. */
+/** (REG-639, Q-13) Every comparison, newest first — Recent lists them all (with a search once the list is long), not the 20 newest.
+    (C-08) A deleted one waits in Deleted comparisons, not here. */
 async function fetchRecents(): Promise<(Omit<XrayRecent, 'canDelete'> & { createdBy: string })[]> {
   const rows = await db.select({ id: quoteComparisons.id, leadId: quoteComparisons.leadId, leadName: leads.name, leadGone: leads.deletedAt, yourLabel: quoteComparisons.yourLabel, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt, sentAt: quoteComparisons.sentAt, createdBy: quoteComparisons.createdBy })
-    .from(quoteComparisons).leftJoin(leads, eq(leads.id, quoteComparisons.leadId)).orderBy(desc(quoteComparisons.createdAt))
+    .from(quoteComparisons).leftJoin(leads, eq(leads.id, quoteComparisons.leadId)).where(isNull(quoteComparisons.deletedAt)).orderBy(desc(quoteComparisons.createdAt))
   return rows.filter((r) => !r.leadGone && !(r.leadId && r.leadName === null)).map(({ leadGone: _gone, ...r }) => ({ ...r, leadName: r.leadName ?? null, createdAt: r.createdAt.getTime(), sentAt: r.sentAt ? r.sentAt.getTime() : null }))
 }
 
 export async function fetchComparison(id: string): Promise<XrayRecord | null> {
   const [row] = await db.select({ c: quoteComparisons, leadName: leads.name, leadPhone: leads.phone, leadGone: leads.deletedAt, by: members.name })
     .from(quoteComparisons).leftJoin(leads, eq(leads.id, quoteComparisons.leadId)).leftJoin(members, eq(members.id, quoteComparisons.createdBy)).where(eq(quoteComparisons.id, id))
-  if (!row) return null
+  if (!row || row.c.deletedAt) return null   // (C-08) a deleted reading answers not found, as a deleted lead's does — it waits in Deleted comparisons
   const c = row.c
   /* (REG-641, Q-19 · Q-21) the record answers as its lead does: not your lead, or a deleted lead — not found */
   const viewer = await fetchViewer()
@@ -84,6 +88,24 @@ export async function fetchComparison(id: string): Promise<XrayRecord | null> {
     sent: c.sentAt ? { at: c.sentAt.getTime(), by: names.get(c.sentBy ?? '') ?? 'Someone', text: c.sentText ?? '', via: c.sentVia === 'copy' ? 'copy' : 'whatsapp' } : null,
     canDelete: canDeleteComparison(viewer, c.createdBy),
   }
+}
+
+/**
+ * (the close-out round 2026-10-31, C-08) Deleted comparisons — the lead's own on its X-Ray page, every one on Tools › Quote X-Ray — newest
+ * deletion first. Who sees leads holds here as in Recent: a lead the viewer can't open keeps its readings out, and a deleted lead's readings
+ * wait with the lead (they come back with it; its Delete forever takes them).
+ */
+export async function fetchDeletedComparisons(leadId: string | null): Promise<DeletedComparison[]> {
+  const viewer = await fetchViewer()
+  const visible = await visibleLeadIds(viewer)
+  const rows = await db.select({ c: quoteComparisons, leadName: leads.name, leadGone: leads.deletedAt, by: members.name })
+    .from(quoteComparisons).leftJoin(leads, eq(leads.id, quoteComparisons.leadId)).leftJoin(members, eq(members.id, quoteComparisons.createdBy))
+    .where(and(isNotNull(quoteComparisons.deletedAt), leadId ? eq(quoteComparisons.leadId, leadId) : undefined)).orderBy(desc(quoteComparisons.deletedAt))
+  return rows.filter((r) => !r.c.leadId || (!r.leadGone && r.leadName !== null && (!visible || visible.has(r.c.leadId)))).map(({ c, leadName, by }) => ({
+    id: c.id, leadId: c.leadId, title: `${leadName ?? c.yourLabel} · vs ${c.otherStudio}`,
+    yours: c.quoteId ? c.yourLabel.split(' · ')[0]! : c.yourFile ?? c.yourLabel,
+    deletedAt: c.deletedAt!.getTime(), madeBy: by ?? 'Someone', mine: canDeleteComparison(viewer, c.createdBy),
+  }))
 }
 
 /** (REG-638, parity Q-02) A studio quote's lines as the comparison reads them — the quote's own count, in its order (lib/xray/lines.ts). */

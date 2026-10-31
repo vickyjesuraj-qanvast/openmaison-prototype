@@ -82,15 +82,15 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     const name = row(page, fromBook).locator('input[data-name]')
     await name.click(); await name.fill('Painting, whole unit — two coats'); await name.press('Enter'); await waitSave(page)
     menu = await bookMenu(page, fromBook, 'Painting, whole unit — two coats')
-    await menu.getByRole('menuitem', { name: 'Update the item from this line' }).click(); await snack(page, 'updated in My Items'); await page.waitForTimeout(500)
+    await menu.getByRole('menuitem', { name: 'Update the item from this line' }).click(); await snack(page, 'updated in the Price book'); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('the item takes the line’s name, History says from where', sql(`select name from price_book_items where id='${PAINT}'`) === 'Painting, whole unit — two coats' && sql(`select note from price_book_changes where item_id='${PAINT}' and kind='edited' order by at desc limit 1`) === 'Updated from OM-10001')
     await page.getByRole('button', { name: 'Undo', exact: true }).last().click(); await snack(page, 'is back as it was'); await page.waitForTimeout(500)
     ok('Undo puts the item back', sql(`select name from price_book_items where id='${PAINT}'`) === 'Painting, whole unit')
     menu = await bookMenu(page, fromBook, 'Painting, whole unit — two coats')
-    await menu.getByRole('menuitem', { name: 'Save as a new item' }).click(); await snack(page, 'Saved to My Items as a new item'); await page.waitForTimeout(500)
+    await menu.getByRole('menuitem', { name: 'Save as a new item' }).click(); await snack(page, 'Saved to the Price book as a new item'); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const made = sql(`select id from price_book_items where name='Painting, whole unit — two coats'`)
     ok('a new item, named for what it is, and the line points at it', !!made && sql(`select price_book_item_id from quote_items where id='${fromBook}'`) === made)
-    await page.getByRole('button', { name: 'Undo', exact: true }).last().click(); await snack(page, 'Taken back out of My Items'); await page.waitForTimeout(500)
+    await page.getByRole('button', { name: 'Undo', exact: true }).last().click(); await snack(page, 'Taken back out of the Price book'); await page.waitForTimeout(500)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('Undo takes it out again; the line points at Painting once more', sql(`select count(*) from price_book_items where name='Painting, whole unit — two coats'`) === '0' && sql(`select price_book_item_id from quote_items where id='${fromBook}'`) === PAINT)
     as('sarah')
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
@@ -107,14 +107,14 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     sql(`update quote_items set print_one_line=1, print_as_text='Approximate', highlight='light' where id='${BATHS}'`)
     await page.goto(`${BASE}/quotes/${Q}`); await ready(page)
     const menu = await rowMenu(page, BATHS, 'Bathrooms')
-    await menu.getByRole('menuitem', { name: 'Save to Price book' }).click(); await snack(page, 'Section saved to My Sections')   // (the calm UI build 2026-10-27, a deliberate change) W-608; await page.waitForTimeout(400)
+    await menu.getByRole('menuitem', { name: 'Save to Price book' }).click(); await snack(page, 'Section saved to the Price book')   // (the calm UI build 2026-10-27, a deliberate change) W-608; await page.waitForTimeout(400)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     saved = sql(`select id from price_book_sections where name='Bathrooms' order by created_at desc limit 1`)
     const j = (p) => sql(`select json_extract(lines_json, '${p}') from price_book_sections where id='${saved}'`)
     ok('kept: one line, its sub-total word, its highlight', j('$.printOneLine') === '1' && j('$.printAsText') === 'Approximate' && j('$.highlight') === 'light')
     ok('kept: a hidden line, an optional line with its rebate', j('$.lines[0].visibility') === 'hidden' && j('$.lines[1].optional') === '1' && j('$.lines[1].rebateMinor') === '5000')
     sql(`update settings set value = json_set(value, '$.gstPct', 8) where key='studio'`)
     await addBox(page, 'Bathrooms')
-    await page.getByTestId('my-section').filter({ hasText: 'Bathrooms' }).filter({ hasNotText: 'full works' }).first().click(); await snack(page, 'Section added from My Sections'); await page.waitForTimeout(800)
+    await page.getByTestId('my-section').filter({ hasText: 'Bathrooms' }).filter({ hasNotText: 'full works' }).first().click(); await snack(page, 'Section added from the Price book'); await page.waitForTimeout(800)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     const g = sql(`select id from quote_items where quote_id='${Q}' and kind='group' and price_book_item_id='${saved}' order by created_at desc limit 1`)
     ok('the section lands one-line, worded, highlighted', sql(`select print_one_line || '|' || print_as_text || '|' || highlight from quote_items where id='${g}'`) === '1|Approximate|light')
     const lines = sql(`select visibility || ':' || optional || ':' || rebate_minor || ':' || gst_pct from quote_items where parent_id='${g}' order by position`).split('\n')
@@ -188,7 +188,7 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     const a = await addBox(page, '')
     await a.press('ArrowDown'); await page.waitForTimeout(300)
     const list = page.getByTestId('add-item-list')
-    ok(`every item, counted (${all})`, (await list.innerText()).includes(`My Items (${all})`) && await list.getByRole('option').filter({ hasNot: page.locator('[data-testid="my-section"]') }).count() >= all)
+    ok(`every item, counted (${all})`, (await list.innerText()).includes(`Price book items (${all})`) && await list.getByRole('option').filter({ hasNot: page.locator('[data-testid="my-section"]') }).count() >= all)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     await a.fill('Tiling'); await page.waitForTimeout(400)
     ok('a category finds its items', await page.getByRole('option', { name: /Homogeneous tiles/ }).count() === 2)
     await a.fill('Labour'); await page.waitForTimeout(400)

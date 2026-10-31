@@ -364,7 +364,7 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     if (askTitle) {
       const created = `created the task “${askTitle}”`
       ok(!act.includes(created), 'Activity › All: the task made from the ask is said once, by the ask’s line (REG-1559)')
-      await d.locator('[data-testid="activity-chips"] [role="radio"]', { hasText: /^Tasks/ }).first().click(); await settle(d, 500)
+      await d.locator('[data-testid="activity-chips"] button').click(); await settle(d, 250); await d.getByRole('menuitemradio', { name: /^Tasks · \d+$/ }).click(); await settle(d, 500)   // (the close-out round 2026-10-31, a deliberate change) C-43: the kinds are the Show pill's menu
       ok((await d.locator('[data-testid="activity-feed"]').innerText()).includes(created), '…and its own “created the task” line is under the Tasks chip')
     }
     await go(d, '/settings?section=notifications')

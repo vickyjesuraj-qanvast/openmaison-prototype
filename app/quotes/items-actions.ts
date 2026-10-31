@@ -522,7 +522,7 @@ const fromLine = (i: QuoteItem, cur?: PriceBookItem) => ({
 export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update' = 'new'): Promise<SavedToBook | Refusal> {
   const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a line is read
   const i = await itemOf(itemId)
-  if (i.kind !== 'item') throw new Error('sections are saved with Save section to My Sections')
+  if (i.kind !== 'item') throw new Error('sections are saved with Save to Price book')
   /* (REG-652, price book parity Q-04) An Owner's or an Admin's save joins the book; a Designer's is proposed — on their quotes at once, offered to no one else until approved. */
   const { fetchViewer } = await import('@/lib/leads/visibility')
   const { newItemStatus, runsBook, BOOK_RULE } = await import('@/lib/company/price-book-rules')
@@ -561,7 +561,7 @@ async function proposeNotice(by: string | null, made: { id: string; name: string
   const { notify } = await import('@/lib/notifications/emit'); const { studioRunnerIds } = await import('@/lib/notifications/queries')
   const [me] = by ? await db.select({ name: members.name }).from(members).where(eq(members.id, by)) : []
   const one = made.length === 1 ? made[0]! : null
-  await notify('price_book_proposed', await studioRunnerIds(), { title: one ? `${me?.name ?? 'Someone'} proposed “${one.name}” for My Items` : `${me?.name ?? 'Someone'} proposed ${made.length} items for My Items`,
+  await notify('price_book_proposed', await studioRunnerIds(), { title: one ? `${me?.name ?? 'Someone'} proposed “${one.name}” for the Price book` : `${me?.name ?? 'Someone'} proposed ${made.length} items for the Price book`,
     body: one ? 'Approve it, or send it back with a note' : 'Approve each, or send it back with a note', href: one ? `/company/price-book?open=${encodeURIComponent(one.id)}` : '/company/price-book', actorId: by })   // (UX audit V11) the item itself
 }
 
@@ -640,7 +640,7 @@ export async function undoSaveToPriceBook(lineId: string, saved: { mode: 'new' |
     if ('error' in u) return u
   } else if (saved.mode === 'new') {
     const others = await db.select({ id: quoteItems.id }).from(quoteItems).where(and(eq(quoteItems.priceBookItemId, cur.id)))
-    if (others.some((o) => o.id !== i.id)) return refuse('Another quote line uses it now — it stays in My Items')
+    if (others.some((o) => o.id !== i.id)) return refuse('Another quote line uses it now — it stays in the Price book')
     const { priceBookChanges } = await import('@/lib/db/schema')
     await db.delete(priceBookItems).where(eq(priceBookItems.id, cur.id))
     await db.delete(priceBookChanges).where(eq(priceBookChanges.itemId, cur.id))

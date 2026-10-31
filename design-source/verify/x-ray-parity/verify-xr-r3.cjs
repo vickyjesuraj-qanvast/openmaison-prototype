@@ -104,7 +104,8 @@ const rowOf = (r, re) => r.rows.find((x) => re.test(x.name))
     await page.getByRole('menuitem', { name: 'Delete' }).click()
     await page.getByRole('dialog', { name: 'Delete this comparison?' }).getByRole('button', { name: 'Delete' }).click()
     await page.waitForURL((u) => u.pathname === '/quote-x-ray', { timeout: 10000 }); await ready(page)
-    ok('Delete removes it and lands on the lead’s X-Ray page', sql(`select count(*) from quote_comparisons where id='${ID}'`) === '0' && new URL(page.url()).searchParams.get('lead') === VIV)
+    /* (the close-out round 2026-10-31, a deliberate change) C-08: the delete is soft — the reading leaves Recent and waits in Deleted comparisons */
+    ok('Delete removes it and lands on the lead’s X-Ray page', sql(`select deleted_at is not null from quote_comparisons where id='${ID}'`) === '1' && (await page.locator(`[data-testid="xray-recent"] a[href*="${ID}"]`).count()) === 0 && new URL(page.url()).searchParams.get('lead') === VIV)
   })
 
   await step('the Lost dialog’s competitor comes from the latest comparison', async () => {
@@ -113,7 +114,7 @@ const rowOf = (r, re) => r.rows.find((x) => re.test(x.name))
     await page.getByRole('menuitem', { name: 'Lost' }).click()
     const dlg = page.getByRole('dialog', { name: 'Mark as lost' }); await dlg.waitFor()   // (the calm UI build 2026-10-27, a deliberate change) 2-29: the Lost dialog is titled by its verb (was "Move stage · Moving to Lost")
     await dlg.getByRole('combobox', { name: /Reason/ }).click(); await page.getByRole('option', { name: 'Went with another firm' }).click()
-    const latest = sql(`select other_studio from quote_comparisons where lead_id='${VIV}' order by created_at desc limit 1`)
+    const latest = sql(`select other_studio from quote_comparisons where lead_id='${VIV}' and deleted_at is null order by created_at desc limit 1`)   // (the close-out round 2026-10-31, a deliberate change) C-08: a deleted reading names no competitor
     ok('the competitor starts as the latest comparison’s studio', (await dlg.getByRole('textbox', { name: /Competitor/ }).inputValue()) === latest, latest)
     ok('and says where it came from', /From the Quote X-Ray of/.test(await dlg.innerText()))
     await page.waitForTimeout(800); await shot('04-lost-competitor')
@@ -124,7 +125,7 @@ const rowOf = (r, re) => r.rows.find((x) => re.test(x.name))
   await step('phone: the row menu on a card, the stale banner', async () => {
     const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const p = await m.newPage()
-    const any = sql(`select id from quote_comparisons where quote_id='${Q8}' order by created_at desc limit 1`)
+    const any = sql(`select id from quote_comparisons where quote_id='${Q8}' and deleted_at is null order by created_at desc limit 1`)   // (the close-out round 2026-10-31, a deliberate change) C-08: a live reading — a deleted one answers not found
     await p.goto(`${BASE}/quote-x-ray/${any}`); await ready(p)
     const card = p.getByTestId('xray-row').filter({ hasText: 'Kitchen countertop' }).first(); await card.scrollIntoViewIfNeeded()
     ok('the card carries its kebab on touch', await card.getByRole('button', { name: /^More actions for/ }).isVisible())

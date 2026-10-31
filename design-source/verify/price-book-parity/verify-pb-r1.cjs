@@ -35,7 +35,7 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
     ok('the category is one of the trades — Tiling from the book among them', cats.includes('Carpentry') && cats.includes('Tiling') && cats.includes('No trade'), cats.join(', '))
     await page.getByRole('option', { name: 'Carpentry', exact: true }).click()
     await shot('01-item-cents')
-    await page.getByRole('dialog').getByRole('button', { name: 'Add to My Items' }).click(); await page.waitForTimeout(1200)
+    await page.getByRole('dialog').getByRole('button', { name: 'Add to Price book' }).click(); await page.waitForTimeout(1200)   // (the close-out round 2026-10-31, a deliberate change) C-122: the Price book is named, not "My Items" / "My Sections"
     ok('saved as S$2.80 + S$0.70', sql(`select cost_minor || '|' || markup_minor || '|' || category from price_book_items where name='Skirting, PVC'`) === '280|70|Carpentry')
     const design = sql(`select id from price_book_items where name like 'Design consultation%'`)
     await page.getByRole('button', { name: /^(Open|Edit) Design consultation/ }).first().click()

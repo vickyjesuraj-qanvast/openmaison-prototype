@@ -857,8 +857,8 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
             <div className={sec.popover}>
               <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>New item</Button></div>
               <div className={sec.popList} data-testid="add-item-list">
-                <div className={sec.popHead}>My Items ({matches.length})</div>
-                {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'Nothing in My Items yet'}</div> : matches.map((p) => { const i = idx('item', p.id); return (
+                <div className={sec.popHead}>Price book items ({matches.length})</div>
+                {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'No items yet'}</div> : matches.map((p) => { const i = idx('item', p.id); return (
                   <button key={p.id} id={optId(i)} type="button" role="option" aria-selected={i === active} data-active={i === active || undefined} className={sec.popRow} onClick={() => pick(p.id)}>
                     <span className={sec.popThumb}>
                       {p.thumb ? (
@@ -875,7 +875,7 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
                 {sectionMatches.length || otherTypes ? (
                   <>
                     <div className={sec.popHead}>
-                      <span>My Sections ({sectionMatches.length}){sectionsLocked ? <> <ProTag /></> : null}</span>
+                      <span>Price book sections ({sectionMatches.length}){sectionsLocked ? <> <ProTag /></> : null}</span>
                       {typeToggle ? <button type="button" id={optId(idx('allTypes', 'all-types'))} role="option" aria-selected={active === idx('allTypes', 'all-types')} data-active={active === idx('allTypes', 'all-types') || undefined} className={sec.popToggle} data-testid="sections-all-types" onMouseDown={(e) => e.preventDefault()} onClick={() => setAllTypes((v) => !v)}>{allTypes ? `For ${propertyType} only` : `Show all · ${otherTypes} more`}</button> : null}
                     </div>
                     {sectionMatches.map((x) => {

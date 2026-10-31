@@ -48,7 +48,7 @@ const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many
 
 /** "3 price book items, 11 quote lines and 2 lines in My Sections" — the parts that move, else null. */
 export function movedWords(u: Pick<TradeUsage, 'items' | 'lines' | 'sectionLines'>): string | null {
-  const parts = [u.items ? n(u.items, 'price book item', 'price book items') : null, u.lines ? n(u.lines, 'quote line', 'quote lines') : null, u.sectionLines ? n(u.sectionLines, 'line in My Sections', 'lines in My Sections') : null].filter((x): x is string => !!x)
+  const parts = [u.items ? n(u.items, 'price book item', 'price book items') : null, u.lines ? n(u.lines, 'quote line', 'quote lines') : null, u.sectionLines ? n(u.sectionLines, 'line in a saved section', 'lines in saved sections') : null].filter((x): x is string => !!x)
   if (!parts.length) return null
   return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
 }
